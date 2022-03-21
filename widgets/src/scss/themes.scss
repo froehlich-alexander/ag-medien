@@ -1,0 +1,44 @@
+
+body {
+  $background-color-name: "--background-color";
+  $dark-default-bg: 20;
+  $light-default-bg: 255;
+  $dark-difference: 10;
+  $light-difference: 7;
+
+  @mixin defaultBackgroundColor($number, $dark: true) {
+    $color: null;
+    @if ($dark) {
+      $color: ($dark-default-bg + ($number * 10));
+      //#{$background-color-name}-#{$number}: rgb($color, $color, $color);
+    } @else {
+      $color: $light-default-bg - ($number * 10);
+    }
+
+    @if ($color < 0) {
+      $color: 0;
+    } @else if ($color > 255) {
+      $color: 255;
+    }
+    #{$background-color-name}-#{$number}: rgb($color, $color, $color);
+  }
+
+  &.dark {
+    @for $i from 0 through 10 {
+      @include defaultBackgroundColor($i, true);
+    }
+
+    //background-0 - 160
+    color: #a0a0a0;
+  }
+
+
+  &.light {
+    @for $i from 0 through 10 {
+      @include defaultBackgroundColor($i, false);
+    }
+
+    //background-0 - 160
+    color: rgb(95, 95, 95);
+  }
+}

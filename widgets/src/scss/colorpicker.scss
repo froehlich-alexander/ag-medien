@@ -1,0 +1,54 @@
+@import "./widgets";
+
+body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  font-family: sans-serif;
+  background-color: var(--background-color-0);
+}
+
+.color-picker {
+  background-color: var(--background-color-1);
+  width: 50%;
+  height: 80%;
+  left: 25%;
+  top: 10%;
+  position: absolute;
+  border-radius: 1rem;
+  padding-bottom: 0.5rem;
+
+  .top {
+    position: relative;
+    font-size: 2rem;
+    border-radius: 1rem;
+    padding: 0.5rem 0;
+    background-color: var(--background-color-3);
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .content {
+    overflow-y: auto;
+    width: 100%;
+    scrollbar-width: thin;
+    box-sizing: border-box;
+
+    .item {
+      padding: 1rem;
+      margin: 0.5rem;
+      border-radius: 1rem;
+      cursor: pointer;
+      font-size: 1rem;
+      position: relative;
+
+      //.text-widget {
+      //  padding: 0 1rem;
+      //  display: inline-block;
+      //  box-sizing: border-box;
+      //  width: 90%;
+      //  vertical-align: middle;
+      //}
+    }
+  }
+}

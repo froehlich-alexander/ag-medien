@@ -1,0 +1,22 @@
+:root {
+	--tuerkis: darkred;
+	--tuerkis-border: repeating-linear-gradient(180deg, #ff4d00, red, violet, blue, green, yellow, #ff4d00 300px) 1 100%;
+	--actuelles-bubbles: linear-gradient(90deg, blue, darkred, yellow);
+	--dunkelblau: #013301;
+	--nav-links: darkred;
+	--button-primary: rgba(210, 5, 48, 0.66);
+	--button-primary-hover: rgba(176, 10, 10, 0.75);
+	--button-primary-border: rgb(176, 10, 10);
+	--button-primary-hover-border: rgb(210, 5, 48);
+	--button-secondary: rgba(255, 213, 0, 0.73);
+	--button-secondary-hover: rgb(241, 134, 11);
+	--button-secondary-border: rgb(241, 134, 11);
+	--button-secondary-hover-border: rgba(255, 213, 0, 100%);
+	--carousel-gradient: linear-gradient(90deg, rgba(0, 0, 255, 0.4), rgba(139, 0, 0, 0.4), rgba(255, 255, 0, 0.4));
+	--div-dark-bg: #205072;
+	--div-dark-color: #7BE495;
+	--link-color: #007bff;
+	--link-color-hover: #0056b3;
+	--scrollbar-thumb: blue;
+	--scrollbar-track: orange;
+}
