@@ -71,13 +71,15 @@ function adjust_clickables() {
     // }
 }
 
-function createHtml(jsonString) {
-    // let json = JSON.parse(jsonString);
-    let json = jsonString;
+function createHtml(json) {
     console.log(json);
     for (let page of json) {
         let clickables = [];
         for (let clickable of page.clickables) {
+            let gotoExist = json.filter(value => value.id == clickable.goto).length > 0;
+            if (!gotoExist) {
+                console.log("Id '" + clickable.goto + "' does not exist");
+            }
             clickables.push($("<div></div>")
                 .addClass("clickable")
                 .append($("<div></div>")
@@ -86,8 +88,10 @@ function createHtml(jsonString) {
                 .append($("<button></button>")
                     .addClass("icon")
                     .addClass(clickable.icon)
-                    .on("click", () => {
+                    .on("click", gotoExist ? () => {
                         goTo(idPrefix + clickable.goto, clickable.backward);
+                    } : () => {
+                        console.log("Cannot go to next page because '" + clickable.goto + "' does not exist");
                     }))
                 .css("left", clickable.x + "%")
                 .css("top", clickable.y + "%")
@@ -114,7 +118,6 @@ function createHtml(jsonString) {
                                 $(this).addClass("fill-width");
                             else
                                 $(this).addClass("fill-height");
-                            // adjust_clickables();
                         }).each(function () {
                             if (this.complete) {
                                 $(this).trigger('load');
