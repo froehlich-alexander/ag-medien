@@ -43,7 +43,7 @@ abstract class Dialog<EventType extends DialogEvents> extends Widget<EventType> 
         return this.buttonBox.inheritVisibility;
     }
 
-    protected addButton(button: Button, mainAlign: FlexAlign = FlexAlign.center, crossAlign: FlexAlign = FlexAlign.center): this {
+    public addButton(button: Button, mainAlign: FlexAlign = FlexAlign.center, crossAlign: FlexAlign = FlexAlign.center): this {
         this.buttonBox.addButton(button, mainAlign, crossAlign);
         return this;
     }

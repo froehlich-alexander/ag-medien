@@ -1,4 +1,5 @@
 @import "./widgets";
+@import "selectMenu";
 
 body {
   margin: 0;
@@ -18,6 +19,13 @@ body {
   border-radius: 1rem;
   padding-bottom: 0.5rem;
 
+  .color-scheme-dialog {
+    width: 60%;
+    height: 70%;
+    top: 15%;
+    left: 20%;
+  }
+
   .top {
     position: relative;
     font-size: 2rem;
@@ -33,6 +41,15 @@ body {
     width: 100%;
     scrollbar-width: thin;
     box-sizing: border-box;
+
+    .color-scheme {
+      padding: 1rem 0;
+
+      .button-widget {
+        border-radius: 1rem;
+        padding: 1rem;
+      }
+    }
 
     .item {
       padding: 1rem;

@@ -147,17 +147,21 @@ export class SelectMenuItem<T> extends Widget<SelectMenuItemEvents> {
 }
 
 export class SelectMenu extends Dialog<SelectMenuEvents> {
-    private items: Array<SelectMenuItem<string>> = [];
+    private readonly items: Array<SelectMenuItem<string>> = [];
     private title: string;
     private minSelected: number = 1;
     private maxSelected: number = 1;
     private values: string[];
     private readonly top: Top;
 
-    constructor() {
+    constructor(acceptButton: Button = Button.Ok(), rejectButton: Button = Button.Cancel()) {
         super();
-        this.addButton(Button.Ok().on({"clicked": () => this.accept()}), FlexAlign.start);
-        this.addButton(Button.Cancel().on({"clicked": () => this.reject()}), FlexAlign.end);
+        if (acceptButton != null) {
+            this.addButton(acceptButton.on({"clicked": () => this.accept()}), FlexAlign.start);
+        }
+        if (rejectButton != null) {
+            this.addButton(rejectButton.on({"clicked": () => this.reject()}), FlexAlign.end);
+        }
         this.top = new Top().setInheritVisibility(true)
             .setIcon(Icon.Close().on({
                 clicked: () => this.reject()
@@ -187,24 +191,6 @@ export class SelectMenu extends Dialog<SelectMenuEvents> {
         super.build(true)
             .addClass("select-menu");
 
-        //top
-        // $("<div/>")
-        //     .addClass("top")
-        //     .append(
-        //         $("<div></div>")
-        //             .addClass("title")
-        //             .text(this.title))
-        //     .append(
-        //         $("<div></div>")
-        //             .addClass("material-icons")
-        //             .addClass("close-icon")
-        //             .text("close")
-        //             .on({
-        //                 click: () => {
-        //                     this.reject();
-        //                 },
-        //             }))
-        //     .appendTo(this.domObject);
         this.domObject.append(this.top.build().addClass("top"));
 
         //content
@@ -231,46 +217,6 @@ export class SelectMenu extends Dialog<SelectMenuEvents> {
         }
 
         this.buildButtons();
-        //bottom
-        /*
-        $("<div></div>")
-            .addClass("bottom")
-            .append(
-                $("<div></div>")
-                    .addClass("button-widget")
-                    .addClass("reject-button")
-                    .append($("<div></div>")
-                        .addClass("material-icons icon")
-                        .text("cancel"))
-                    .append($("<div></div>")
-                        .text("Cancel")
-                        .addClass("text"))
-                    .on({
-                        click: () => {
-                            this.reject();
-                        },
-                    })
-            )
-            .append($("<div></div>")
-                .addClass("align-spacer"))
-            .append(
-                $("<div></div>")
-                    .addClass("button-widget")
-                    .addClass("accept-button")
-                    .append($("<div></div>")
-                        .addClass("material-icons icon")
-                        .text("done"))
-                    .append($("<div></div>")
-                        .text("Ok")
-                        .addClass("text"))
-                    .on({
-                        click: () => {
-                            this.accept();
-                        },
-                    })
-            )
-            .appendTo(this.domObject);
-         */
         this.buildCallback();
         return this.domObject;
     }
@@ -319,8 +265,10 @@ export class SelectMenu extends Dialog<SelectMenuEvents> {
         return this.items;
     }
 
-    setItems(value: Array<SelectMenuItem<string>>): this {
-        this.items = value;
+    addItems(...items: Array<SelectMenuItem<string>>): this {
+        for (let item of items) {
+            this.children.set("item" + this.items.push(item), item);
+        }
         return this;
     }
 

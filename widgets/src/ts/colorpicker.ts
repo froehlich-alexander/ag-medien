@@ -1,10 +1,16 @@
-import {WidgetEvents} from "./Widget.js";
-import {Icon, ListTile, Top} from "./Widgets.js";
-import {Dialog} from "./Dialog.js";
 import {EventCallbacks} from "./AbstractWidgets.js";
+import {Pair} from "./base.js";
+import {Dialog} from "./Dialog.js";
+import {Overlay} from "./Overlay.js";
+import {SelectMenu, SelectMenuItem} from "./SelectMenu.js";
+import {WidgetEvents} from "./Widget.js";
+import {FontSize, FontWeight} from "./WidgetBase.js";
+import {Button, ButtonEvents, FlexAlign, FlexBox, Icon, IconType, ListTile, Text, Top} from "./Widgets.js";
 
 type ColorSchemeMap = Map<string, ColorScheme>;
-class ColorMap extends Map<string, string>{}
+
+class ColorMap extends Map<string, string> {
+}
 
 class ColorScheme {
     private _name: string;
@@ -322,18 +328,18 @@ class ColorPickerService {
 
     /**
      * should be used when the color input onChange fires
-     * @param id {string}
+     * @param colorType {string}
      * @param newColor {string}
      */
-    onChange(id: string, newColor: string) {
-        let colorScheme = this.getColorScheme(id);
+    onChange(colorType: string, newColor: string) {
+        let colorScheme = this.getCurrent();
         if (colorScheme == null || colorScheme.preDefined) {
-            colorScheme = new ColorScheme(this, null, null, null, this.getColorScheme(id).colors);
+            colorScheme = new ColorScheme(this, null, null, null, this.getColorScheme(colorType).colors);
             console.log("hmm");
             console.log(colorScheme);
         }
 
-        colorScheme.colors.set(id, newColor);
+        colorScheme.colors.set(colorType, newColor);
         this.activate(colorScheme);
         this.save(colorScheme);
     }
@@ -375,11 +381,13 @@ class ColorPickerService {
     }
 }
 
-enum ColorPickerEvents {
+const ColorPickerItemEvents = {
+    ...WidgetEvents,
+    colorChanged: "colorChanged",
+};
+type ColorPickerItemEvents = (typeof ColorPickerItemEvents)[keyof typeof ColorPickerItemEvents];
 
-}
-
-class ColorPickerItem<EventType extends WidgetEvents> extends ListTile<EventType> {
+class ColorPickerItem extends ListTile<ColorPickerItemEvents> {
     constructor() {
         super();
         this.setInheritVisibility(true);
@@ -400,34 +408,99 @@ class ColorPickerItem<EventType extends WidgetEvents> extends ListTile<EventType
 class ColorPicker extends Dialog<WidgetEvents> {
     private readonly colorPickerService: ColorPickerService;
     private readonly top: Top;
+    private readonly colorSchemeDialog: Overlay<SelectMenu>;
+    private readonly colorSchemeButton: Button;
+    private readonly colorSchemeLabel: Text;
+    private readonly colorSchemeBox: FlexBox;
 
     public constructor() {
         super();
         this.colorPickerService = new ColorPickerService();
+        this.colorSchemeDialog = new Overlay<SelectMenu>(new SelectMenu(null, null)
+            .setMaxSelected(1)
+            .setMinSelected(1)
+            .setTitle("Color Scheme")
+            .addButton(Button.Delete().on(undefined, new Pair(ButtonEvents.clicked, (event) => {
+
+            })), FlexAlign.end)
+            .addButton(new Button().setLabel("New").setIcon(Icon.of("add"))
+                .on(undefined, new Pair(ButtonEvents.clicked, (event) => {
+
+            })), FlexAlign.end)
+            .enableButtons(true)
+        );
+        this.colorSchemeButton = new Button()
+            .setInheritVisibility(true)
+            .setIcon(Icon.of("expand_more", IconType.material))
+            .setLabel("Anything")
+            .on(undefined, new Pair(ButtonEvents.clicked, () => this.colorSchemeDialog.widget.open()));
+        this.colorSchemeLabel = new Text().set("Color-Scheme")
+            .setInheritVisibility(true)
+            .setFontWeight(FontWeight.bold)
+            .setFontSize(FontSize.large);
+        this.colorSchemeBox = new FlexBox().setInheritVisibility(true)
+            .addItem(this.colorSchemeLabel, FlexAlign.start)
+            .addItem(this.colorSchemeButton, FlexAlign.start)
+            .setSpacing("3rem", "1rem", "2rem");
+
         this.top = new Top().setLabel("Color-Picker")
             .setInheritVisibility(true)
             .setIcon(Icon.Close().setClickable(true));
         this.children.set("top", this.top);
+        this.children.set("colorSchemeDialog", this.colorSchemeDialog);
+        // this.children.set("colorSchemeButton", this.colorSchemeButton);
+        // this.children.set("colorSchemeLabel", this.colorSchemeLabel);
+        this.children.set("colorSchemeBox", this.colorSchemeBox);
 
         this.on({
             "sizeSet": () => {
-                this.domObject.find(".content").css("max-height", "calc(100% - "
+                this.domObject.children(".content").css("max-height", "calc(100% - "
                     // + this.domObject.find(".bottom").outerHeight(true) + "px - "
-                    + this.domObject.find(".top").outerHeight(true) + "px)");
+                    + this.domObject.children(".top").outerHeight(true) + "px)");
             }
         });
-        this.enableButtons(true);
+        this.enableButtons(false);
     }
 
     public build(suppressCallback: boolean = false): JQuery<HTMLElement> {
+        //color schemes
+        for (let scheme of this.colorPickerService.all.values()) {
+            let item = new SelectMenuItem<string>()
+                .setInheritVisibility(true)
+                .setLabel(scheme.name)
+                .setCheckbox(true)
+                .setValue(scheme.id)
+                .setSelected(scheme.current)
+                .setIcon(Icon.Info());
+            this.colorSchemeDialog.widget.addItems(item);
+        }
+
         super.build(true)
             .addClass("color-picker")
+            .append(this.colorSchemeDialog.build())
             .append(this.top.build()
                 .addClass("top"));
+        this.colorSchemeDialog.widget.domObject
+            .addClass("color-scheme-dialog");
         let content = $("<div></div>")
             .addClass("content")
             .appendTo(this.domObject);
 
+        //color scheme select menu
+        // content.append($("<div></div>")
+        //     .addClass("color-scheme-select-button")
+        //     .on("click", this.colorSchemeDialog.open))
+
+        // content.append($("<div></div>")
+        //     .addClass("color-scheme")
+        //     .append(this.colorSchemeLabel.build()
+        //         .addClass("label"))
+        //     .append(this.colorSchemeButton.build()
+        //         .addClass("button")));
+        content.append(this.colorSchemeBox.build()
+            .addClass("color-scheme"));
+
+        //color items
         let i = 0;
         for (let colorType of this.colorPickerService.colorTypes) {
             let item = new ColorPickerItem();
@@ -436,6 +509,7 @@ class ColorPicker extends Dialog<WidgetEvents> {
             item.setVisibility(this.visibility);
             item.backgroundColor.set("var(" + colorType + ")");
             item.label.set(this.colorPickerService.getDisplayColorName(colorType));
+            item.on(undefined, new Pair(ColorPickerItemEvents.colorChanged, (event, colorValue) => this.colorPickerService.onChange((<ColorPickerItem>event.target).label.get(), colorValue)));
 
             content.append(item.build());
             i++;

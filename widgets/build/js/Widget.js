@@ -79,7 +79,7 @@ class Widget extends _EventHandler {
         if (!this.eventDisabled(event)) {
             for (let i of this.callbacks.filter(value => value.first == event || value.first == WidgetEvents.all || value.first in acceptedTypes)) {
                 if (args != undefined && args.length > 0) {
-                    i.second({ type: event, target: this }, args);
+                    i.second({ type: event, target: this }, ...args);
                 }
                 else {
                     i.second({ type: event, target: this });

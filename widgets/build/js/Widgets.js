@@ -89,6 +89,9 @@ Icon.Edit = () => Icon_1.of("edit", IconType.material);
 Icon.Done = () => Icon_1.of("done", IconType.material);
 Icon.Back = () => Icon_1.of("arrow_back", IconType.material);
 Icon.Next = () => Icon_1.of("arrow_forward", IconType.material);
+Icon.Delete = () => Icon_1.of("delete", IconType.material);
+Icon.Cancel = () => Icon_1.of("cancel", IconType.material);
+Icon.Info = () => Icon_1.of("info", IconType.material);
 Icon = Icon_1 = __decorate([
     mixin(MixinImplementing, SpacingEditable)
 ], Icon);
@@ -128,11 +131,12 @@ class Button extends Widget {
         return this;
     }
 }
-Button.Cancel = () => new Button().setLabel("Cancel").setIcon(Icon.of("cancel", IconType.material));
-Button.Ok = () => new Button().setLabel("Ok").setIcon(Icon.of("done", IconType.material));
+Button.Cancel = () => new Button().setLabel("Cancel").setIcon(Icon.Cancel());
+Button.Ok = () => new Button().setLabel("Ok").setIcon(Icon.Done());
 Button.Back = () => new Button().setLabel("Back").setIcon(Icon.of("arrow_back", IconType.material));
 Button.Next = () => new Button().setLabel("Next").setIcon(Icon.of("arrow_forward", IconType.material));
-Button.Agree = () => new Button().setLabel("Agree").setIcon(Icon.of("done", IconType.material));
+Button.Agree = () => new Button().setLabel("Agree").setIcon(Icon.Done());
+Button.Delete = () => new Button().setLabel("Delete").setIcon(Icon.Delete());
 var FlexAlign;
 (function (FlexAlign) {
     FlexAlign["start"] = "start";
@@ -170,6 +174,8 @@ class FlexBox extends Widget {
         }
         Util.addCssProperty(this.domObject, "padding-left", this.startSpacing);
         Util.addCssProperty(this.domObject, "padding-right", this.endSpacing);
+        console.log("flex");
+        console.log(this);
         this.buildCallback(suppressCallback);
         return this.domObject;
     }
@@ -328,4 +334,4 @@ let ListTile = class ListTile extends FlexBox {
 ListTile = __decorate([
     mixin(ColorEditable, SpacingEditable, LeadingTrailingIconContaining)
 ], ListTile);
-export { Icon, IconType, Button, ButtonBox, FlexAlign, Top, Text, ListTile };
+export { Icon, IconEvents, IconType, Button, ButtonEvents, ButtonBox, FlexAlign, Top, Text, ListTile, FlexBox };

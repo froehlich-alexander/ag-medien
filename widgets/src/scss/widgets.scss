@@ -148,4 +148,15 @@
       vertical-align: center;
     }
   }
+
+  &.overlay-widget {
+    left: 0;
+    right: 0;
+    width: 100vw;
+    height: 100vh;
+    user-select: none;
+    position: fixed;
+    background-color: rgba(black, 0.5);
+    z-index: 2;
+  }
 }

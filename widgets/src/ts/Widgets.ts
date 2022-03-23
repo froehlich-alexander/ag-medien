@@ -31,6 +31,11 @@ class Icon extends Widget<IconEvents> {
     public static Done = () => Icon.of("done", IconType.material);
     public static Back = () => Icon.of("arrow_back", IconType.material);
     public static Next = () => Icon.of("arrow_forward", IconType.material);
+    public static Delete = () => Icon.of("delete", IconType.material);
+    public static Cancel = () => Icon.of("cancel", IconType.material);
+    public static Info = () => Icon.of("info", IconType.material);
+    // public static Info = () => Icon.of("info", IconType.material);
+    // public static Info = () => Icon.of("info", IconType.material);
 
     constructor() {
         super();
@@ -124,11 +129,19 @@ class Button extends Widget<ButtonEvents> {
     private label: string;
     private icon: Icon | null;
 
-    public static Cancel = () => new Button().setLabel("Cancel").setIcon(Icon.of("cancel", IconType.material));
-    public static Ok = () => new Button().setLabel("Ok").setIcon(Icon.of("done", IconType.material));
+    public static Cancel = () => new Button().setLabel("Cancel").setIcon(Icon.Cancel());
+    public static Ok = () => new Button().setLabel("Ok").setIcon(Icon.Done());
     public static Back = () => new Button().setLabel("Back").setIcon(Icon.of("arrow_back", IconType.material));
     public static Next = () => new Button().setLabel("Next").setIcon(Icon.of("arrow_forward", IconType.material));
-    public static Agree = () => new Button().setLabel("Agree").setIcon(Icon.of("done", IconType.material));
+    public static Agree = () => new Button().setLabel("Agree").setIcon(Icon.Done());
+    public static Delete = () => new Button().setLabel("Delete").setIcon(Icon.Delete());
+    // public static Agree = () => new Button().setLabel("Agree").setIcon(Icon.of("done", IconType.material));
+    // public static Agree = () => new Button().setLabel("Agree").setIcon(Icon.of("done", IconType.material));
+    // public static Agree = () => new Button().setLabel("Agree").setIcon(Icon.of("done", IconType.material));
+    // public static Agree = () => new Button().setLabel("Agree").setIcon(Icon.of("done", IconType.material));
+    // public static Agree = () => new Button().setLabel("Agree").setIcon(Icon.of("done", IconType.material));
+    // public static Agree = () => new Button().setLabel("Agree").setIcon(Icon.of("done", IconType.material));
+    // public static Agree = () => new Button().setLabel("Agree").setIcon(Icon.of("done", IconType.material));
 
     build(suppressCallback: boolean = false): JQuery<HTMLElement> {
         super.build(true)
@@ -398,6 +411,9 @@ class FlexBox extends Widget<WidgetEvents> {
         Util.addCssProperty(this.domObject, "padding-left", this.startSpacing);
         Util.addCssProperty(this.domObject, "padding-right", this.endSpacing);
 
+        console.log("flex");
+        console.log(this);
+
         this.buildCallback(suppressCallback);
         return this.domObject;
     }
@@ -624,4 +640,4 @@ interface ListTile<EventType extends WidgetEvents> extends MixinImplementing, Co
 // applyMixins(ListTile, [MixinImplementing, ColorEditable, SpacingEditable, LeadingTrailingIconContaining]);
 
 
-export {Icon, IconType, Button, ButtonBox, FlexAlign, Top, Text, ListTile};
+export {Icon, IconEvents, IconType, Button, ButtonEvents, ButtonBox, FlexAlign, Top, Text, ListTile, FlexBox};

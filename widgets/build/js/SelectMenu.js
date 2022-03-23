@@ -107,13 +107,17 @@ export class SelectMenuItem extends Widget {
     }
 }
 export class SelectMenu extends Dialog {
-    constructor() {
+    constructor(acceptButton = Button.Ok(), rejectButton = Button.Cancel()) {
         super();
         this.items = [];
         this.minSelected = 1;
         this.maxSelected = 1;
-        this.addButton(Button.Ok().on({ "clicked": () => this.accept() }), FlexAlign.start);
-        this.addButton(Button.Cancel().on({ "clicked": () => this.reject() }), FlexAlign.end);
+        if (acceptButton != null) {
+            this.addButton(acceptButton.on({ "clicked": () => this.accept() }), FlexAlign.start);
+        }
+        if (rejectButton != null) {
+            this.addButton(rejectButton.on({ "clicked": () => this.reject() }), FlexAlign.end);
+        }
         this.top = new Top().setInheritVisibility(true)
             .setIcon(Icon.Close().on({
             clicked: () => this.reject()
@@ -182,8 +186,10 @@ export class SelectMenu extends Dialog {
     getItems() {
         return this.items;
     }
-    setItems(value) {
-        this.items = value;
+    addItems(...items) {
+        for (let item of items) {
+            this.children.set("item" + this.items.push(item), item);
+        }
         return this;
     }
     getTitle() {

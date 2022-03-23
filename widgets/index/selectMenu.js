@@ -12,7 +12,7 @@ for (let i = 0; i < 100; i++) {
 
 let selectMenu = new SelectMenu()
     .setTitle("Hello")
-    .setItems(items)
+    .addItems(items)
     .enableButtons(true);
 selectMenu.build().appendTo("body");
 selectMenu.show();
