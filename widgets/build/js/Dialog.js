@@ -32,13 +32,14 @@ class Dialog extends Widget {
     open() {
         this.opened = true;
         this.result = null;
+        this.value = null;
         this.setVisibility(true);
         return this;
     }
     accept() {
         this.result = DialogEvents.accepted;
         this.close();
-        return (this.dispatchEvent(DialogEvents.accepted, [], DialogEvents.finished));
+        return (this.dispatchEvent(DialogEvents.accepted, [this.setValue()], DialogEvents.finished));
     }
     reject() {
         this.result = DialogEvents.rejected;

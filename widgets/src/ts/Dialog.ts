@@ -17,8 +17,9 @@ interface _Dialog extends _Widget {
     open(): this;
 }
 
-abstract class Dialog<EventType extends DialogEvents> extends Widget<EventType> implements _Dialog {
+abstract class Dialog<EventType extends DialogEvents, ValueType> extends Widget<EventType> implements _Dialog {
     private result: string;
+    protected value: ValueType;
     private opened: boolean;
     protected readonly buttonBox: ButtonBox = new ButtonBox();
 
@@ -59,14 +60,22 @@ abstract class Dialog<EventType extends DialogEvents> extends Widget<EventType> 
     public open(): this {
         this.opened = true;
         this.result = null;
+        this.value = null;
         this.setVisibility(true);
         return this;
     }
 
+    /**
+     * You should save your result into {@link value} in this method and return {@link value}
+     * @return {ValueType}
+     * @protected
+     */
+    protected abstract setValue(): ValueType;
+
     public accept(): this {
         this.result = DialogEvents.accepted;
         this.close();
-        return (this.dispatchEvent(DialogEvents.accepted, [], DialogEvents.finished));
+        return (this.dispatchEvent(DialogEvents.accepted, [this.setValue()], DialogEvents.finished));
     }
 
     public reject(): this {

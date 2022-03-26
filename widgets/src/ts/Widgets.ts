@@ -1,14 +1,28 @@
+import {Dialog, DialogEvents} from "./Dialog.js";
 import {Widget, WidgetEvents} from "./Widget.js";
 import {mixin, MixinImplementing, Tripel} from "./base.js";
 import {
     ColorEditable,
-    EventCallbacks,
+    EventCallbacks, ItemContaining,
     LeadingTrailingIconContaining,
     OneIconContaining,
     SpacingEditable,
     Util
 } from "./AbstractWidgets.js";
 import {Font, FontFamily, FontSize, FontWeight} from "./WidgetBase.js";
+import ChangeEvent = JQuery.ChangeEvent;
+
+class Item {
+    private _index: number;
+
+    public get index(): number {
+        return this._index;
+    }
+
+    public set index(value: number) {
+        this._index = value;
+    }
+}
 
 const IconEvents = {
     ...WidgetEvents,
@@ -351,6 +365,7 @@ class FlexBox extends Widget<WidgetEvents> {
             if (i >= items.length - 1) {
                 item.first.domObject.addClass("end-of-" + align);
             }
+            i++;
         }
         if (items.length > 0) {
             this.domObject.addClass(align);
@@ -410,9 +425,6 @@ class FlexBox extends Widget<WidgetEvents> {
 
         Util.addCssProperty(this.domObject, "padding-left", this.startSpacing);
         Util.addCssProperty(this.domObject, "padding-right", this.endSpacing);
-
-        console.log("flex");
-        console.log(this);
 
         this.buildCallback(suppressCallback);
         return this.domObject;
@@ -613,10 +625,10 @@ class ListTile<EventType extends WidgetEvents> extends FlexBox {
 
     public build(suppressCallback: boolean = false): JQuery<HTMLElement> {
         super.build(true)
-            .addClass("list-tile-widget")
-            // .append(this.getLeadingIcon().build())
-            // .append(this._label.build())
-            // .append(this.getTrailingIcon().build());
+            .addClass("list-tile-widget");
+        // .append(this.getLeadingIcon().build())
+        // .append(this._label.build())
+        // .append(this.getTrailingIcon().build());
 
         this.buildColor();
         this.buildSpacing();
@@ -637,7 +649,159 @@ class ListTile<EventType extends WidgetEvents> extends FlexBox {
 interface ListTile<EventType extends WidgetEvents> extends MixinImplementing, ColorEditable, SpacingEditable, LeadingTrailingIconContaining<EventType> {
 }
 
-// applyMixins(ListTile, [MixinImplementing, ColorEditable, SpacingEditable, LeadingTrailingIconContaining]);
+const TextInputEvents = {
+    ...WidgetEvents,
+    change: "change",
+    input: "input",
+}
+type TextInputEvents = (typeof TextInputEvents[keyof typeof TextInputEvents]);
+
+class TextInput extends Widget<TextInputEvents> {
+    private _id: string;
+    private _label: string;
+    private _placeHolder: string;
+    private _minLength: number;
+    private _maxLength: number;
+    private _readonly: boolean;
+    private _spellcheck: boolean;
+    private _size: number;
+    private _pattern: string;
+
+    constructor() {
+        super();
+    }
+
+    public build(suppressCallback: boolean = false): JQuery<HTMLElement> {
+        super.build(suppressCallback)
+            .addClass("text-input")
+            .append($("<input>")
+                .addClass("field")
+                .attr("id", this._id)
+                .attr("placeholder", this._placeHolder)
+                .attr("minLength", this._minLength)
+                .attr("maxLength", this._maxLength)
+                .prop("readonly", this._readonly)
+                .prop("spellcheck", this._spellcheck)
+                .attr("size", this._size)
+                .attr("pattern", this._pattern)
+            )
+            .append($("<label></label>")
+                .text(this._label)
+                .addClass("label")
+                .attr("for", this._id))
+            .append($("<span></span>")
+                .addClass("underline"))
+            .on("change", (event) => {this.dispatchEvent(TextInputEvents.change, [(<HTMLInputElement>event.target).value])})
+            .on("input", (event) => {this.dispatchEvent(TextInputEvents.input, [(<HTMLInputElement>event.target).value])})
+        this.buildCallback(suppressCallback);
+        return this.domObject;
+    }
+
+    get value(): string {
+        return this.domObject.find("input").get(0).value;
+    }
+
+    public setLabel(_label: string): this {
+        this._label = _label;
+        return this;
+    }
+
+    public setId(id: string): this {
+        this._id = id;
+        return this;
+    }
+
+    public setPlaceHolder(placeHolder: string): this {
+        this._placeHolder = placeHolder;
+        return this;
+    }
+
+    public setMinLength(minLength: number): this {
+        this._minLength = minLength;
+        return this;
+    }
+
+    public setMaxLength(maxLength: number): this {
+        this._maxLength = maxLength;
+        return this;
+    }
+
+    public setReadonly(readonly: boolean): this {
+        this._readonly = readonly;
+        return this;
+    }
+
+    public setSpellcheck(spellcheck: boolean): this {
+        this._spellcheck = spellcheck;
+        return this;
+    }
+
+    public setSize(size: number): this {
+        this._size = size;
+        return this;
+    }
+
+    public setPattern(pattern: string): this {
+        this._pattern = pattern;
+        return this;
+    }
+
+    public get id() {
+        return this._id;
+    }
+
+    public get label(): string {
+        return this._label;
+    }
+
+    public get placeHolder(): string {
+        return this._placeHolder;
+    }
+
+    public get minLength(): number {
+        return this._minLength;
+    }
+
+    public get maxLength(): number {
+        return this._maxLength;
+    }
+
+    public get readonly(): boolean {
+        return this._readonly;
+    }
+
+    public get spellcheck(): boolean {
+        return this._spellcheck;
+    }
+
+    public get size(): number {
+        return this._size;
+    }
+
+    public get pattern(): string {
+        return this._pattern;
+    }
+}
+
+@mixin(ItemContaining, SpacingEditable)
+class Box<EventType extends WidgetEvents> extends Widget<EventType> {
+    constructor() {
+        super();
+        this.mixinConstructor(ItemContaining, SpacingEditable);
+    }
+
+    public build(suppressCallback: boolean = false): JQuery<HTMLElement> {
+        super.build(suppressCallback)
+            .addClass("box");
+        this.buildSpacing();
+        this.buildItems(this.domObject);
+        this.buildCallback(suppressCallback);
+        return this.domObject;
+    }
+}
+
+interface Box<EventType extends WidgetEvents> extends MixinImplementing, ItemContaining, SpacingEditable {
+}
 
 
-export {Icon, IconEvents, IconType, Button, ButtonEvents, ButtonBox, FlexAlign, Top, Text, ListTile, FlexBox};
+export {Icon, IconEvents, IconType, Button, ButtonEvents, ButtonBox, FlexAlign, Top, Text, ListTile, FlexBox, TextInput, TextInputEvents};

@@ -293,7 +293,7 @@ class ColorPicker extends Dialog {
             .setTitle("Color Scheme")
             .addButton(Button.Delete().on(undefined, new Pair(ButtonEvents.clicked, (event) => {
         })), FlexAlign.end)
-            .addButton(new Button().setLabel("New").setIcon(Icon.of("add"))
+            .addButton(new Button().setLabel("New").setIcon(Icon.of("add", IconType.material))
             .on(undefined, new Pair(ButtonEvents.clicked, (event) => {
         })), FlexAlign.end)
             .enableButtons(true));
@@ -360,6 +360,20 @@ class ColorPicker extends Dialog {
         }
         this.buildCallback(suppressCallback);
         return this.domObject;
+    }
+    setValue() {
+        this.value = this.colorPickerService.getCurrent();
+        return this.value;
+    }
+}
+class ColorSchemeNewDialog extends Dialog {
+    constructor(baseScheme) {
+        super();
+        this.newScheme = new ColorScheme({});
+        this.baseScheme = baseScheme;
+    }
+    setValue() {
+        return this.value;
     }
 }
 export { ColorScheme, ColorPickerService, ColorPicker };

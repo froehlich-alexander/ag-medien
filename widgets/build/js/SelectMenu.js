@@ -157,17 +157,9 @@ export class SelectMenu extends Dialog {
         return super.buildButtons()
             .addClass("bottom");
     }
-    getValues() {
-        console.assert(this.built && this.getResult() != null && this.values != null);
-        return this.values;
-    }
-    open() {
-        this.values = null;
-        return super.open();
-    }
-    close() {
-        this.values = this.items.filter(value => value.isSelected()).map(value => value.getValue());
-        return super.close();
+    setValue() {
+        this.value = this.items.filter(value => value.isSelected()).map(value => value.getValue());
+        return this.value;
     }
     setVisibility(visible) {
         for (let i of this.items) {

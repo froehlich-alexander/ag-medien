@@ -7,8 +7,16 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var Icon_1;
 import { Widget, WidgetEvents } from "./Widget.js";
 import { mixin, MixinImplementing, Tripel } from "./base.js";
-import { ColorEditable, EventCallbacks, LeadingTrailingIconContaining, OneIconContaining, SpacingEditable, Util } from "./AbstractWidgets.js";
+import { ColorEditable, EventCallbacks, ItemContaining, LeadingTrailingIconContaining, OneIconContaining, SpacingEditable, Util } from "./AbstractWidgets.js";
 import { Font, FontWeight } from "./WidgetBase.js";
+class Item {
+    get index() {
+        return this._index;
+    }
+    set index(value) {
+        this._index = value;
+    }
+}
 const IconEvents = Object.assign(Object.assign({}, WidgetEvents), { clicked: "clicked" });
 var IconType;
 (function (IconType) {
@@ -160,6 +168,7 @@ class FlexBox extends Widget {
             if (i >= items.length - 1) {
                 item.first.domObject.addClass("end-of-" + align);
             }
+            i++;
         }
         if (items.length > 0) {
             this.domObject.addClass(align);
@@ -174,8 +183,6 @@ class FlexBox extends Widget {
         }
         Util.addCssProperty(this.domObject, "padding-left", this.startSpacing);
         Util.addCssProperty(this.domObject, "padding-right", this.endSpacing);
-        console.log("flex");
-        console.log(this);
         this.buildCallback(suppressCallback);
         return this.domObject;
     }
@@ -334,4 +341,117 @@ let ListTile = class ListTile extends FlexBox {
 ListTile = __decorate([
     mixin(ColorEditable, SpacingEditable, LeadingTrailingIconContaining)
 ], ListTile);
-export { Icon, IconEvents, IconType, Button, ButtonEvents, ButtonBox, FlexAlign, Top, Text, ListTile, FlexBox };
+const TextInputEvents = Object.assign(Object.assign({}, WidgetEvents), { change: "change", input: "input" });
+class TextInput extends Widget {
+    constructor() {
+        super();
+    }
+    build(suppressCallback = false) {
+        super.build(suppressCallback)
+            .addClass("text-input")
+            .append($("<input>")
+            .addClass("field")
+            .attr("id", this._id)
+            .attr("placeholder", this._placeHolder)
+            .attr("minLength", this._minLength)
+            .attr("maxLength", this._maxLength)
+            .prop("readonly", this._readonly)
+            .prop("spellcheck", this._spellcheck)
+            .attr("size", this._size)
+            .attr("pattern", this._pattern))
+            .append($("<label></label>")
+            .text(this._label)
+            .addClass("label")
+            .attr("for", this._id))
+            .append($("<span></span>")
+            .addClass("underline"))
+            .on("change", (event) => { this.dispatchEvent(TextInputEvents.change, [event.target.value]); })
+            .on("input", (event) => { this.dispatchEvent(TextInputEvents.input, [event.target.value]); });
+        this.buildCallback(suppressCallback);
+        return this.domObject;
+    }
+    get value() {
+        return this.domObject.find("input").get(0).value;
+    }
+    setLabel(_label) {
+        this._label = _label;
+        return this;
+    }
+    setId(id) {
+        this._id = id;
+        return this;
+    }
+    setPlaceHolder(placeHolder) {
+        this._placeHolder = placeHolder;
+        return this;
+    }
+    setMinLength(minLength) {
+        this._minLength = minLength;
+        return this;
+    }
+    setMaxLength(maxLength) {
+        this._maxLength = maxLength;
+        return this;
+    }
+    setReadonly(readonly) {
+        this._readonly = readonly;
+        return this;
+    }
+    setSpellcheck(spellcheck) {
+        this._spellcheck = spellcheck;
+        return this;
+    }
+    setSize(size) {
+        this._size = size;
+        return this;
+    }
+    setPattern(pattern) {
+        this._pattern = pattern;
+        return this;
+    }
+    get id() {
+        return this._id;
+    }
+    get label() {
+        return this._label;
+    }
+    get placeHolder() {
+        return this._placeHolder;
+    }
+    get minLength() {
+        return this._minLength;
+    }
+    get maxLength() {
+        return this._maxLength;
+    }
+    get readonly() {
+        return this._readonly;
+    }
+    get spellcheck() {
+        return this._spellcheck;
+    }
+    get size() {
+        return this._size;
+    }
+    get pattern() {
+        return this._pattern;
+    }
+}
+let Box = class Box extends Widget {
+    constructor() {
+        super();
+        this.mixinConstructor(ItemContaining, SpacingEditable);
+    }
+    build(suppressCallback = false) {
+        super.build(suppressCallback)
+            .addClass("box");
+        this.buildSpacing();
+        this.buildItems(this.domObject);
+        this.buildCallback(suppressCallback);
+        return this.domObject;
+    }
+};
+Box = __decorate([
+    mixin(ItemContaining, SpacingEditable)
+], Box);
+export { Icon, IconEvents, IconType, Button, ButtonEvents, ButtonBox, FlexAlign, Top, Text, ListTile, FlexBox, TextInput, TextInputEvents };

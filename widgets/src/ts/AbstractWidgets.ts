@@ -279,4 +279,33 @@ class SpacingEditable extends Mixin{
     }
 }
 
-export {Util, OneIconContaining, LeadingTrailingIconContaining, EventCallbacks, ColorEditable, SpacingEditable};
+class ItemContaining extends Mixin {
+    private _items: Widget<WidgetEvents>[];
+
+    protected buildItem(item: Widget<WidgetEvents>, inheritVisibility: boolean = true): void {
+        item.setInheritVisibility(inheritVisibility);
+    }
+
+    // @ts-ignore
+    protected buildItems(domObject: JQuery<HTMLElement> = this.domObject): this {
+        for (let i of this._items) {
+            this.buildItem(i);
+            domObject.append(i.build());
+        }
+        return this;
+    }
+
+    public addItems(...items: Widget<WidgetEvents>[]): this {
+        for (let i of items) {
+            // @ts-ignore
+            this.children.set("item" + this._items.push(i), i);
+        }
+        return this;
+    }
+
+    public get items(): Widget<WidgetEvents>[] {
+        return this._items;
+    }
+}
+
+export {Util, OneIconContaining, LeadingTrailingIconContaining, EventCallbacks, ColorEditable, SpacingEditable, ItemContaining};

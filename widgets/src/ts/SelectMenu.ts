@@ -1,3 +1,4 @@
+import {Pair} from "./base.js";
 import {Widget, WidgetEvents} from './Widget.js';
 // import * as $ from 'jquery';
 import {Button, FlexAlign, Icon, Top} from "./Widgets.js";
@@ -146,7 +147,7 @@ export class SelectMenuItem<T> extends Widget<SelectMenuItemEvents> {
     }
 }
 
-export class SelectMenu extends Dialog<SelectMenuEvents> {
+export class SelectMenu extends Dialog<SelectMenuEvents, string[]> {
     private readonly items: Array<SelectMenuItem<string>> = [];
     private title: string;
     private minSelected: number = 1;
@@ -230,19 +231,14 @@ export class SelectMenu extends Dialog<SelectMenuEvents> {
     //     return new SelectMenu().enableButtons(true);
     // }
 
-    public getValues(): string[] {
-        console.assert(this.built && this.getResult() != null && this.values != null);
-        return this.values;
-    }
+    // public getValues(): string[] {
+    //     console.assert(this.built && this.getResult() != null && this.values != null);
+    //     return this.values;
+    // }
 
-    open(): this {
-        this.values = null;
-        return super.open();
-    }
-
-    protected close(): this {
-        this.values = this.items.filter(value => value.isSelected()).map(value => value.getValue());
-        return super.close();
+    protected setValue(): string[] {
+        this.value = this.items.filter(value => value.isSelected()).map(value => value.getValue());
+        return this.value;
     }
 
     setVisibility(visible: boolean): this {

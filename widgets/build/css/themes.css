@@ -1,3 +1,6 @@
+body {
+  color: var(--color);
+}
 body.dark {
   --background-color-0: #141414;
   --background-color-1: #1e1e1e;
@@ -10,7 +13,7 @@ body.dark {
   --background-color-8: #646464;
   --background-color-9: #6e6e6e;
   --background-color-10: #787878;
-  color: #a0a0a0;
+  --color: #a0a0a0;
 }
 body.light {
   --background-color-0: white;
@@ -24,7 +27,7 @@ body.light {
   --background-color-8: #afafaf;
   --background-color-9: #a5a5a5;
   --background-color-10: #9b9b9b;
-  color: #5f5f5f;
+  --color: rgb(95, 95, 95);
 }
 
 /*# sourceMappingURL=themes.css.map */

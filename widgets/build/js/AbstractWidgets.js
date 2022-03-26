@@ -176,4 +176,25 @@ class SpacingEditable extends Mixin {
         return [...this._margin];
     }
 }
-export { Util, OneIconContaining, LeadingTrailingIconContaining, EventCallbacks, ColorEditable, SpacingEditable };
+class ItemContaining extends Mixin {
+    buildItem(item, inheritVisibility = true) {
+        item.setInheritVisibility(inheritVisibility);
+    }
+    buildItems(domObject = this.domObject) {
+        for (let i of this._items) {
+            this.buildItem(i);
+            domObject.append(i.build());
+        }
+        return this;
+    }
+    addItems(...items) {
+        for (let i of items) {
+            this.children.set("item" + this._items.push(i), i);
+        }
+        return this;
+    }
+    get items() {
+        return this._items;
+    }
+}
+export { Util, OneIconContaining, LeadingTrailingIconContaining, EventCallbacks, ColorEditable, SpacingEditable, ItemContaining };

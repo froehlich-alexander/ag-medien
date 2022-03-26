@@ -109,8 +109,9 @@ abstract class Widget<EventType extends WidgetEvents> extends _EventHandler impl
 
     public on(events?: EventCallback<EventType, Widget<EventType>>, event?: Pair<string, EventHandler<string, Widget<EventType>>>): this {
         if (this._built) {
-            console.log("on called to jquery");
+            console.log("on called after element is built");
             console.log(events);
+            console.log(this);
             // this.domObject.on(events);
         }
         if (event != null) {

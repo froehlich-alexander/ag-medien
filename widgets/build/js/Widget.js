@@ -62,8 +62,9 @@ class Widget extends _EventHandler {
     }
     on(events, event) {
         if (this._built) {
-            console.log("on called to jquery");
+            console.log("on called after element is built");
             console.log(events);
+            console.log(this);
         }
         if (event != null) {
             this.callbacks.push(event);

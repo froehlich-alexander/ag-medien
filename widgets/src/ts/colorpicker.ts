@@ -405,7 +405,7 @@ class ColorPickerItem extends ListTile<ColorPickerItemEvents> {
     }
 }
 
-class ColorPicker extends Dialog<WidgetEvents> {
+class ColorPicker extends Dialog<WidgetEvents, ColorScheme> {
     private readonly colorPickerService: ColorPickerService;
     private readonly top: Top;
     private readonly colorSchemeDialog: Overlay<SelectMenu>;
@@ -423,7 +423,7 @@ class ColorPicker extends Dialog<WidgetEvents> {
             .addButton(Button.Delete().on(undefined, new Pair(ButtonEvents.clicked, (event) => {
 
             })), FlexAlign.end)
-            .addButton(new Button().setLabel("New").setIcon(Icon.of("add"))
+            .addButton(new Button().setLabel("New").setIcon(Icon.of("add", IconType.material))
                 .on(undefined, new Pair(ButtonEvents.clicked, (event) => {
 
             })), FlexAlign.end)
@@ -517,6 +517,25 @@ class ColorPicker extends Dialog<WidgetEvents> {
 
         this.buildCallback(suppressCallback);
         return this.domObject;
+    }
+
+    protected setValue(): ColorScheme {
+        this.value = this.colorPickerService.getCurrent();
+        return this.value;
+    }
+}
+
+class ColorSchemeNewDialog extends Dialog<any, ColorScheme> {
+    private baseScheme: ColorScheme;
+    private newScheme: ColorScheme = new ColorScheme({});
+
+    constructor(baseScheme: ColorScheme) {
+        super();
+        this.baseScheme = baseScheme;
+    }
+
+    protected setValue(): ColorScheme {
+        return this.value;
     }
 }
 
