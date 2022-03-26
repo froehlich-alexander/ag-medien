@@ -22,6 +22,17 @@ body {
   top: 15%;
   left: 20%;
 }
+.color-picker .color-scheme-new-dialog {
+  width: 40%;
+  height: 50%;
+  left: 30%;
+  top: 25%;
+  position: relative;
+  background-color: var(--background-color-1);
+}
+.color-picker .color-scheme-new-dialog .content {
+  padding: 1rem;
+}
 .color-picker .top {
   position: relative;
   font-size: 2rem;

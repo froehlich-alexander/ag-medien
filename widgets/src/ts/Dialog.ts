@@ -1,5 +1,5 @@
 import {_Widget, Widget, WidgetEvents} from "./Widget.js";
-import {Button, ButtonBox, FlexAlign} from "./Widgets.js";
+import {Button, ButtonBox, FlexAlign, Top} from "./Widgets.js";
 
 const DialogEvents = {
     ...WidgetEvents,
@@ -22,17 +22,33 @@ abstract class Dialog<EventType extends DialogEvents, ValueType> extends Widget<
     protected value: ValueType;
     private opened: boolean;
     protected readonly buttonBox: ButtonBox = new ButtonBox();
+    protected readonly aTop: Top = new Top();
 
-    protected constructor() {
-        super();
+    protected constructor(htmlElementType?: string) {
+        super(htmlElementType);
         this.children.set("buttons", this.buttonBox);
+        this.children.set("atop", this.aTop);
         // this.buttonBox.setSpacing("2rem", "2rem", "1rem");
+    }
+
+    protected buildTop(): JQuery<HTMLElement> {
+        let top = this.aTop.build();
+        this.domObject.append(top);
+        return top;
     }
 
     protected buildButtons(): JQuery<HTMLElement> {
         let buttonBox = this.buttonBox.build();
         this.domObject.append(buttonBox);
         return buttonBox;
+    }
+
+    public build(suppressCallback: boolean = false): JQuery<HTMLElement> {
+        super.build(true)
+            .addClass("dialog-widget");
+
+        this.buildCallback(suppressCallback);
+        return this.domObject;
     }
 
     public enableButtons(value: boolean): this {
@@ -42,6 +58,15 @@ abstract class Dialog<EventType extends DialogEvents, ValueType> extends Widget<
 
     public buttonsEnabled(): boolean {
         return this.buttonBox.inheritVisibility;
+    }
+
+    public enableTop(value: boolean): this {
+        this.aTop.setInheritVisibility(value);
+        return this;
+    }
+
+    public topEnabled(): boolean {
+        return this.aTop.inheritVisibility;
     }
 
     public addButton(button: Button, mainAlign: FlexAlign = FlexAlign.center, crossAlign: FlexAlign = FlexAlign.center): this {

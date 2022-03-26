@@ -10,7 +10,7 @@ const WidgetEvents = {
 class _EventHandler {
 }
 class Widget extends _EventHandler {
-    constructor() {
+    constructor(htmlElementType) {
         super();
         this._built = false;
         this.children = new Map();
@@ -20,6 +20,10 @@ class Widget extends _EventHandler {
         this._inheritVisibility = false;
         this._hidingIfNotShown = false;
         this.sizeSet = false;
+        this.htmlElementType = "div";
+        if (htmlElementType != null) {
+            this.htmlElementType = htmlElementType;
+        }
         this.observer = new MutationObserver((mutationList) => {
             let target = $(mutationList[0].target);
             if (target.filter(":visible").length > 0) {
@@ -32,10 +36,12 @@ class Widget extends _EventHandler {
                 this.observer.disconnect();
             }
         });
-        this.on(undefined, new Pair(WidgetEvents.sizeSet, () => { this.buildVisibility(); }));
+        this.on(undefined, new Pair(WidgetEvents.sizeSet, () => {
+            this.buildVisibility();
+        }));
     }
     build(suppressCallback = false) {
-        this._domObject = $("<div></div>")
+        this._domObject = $(`<${this.htmlElementType}></${this.htmlElementType}>`)
             .addClass("widget")
             .addClass(this._hidingIfNotShown ? "hidingIfNotShown" : null);
         this.observer.observe(this._domObject.get()[0], {

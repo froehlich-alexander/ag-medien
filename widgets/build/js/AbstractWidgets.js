@@ -21,6 +21,21 @@ class Util {
         }
         return element;
     }
+    static setHeightToRemaining(parent, child) {
+        let w = 0;
+        for (let i = 0; i < parent.children().length; i++) {
+            w += parent.children().not(child).outerHeight(true);
+        }
+        child.outerHeight(parent.innerHeight() - w, true);
+        child.css("max-height", `calc(100% - ${w}px`);
+    }
+    static setWidthToRemaining(parent, child) {
+        let w = 0;
+        for (let i = 0; i < parent.children().length; i++) {
+            w += parent.children().not(child).outerWidth(true);
+        }
+        child.css("max-width", `calc(100% - ${w}px`);
+    }
 }
 class EventCallbacks {
 }
@@ -29,6 +44,12 @@ EventCallbacks.setHeight = new Pair(WidgetEvents.sizeSet, function (event) {
 });
 EventCallbacks.setWidth = new Pair(WidgetEvents.sizeSet, function (event) {
     Util.setWidth(event.target.domObject);
+});
+EventCallbacks.setWidthToRemaining = (child) => new Pair(WidgetEvents.sizeSet, function (event) {
+    Util.setWidthToRemaining(event.target.domObject, child.domObject);
+});
+EventCallbacks.setHeightToRemaining = (child) => new Pair(WidgetEvents.sizeSet, function (event) {
+    Util.setHeightToRemaining(event.target.domObject, child.domObject);
 });
 class IconContaining extends Mixin {
     _setIcon(fieldName, icon) {
@@ -177,6 +198,10 @@ class SpacingEditable extends Mixin {
     }
 }
 class ItemContaining extends Mixin {
+    constructor() {
+        super(...arguments);
+        this._items = [];
+    }
     buildItem(item, inheritVisibility = true) {
         item.setInheritVisibility(inheritVisibility);
     }

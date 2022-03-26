@@ -1,6 +1,6 @@
 import {Dialog, DialogEvents} from "./Dialog.js";
 import {Widget, WidgetEvents} from "./Widget.js";
-import {mixin, MixinImplementing, Tripel} from "./base.js";
+import {mixin, MixinImplementing, Pair, Tripel} from "./base.js";
 import {
     ColorEditable,
     EventCallbacks, ItemContaining,
@@ -497,6 +497,13 @@ class ButtonBox extends FlexBox {
         this.setSpacing("2rem", "2rem", "1rem");
     }
 
+    public build(suppressCallback: boolean = false): JQuery<HTMLElement> {
+        super.build(true)
+            .addClass("button-box-widget");
+        this.buildCallback(suppressCallback);
+        return this.domObject;
+    }
+
     public addButton(button: Button, mainAlign: FlexAlign = FlexAlign.center, crossAlign: FlexAlign = FlexAlign.center): this {
         return super.addItem(button, mainAlign, crossAlign);
     }
@@ -785,13 +792,13 @@ class TextInput extends Widget<TextInputEvents> {
 
 @mixin(ItemContaining, SpacingEditable)
 class Box<EventType extends WidgetEvents> extends Widget<EventType> {
-    constructor() {
-        super();
+    constructor(htmlElementType?: string) {
+        super(htmlElementType);
         this.mixinConstructor(ItemContaining, SpacingEditable);
     }
 
     public build(suppressCallback: boolean = false): JQuery<HTMLElement> {
-        super.build(suppressCallback)
+        super.build(true)
             .addClass("box");
         this.buildSpacing();
         this.buildItems(this.domObject);
@@ -804,4 +811,4 @@ interface Box<EventType extends WidgetEvents> extends MixinImplementing, ItemCon
 }
 
 
-export {Icon, IconEvents, IconType, Button, ButtonEvents, ButtonBox, FlexAlign, Top, Text, ListTile, FlexBox, TextInput, TextInputEvents};
+export {Icon, IconEvents, IconType, Button, ButtonEvents, ButtonBox, FlexAlign, Top, Text, ListTile, FlexBox, TextInput, TextInputEvents, Box};

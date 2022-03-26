@@ -24,6 +24,19 @@ body {
     left: 20%;
   }
 
+  .color-scheme-new-dialog {
+    width: 40%;
+    height: 50%;
+    left: 30%;
+    top: 25%;
+    position: relative;
+    background-color: var(--background-color-1);
+
+    .content {
+      padding: 1rem;
+    }
+  }
+
   .top {
     position: relative;
     font-size: 2rem;

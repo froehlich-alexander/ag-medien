@@ -136,6 +136,17 @@
       vertical-align: middle;
       display: inline-block;
     }
+
+    &.default {
+      position: relative;
+      font-size: 1.5rem;
+      border-radius: 1rem;
+      padding: 0.5rem 0;
+      margin-bottom: 0.5rem;
+      background-color: var(--background-color-3);
+      width: 100%;
+      box-sizing: border-box;
+    }
   }
 
   &.text-widget {
@@ -237,5 +248,28 @@
       font-size: 1rem;
       color: var(--color);
     }
+  }
+
+  &.dialog-widget {
+    border-radius: 1rem;
+    background-color: var(--background-color-1);
+    position: absolute;
+    padding-bottom: 0.5rem;
+  }
+
+  &.box {
+    box-sizing: border-box;
+
+    &.default-content {
+      padding: 0 0.5rem;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      border-radius: 1rem;
+    }
+  }
+
+  &.button-box-widget {
+    margin-top: 0.5rem;
+    border-radius: 1rem;
   }
 }

@@ -29,6 +29,23 @@ class Util {
         }
         return element;
     }
+
+    static setHeightToRemaining(parent: JQuery<HTMLElement>, child: JQuery<HTMLElement>): void {
+        let w = 0;
+        for (let i = 0; i < parent.children().length; i++) {
+            w += parent.children().not(child).outerHeight(true);
+        }
+        child.outerHeight(parent.innerHeight() - w, true);
+        child.css("max-height",  `calc(100% - ${w}px`);
+    }
+
+    static setWidthToRemaining(parent: JQuery<HTMLElement>, child: JQuery<HTMLElement>): void {
+        let w = 0;
+        for (let i = 0; i < parent.children().length; i++) {
+            w += parent.children().not(child).outerWidth(true);
+        }
+        child.css("max-width",  `calc(100% - ${w}px`);
+    }
 }
 
 class EventCallbacks {
@@ -49,6 +66,14 @@ class EventCallbacks {
         WidgetEvents.sizeSet, function (event) {
             Util.setWidth(event.target.domObject);
         });
+
+    static setWidthToRemaining = (child: Widget<WidgetEvents>) => new Pair<WidgetEvents, EventHandler<WidgetEvents, Widget<WidgetEvents>>>(WidgetEvents.sizeSet, function (event) {
+        Util.setWidthToRemaining(event.target.domObject, child.domObject);
+    });
+
+    static setHeightToRemaining = (child: Widget<WidgetEvents>) => new Pair<WidgetEvents, EventHandler<WidgetEvents, Widget<WidgetEvents>>>(WidgetEvents.sizeSet, function (event) {
+        Util.setHeightToRemaining(event.target.domObject, child.domObject);
+    });
 }
 
 // interface IconContainingInterface {
@@ -188,11 +213,11 @@ class ColorEditable extends Mixin {
     }
 }
 
-class SpacingEditable extends Mixin{
+class SpacingEditable extends Mixin {
     private readonly _padding: [string, string, string, string] = [null, null, null, null];
     private readonly _margin: [string, string, string, string] = [null, null, null, null];
 
-    buildSpacing() : this {
+    buildSpacing(): this {
         // @ts-ignore
         this.domObject.css("padding-top", this._padding[0]);
         // @ts-ignore
@@ -213,6 +238,7 @@ class SpacingEditable extends Mixin{
 
         return this;
     }
+
     /**
      * Set them to {@link undefined} or {@link null} to avoid overwriting the original value
      * @param {string} top
@@ -280,7 +306,7 @@ class SpacingEditable extends Mixin{
 }
 
 class ItemContaining extends Mixin {
-    private _items: Widget<WidgetEvents>[];
+    private _items: Widget<WidgetEvents>[] = [];
 
     protected buildItem(item: Widget<WidgetEvents>, inheritVisibility: boolean = true): void {
         item.setInheritVisibility(inheritVisibility);
@@ -308,4 +334,12 @@ class ItemContaining extends Mixin {
     }
 }
 
-export {Util, OneIconContaining, LeadingTrailingIconContaining, EventCallbacks, ColorEditable, SpacingEditable, ItemContaining};
+export {
+    Util,
+    OneIconContaining,
+    LeadingTrailingIconContaining,
+    EventCallbacks,
+    ColorEditable,
+    SpacingEditable,
+    ItemContaining
+};

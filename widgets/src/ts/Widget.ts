@@ -1,7 +1,7 @@
 import {Pair} from "./base.js";
 // import {$, jQuery} from "../lib/jquery";
 // import * as $ from "jquery";
-import "./imports.js"
+import "./imports.js";
 
 const WidgetEvents = {
     build: "build",
@@ -52,9 +52,13 @@ abstract class Widget<EventType extends WidgetEvents> extends _EventHandler impl
     private observer: MutationObserver;
     private _setWidth: boolean;
     private _setHeight: boolean;
+    private htmlElementType: string = "div";
 
-    constructor() {
+    constructor(htmlElementType?: string) {
         super();
+        if (htmlElementType != null) {
+            this.htmlElementType = htmlElementType;
+        }
         this.observer = new MutationObserver((mutationList) => {
             let target = $(mutationList[0].target);
             if (target.filter(":visible").length > 0) {
@@ -72,14 +76,16 @@ abstract class Widget<EventType extends WidgetEvents> extends _EventHandler impl
                 this.observer.disconnect();
             }
         });
-        this.on(undefined, new Pair(WidgetEvents.sizeSet, () => {this.buildVisibility();}));
+        this.on(undefined, new Pair(WidgetEvents.sizeSet, () => {
+            this.buildVisibility();
+        }));
     }
 
     /**
      * This method should call {@link buildCallback} before it returns
      */
     build(suppressCallback: boolean = false): JQuery<HTMLElement> {
-        this._domObject = $("<div></div>")
+        this._domObject = $(`<${this.htmlElementType}></${this.htmlElementType}>`)
             .addClass("widget")
             .addClass(this._hidingIfNotShown ? "hidingIfNotShown" : null);
         this.observer.observe(this._domObject.get()[0], {

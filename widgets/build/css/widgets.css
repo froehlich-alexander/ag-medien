@@ -88,6 +88,16 @@
   vertical-align: middle;
   display: inline-block;
 }
+.widget.title-widget.default {
+  position: relative;
+  font-size: 1.5rem;
+  border-radius: 1rem;
+  padding: 0.5rem 0;
+  margin-bottom: 0.5rem;
+  background-color: var(--background-color-3);
+  width: 100%;
+  box-sizing: border-box;
+}
 .widget.list-tile-widget .icon-widget {
   height: 100%;
   vertical-align: center;
@@ -164,6 +174,25 @@
   transition: all 0.2s;
   font-size: 1rem;
   color: var(--color);
+}
+.widget.dialog-widget {
+  border-radius: 1rem;
+  background-color: var(--background-color-1);
+  position: absolute;
+  padding-bottom: 0.5rem;
+}
+.widget.box {
+  box-sizing: border-box;
+}
+.widget.box.default-content {
+  padding: 0 0.5rem;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  border-radius: 1rem;
+}
+.widget.button-box-widget {
+  margin-top: 0.5rem;
+  border-radius: 1rem;
 }
 
 /*# sourceMappingURL=widgets.css.map */

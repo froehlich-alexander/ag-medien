@@ -233,6 +233,12 @@ class ButtonBox extends FlexBox {
         this.on(undefined, EventCallbacks.setHeight);
         this.setSpacing("2rem", "2rem", "1rem");
     }
+    build(suppressCallback = false) {
+        super.build(true)
+            .addClass("button-box-widget");
+        this.buildCallback(suppressCallback);
+        return this.domObject;
+    }
     addButton(button, mainAlign = FlexAlign.center, crossAlign = FlexAlign.center) {
         return super.addItem(button, mainAlign, crossAlign);
     }
@@ -438,12 +444,12 @@ class TextInput extends Widget {
     }
 }
 let Box = class Box extends Widget {
-    constructor() {
-        super();
+    constructor(htmlElementType) {
+        super(htmlElementType);
         this.mixinConstructor(ItemContaining, SpacingEditable);
     }
     build(suppressCallback = false) {
-        super.build(suppressCallback)
+        super.build(true)
             .addClass("box");
         this.buildSpacing();
         this.buildItems(this.domObject);
@@ -454,4 +460,4 @@ let Box = class Box extends Widget {
 Box = __decorate([
     mixin(ItemContaining, SpacingEditable)
 ], Box);
-export { Icon, IconEvents, IconType, Button, ButtonEvents, ButtonBox, FlexAlign, Top, Text, ListTile, FlexBox, TextInput, TextInputEvents };
+export { Icon, IconEvents, IconType, Button, ButtonEvents, ButtonBox, FlexAlign, Top, Text, ListTile, FlexBox, TextInput, TextInputEvents, Box };

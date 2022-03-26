@@ -5,7 +5,19 @@ import {Overlay} from "./Overlay.js";
 import {SelectMenu, SelectMenuItem} from "./SelectMenu.js";
 import {WidgetEvents} from "./Widget.js";
 import {FontSize, FontWeight} from "./WidgetBase.js";
-import {Button, ButtonEvents, FlexAlign, FlexBox, Icon, IconType, ListTile, Text, Top} from "./Widgets.js";
+import {
+    Box,
+    Button,
+    ButtonEvents,
+    FlexAlign,
+    FlexBox,
+    Icon, IconEvents,
+    IconType,
+    ListTile,
+    Text,
+    TextInput,
+    Top
+} from "./Widgets.js";
 
 type ColorSchemeMap = Map<string, ColorScheme>;
 
@@ -409,6 +421,7 @@ class ColorPicker extends Dialog<WidgetEvents, ColorScheme> {
     private readonly colorPickerService: ColorPickerService;
     private readonly top: Top;
     private readonly colorSchemeDialog: Overlay<SelectMenu>;
+    private readonly colorSchemeNewDialog: Overlay<ColorSchemeNewDialog>;
     private readonly colorSchemeButton: Button;
     private readonly colorSchemeLabel: Text;
     private readonly colorSchemeBox: FlexBox;
@@ -416,17 +429,19 @@ class ColorPicker extends Dialog<WidgetEvents, ColorScheme> {
     public constructor() {
         super();
         this.colorPickerService = new ColorPickerService();
+        this.colorSchemeNewDialog = new Overlay<ColorSchemeNewDialog>(new ColorSchemeNewDialog(this.colorPickerService.getCurrent()));
         this.colorSchemeDialog = new Overlay<SelectMenu>(new SelectMenu(null, null)
             .setMaxSelected(1)
             .setMinSelected(1)
             .setTitle("Color Scheme")
             .addButton(Button.Delete().on(undefined, new Pair(ButtonEvents.clicked, (event) => {
-
             })), FlexAlign.end)
             .addButton(new Button().setLabel("New").setIcon(Icon.of("add", IconType.material))
                 .on(undefined, new Pair(ButtonEvents.clicked, (event) => {
-
-            })), FlexAlign.end)
+                    console.log("new");
+                    this.colorSchemeNewDialog.widget.setBaseScheme(this.colorPickerService.getCurrent());
+                    this.colorSchemeNewDialog.widget.open();
+                })), FlexAlign.end)
             .enableButtons(true)
         );
         this.colorSchemeButton = new Button()
@@ -448,6 +463,7 @@ class ColorPicker extends Dialog<WidgetEvents, ColorScheme> {
             .setIcon(Icon.Close().setClickable(true));
         this.children.set("top", this.top);
         this.children.set("colorSchemeDialog", this.colorSchemeDialog);
+        this.children.set("colorSchemeNewDialog", this.colorSchemeNewDialog);
         // this.children.set("colorSchemeButton", this.colorSchemeButton);
         // this.children.set("colorSchemeLabel", this.colorSchemeLabel);
         this.children.set("colorSchemeBox", this.colorSchemeBox);
@@ -478,6 +494,7 @@ class ColorPicker extends Dialog<WidgetEvents, ColorScheme> {
         super.build(true)
             .addClass("color-picker")
             .append(this.colorSchemeDialog.build())
+            .append(this.colorSchemeNewDialog.build())
             .append(this.top.build()
                 .addClass("top"));
         this.colorSchemeDialog.widget.domObject
@@ -528,14 +545,77 @@ class ColorPicker extends Dialog<WidgetEvents, ColorScheme> {
 class ColorSchemeNewDialog extends Dialog<any, ColorScheme> {
     private baseScheme: ColorScheme;
     private newScheme: ColorScheme = new ColorScheme({});
+    private readonly content: Box<WidgetEvents>;
 
     constructor(baseScheme: ColorScheme) {
         super();
-        this.baseScheme = baseScheme;
+        this.content = new Box<WidgetEvents>("form")
+            .setInheritVisibility(true);
+        this.enableButtons(true);
+        this.addButton(new Button().setLabel("Create").setIcon(Icon.of("add", IconType.material))
+            .on(undefined, new Pair(ButtonEvents.clicked, () => this.accept())), FlexAlign.end);
+        this.addButton(Button.Cancel().on(undefined, new Pair(ButtonEvents.clicked, () => this.reject())), FlexAlign.end)
+        this.enableTop(true);
+        this.aTop.setLabel("New Colorscheme");
+        this.aTop.setIcon(Icon.Close().on(undefined, new Pair(IconEvents.clicked, () => this.reject())));
+
+        if (baseScheme != null) {
+            this.baseScheme = baseScheme;
+        }
+
+        this.children.set("content", this.content);
+
+        this.on(undefined, EventCallbacks.setHeightToRemaining(this.content));
+    }
+
+    public build(suppressCallback: boolean = false): JQuery<HTMLElement> {
+        super.build(true)
+            .addClass("color-scheme-new-dialog");
+
+        for (let i of Object.keys(ColorScheme)) {
+            this.content.addItems();
+        }
+
+        //choose Base Widget
+        // this.content.addItems();
+
+        //ColorScheme field inputs
+        this.content.addItems(...[
+            new TextInput()
+                .setLabel("Name")
+                .setId("name")
+                .setMinLength(3)
+                .setSpellcheck(true),
+            new TextInput()
+                .setId("author")
+                .setLabel("Author")
+                .setMinLength(5)
+        ].map(value => value.setId(ColorSchemeNewDialog.name + value.id)
+            // @ts-ignore
+            .setPlaceHolder(this.baseScheme[value.id.value])));
+
+        this.buildTop()
+            .addClass("default");
+        this.domObject.append(this.content.build()
+            .addClass("default-content"));
+        this.buildButtons();
+
+        this.buildCallback(suppressCallback);
+        return this.domObject;
     }
 
     protected setValue(): ColorScheme {
-        return this.value;
+        let inputs = {};
+        for (let i of this.content.items.filter((value: TextInput) => value.id.startsWith(ColorSchemeNewDialog.name))) {
+            let id = (<TextInput>i).id.substring(ColorSchemeNewDialog.name.length, (<TextInput>i).id.length);
+            Object.defineProperty(inputs, id, Object.getOwnPropertyDescriptor(i, id));
+        }
+        return new ColorScheme(inputs);
+    }
+
+    public setBaseScheme(scheme: ColorScheme): this {
+        this.baseScheme = scheme;
+        return this;
     }
 }
 
