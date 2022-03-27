@@ -1,3 +1,4 @@
+import {EventCallbacks} from "./AbstractWidgets.js";
 import {Pair} from "./base.js";
 // import {$, jQuery} from "../lib/jquery";
 // import * as $ from "jquery";
@@ -9,6 +10,7 @@ const WidgetEvents = {
     visibilityChanged: "visibilityChanged",
     sizeSet: "sizeSet",
     initialize: "initialize",
+    rebuild: "rebuild"
 };
 
 type WidgetEvents = (typeof WidgetEvents)[keyof typeof WidgetEvents];
@@ -30,6 +32,8 @@ interface _Widget {
 
     build(suppressCallback: boolean): JQuery<HTMLElement>;
 
+    rebuild(suppressCallback: boolean): JQuery<HTMLElement>;
+
     destroy(): this;
 
     show(): this;
@@ -49,9 +53,7 @@ abstract class Widget<EventType extends WidgetEvents> extends _EventHandler impl
     private _inheritVisibility: boolean = false;
     private _hidingIfNotShown: boolean = false;
     private sizeSet: boolean = false;
-    private observer: MutationObserver;
-    private _setWidth: boolean;
-    private _setHeight: boolean;
+    private sizeSetObserver: MutationObserver;
     private htmlElementType: string = "div";
 
     constructor(htmlElementType?: string) {
@@ -59,21 +61,21 @@ abstract class Widget<EventType extends WidgetEvents> extends _EventHandler impl
         if (htmlElementType != null) {
             this.htmlElementType = htmlElementType;
         }
-        this.observer = new MutationObserver((mutationList) => {
+        this.sizeSetObserver = new MutationObserver((mutationList) => {
             let target = $(mutationList[0].target);
             if (target.filter(":visible").length > 0) {
                 if (this.sizeSet) {
-                    this.observer.disconnect();
+                    this.sizeSetObserver.disconnect();
                     return;
                 }
                 this.sizeSet = true;
                 this.dispatchEvent(WidgetEvents.sizeSet);
                 // if (target.filter(".button-box-widget").length > 0) {
-                //     console.log("widget observer");
+                //     console.log("widget sizeSetObserver");
                 //     console.log(target);
                 //     console.log(mutationList[0]);
                 // }
-                this.observer.disconnect();
+                this.sizeSetObserver.disconnect();
             }
         });
         this.on(undefined, new Pair(WidgetEvents.sizeSet, () => {
@@ -84,16 +86,24 @@ abstract class Widget<EventType extends WidgetEvents> extends _EventHandler impl
     /**
      * This method should call {@link buildCallback} before it returns
      */
-    build(suppressCallback: boolean = false): JQuery<HTMLElement> {
+    public build(suppressCallback: boolean = false): JQuery<HTMLElement> {
         this._domObject = $(`<${this.htmlElementType}></${this.htmlElementType}>`)
             .addClass("widget")
             .addClass(this._hidingIfNotShown ? "hidingIfNotShown" : null);
-        this.observer.observe(this._domObject.get()[0], {
-            attributeFilter: ["style", "class"],
-        });
+        // this.sizeSetObserver.observe(this._domObject.get()[0], {
+        //     attributeFilter: ["style", "class"],
+        // });
         this._built = true;
         this.buildCallback(suppressCallback);
         return this._domObject;
+    }
+
+    public rebuild(suppressCallback: boolean = false): JQuery<HTMLElement> {
+        this.sizeSetObserver.observe(this._domObject.get(0), {
+            attributeFilter: ["style", "class"],
+        });
+        this.rebuildCallback(suppressCallback);
+        return this.domObject;
     }
 
     public destroy(): this {
@@ -108,9 +118,20 @@ abstract class Widget<EventType extends WidgetEvents> extends _EventHandler impl
         if (suppress) {
             return;
         }
+        this.rebuild(true);
         this._built = true;
         this.dispatchEvent(WidgetEvents.build);
         this.buildVisibility();
+    }
+
+    protected rebuildCallback(suppress: boolean = false): void {
+        if (suppress) {
+            return;
+        }
+        if (this._built == true) {
+            this.dispatchEvent(WidgetEvents.rebuild);
+        }
+        this.buildVisibility();//todo do we need this? remove???
     }
 
     public on(events?: EventCallback<EventType, Widget<EventType>>, event?: Pair<string, EventHandler<string, Widget<EventType>>>): this {
@@ -132,6 +153,32 @@ abstract class Widget<EventType extends WidgetEvents> extends _EventHandler impl
         return this;
     }
 
+    public on2(events?: EventCallback<EventType, Widget<EventType>> | EventType, handler?: EventHandler<string, Widget<EventType>>): this {
+        console.log("on2");
+        if (this._built) {
+            console.log("on called after element is built");
+            console.log(events);
+            console.log(this);
+            // this.domObject.on(events);
+        }
+        if (handler !== undefined) {
+            // @ts-ignore
+            this.callbacks.push(new Pair(events, handler));
+            console.log("handler!== undefined");
+            console.log(new Pair(events, handler));
+        } else if (events != null) {
+            console.log("else");
+            // @ts-ignore
+            for (let i in events) {
+                // @ts-ignore
+                this.callbacks.push(new Pair(i, events[i]));
+                // @ts-ignore
+                console.log(new Pair(i, events[i]));
+            }
+        }
+        return this;
+    }
+
     protected dispatchEvent(event: string, args?: any[], ...acceptedTypes: string[]): this {
         if (!this.eventDisabled(event)) {
             for (let i of this.callbacks.filter(value => value.first == event || value.first == WidgetEvents.all || value.first in acceptedTypes)) {
@@ -142,6 +189,18 @@ abstract class Widget<EventType extends WidgetEvents> extends _EventHandler impl
                 }
             }
         }
+        return this;
+    }
+
+    /**
+     * This works only if the child is a field of this object
+     * @param {string} childName
+     * @return {this}
+     * @protected
+     */
+    protected addChild(childName: string): this {
+        // @ts-ignore
+        this.children.set(childName, this[childName]);
         return this;
     }
 
@@ -172,7 +231,7 @@ abstract class Widget<EventType extends WidgetEvents> extends _EventHandler impl
                 this._domObject.addClass("show");
                 if (!this.sizeSet && this._domObject.filter(":visible").length > 0) {
                     // this.sizeSet = true;
-                    // this.observer.disconnect();
+                    // this.sizeSetObserver.disconnect();
                     // this.dispatchEvent("sizeSet");
                 }
             } else {
@@ -255,22 +314,6 @@ abstract class Widget<EventType extends WidgetEvents> extends _EventHandler impl
 
     public set hidingIfNotShown(value: boolean) {
         this.setHidingIfNotShown(value);
-    }
-
-    public get setWidth(): boolean {
-        return this._setWidth;
-    }
-
-    protected set setWidth(value: boolean) {
-        this._setWidth = value;
-    }
-
-    public get setHeight(): boolean {
-        return this._setHeight;
-    }
-
-    protected set setHeight(value: boolean) {
-        this._setHeight = value;
     }
 }
 

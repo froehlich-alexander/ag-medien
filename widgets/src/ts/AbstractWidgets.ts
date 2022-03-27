@@ -1,4 +1,5 @@
-import {Icon} from "./Widgets.js";
+import {cssNumber} from "jquery";
+import {Icon, IconEvents} from "./Widgets.js";
 import {EventHandler, Widget, WidgetEvents} from "./Widget.js";
 import {Mixin, Pair} from "./base.js";
 import {CSSColorValue} from "./WidgetBase.js";
@@ -35,8 +36,7 @@ class Util {
         for (let i = 0; i < parent.children().length; i++) {
             w += parent.children().not(child).outerHeight(true);
         }
-        child.outerHeight(parent.innerHeight() - w, true);
-        child.css("max-height",  `calc(100% - ${w}px`);
+        child.css("max-height", `calc(100% - ${w}px`);
     }
 
     static setWidthToRemaining(parent: JQuery<HTMLElement>, child: JQuery<HTMLElement>): void {
@@ -44,7 +44,7 @@ class Util {
         for (let i = 0; i < parent.children().length; i++) {
             w += parent.children().not(child).outerWidth(true);
         }
-        child.css("max-width",  `calc(100% - ${w}px`);
+        child.css("max-width", `calc(100% - ${w}px`);
     }
 }
 
@@ -67,12 +67,20 @@ class EventCallbacks {
             Util.setWidth(event.target.domObject);
         });
 
-    static setWidthToRemaining = (child: Widget<WidgetEvents>) => new Pair<WidgetEvents, EventHandler<WidgetEvents, Widget<WidgetEvents>>>(WidgetEvents.sizeSet, function (event) {
-        Util.setWidthToRemaining(event.target.domObject, child.domObject);
+    // static setWidthToRemaining = (child: Widget<WidgetEvents>) => new Pair<WidgetEvents, EventHandler<WidgetEvents, Widget<WidgetEvents>>>(WidgetEvents.sizeSet, function (event) {
+    //     Util.setWidthToRemaining(event.target.domObject, child.domObject);
+    // });
+    //
+    // static setHeightToRemaining = (child: Widget<WidgetEvents>) => new Pair<WidgetEvents, EventHandler<WidgetEvents, Widget<WidgetEvents>>>(WidgetEvents.sizeSet, function (event) {
+    //     Util.setHeightToRemaining(event.target.domObject, child.domObject);
+    // });
+
+    static setWidthToRemaining = new Pair<WidgetEvents, EventHandler<WidgetEvents, Widget<WidgetEvents>>>(WidgetEvents.sizeSet, function (event) {
+        Util.setWidthToRemaining(event.target.domObject.parent(), event.target.domObject);
     });
 
-    static setHeightToRemaining = (child: Widget<WidgetEvents>) => new Pair<WidgetEvents, EventHandler<WidgetEvents, Widget<WidgetEvents>>>(WidgetEvents.sizeSet, function (event) {
-        Util.setHeightToRemaining(event.target.domObject, child.domObject);
+    static setHeightToRemaining = new Pair<WidgetEvents, EventHandler<WidgetEvents, Widget<WidgetEvents>>>(WidgetEvents.sizeSet, function (event) {
+        Util.setHeightToRemaining(event.target.domObject.parent(), event.target.domObject);
     });
 }
 
@@ -86,13 +94,16 @@ class EventCallbacks {
 //     iconEnabled(): boolean;
 // }
 
+enum IconContainingEvents {
+    iconClicked = "iconClicked"
+}
+
 abstract class IconContaining<EventType extends WidgetEvents> extends Mixin {
     protected _setIcon(fieldName: string, icon: Icon): this {
         // @ts-ignore
         this[fieldName].set(icon.getValue(), icon.getType());
-        // @ts-ignore
         // if (this[fieldName] != null) {
-        //     // @ts-ignore
+        //
         //     this.children.set(fieldName, this[fieldName]);
         // }
         return this;
@@ -118,12 +129,15 @@ abstract class IconContaining<EventType extends WidgetEvents> extends Mixin {
     }
 }
 
+interface IconContaining<EventType extends WidgetEvents> extends Mixin, Widget<WidgetEvents | IconContainingEvents> {
+}
+
 class OneIconContaining<EventType extends WidgetEvents> extends IconContaining<EventType> {
     private readonly icon: Icon = new Icon();
 
     _constructor() {
-        // @ts-ignore
         this.children.set("icon", this.icon);
+        this.icon.on(undefined, new Pair(IconEvents.clicked, () => this.dispatchEvent(IconContainingEvents.iconClicked, [this.icon, 0])));
     }
 
     public setIcon(icon: Icon): this {
@@ -148,10 +162,10 @@ class LeadingTrailingIconContaining<EventType extends WidgetEvents> extends Icon
     private readonly trailingIcon: Icon = new Icon();
 
     _constructor() {
-        // @ts-ignore
         this.children.set("leadingIcon", this.leadingIcon);
-        // @ts-ignore
+        this.leadingIcon.on(undefined, new Pair(IconEvents.clicked, () => this.dispatchEvent(IconContainingEvents.iconClicked, [this.leadingIcon, 0])));
         this.children.set("trailingIcon", this.trailingIcon);
+        this.trailingIcon.on(undefined, new Pair(IconEvents.clicked, () => this.dispatchEvent(IconContainingEvents.iconClicked, [this.trailingIcon, 1])));
     }
 
     public setLeadingIcon(icon: Icon): this {
@@ -197,9 +211,7 @@ class ColorEditable extends Mixin {
      * @protected
      */
     protected buildColor(): this {
-        // @ts-ignore
         this.domObject.css("background-color", this._backgroundColor.get());
-        // @ts-ignore
         this.domObject.css("color", this._textColor.get());
         return this;
     }
@@ -213,27 +225,22 @@ class ColorEditable extends Mixin {
     }
 }
 
+interface ColorEditable extends Mixin, Widget<WidgetEvents> {
+}
+
 class SpacingEditable extends Mixin {
     private readonly _padding: [string, string, string, string] = [null, null, null, null];
     private readonly _margin: [string, string, string, string] = [null, null, null, null];
 
     buildSpacing(): this {
-        // @ts-ignore
         this.domObject.css("padding-top", this._padding[0]);
-        // @ts-ignore
         this.domObject.css("padding-right", this._padding[1]);
-        // @ts-ignore
         this.domObject.css("padding-bottom", this._padding[2]);
-        // @ts-ignore
         this.domObject.css("padding-left", this._padding[3]);
 
-        // @ts-ignore
         this.domObject.css("margin-top", this._margin[0]);
-        // @ts-ignore
         this.domObject.css("margin-right", this._margin[1]);
-        // @ts-ignore
         this.domObject.css("margin-bottom", this._margin[2]);
-        // @ts-ignore
         this.domObject.css("margin-left", this._margin[3]);
 
         return this;
@@ -305,16 +312,26 @@ class SpacingEditable extends Mixin {
     }
 }
 
+interface SpacingEditable extends Mixin, Widget<WidgetEvents> {
+}
+
+enum ItemContainingEvents {
+    itemAdded = "",
+    itemRemoved = "",
+}
+
 class ItemContaining extends Mixin {
-    private _items: Widget<WidgetEvents>[] = [];
+    private static itemChildrenPrefix: string = "item";
+    private itemCount = 0;
 
     protected buildItem(item: Widget<WidgetEvents>, inheritVisibility: boolean = true): void {
         item.setInheritVisibility(inheritVisibility);
     }
 
-    // @ts-ignore
     protected buildItems(domObject: JQuery<HTMLElement> = this.domObject): this {
-        for (let i of this._items) {
+        for (let i of [...this.children.entries()]
+            .filter(value => ItemContaining.isItem(value[0]))
+            .map(value => value[1])) {
             this.buildItem(i);
             domObject.append(i.build());
         }
@@ -323,23 +340,109 @@ class ItemContaining extends Mixin {
 
     public addItems(...items: Widget<WidgetEvents>[]): this {
         for (let i of items) {
-            // @ts-ignore
-            this.children.set("item" + this._items.push(i), i);
+            this.children.set(ItemContaining.itemChildrenPrefix + this.itemCount, i);
+            this.itemCount++;
+            this.dispatchEvent(ItemContainingEvents.itemAdded, [i]);
+        }
+        if (this.built) {
+            this.rebuild();
         }
         return this;
     }
 
-    public get items(): Widget<WidgetEvents>[] {
-        return this._items;
+    private static isItem(key: string): boolean {
+        return key.startsWith(ItemContaining.itemChildrenPrefix) &&
+            !Number.isNaN(Number.parseInt(key.substring(ItemContaining.itemChildrenPrefix.length, key.length), 10));
     }
+
+    private static itemIndex(key: string): number {
+        return Number.parseInt(key.substring(ItemContaining.itemChildrenPrefix.length, key.length), 10);
+    }
+
+    /**
+     * This orders the items new if some items are removed<br>
+     * e.g. you delete item 2 from this list {1 -> x, 2 -> y, 3 -> e, 4 -> r} -> {1 -> x, 3 -> e, 4 -> r} -><br>
+     * End product produced by this function: {1 -> x, 2 -> e, 3 -> r}<br>
+     * (indexes still start at 0)
+     * @param {number} indexes
+     * @private
+     */
+    private reassignDeletedIndexes(...indexes: number[]) {
+        indexes.sort();
+        for (let i = 0; i < this.itemCount; i++) {
+            //deleted items
+            if (indexes.indexOf(i) !== -1) {
+                continue;
+            }
+            let newIndex = i;
+            let item = this.children.get(ItemContaining.itemChildrenPrefix + i);
+            //item does not exist
+            if (item === undefined) {
+                continue;
+            }
+            for (let j of indexes) {
+                if (j > i) {
+                    break;
+                }
+                newIndex -= 1;
+            }
+            this.children.delete(ItemContaining.itemChildrenPrefix + i);
+            this.children.set(ItemContaining.itemChildrenPrefix + newIndex, item);
+        }
+        this.itemCount -= indexes.length;
+        //rebuild
+        if (this.built) {
+            this.rebuild();
+        }
+        console.assert(this.itemCount === [...this.children.keys()].filter(value => ItemContaining.isItem(value)).length);
+    }
+
+    public removeItems(...items: Widget<WidgetEvents>[]): this {
+        let indexes = [];
+        for (let [k, v] of this.children) {
+            if (items.indexOf(v) !== -1 && ItemContaining.isItem(k)) {
+                this.children.delete(k);
+                this.dispatchEvent(ItemContainingEvents.itemRemoved, [ItemContaining.itemIndex(k), v]);
+                indexes.push(ItemContaining.itemIndex(k));
+            }
+        }
+        this.reassignDeletedIndexes(...indexes);
+        return this;
+    }
+
+    public removeItem(...indexes: number[]): this {
+        for (let index of indexes) {
+            let item = this.children.get(ItemContaining.itemChildrenPrefix + indexes);
+            this.children.delete(ItemContaining.itemChildrenPrefix + index);
+            this.dispatchEvent(ItemContainingEvents.itemRemoved, [index, item]);
+        }
+        this.reassignDeletedIndexes(...indexes);
+        return this;
+    }
+
+    public get items(): Widget<WidgetEvents>[] {
+        return [...this.children.entries()]
+            .filter(value => ItemContaining.isItem(value[0]))
+            .sort()
+            .map(value => value[1]);
+    }
+
+    public get itemLength(): number {
+        return this.itemCount;
+    }
+}
+
+interface ItemContaining extends Mixin, Widget<WidgetEvents | ItemContainingEvents> {
 }
 
 export {
     Util,
     OneIconContaining,
     LeadingTrailingIconContaining,
+    IconContainingEvents,
     EventCallbacks,
     ColorEditable,
     SpacingEditable,
-    ItemContaining
+    ItemContaining,
+    ItemContainingEvents
 };

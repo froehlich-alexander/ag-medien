@@ -1,5 +1,5 @@
 import {_Widget, Widget, WidgetEvents} from "./Widget.js";
-import {Button, ButtonBox, FlexAlign, Top} from "./Widgets.js";
+import {Button, ButtonBox, ContentBox, FlexAlign, Top} from "./Widgets.js";
 
 const DialogEvents = {
     ...WidgetEvents,
@@ -23,11 +23,13 @@ abstract class Dialog<EventType extends DialogEvents, ValueType> extends Widget<
     private opened: boolean;
     protected readonly buttonBox: ButtonBox = new ButtonBox();
     protected readonly aTop: Top = new Top();
+    protected readonly aContent: ContentBox = new ContentBox();
 
     protected constructor(htmlElementType?: string) {
         super(htmlElementType);
         this.children.set("buttons", this.buttonBox);
         this.children.set("atop", this.aTop);
+        this.children.set("aContent", this.aContent);
         // this.buttonBox.setSpacing("2rem", "2rem", "1rem");
     }
 
@@ -35,6 +37,12 @@ abstract class Dialog<EventType extends DialogEvents, ValueType> extends Widget<
         let top = this.aTop.build();
         this.domObject.append(top);
         return top;
+    }
+
+    protected buildContent(): JQuery<HTMLElement> {
+        let content = this.aContent.build();
+        this.domObject.append(content);
+        return content;
     }
 
     protected buildButtons(): JQuery<HTMLElement> {
@@ -67,6 +75,15 @@ abstract class Dialog<EventType extends DialogEvents, ValueType> extends Widget<
 
     public topEnabled(): boolean {
         return this.aTop.inheritVisibility;
+    }
+
+    public enableContent(value: boolean): this {
+        this.aContent.setInheritVisibility(value);
+        return this;
+    }
+
+    public contentEnabled(): boolean {
+        return this.aContent.inheritVisibility;
     }
 
     public addButton(button: Button, mainAlign: FlexAlign = FlexAlign.center, crossAlign: FlexAlign = FlexAlign.center): this {

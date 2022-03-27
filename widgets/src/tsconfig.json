@@ -4,11 +4,11 @@
     "experimentalDecorators": true,
     "baseUrl": "./",
 //    "importHelpers": true,
-    "module": "es2015",
-    "target": "es2015",
+    "module": "es2022",
+    "target": "es2019",
     "moduleResolution": "node",
     "lib": [
-      "es2017",
+      "es2019",
       "DOM"
     ],
     "noImplicitAny": true,

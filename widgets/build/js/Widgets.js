@@ -7,7 +7,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var Icon_1;
 import { Widget, WidgetEvents } from "./Widget.js";
 import { mixin, MixinImplementing, Tripel } from "./base.js";
-import { ColorEditable, EventCallbacks, ItemContaining, LeadingTrailingIconContaining, OneIconContaining, SpacingEditable, Util } from "./AbstractWidgets.js";
+import { ColorEditable, EventCallbacks, IconContainingEvents, ItemContaining, LeadingTrailingIconContaining, OneIconContaining, SpacingEditable, Util } from "./AbstractWidgets.js";
 import { Font, FontWeight } from "./WidgetBase.js";
 class Item {
     get index() {
@@ -17,7 +17,10 @@ class Item {
         this._index = value;
     }
 }
-const IconEvents = Object.assign(Object.assign({}, WidgetEvents), { clicked: "clicked" });
+const IconEvents = {
+    ...WidgetEvents,
+    clicked: "clicked",
+};
 var IconType;
 (function (IconType) {
     IconType[IconType["material"] = 0] = "material";
@@ -103,7 +106,10 @@ Icon.Info = () => Icon_1.of("info", IconType.material);
 Icon = Icon_1 = __decorate([
     mixin(MixinImplementing, SpacingEditable)
 ], Icon);
-const ButtonEvents = Object.assign(Object.assign({}, WidgetEvents), { clicked: "clicked" });
+const ButtonEvents = {
+    ...WidgetEvents,
+    clicked: "clicked",
+};
 class Button extends Widget {
     build(suppressCallback = false) {
         super.build(true)
@@ -289,6 +295,10 @@ let Text = class Text extends Widget {
 Text = __decorate([
     mixin(MixinImplementing, ColorEditable, SpacingEditable)
 ], Text);
+const TopEvents = {
+    ...WidgetEvents,
+    ...IconContainingEvents
+};
 let Top = class Top extends FlexBox {
     constructor() {
         super();
@@ -347,7 +357,11 @@ let ListTile = class ListTile extends FlexBox {
 ListTile = __decorate([
     mixin(ColorEditable, SpacingEditable, LeadingTrailingIconContaining)
 ], ListTile);
-const TextInputEvents = Object.assign(Object.assign({}, WidgetEvents), { change: "change", input: "input" });
+const TextInputEvents = {
+    ...WidgetEvents,
+    change: "change",
+    input: "input",
+};
 class TextInput extends Widget {
     constructor() {
         super();
@@ -371,8 +385,12 @@ class TextInput extends Widget {
             .attr("for", this._id))
             .append($("<span></span>")
             .addClass("underline"))
-            .on("change", (event) => { this.dispatchEvent(TextInputEvents.change, [event.target.value]); })
-            .on("input", (event) => { this.dispatchEvent(TextInputEvents.input, [event.target.value]); });
+            .on("change", (event) => {
+            this.dispatchEvent(TextInputEvents.change, [event.target.value]);
+        })
+            .on("input", (event) => {
+            this.dispatchEvent(TextInputEvents.input, [event.target.value]);
+        });
         this.buildCallback(suppressCallback);
         return this.domObject;
     }
@@ -460,4 +478,16 @@ let Box = class Box extends Widget {
 Box = __decorate([
     mixin(ItemContaining, SpacingEditable)
 ], Box);
-export { Icon, IconEvents, IconType, Button, ButtonEvents, ButtonBox, FlexAlign, Top, Text, ListTile, FlexBox, TextInput, TextInputEvents, Box };
+class ContentBox extends Box {
+    constructor(htmlElementType) {
+        super(htmlElementType);
+        this.on(undefined, EventCallbacks.setHeightToRemaining);
+    }
+    build(suppressCallback = false) {
+        super.build(true)
+            .addClass("default-content");
+        this.buildCallback(suppressCallback);
+        return this.domObject;
+    }
+}
+export { Icon, IconEvents, IconType, Button, ButtonEvents, ButtonBox, FlexAlign, Top, TopEvents, Text, ListTile, FlexBox, TextInput, TextInputEvents, Box, ContentBox };

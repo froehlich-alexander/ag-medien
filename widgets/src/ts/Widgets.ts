@@ -3,7 +3,7 @@ import {Widget, WidgetEvents} from "./Widget.js";
 import {mixin, MixinImplementing, Pair, Tripel} from "./base.js";
 import {
     ColorEditable,
-    EventCallbacks, ItemContaining,
+    EventCallbacks, IconContainingEvents, ItemContaining,
     LeadingTrailingIconContaining,
     OneIconContaining,
     SpacingEditable,
@@ -343,7 +343,7 @@ enum FlexAlign {
  * Padding is used for space at the start / end of the whole container<br>
  * CSS column-gap is used for space between the items
  */
-class FlexBox extends Widget<WidgetEvents> {
+class FlexBox<EventType extends WidgetEvents> extends Widget<EventType> {
     private readonly items: Tripel<Widget<WidgetEvents>, FlexAlign, FlexAlign>[] = [];
     private startSpacing: string;
     private endSpacing: string;
@@ -489,7 +489,7 @@ class FlexBox extends Widget<WidgetEvents> {
     }
 }
 
-class ButtonBox extends FlexBox {
+class ButtonBox extends FlexBox<WidgetEvents> {
 
     constructor() {
         super();
@@ -569,8 +569,14 @@ class Text extends Widget<WidgetEvents> {
 interface Text extends MixinImplementing, ColorEditable, SpacingEditable {
 }
 
+const TopEvents = {
+    ...WidgetEvents,
+    ...IconContainingEvents
+}
+type TopEvents = (typeof TopEvents[keyof typeof TopEvents]);
+
 @mixin(MixinImplementing, OneIconContaining)
-class Top extends FlexBox {
+class Top extends FlexBox<TopEvents> {
     private readonly label: Text;
 
     constructor() {
@@ -611,7 +617,7 @@ interface Top extends MixinImplementing, OneIconContaining<WidgetEvents> {
 }
 
 @mixin(ColorEditable, SpacingEditable, LeadingTrailingIconContaining)
-class ListTile<EventType extends WidgetEvents> extends FlexBox {
+class ListTile<EventType extends WidgetEvents> extends FlexBox<EventType> {
     private readonly _label: Text = new Text();
     private readonly _description: Text = new Text();
 
@@ -660,7 +666,7 @@ const TextInputEvents = {
     ...WidgetEvents,
     change: "change",
     input: "input",
-}
+};
 type TextInputEvents = (typeof TextInputEvents[keyof typeof TextInputEvents]);
 
 class TextInput extends Widget<TextInputEvents> {
@@ -698,8 +704,12 @@ class TextInput extends Widget<TextInputEvents> {
                 .attr("for", this._id))
             .append($("<span></span>")
                 .addClass("underline"))
-            .on("change", (event) => {this.dispatchEvent(TextInputEvents.change, [(<HTMLInputElement>event.target).value])})
-            .on("input", (event) => {this.dispatchEvent(TextInputEvents.input, [(<HTMLInputElement>event.target).value])})
+            .on("change", (event) => {
+                this.dispatchEvent(TextInputEvents.change, [(<HTMLInputElement>event.target).value]);
+            })
+            .on("input", (event) => {
+                this.dispatchEvent(TextInputEvents.input, [(<HTMLInputElement>event.target).value]);
+            });
         this.buildCallback(suppressCallback);
         return this.domObject;
     }
@@ -810,5 +820,37 @@ class Box<EventType extends WidgetEvents> extends Widget<EventType> {
 interface Box<EventType extends WidgetEvents> extends MixinImplementing, ItemContaining, SpacingEditable {
 }
 
+class ContentBox extends Box<WidgetEvents> {
 
-export {Icon, IconEvents, IconType, Button, ButtonEvents, ButtonBox, FlexAlign, Top, Text, ListTile, FlexBox, TextInput, TextInputEvents, Box};
+    constructor(htmlElementType?: string) {
+        super(htmlElementType);
+        this.on(undefined, EventCallbacks.setHeightToRemaining);
+    }
+
+    public build(suppressCallback: boolean = false): JQuery<HTMLElement> {
+        super.build(true)
+            .addClass("default-content");
+        this.buildCallback(suppressCallback);
+        return this.domObject;
+    }
+}
+
+
+export {
+    Icon,
+    IconEvents,
+    IconType,
+    Button,
+    ButtonEvents,
+    ButtonBox,
+    FlexAlign,
+    Top,
+    TopEvents,
+    Text,
+    ListTile,
+    FlexBox,
+    TextInput,
+    TextInputEvents,
+    Box,
+    ContentBox
+};

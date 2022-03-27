@@ -52,4 +52,12 @@ function mixin(...mixins) {
         applyMixins(constructor, [MixinImplementing, ...mixins]);
     };
 }
-export { Pair, Tripel, Mixin, MixinImplementing, mixin };
+function toObject(input) {
+    if (input instanceof Map) {
+        return Object.fromEntries(input);
+    }
+    else {
+        return input;
+    }
+}
+export { Pair, Tripel, Mixin, MixinImplementing, mixin, toObject };

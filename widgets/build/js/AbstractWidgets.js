@@ -1,4 +1,4 @@
-import { Icon } from "./Widgets.js";
+import { Icon, IconEvents } from "./Widgets.js";
 import { WidgetEvents } from "./Widget.js";
 import { Mixin, Pair } from "./base.js";
 import { CSSColorValue } from "./WidgetBase.js";
@@ -26,7 +26,6 @@ class Util {
         for (let i = 0; i < parent.children().length; i++) {
             w += parent.children().not(child).outerHeight(true);
         }
-        child.outerHeight(parent.innerHeight() - w, true);
         child.css("max-height", `calc(100% - ${w}px`);
     }
     static setWidthToRemaining(parent, child) {
@@ -45,12 +44,16 @@ EventCallbacks.setHeight = new Pair(WidgetEvents.sizeSet, function (event) {
 EventCallbacks.setWidth = new Pair(WidgetEvents.sizeSet, function (event) {
     Util.setWidth(event.target.domObject);
 });
-EventCallbacks.setWidthToRemaining = (child) => new Pair(WidgetEvents.sizeSet, function (event) {
-    Util.setWidthToRemaining(event.target.domObject, child.domObject);
+EventCallbacks.setWidthToRemaining = new Pair(WidgetEvents.sizeSet, function (event) {
+    Util.setWidthToRemaining(event.target.domObject.parent(), event.target.domObject);
 });
-EventCallbacks.setHeightToRemaining = (child) => new Pair(WidgetEvents.sizeSet, function (event) {
-    Util.setHeightToRemaining(event.target.domObject, child.domObject);
+EventCallbacks.setHeightToRemaining = new Pair(WidgetEvents.sizeSet, function (event) {
+    Util.setHeightToRemaining(event.target.domObject.parent(), event.target.domObject);
 });
+var IconContainingEvents;
+(function (IconContainingEvents) {
+    IconContainingEvents["iconClicked"] = "iconClicked";
+})(IconContainingEvents || (IconContainingEvents = {}));
 class IconContaining extends Mixin {
     _setIcon(fieldName, icon) {
         this[fieldName].set(icon.getValue(), icon.getType());
@@ -76,6 +79,7 @@ class OneIconContaining extends IconContaining {
     }
     _constructor() {
         this.children.set("icon", this.icon);
+        this.icon.on(undefined, new Pair(IconEvents.clicked, () => this.dispatchEvent(IconContainingEvents.iconClicked, [this.icon, 0])));
     }
     setIcon(icon) {
         return super._setIcon("icon", icon);
@@ -98,7 +102,9 @@ class LeadingTrailingIconContaining extends IconContaining {
     }
     _constructor() {
         this.children.set("leadingIcon", this.leadingIcon);
+        this.leadingIcon.on(undefined, new Pair(IconEvents.clicked, () => this.dispatchEvent(IconContainingEvents.iconClicked, [this.leadingIcon, 0])));
         this.children.set("trailingIcon", this.trailingIcon);
+        this.trailingIcon.on(undefined, new Pair(IconEvents.clicked, () => this.dispatchEvent(IconContainingEvents.iconClicked, [this.trailingIcon, 1])));
     }
     setLeadingIcon(icon) {
         return super._setIcon("leadingIcon", icon);
@@ -197,16 +203,23 @@ class SpacingEditable extends Mixin {
         return [...this._margin];
     }
 }
+var ItemContainingEvents;
+(function (ItemContainingEvents) {
+    ItemContainingEvents["itemAdded"] = "";
+    ItemContainingEvents["itemRemoved"] = "";
+})(ItemContainingEvents || (ItemContainingEvents = {}));
 class ItemContaining extends Mixin {
     constructor() {
         super(...arguments);
-        this._items = [];
+        this.itemCount = 0;
     }
     buildItem(item, inheritVisibility = true) {
         item.setInheritVisibility(inheritVisibility);
     }
     buildItems(domObject = this.domObject) {
-        for (let i of this._items) {
+        for (let i of [...this.children.entries()]
+            .filter(value => ItemContaining.isItem(value[0]))
+            .map(value => value[1])) {
             this.buildItem(i);
             domObject.append(i.build());
         }
@@ -214,12 +227,78 @@ class ItemContaining extends Mixin {
     }
     addItems(...items) {
         for (let i of items) {
-            this.children.set("item" + this._items.push(i), i);
+            this.children.set(ItemContaining.itemChildrenPrefix + this.itemCount, i);
+            this.itemCount++;
+            this.dispatchEvent(ItemContainingEvents.itemAdded, [i]);
+        }
+        if (this.built) {
+            this.rebuild();
         }
         return this;
     }
+    static isItem(key) {
+        return key.startsWith(ItemContaining.itemChildrenPrefix) &&
+            !Number.isNaN(Number.parseInt(key.substring(ItemContaining.itemChildrenPrefix.length, key.length), 10));
+    }
+    static itemIndex(key) {
+        return Number.parseInt(key.substring(ItemContaining.itemChildrenPrefix.length, key.length), 10);
+    }
+    reassignDeletedIndexes(...indexes) {
+        indexes.sort();
+        for (let i = 0; i < this.itemCount; i++) {
+            if (indexes.indexOf(i) !== -1) {
+                continue;
+            }
+            let newIndex = i;
+            let item = this.children.get(ItemContaining.itemChildrenPrefix + i);
+            if (item === undefined) {
+                continue;
+            }
+            for (let j of indexes) {
+                if (j > i) {
+                    break;
+                }
+                newIndex -= 1;
+            }
+            this.children.delete(ItemContaining.itemChildrenPrefix + i);
+            this.children.set(ItemContaining.itemChildrenPrefix + newIndex, item);
+        }
+        this.itemCount -= indexes.length;
+        if (this.built) {
+            this.rebuild();
+        }
+        console.assert(this.itemCount === [...this.children.keys()].filter(value => ItemContaining.isItem(value)).length);
+    }
+    removeItems(...items) {
+        let indexes = [];
+        for (let [k, v] of this.children) {
+            if (items.indexOf(v) !== -1 && ItemContaining.isItem(k)) {
+                this.children.delete(k);
+                this.dispatchEvent(ItemContainingEvents.itemRemoved, [ItemContaining.itemIndex(k), v]);
+                indexes.push(ItemContaining.itemIndex(k));
+            }
+        }
+        this.reassignDeletedIndexes(...indexes);
+        return this;
+    }
+    removeItem(...indexes) {
+        for (let index of indexes) {
+            let item = this.children.get(ItemContaining.itemChildrenPrefix + indexes);
+            this.children.delete(ItemContaining.itemChildrenPrefix + index);
+            this.dispatchEvent(ItemContainingEvents.itemRemoved, [index, item]);
+        }
+        this.reassignDeletedIndexes(...indexes);
+        return this;
+    }
     get items() {
-        return this._items;
+        return [...this.children.entries()]
+            .filter(value => ItemContaining.isItem(value[0]))
+            .sort()
+            .map(value => value[1]);
+    }
+    get itemLength() {
+        return this.itemCount;
     }
 }
-export { Util, OneIconContaining, LeadingTrailingIconContaining, EventCallbacks, ColorEditable, SpacingEditable, ItemContaining };
+ItemContaining.itemChildrenPrefix = "item";
+export { Util, OneIconContaining, LeadingTrailingIconContaining, IconContainingEvents, EventCallbacks, ColorEditable, SpacingEditable, ItemContaining, ItemContainingEvents };

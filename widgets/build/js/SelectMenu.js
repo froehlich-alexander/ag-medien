@@ -2,8 +2,15 @@ import { Widget, WidgetEvents } from './Widget.js';
 import { Button, FlexAlign, Icon, Top } from "./Widgets.js";
 import { Dialog, DialogEvents } from "./Dialog.js";
 export var a = "fdf";
-const SelectMenuItemEvents = Object.assign(Object.assign({}, WidgetEvents), { selected: "selected", unselected: "unselected" });
-const SelectMenuEvents = Object.assign(Object.assign({}, DialogEvents), { checkStateChanged: "checkStateChanged" });
+const SelectMenuItemEvents = {
+    ...WidgetEvents,
+    selected: "selected",
+    unselected: "unselected",
+};
+const SelectMenuEvents = {
+    ...DialogEvents,
+    checkStateChanged: "checkStateChanged",
+};
 export class SelectMenuItem extends Widget {
     constructor() {
         super(...arguments);

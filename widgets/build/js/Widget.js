@@ -6,6 +6,7 @@ const WidgetEvents = {
     visibilityChanged: "visibilityChanged",
     sizeSet: "sizeSet",
     initialize: "initialize",
+    rebuild: "rebuild"
 };
 class _EventHandler {
 }
@@ -24,16 +25,16 @@ class Widget extends _EventHandler {
         if (htmlElementType != null) {
             this.htmlElementType = htmlElementType;
         }
-        this.observer = new MutationObserver((mutationList) => {
+        this.sizeSetObserver = new MutationObserver((mutationList) => {
             let target = $(mutationList[0].target);
             if (target.filter(":visible").length > 0) {
                 if (this.sizeSet) {
-                    this.observer.disconnect();
+                    this.sizeSetObserver.disconnect();
                     return;
                 }
                 this.sizeSet = true;
                 this.dispatchEvent(WidgetEvents.sizeSet);
-                this.observer.disconnect();
+                this.sizeSetObserver.disconnect();
             }
         });
         this.on(undefined, new Pair(WidgetEvents.sizeSet, () => {
@@ -44,12 +45,16 @@ class Widget extends _EventHandler {
         this._domObject = $(`<${this.htmlElementType}></${this.htmlElementType}>`)
             .addClass("widget")
             .addClass(this._hidingIfNotShown ? "hidingIfNotShown" : null);
-        this.observer.observe(this._domObject.get()[0], {
-            attributeFilter: ["style", "class"],
-        });
         this._built = true;
         this.buildCallback(suppressCallback);
         return this._domObject;
+    }
+    rebuild(suppressCallback = false) {
+        this.sizeSetObserver.observe(this._domObject.get(0), {
+            attributeFilter: ["style", "class"],
+        });
+        this.rebuildCallback(suppressCallback);
+        return this.domObject;
     }
     destroy() {
         console.assert(this._built);
@@ -62,8 +67,18 @@ class Widget extends _EventHandler {
         if (suppress) {
             return;
         }
+        this.rebuild(true);
         this._built = true;
         this.dispatchEvent(WidgetEvents.build);
+        this.buildVisibility();
+    }
+    rebuildCallback(suppress = false) {
+        if (suppress) {
+            return;
+        }
+        if (this._built == true) {
+            this.dispatchEvent(WidgetEvents.rebuild);
+        }
         this.buildVisibility();
     }
     on(events, event) {
@@ -82,6 +97,27 @@ class Widget extends _EventHandler {
         }
         return this;
     }
+    on2(events, handler) {
+        console.log("on2");
+        if (this._built) {
+            console.log("on called after element is built");
+            console.log(events);
+            console.log(this);
+        }
+        if (handler !== undefined) {
+            this.callbacks.push(new Pair(events, handler));
+            console.log("handler!== undefined");
+            console.log(new Pair(events, handler));
+        }
+        else if (events != null) {
+            console.log("else");
+            for (let i in events) {
+                this.callbacks.push(new Pair(i, events[i]));
+                console.log(new Pair(i, events[i]));
+            }
+        }
+        return this;
+    }
     dispatchEvent(event, args, ...acceptedTypes) {
         if (!this.eventDisabled(event)) {
             for (let i of this.callbacks.filter(value => value.first == event || value.first == WidgetEvents.all || value.first in acceptedTypes)) {
@@ -93,6 +129,10 @@ class Widget extends _EventHandler {
                 }
             }
         }
+        return this;
+    }
+    addChild(childName) {
+        this.children.set(childName, this[childName]);
         return this;
     }
     disableEvent(event, disable = true) {
@@ -174,18 +214,6 @@ class Widget extends _EventHandler {
     }
     set hidingIfNotShown(value) {
         this.setHidingIfNotShown(value);
-    }
-    get setWidth() {
-        return this._setWidth;
-    }
-    set setWidth(value) {
-        this._setWidth = value;
-    }
-    get setHeight() {
-        return this._setHeight;
-    }
-    set setHeight(value) {
-        this._setHeight = value;
     }
 }
 export { Widget, WidgetEvents };

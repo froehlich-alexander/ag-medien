@@ -1,18 +1,30 @@
 import { Widget, WidgetEvents } from "./Widget.js";
-import { ButtonBox, FlexAlign, Top } from "./Widgets.js";
-const DialogEvents = Object.assign(Object.assign({}, WidgetEvents), { accepted: "accepted", finished: "finished", rejected: "rejected" });
+import { ButtonBox, ContentBox, FlexAlign, Top } from "./Widgets.js";
+const DialogEvents = {
+    ...WidgetEvents,
+    accepted: "accepted",
+    finished: "finished",
+    rejected: "rejected",
+};
 class Dialog extends Widget {
     constructor(htmlElementType) {
         super(htmlElementType);
         this.buttonBox = new ButtonBox();
         this.aTop = new Top();
+        this.aContent = new ContentBox();
         this.children.set("buttons", this.buttonBox);
         this.children.set("atop", this.aTop);
+        this.children.set("aContent", this.aContent);
     }
     buildTop() {
         let top = this.aTop.build();
         this.domObject.append(top);
         return top;
+    }
+    buildContent() {
+        let content = this.aContent.build();
+        this.domObject.append(content);
+        return content;
     }
     buildButtons() {
         let buttonBox = this.buttonBox.build();
@@ -38,6 +50,13 @@ class Dialog extends Widget {
     }
     topEnabled() {
         return this.aTop.inheritVisibility;
+    }
+    enableContent(value) {
+        this.aContent.setInheritVisibility(value);
+        return this;
+    }
+    contentEnabled() {
+        return this.aContent.inheritVisibility;
     }
     addButton(button, mainAlign = FlexAlign.center, crossAlign = FlexAlign.center) {
         this.buttonBox.addButton(button, mainAlign, crossAlign);

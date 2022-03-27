@@ -23,9 +23,10 @@ body {
   left: 20%;
 }
 .color-picker .color-scheme-new-dialog {
-  width: 40%;
-  height: 50%;
-  left: 30%;
+  width: 35%;
+  max-height: 50%;
+  left: 50%;
+  transform: translateX(-50%);
   top: 25%;
   position: relative;
   background-color: var(--background-color-1);

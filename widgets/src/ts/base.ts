@@ -128,4 +128,18 @@ function mixin(...mixins: typeof Mixin[]): Function {
     };
 }
 
-export {Pair, Tripel, Mixin, MixinImplementing, mixin};
+/**
+ * This converts a object of a type (like a Map) into an object.<br>
+ * This can be useful e.g. if you want to convert something to json
+ * @param input
+ * @return {Object}
+ */
+function toObject(input: any): Object {
+    if (input instanceof Map) {
+        return Object.fromEntries(input);
+    } else {
+        return input;
+    }
+}
+
+export {Pair, Tripel, Mixin, MixinImplementing, mixin, toObject};

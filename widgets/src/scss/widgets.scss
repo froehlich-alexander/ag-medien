@@ -1,6 +1,8 @@
 @import "base";
 
 .widget {
+  position: relative;
+
   &.show {
   }
 
@@ -269,7 +271,8 @@
   }
 
   &.button-box-widget {
-    margin-top: 0.5rem;
+    align-self: end;
+    padding-top: 1rem;
     border-radius: 1rem;
   }
 }

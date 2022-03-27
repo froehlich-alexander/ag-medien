@@ -19,6 +19,9 @@
   user-select: none;
 }
 
+.widget {
+  position: relative;
+}
 .widget:not(.show) {
   display: none !important;
 }
@@ -191,7 +194,8 @@
   border-radius: 1rem;
 }
 .widget.button-box-widget {
-  margin-top: 0.5rem;
+  align-self: end;
+  padding-top: 1rem;
   border-radius: 1rem;
 }
 
