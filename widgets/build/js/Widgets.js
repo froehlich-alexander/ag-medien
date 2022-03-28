@@ -141,7 +141,7 @@ class Button extends Widget {
         if (this.icon != null) {
             this.icon.setInheritVisibility(true);
         }
-        this.children.set("icon", this.icon);
+        this.addChild("icon", this.icon);
         return this;
     }
 }
@@ -195,7 +195,7 @@ class FlexBox extends Widget {
     addItem(item, mainAlign = FlexAlign.center, crossAlign = FlexAlign.center) {
         console.assert(!this.built);
         item.setInheritVisibility(true);
-        this.children.set("flexbox" + this.items.push(new Tripel(item, mainAlign, crossAlign)).toString(10), item);
+        this.addChild("flexbox" + this.items.push(new Tripel(item, mainAlign, crossAlign)).toString(10), item);
         return this;
     }
     isEmpty() {
@@ -302,6 +302,7 @@ const TopEvents = {
 let Top = class Top extends FlexBox {
     constructor() {
         super();
+        this._defaultTop = true;
         this.mixinConstructor(OneIconContaining);
         this.setIcon(Icon.Close());
         this.label = new Text().setFontWeight(FontWeight.bold);
@@ -316,11 +317,25 @@ let Top = class Top extends FlexBox {
         this.buildCallback(suppressCallback);
         return this.domObject;
     }
+    rebuild(suppressCallback = false) {
+        super.rebuild(true);
+        this.domObject
+            .toggleClass("default", this._defaultTop);
+        this.rebuildCallback(suppressCallback);
+        return this.domObject;
+    }
     getLabel() {
         return this.label.get();
     }
     setLabel(value) {
         this.label.set(value);
+        return this;
+    }
+    get defaultTop() {
+        return this._defaultTop;
+    }
+    setDefaultTop(defaultTop) {
+        this._defaultTop = defaultTop;
         return this;
     }
 };
@@ -350,12 +365,20 @@ let ListTile = class ListTile extends FlexBox {
     get label() {
         return this._label;
     }
+    setLabel(label) {
+        this._label.set(label);
+        return this;
+    }
+    setDescription(description) {
+        this._description.set(description);
+        return this;
+    }
     get description() {
         return this._description;
     }
 };
 ListTile = __decorate([
-    mixin(ColorEditable, SpacingEditable, LeadingTrailingIconContaining)
+    mixin(Item, ColorEditable, SpacingEditable, LeadingTrailingIconContaining)
 ], ListTile);
 const TextInputEvents = {
     ...WidgetEvents,
@@ -466,11 +489,17 @@ let Box = class Box extends Widget {
         super(htmlElementType);
         this.mixinConstructor(ItemContaining, SpacingEditable);
     }
+    rebuild(suppressCallback = false) {
+        super.rebuild(true);
+        this.rebuildItems();
+        this.rebuildCallback(suppressCallback);
+        return this.domObject;
+    }
     build(suppressCallback = false) {
         super.build(true)
             .addClass("box");
         this.buildSpacing();
-        this.buildItems(this.domObject);
+        this.buildItems();
         this.buildCallback(suppressCallback);
         return this.domObject;
     }

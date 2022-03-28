@@ -10,7 +10,8 @@ const WidgetEvents = {
     visibilityChanged: "visibilityChanged",
     sizeSet: "sizeSet",
     initialize: "initialize",
-    rebuild: "rebuild"
+    rebuild: "rebuild",
+    needVisibilityUpdate: "needVisibilityUpdate"
 };
 
 type WidgetEvents = (typeof WidgetEvents)[keyof typeof WidgetEvents];
@@ -79,6 +80,8 @@ abstract class Widget<EventType extends WidgetEvents> extends _EventHandler impl
             }
         });
         this.on(undefined, new Pair(WidgetEvents.sizeSet, () => {
+            console.log("size set ");
+            this.dispatchEvent(WidgetEvents.needVisibilityUpdate);
             this.buildVisibility();
         }));
     }
@@ -93,7 +96,7 @@ abstract class Widget<EventType extends WidgetEvents> extends _EventHandler impl
         // this.sizeSetObserver.observe(this._domObject.get()[0], {
         //     attributeFilter: ["style", "class"],
         // });
-        this._built = true;
+        // this._built = true;
         this.buildCallback(suppressCallback);
         return this._domObject;
     }
@@ -115,6 +118,7 @@ abstract class Widget<EventType extends WidgetEvents> extends _EventHandler impl
     }
 
     protected buildCallback(suppress: boolean = false): void {
+        this._built = true;
         if (suppress) {
             return;
         }
@@ -153,7 +157,7 @@ abstract class Widget<EventType extends WidgetEvents> extends _EventHandler impl
         return this;
     }
 
-    public on2(events?: EventCallback<EventType, Widget<EventType>> | EventType, handler?: EventHandler<string, Widget<EventType>>): this {
+    public on2(events?: EventCallback<EventType, Widget<EventType>> | string, handler?: EventHandler<string, Widget<EventType>>): this {
         console.log("on2");
         if (this._built) {
             console.log("on called after element is built");
@@ -193,14 +197,24 @@ abstract class Widget<EventType extends WidgetEvents> extends _EventHandler impl
     }
 
     /**
-     * This works only if the child is a field of this object
+     * Using this function single parameterized works only if the child is a field (with the same name as {@link childName}) of this object
      * @param {string} childName
+     * @param {Widget<WidgetEvents>} child
      * @return {this}
      * @protected
      */
-    protected addChild(childName: string): this {
-        // @ts-ignore
-        this.children.set(childName, this[childName]);
+    protected addChild(childName: string, child?: Widget<WidgetEvents>): this {
+        if (child === undefined) {
+            // @ts-ignore
+            child = this[childName];
+        }
+        this.children.set(childName, child);
+        child.on(undefined, new Pair(WidgetEvents.needVisibilityUpdate, (event) => {
+            if (event.target.inheritVisibility) {
+                console.log("set vis");
+                event.target.setVisibility(this.visibility);
+            }
+        }));
         return this;
     }
 
@@ -274,7 +288,11 @@ abstract class Widget<EventType extends WidgetEvents> extends _EventHandler impl
      * @param value
      */
     public setInheritVisibility(value: boolean): this {
+        let changed = this._inheritVisibility !== value;
         this._inheritVisibility = value;
+        if (changed && this.built) {
+            this.dispatchEvent(WidgetEvents.needVisibilityUpdate);
+        }
         return this;
     }
 

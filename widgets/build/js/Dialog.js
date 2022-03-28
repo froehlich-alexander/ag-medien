@@ -12,9 +12,9 @@ class Dialog extends Widget {
         this.buttonBox = new ButtonBox();
         this.aTop = new Top();
         this.aContent = new ContentBox();
-        this.children.set("buttons", this.buttonBox);
-        this.children.set("atop", this.aTop);
-        this.children.set("aContent", this.aContent);
+        this.addChild("buttons", this.buttonBox);
+        this.addChild("atop", this.aTop);
+        this.addChild("aContent", this.aContent);
     }
     buildTop() {
         let top = this.aTop.build();

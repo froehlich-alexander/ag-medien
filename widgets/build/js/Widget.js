@@ -6,7 +6,8 @@ const WidgetEvents = {
     visibilityChanged: "visibilityChanged",
     sizeSet: "sizeSet",
     initialize: "initialize",
-    rebuild: "rebuild"
+    rebuild: "rebuild",
+    needVisibilityUpdate: "needVisibilityUpdate"
 };
 class _EventHandler {
 }
@@ -38,6 +39,8 @@ class Widget extends _EventHandler {
             }
         });
         this.on(undefined, new Pair(WidgetEvents.sizeSet, () => {
+            console.log("size set ");
+            this.dispatchEvent(WidgetEvents.needVisibilityUpdate);
             this.buildVisibility();
         }));
     }
@@ -45,7 +48,6 @@ class Widget extends _EventHandler {
         this._domObject = $(`<${this.htmlElementType}></${this.htmlElementType}>`)
             .addClass("widget")
             .addClass(this._hidingIfNotShown ? "hidingIfNotShown" : null);
-        this._built = true;
         this.buildCallback(suppressCallback);
         return this._domObject;
     }
@@ -64,6 +66,7 @@ class Widget extends _EventHandler {
         return this;
     }
     buildCallback(suppress = false) {
+        this._built = true;
         if (suppress) {
             return;
         }
@@ -131,8 +134,17 @@ class Widget extends _EventHandler {
         }
         return this;
     }
-    addChild(childName) {
-        this.children.set(childName, this[childName]);
+    addChild(childName, child) {
+        if (child === undefined) {
+            child = this[childName];
+        }
+        this.children.set(childName, child);
+        child.on(undefined, new Pair(WidgetEvents.needVisibilityUpdate, (event) => {
+            if (event.target.inheritVisibility) {
+                console.log("set vis");
+                event.target.setVisibility(this.visibility);
+            }
+        }));
         return this;
     }
     disableEvent(event, disable = true) {
@@ -184,7 +196,11 @@ class Widget extends _EventHandler {
         return this.setVisibility(true);
     }
     setInheritVisibility(value) {
+        let changed = this._inheritVisibility !== value;
         this._inheritVisibility = value;
+        if (changed && this.built) {
+            this.dispatchEvent(WidgetEvents.needVisibilityUpdate);
+        }
         return this;
     }
     setHidingIfNotShown(value) {

@@ -9,10 +9,10 @@ $("body")
     .addClass("dark");
 // let l = new ListTile();
 //
-// let colorPicker = new ColorPicker().show();
-// let overlay = new Overlay(colorPicker);
-// overlay.build()
-//     .appendTo("body");
+let colorPicker = new ColorPicker().show();
+let overlay = new Overlay(colorPicker);
+overlay.build()
+    .appendTo("body");
 
 
 // new SelectMenu()
@@ -23,16 +23,16 @@ $("body")
 //     .appendTo("body")
 //     .css("left", 0);
 
-let i = new Text().set("ljlsdkvhlxskvh");
-let j = new Text().set("ökölakfsd");
-let a = new ContentBox()
-    .show()
-    .addItems(
-        i,
-        new Text().set("Hmm"),
-        j,
-        new Text().set("a"),
-        new Text().set("j"));
-a.build();
-a.removeItems(i, j);
-console.log(a.items.map(value => value.value));
+// let i = new Text().set("ljlsdkvhlxskvh");
+// let j = new Text().set("ökölakfsd");
+// let a = new ContentBox()
+//     .show()
+//     .addItems(
+//         i,
+//         new Text().set("Hmm"),
+//         j,
+//         new Text().set("a"),
+//         new Text().set("j"));
+// a.build();
+// a.removeItems(i, j);
+// console.log(a.items.map(value => value.value));

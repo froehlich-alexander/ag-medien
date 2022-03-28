@@ -1,7 +1,7 @@
-import { Icon, IconEvents } from "./Widgets.js";
-import { WidgetEvents } from "./Widget.js";
 import { Mixin, Pair } from "./base.js";
+import { WidgetEvents } from "./Widget.js";
 import { CSSColorValue } from "./WidgetBase.js";
+import { Icon, IconEvents, IconType } from "./Widgets.js";
 class Util {
     static setHeight(element) {
         element.outerHeight(element.outerHeight(false), false);
@@ -22,16 +22,18 @@ class Util {
         return element;
     }
     static setHeightToRemaining(parent, child) {
+        let children = parent.children().not(child).not(".overlay-widget");
         let w = 0;
-        for (let i = 0; i < parent.children().length; i++) {
-            w += parent.children().not(child).outerHeight(true);
+        for (let i = 0; i < children.length; i++) {
+            w += children.eq(i).outerHeight(true);
         }
         child.css("max-height", `calc(100% - ${w}px`);
     }
     static setWidthToRemaining(parent, child) {
+        let children = parent.children().not(child).not(".overlay-widget");
         let w = 0;
-        for (let i = 0; i < parent.children().length; i++) {
-            w += parent.children().not(child).outerWidth(true);
+        for (let i = 0; i < children.length; i++) {
+            w += children.eq(i).outerWidth(true);
         }
         child.css("max-width", `calc(100% - ${w}px`);
     }
@@ -78,7 +80,7 @@ class OneIconContaining extends IconContaining {
         this.icon = new Icon();
     }
     _constructor() {
-        this.children.set("icon", this.icon);
+        this.addChild("icon", this.icon);
         this.icon.on(undefined, new Pair(IconEvents.clicked, () => this.dispatchEvent(IconContainingEvents.iconClicked, [this.icon, 0])));
     }
     setIcon(icon) {
@@ -101,9 +103,9 @@ class LeadingTrailingIconContaining extends IconContaining {
         this.trailingIcon = new Icon();
     }
     _constructor() {
-        this.children.set("leadingIcon", this.leadingIcon);
+        this.addChild("leadingIcon", this.leadingIcon);
         this.leadingIcon.on(undefined, new Pair(IconEvents.clicked, () => this.dispatchEvent(IconContainingEvents.iconClicked, [this.leadingIcon, 0])));
-        this.children.set("trailingIcon", this.trailingIcon);
+        this.addChild("trailingIcon", this.trailingIcon);
         this.trailingIcon.on(undefined, new Pair(IconEvents.clicked, () => this.dispatchEvent(IconContainingEvents.iconClicked, [this.trailingIcon, 1])));
     }
     setLeadingIcon(icon) {
@@ -208,6 +210,18 @@ var ItemContainingEvents;
     ItemContainingEvents["itemAdded"] = "";
     ItemContainingEvents["itemRemoved"] = "";
 })(ItemContainingEvents || (ItemContainingEvents = {}));
+class Item {
+    constructor() {
+        this._index = -1;
+    }
+    get index() {
+        return this._index;
+    }
+    setIndex(index) {
+        this._index = index;
+        return this;
+    }
+}
 class ItemContaining extends Mixin {
     constructor() {
         super(...arguments);
@@ -216,22 +230,48 @@ class ItemContaining extends Mixin {
     buildItem(item, inheritVisibility = true) {
         item.setInheritVisibility(inheritVisibility);
     }
-    buildItems(domObject = this.domObject) {
+    buildItems() {
         for (let i of [...this.children.entries()]
             .filter(value => ItemContaining.isItem(value[0]))
+            .sort()
             .map(value => value[1])) {
             this.buildItem(i);
-            domObject.append(i.build());
+            this.domObject.append(i.build());
+        }
+        return this;
+    }
+    rebuildItems() {
+        console.log("rebuild items");
+        let pre;
+        for (let i of [...this.children.entries()]
+            .filter(value => ItemContaining.isItem(value[0]))
+            .sort()
+            .map(value => value[1])) {
+            if (!(this.domObject.find(i.domObject).length > 0)) {
+                if (pre !== undefined) {
+                    console.log(this.domObject);
+                    console.log(pre.label.get());
+                    pre.domObject.after(i.domObject);
+                }
+                else {
+                    this.domObject.append(i.domObject);
+                }
+            }
+            i.rebuild();
+            pre = i;
         }
         return this;
     }
     addItems(...items) {
         for (let i of items) {
-            this.children.set(ItemContaining.itemChildrenPrefix + this.itemCount, i);
+            this.addChild(ItemContaining.itemChildrenPrefix + this.itemCount, i);
+            this.dispatchEvent(ItemContainingEvents.itemAdded, [this.itemCount, i]);
+            if (i instanceof Item) {
+                i.setIndex(this.itemCount);
+            }
             this.itemCount++;
-            this.dispatchEvent(ItemContainingEvents.itemAdded, [i]);
         }
-        if (this.built) {
+        if (this.built && items.length > 0) {
             this.rebuild();
         }
         return this;
@@ -245,13 +285,17 @@ class ItemContaining extends Mixin {
     }
     reassignDeletedIndexes(...indexes) {
         indexes.sort();
+        let removed = new Map();
         for (let i = 0; i < this.itemCount; i++) {
-            if (indexes.indexOf(i) !== -1) {
+            let item = this.children.get(ItemContaining.itemChildrenPrefix + i);
+            let newIndex = i;
+            if (item === undefined) {
                 continue;
             }
-            let newIndex = i;
-            let item = this.children.get(ItemContaining.itemChildrenPrefix + i);
-            if (item === undefined) {
+            if (indexes.indexOf(i) !== -1) {
+                this.children.delete(ItemContaining.itemChildrenPrefix + i);
+                removed.set(i, item);
+                item.domObject.detach();
                 continue;
             }
             for (let j of indexes) {
@@ -261,10 +305,16 @@ class ItemContaining extends Mixin {
                 newIndex -= 1;
             }
             this.children.delete(ItemContaining.itemChildrenPrefix + i);
-            this.children.set(ItemContaining.itemChildrenPrefix + newIndex, item);
+            this.addChild(ItemContaining.itemChildrenPrefix + newIndex, item);
+            if (item instanceof Item) {
+                item.setIndex(newIndex);
+            }
         }
-        this.itemCount -= indexes.length;
-        if (this.built) {
+        this.itemCount -= removed.size;
+        for (let [k, v] of removed.entries()) {
+            this.dispatchEvent(ItemContainingEvents.itemRemoved, [k, v]);
+        }
+        if (this.built && removed.size > 0) {
             this.rebuild();
         }
         console.assert(this.itemCount === [...this.children.keys()].filter(value => ItemContaining.isItem(value)).length);
@@ -273,8 +323,6 @@ class ItemContaining extends Mixin {
         let indexes = [];
         for (let [k, v] of this.children) {
             if (items.indexOf(v) !== -1 && ItemContaining.isItem(k)) {
-                this.children.delete(k);
-                this.dispatchEvent(ItemContainingEvents.itemRemoved, [ItemContaining.itemIndex(k), v]);
                 indexes.push(ItemContaining.itemIndex(k));
             }
         }
@@ -282,11 +330,6 @@ class ItemContaining extends Mixin {
         return this;
     }
     removeItem(...indexes) {
-        for (let index of indexes) {
-            let item = this.children.get(ItemContaining.itemChildrenPrefix + indexes);
-            this.children.delete(ItemContaining.itemChildrenPrefix + index);
-            this.dispatchEvent(ItemContainingEvents.itemRemoved, [index, item]);
-        }
         this.reassignDeletedIndexes(...indexes);
         return this;
     }
@@ -301,4 +344,55 @@ class ItemContaining extends Mixin {
     }
 }
 ItemContaining.itemChildrenPrefix = "item";
-export { Util, OneIconContaining, LeadingTrailingIconContaining, IconContainingEvents, EventCallbacks, ColorEditable, SpacingEditable, ItemContaining, ItemContainingEvents };
+var CheckboxEvents;
+(function (CheckboxEvents) {
+    CheckboxEvents["selected"] = "selected";
+    CheckboxEvents["unselected"] = "unselected";
+    CheckboxEvents["checkStateChanged"] = "checkStateChanged";
+})(CheckboxEvents || (CheckboxEvents = {}));
+class CheckboxContaining extends Mixin {
+    constructor() {
+        super(...arguments);
+        this.checkBoxIcon = Icon.of("check_box_outline_blank", IconType.material);
+    }
+    _constructor() {
+        this.addChild("checkBoxIcon");
+    }
+    buildCheckbox() {
+        return this.checkBoxIcon.on2(IconEvents.clicked, () => this.setChecked(!this._checked))
+            .build();
+    }
+    rebuildCheckbox() {
+        if (this.checkboxEnabled) {
+            this.checkBoxIcon.set(this._checked ? "check_box" : "check_box_outline_blank", IconType.material)
+                .domObject.addClass(this._checked ? "checked" : null)
+                .removeClass(this._checked ? null : "checked");
+        }
+        return this;
+    }
+    get checked() {
+        return this._checked;
+    }
+    setChecked(value) {
+        let changed = this._checked !== value;
+        this._checked = value;
+        if (changed) {
+            this.dispatchEvent(this._checked ? CheckboxEvents.selected : CheckboxEvents.unselected, [this._checked], CheckboxEvents.checkStateChanged);
+            if (this.built) {
+                this.rebuildCheckbox();
+            }
+        }
+        return this;
+    }
+    get checkboxEnabled() {
+        return this.checkBoxIcon.inheritVisibility;
+    }
+    enableCheckbox(value) {
+        this.checkBoxIcon.setInheritVisibility(value);
+        if (this.built) {
+            this.rebuildCheckbox();
+        }
+        return this;
+    }
+}
+export { Util, OneIconContaining, LeadingTrailingIconContaining, IconContainingEvents, EventCallbacks, ColorEditable, SpacingEditable, ItemContaining, ItemContainingEvents, Item, CheckboxContaining, CheckboxEvents };

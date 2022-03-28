@@ -3,7 +3,7 @@ import {Widget, WidgetEvents} from "./Widget.js";
 import {mixin, MixinImplementing, Pair, Tripel} from "./base.js";
 import {
     ColorEditable,
-    EventCallbacks, IconContainingEvents, ItemContaining,
+    EventCallbacks, IconContainingEvents, ItemContaining, ItemContainingEvents,
     LeadingTrailingIconContaining,
     OneIconContaining,
     SpacingEditable,
@@ -37,7 +37,7 @@ enum IconType {
 @mixin(MixinImplementing, SpacingEditable)
 class Icon extends Widget<IconEvents> {
     private type: IconType;
-    private value: any;
+    private value: string;
     private _clickable: boolean = true;
 
     public static Close = () => Icon.of("close", IconType.material);
@@ -113,7 +113,7 @@ class Icon extends Widget<IconEvents> {
         return this.type;
     }
 
-    getValue(): any {
+    getValue(): string {
         return this.value;
     }
 
@@ -129,7 +129,7 @@ class Icon extends Widget<IconEvents> {
     }
 }
 
-interface Icon extends MixinImplementing, SpacingEditable {
+interface Icon extends MixinImplementing, SpacingEditable<IconEvents> {
 }
 
 const ButtonEvents = {
@@ -191,7 +191,7 @@ class Button extends Widget<ButtonEvents> {
         if (this.icon != null) {
             this.icon.setInheritVisibility(true);
         }
-        this.children.set("icon", this.icon);
+        this.addChild("icon", this.icon);
         return this;
     }
 }
@@ -433,7 +433,7 @@ class FlexBox<EventType extends WidgetEvents> extends Widget<EventType> {
     public addItem(item: Widget<WidgetEvents>, mainAlign: FlexAlign = FlexAlign.center, crossAlign: FlexAlign = FlexAlign.center): this {
         console.assert(!this.built);
         item.setInheritVisibility(true);
-        this.children.set("flexbox" + this.items.push(new Tripel(item, mainAlign, crossAlign)).toString(10), item);
+        this.addChild("flexbox" + this.items.push(new Tripel(item, mainAlign, crossAlign)).toString(10), item);
         return this;
     }
 
@@ -566,7 +566,7 @@ class Text extends Widget<WidgetEvents> {
     }
 }
 
-interface Text extends MixinImplementing, ColorEditable, SpacingEditable {
+interface Text extends MixinImplementing, ColorEditable<WidgetEvents>, SpacingEditable<WidgetEvents> {
 }
 
 const TopEvents = {
@@ -578,6 +578,7 @@ type TopEvents = (typeof TopEvents[keyof typeof TopEvents]);
 @mixin(MixinImplementing, OneIconContaining)
 class Top extends FlexBox<TopEvents> {
     private readonly label: Text;
+    private _defaultTop = true;
 
     constructor() {
         super();
@@ -603,6 +604,14 @@ class Top extends FlexBox<TopEvents> {
         return this.domObject;
     }
 
+    public rebuild(suppressCallback: boolean = false): JQuery<HTMLElement> {
+        super.rebuild(true);
+        this.domObject
+            .toggleClass("default", this._defaultTop);
+        this.rebuildCallback(suppressCallback);
+        return this.domObject;
+    }
+
     public getLabel(): string {
         return this.label.get();
     }
@@ -611,12 +620,22 @@ class Top extends FlexBox<TopEvents> {
         this.label.set(value);
         return this;
     }
+
+
+    public get defaultTop(): boolean {
+        return this._defaultTop;
+    }
+
+    public setDefaultTop(defaultTop: boolean): this {
+        this._defaultTop = defaultTop;
+        return this;
+    }
 }
 
 interface Top extends MixinImplementing, OneIconContaining<WidgetEvents> {
 }
 
-@mixin(ColorEditable, SpacingEditable, LeadingTrailingIconContaining)
+@mixin(Item, ColorEditable, SpacingEditable, LeadingTrailingIconContaining)
 class ListTile<EventType extends WidgetEvents> extends FlexBox<EventType> {
     private readonly _label: Text = new Text();
     private readonly _description: Text = new Text();
@@ -654,12 +673,22 @@ class ListTile<EventType extends WidgetEvents> extends FlexBox<EventType> {
         return this._label;
     }
 
+    public setLabel(label: string): this {
+        this._label.set(label);
+        return this;
+    }
+
+    public setDescription(description: string): this {
+        this._description.set(description);
+        return this;
+    }
+
     public get description(): Text {
         return this._description;
     }
 }
 
-interface ListTile<EventType extends WidgetEvents> extends MixinImplementing, ColorEditable, SpacingEditable, LeadingTrailingIconContaining<EventType> {
+interface ListTile<EventType extends WidgetEvents | IconContainingEvents> extends MixinImplementing, Item, ColorEditable<EventType>, SpacingEditable<EventType>, LeadingTrailingIconContaining<EventType> {
 }
 
 const TextInputEvents = {
@@ -801,23 +830,30 @@ class TextInput extends Widget<TextInputEvents> {
 }
 
 @mixin(ItemContaining, SpacingEditable)
-class Box<EventType extends WidgetEvents> extends Widget<EventType> {
+class Box<EventType extends WidgetEvents | ItemContainingEvents> extends Widget<EventType> {
     constructor(htmlElementType?: string) {
         super(htmlElementType);
         this.mixinConstructor(ItemContaining, SpacingEditable);
+    }
+
+    public rebuild(suppressCallback: boolean = false): JQuery<HTMLElement> {
+        super.rebuild(true);
+        this.rebuildItems();
+        this.rebuildCallback(suppressCallback);
+        return this.domObject;
     }
 
     public build(suppressCallback: boolean = false): JQuery<HTMLElement> {
         super.build(true)
             .addClass("box");
         this.buildSpacing();
-        this.buildItems(this.domObject);
+        this.buildItems();
         this.buildCallback(suppressCallback);
         return this.domObject;
     }
 }
 
-interface Box<EventType extends WidgetEvents> extends MixinImplementing, ItemContaining, SpacingEditable {
+interface Box<EventType extends WidgetEvents> extends MixinImplementing, ItemContaining<EventType>, SpacingEditable<EventType> {
 }
 
 class ContentBox extends Box<WidgetEvents> {

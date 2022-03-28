@@ -27,9 +27,9 @@ abstract class Dialog<EventType extends DialogEvents, ValueType> extends Widget<
 
     protected constructor(htmlElementType?: string) {
         super(htmlElementType);
-        this.children.set("buttons", this.buttonBox);
-        this.children.set("atop", this.aTop);
-        this.children.set("aContent", this.aContent);
+        this.addChild("buttons", this.buttonBox);
+        this.addChild("atop", this.aTop);
+        this.addChild("aContent", this.aContent);
         // this.buttonBox.setSpacing("2rem", "2rem", "1rem");
     }
 
