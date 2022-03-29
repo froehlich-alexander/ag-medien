@@ -1,109 +1,13 @@
 <!DOCTYPE html>
-<html>
-	<head>
-		<title>Schultour</title>
-		<script src="js/jquery.min.js"></script>
-		<script src="js/transform_html_to_json.js"></script>
-		<link rel="stylesheet" type="text/css" href="css/style.css">
-	</head>
-	<body>
-		<div class="page" id="tour_pg_01_hof">
-			<div class="pg_wrapper">
-				<img src="tour/img/01_hof.jpg" alt="Bild" class="bg"/>
-				<div class="clickable" data-x="70" data-y="45" data-goto="15_eingang">
-					<div class="title">Zum Eingang</div>
-					<button class="icon arrow_r" ></button>
-				</div>
-				<div class="clickable" data-x="90" data-y="80" data-goto="05_sporthalle">
-					<div class="title">Zur Sporthalle</div>
-					<button class="icon arrow_r" ></button>
-				</div>
-			</div>
-		</div>
-		<div class="page" id="tour_pg_05_sporthalle">
-			<div class="pg_wrapper">
-				<img src="tour/img/05_sporthalle.jpg" alt="Bild" class="bg"/>
-				<div class="clickable" data-x="10" data-y="50" data-goto="01_hof" data-backward="true">
-					<div class="title">Zum Hof</div>
-					<button class="icon"></button>
-				</div>
-			</div>
-		</div>
-		<div class="page" id="tour_pg_15_eingang">
-			<div class="pg_wrapper">
-				<img src="img/15_eingang.jpg" alt="Bild" class="bg"/>
-				<div class="clickable" data-x="70" data-y="45" data-goto="01_hof">
-					<div class="title">Zum Hof</div>
-					<button class="icon arrow_u" ></button>
-				</div>
-				<div class="clickable" data-x="10" data-y="30" data-goto="15_flur_eg">
-					<div class="title">Zum Flur</div>
-					<button class="icon" ></button>
-				</div>
-			</div>
-		</div>
-		<div class="page" id="tour_pg_15_flur_eg">
-			<div class="pg_wrapper">
-				<img src="tour/img/15_flur_eg.jpg" alt="Bild" class="bg"/>
-				<div class="clickable" data-x="35" data-y="60" data-goto="16_sekretariat">
-					<div class="title">Zum Sekretariat</div>
-					<button class="icon" ></button>
-				</div>
-				<div class="clickable" data-x="60" data-y="50" data-goto="15_eingang">
-					<div class="title">Zum Eingang</div>
-					<button class="icon arrow_r" ></button>
-				</div>
-				<div class="clickable" data-x="50" data-y="35" data-goto="20_foyer">
-					<div class="title">Zum Foyer</div>
-					<button class="icon arrow_u" ></button>
-				</div>
-				<div class="clickable" data-x="50" data-y="85" data-goto="15_glaskasten">
-					<div class="title">Zum Glaskasten</div>
-					<button class="icon arrow_d" ></button>
-				</div>
-			</div>
-		</div>
-		<div class="page" id="tour_pg_15_glaskasten">
-			<div class="pg_wrapper">
-				<img src="tour/img/15_glaskasten.jpg" alt="Bild" class="bg"/>
-				<div class="clickable" data-x="50" data-y="85" data-goto="15_flur_eg" data-backward="true">
-					<div class="title">Zurück</div>
-					<button class="icon arrow_d" ></button>
-				</div>
-			</div>
-		</div>
-		<div class="page" id="tour_pg_16_sekretariat">
-			<div class="pg_wrapper">
-				<img src="img/16_sekretariat.jpg" alt="Bild" class="bg"/>
-				<div class="clickable" data-x="10" data-y="10" data-goto="15_flur_eg" data-backward="true">
-					<div class="title">Zurück</div>
-					<button class="icon" ></button>
-				</div>
-			</div>
-		</div>
-		<div class="page pg_panorama" id="tour_pg_20_foyer">
-			<div class="pg_wrapper">
-				<img src="img/20_foyer.jpg" alt="Bild" class="bg"/>
-				<div class="clickable" data-x="5" data-y="30" data-goto="20_treppe_eg">
-					<div class="title">in das 1.OG</div>
-					<button class="icon arrow_u" ></button>
-				</div>
-				<div class="clickable" data-x="28" data-y="50" data-goto="15_flur_eg">
-					<div class="title">In den Flur</div>
-					<button class="icon arrow_u" ></button>
-				</div>
-				
-			</div>
-		</div>
-		<div class="page" id="tour_pg_20_treppe_eg">
-			<div class="pg_wrapper">
-				<img src="tour/img/20_treppe_eg.jpg" alt="Bild" class="bg"/>
-				<div class="clickable" data-x="50" data-y="50" data-goto="UNDEFINED">
-					<div class="title">in das 1.OG</div>
-					<button class="icon arrow_u" ></button>
-				</div>
-				
-			</div>
-		</div>
-	</body>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="stylesheet" href="css/style.css" type="text/css">
+    <script src="js/jquery.min.js" type="application/javascript"></script>
+    <script src="pages.js" type="text/javascript"></script> <!--    including pages.js here is only relevant for testing!!! (because chrome is bad)     -->
+    <script src="js/script.js" type="application/javascript"></script>
+</head>
+<body>
+</body>
 </html>

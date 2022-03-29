@@ -61,7 +61,7 @@ function adjust_clickables() {
     let clickables = $(".clickable");
     clickables.removeClass("right");
     for (let i = 0; i < clickables.length; i++) {
-        let clickables = $(".clickable");
+        // let clickables = $(".clickable");
         if (clickables.eq(i).offset().left + clickables.eq(i).outerWidth(true) > clickables.eq(i).parent().offset().left + clickables.eq(i).parent().outerWidth(true))
             clickables.eq(i).addClass("right");
     }
@@ -131,9 +131,17 @@ function createHtml(json) {
     adjust_clickables();
 }
 
+/**
+ * Ajax requests to file:// endpoints do not work in chrome base browsers<br>
+ * That's only relevant for testing
+ * @param pagesJsonPath
+ */
 function init(pagesJsonPath) {
+    let json = pages;
     $.ajax(pagesJsonPath)
-        .done(function (json) {
+        .done(function (data) {
+            //testing...
+            // let json = data;
             $(() => {
                 createHtml(json);
                 if (window.location.hash !== "") {
@@ -142,7 +150,11 @@ function init(pagesJsonPath) {
                     $(".page").eq(0).addClass("show");
                 }
             });
-        });
+        })
+        .catch(function () {
+            console.log("Error fetching the json file");
+        }
+    );
 }
 
-init("pages.json");
+init("pages.js");
