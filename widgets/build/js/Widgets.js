@@ -7,7 +7,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var Icon_1;
 import { Widget, WidgetEvents } from "./Widget.js";
 import { mixin, MixinImplementing, Tripel } from "./base.js";
-import { ColorEditable, EventCallbacks, IconContainingEvents, ItemContaining, LeadingTrailingIconContaining, OneIconContaining, SpacingEditable, Util } from "./AbstractWidgets.js";
+import { CheckboxContaining, ColorEditable, EventCallbacks, IconContainingEvents, ItemContaining, LeadingTrailingIconContaining, OneIconContaining, SpacingEditable, Util } from "./AbstractWidgets.js";
 import { Font, FontWeight } from "./WidgetBase.js";
 class Item {
     get index() {
@@ -18,8 +18,7 @@ class Item {
     }
 }
 const IconEvents = {
-    ...WidgetEvents,
-    clicked: "clicked",
+    ...WidgetEvents
 };
 var IconType;
 (function (IconType) {
@@ -107,8 +106,7 @@ Icon = Icon_1 = __decorate([
     mixin(MixinImplementing, SpacingEditable)
 ], Icon);
 const ButtonEvents = {
-    ...WidgetEvents,
-    clicked: "clicked",
+    ...WidgetEvents
 };
 class Button extends Widget {
     build(suppressCallback = false) {
@@ -151,6 +149,9 @@ Button.Back = () => new Button().setLabel("Back").setIcon(Icon.of("arrow_back", 
 Button.Next = () => new Button().setLabel("Next").setIcon(Icon.of("arrow_forward", IconType.material));
 Button.Agree = () => new Button().setLabel("Agree").setIcon(Icon.Done());
 Button.Delete = () => new Button().setLabel("Delete").setIcon(Icon.Delete());
+Button.Save = () => new Button().setLabel("Save").setIcon(Icon.of("save", IconType.material));
+Button.Activate = () => new Button().setLabel("Activate").setIcon(Icon.of("favorite", IconType.material));
+Button.Reset = () => new Button().setLabel("Reset").setIcon(Icon.of("restart_alt", IconType.material));
 var FlexAlign;
 (function (FlexAlign) {
     FlexAlign["start"] = "start";
@@ -347,19 +348,29 @@ let ListTile = class ListTile extends FlexBox {
         super();
         this._label = new Text();
         this._description = new Text();
-        this.mixinConstructor(SpacingEditable, LeadingTrailingIconContaining, ColorEditable);
+        this.mixinConstructor(SpacingEditable, LeadingTrailingIconContaining, ColorEditable, CheckboxContaining);
         this._label.setInheritVisibility(true);
         this._description.setInheritVisibility(false);
         this.addItem(this.getLeadingIcon(), FlexAlign.start);
         this.addItem(this._label, FlexAlign.start);
         this.addItem(this.getTrailingIcon(), FlexAlign.end);
+        this.addItem(this.checkbox, FlexAlign.end);
+        this.setSpacing("1rem", "1rem", "1rem");
+        this.enableCheckbox(false);
     }
     build(suppressCallback = false) {
         super.build(true)
             .addClass("list-tile-widget");
         this.buildColor();
         this.buildSpacing();
+        this.buildCheckbox();
         this.buildCallback(suppressCallback);
+        return this.domObject;
+    }
+    rebuild(suppressCallback = false) {
+        super.rebuild(true);
+        this.rebuildCheckbox();
+        this.rebuildCallback(suppressCallback);
         return this.domObject;
     }
     get label() {
@@ -378,7 +389,7 @@ let ListTile = class ListTile extends FlexBox {
     }
 };
 ListTile = __decorate([
-    mixin(Item, ColorEditable, SpacingEditable, LeadingTrailingIconContaining)
+    mixin(Item, ColorEditable, SpacingEditable, LeadingTrailingIconContaining, CheckboxContaining)
 ], ListTile);
 const TextInputEvents = {
     ...WidgetEvents,

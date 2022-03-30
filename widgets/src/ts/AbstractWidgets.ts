@@ -508,17 +508,21 @@ class CheckboxContaining<EventType extends WidgetEvents | CheckboxEvents> extend
     }
 
     public buildCheckbox(): JQuery<HTMLElement> {
-        return this.checkBoxIcon.on2(IconEvents.clicked, () => this.setChecked(!this._checked))
-            .build();
+        this.domObject.addClass("checkable");
+        this.on2(WidgetEvents.clicked, () => this.setChecked(!this._checked));
+        if (!this.checkBoxIcon.built) {
+            this.checkBoxIcon.build();
+        }
+        return this.checkBoxIcon.domObject;
         // .addClass(this.checked ? "checked" : null)
         // .text(this.checked ? "check_box" : "check_box_outline_blank");
     }
 
     protected rebuildCheckbox(): this {
+        this.domObject.toggleClass("checkable", this.checkboxEnabled);
         if (this.checkboxEnabled) {
             this.checkBoxIcon.set(this._checked ? "check_box" : "check_box_outline_blank", IconType.material)
-                .domObject.addClass(this._checked ? "checked" : null)
-                .removeClass(this._checked ? null : "checked");
+                .domObject.toggleClass("checked", this._checked);
             // this.checkBoxIcon.domObject
             //     .text(this._checked ? "check_box" : "check_box_outline_blank")
             //     .addClass(this._checked ? "checked" : null);
@@ -530,7 +534,7 @@ class CheckboxContaining<EventType extends WidgetEvents | CheckboxEvents> extend
         return this._checked;
     }
 
-    setChecked(value: boolean): this {
+    public setChecked(value: boolean): this {
         let changed = this._checked !== value;
         this._checked = value;
         if (changed) {
@@ -546,12 +550,16 @@ class CheckboxContaining<EventType extends WidgetEvents | CheckboxEvents> extend
         return this.checkBoxIcon.inheritVisibility;
     }
 
-    enableCheckbox(value: boolean): this {
+    public enableCheckbox(value: boolean): this {
         this.checkBoxIcon.setInheritVisibility(value);
         if (this.built) {
             this.rebuildCheckbox();
         }
         return this;
+    }
+
+    get checkbox() {
+        return this.checkBoxIcon;
     }
 }
 

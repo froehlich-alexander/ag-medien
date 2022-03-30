@@ -105,6 +105,22 @@
   height: 100%;
   vertical-align: center;
 }
+.widget.list-tile-widget.default-item {
+  padding: 1rem;
+  margin: 0.5rem;
+  border-radius: 1rem;
+  font-size: 1rem;
+  background-color: var(--background-color-2);
+}
+.widget.list-tile-widget.default-item:hover {
+  background-color: var(--background-color-3);
+}
+.widget.list-tile-widget.default-item.checked {
+  background-color: var(--background-color-4);
+}
+.widget.list-tile-widget.default-item.checkable {
+  cursor: pointer;
+}
 .widget.overlay-widget {
   left: 0;
   right: 0;

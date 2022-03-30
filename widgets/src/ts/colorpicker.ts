@@ -1,8 +1,7 @@
-import {CheckboxContaining, CheckboxEvents, EventCallbacks, Item} from "./AbstractWidgets.js";
-import {mixin, MixinImplementing, Pair, toObject} from "./base.js";
+import {CheckboxEvents, EventCallbacks} from "./AbstractWidgets.js";
+import {Pair, toObject} from "./base.js";
 import {Dialog, DialogEvents} from "./Dialog.js";
 import {Overlay} from "./Overlay.js";
-import {SelectMenu, SelectMenuItem} from "./SelectMenu.js";
 import {Widget, WidgetEvents} from "./Widget.js";
 import {FontSize, FontWeight} from "./WidgetBase.js";
 import {
@@ -11,7 +10,7 @@ import {
     ContentBox,
     FlexAlign,
     FlexBox,
-    Icon, IconEvents,
+    Icon,
     IconType,
     ListTile,
     Text,
@@ -127,6 +126,15 @@ class ColorScheme {
             });
         }
         return new ColorScheme(colorScheme);
+    }
+
+    public copy(colorScheme?: ColorScheme): ColorScheme {
+        if (colorScheme === undefined) {
+            colorScheme = new ColorScheme({});
+        }
+        return colorScheme.setName(this.name)
+            .setAuthor(this.author)
+            .setColors(this.colors);
     }
 
     public get name(): string {
@@ -549,29 +557,27 @@ enum ColorSchemeItemEvents {
     a = "a"
 }
 
-@mixin(CheckboxContaining)
 class ColorSchemeItem extends ListTile<WidgetEvents | CheckboxEvents | ColorSchemeItemEvents> {
     private readonly _colorScheme: ColorScheme;
 
     constructor(colorScheme: ColorScheme) {
         super();
         this._colorScheme = colorScheme;
-        this.mixinConstructor(CheckboxContaining);
-        this.enableCheckbox(true);
         this.setLeadingIcon(Icon.Info());
+        this.addItem(Icon.Back(), FlexAlign.start);
         this.setLabel(colorScheme.name);
+        this.enableCheckbox(true);
     }
 
     public build(suppressCallback: boolean = false): JQuery<HTMLElement> {
-        super.build(true);
-        this.buildCheckbox();
+        super.build(true)
+            .addClass("default-item");
         this.buildCallback(suppressCallback);
         return this.domObject;
     }
 
     public rebuild(suppressCallback: boolean = false): JQuery<HTMLElement> {
         super.rebuild(true);
-        this.rebuildCheckbox();
         this.rebuildCallback(suppressCallback);
         return this.domObject;
     }
@@ -579,9 +585,6 @@ class ColorSchemeItem extends ListTile<WidgetEvents | CheckboxEvents | ColorSche
     public get colorScheme(): ColorScheme {
         return this._colorScheme;
     }
-}
-
-interface ColorSchemeItem extends MixinImplementing, CheckboxContaining<WidgetEvents | CheckboxEvents | ColorSchemeItemEvents> {
 }
 
 class ColorSchemeDialog extends Dialog<any, null> {
@@ -769,6 +772,90 @@ class ColorSchemeNewDialog extends Dialog<any, ColorScheme> {
 
     public setBaseScheme(scheme: ColorScheme): this {
         this.baseScheme = scheme;
+        return this;
+    }
+}
+
+class ColorSchemeInfoDialog extends Dialog<DialogEvents, ColorScheme> {
+    private _colorScheme: ColorScheme;
+    private readonly nameInput: TextInput;
+    private readonly authorInput: TextInput;
+    private readonly colorSchemeBackup: ColorScheme;
+    private readonly service: ColorPickerService;
+
+    constructor(service: ColorPickerService, colorScheme: ColorScheme) {
+        super();
+        this._colorScheme = colorScheme;
+        this.colorSchemeBackup = colorScheme.copy();
+        this.service = service;
+
+        //ColorScheme field inputs
+        this.nameInput = new TextInput()
+            .setId(ColorSchemeInfoDialog.name + "_name")
+            .setLabel("Name")
+            .setMinLength(3)
+            .setSpellcheck(true)
+            .setPlaceHolder(this._colorScheme.name);
+
+        this.authorInput = new TextInput()
+            .setId(ColorSchemeInfoDialog.name + "_author")
+            .setLabel("Author")
+            .setMinLength(5)
+            .setPlaceHolder(this._colorScheme.author);
+
+        this.aContent.addItems(this.nameInput, this.authorInput);
+
+        this.enableTop(true);
+        this.enableContent(true);
+        this.enableButtons(true);
+        this.aTop.setLabel(colorScheme.name)
+            .setDefaultTop(true)
+            .on2(TopEvents.iconClicked, () => this.reject());
+        this.addButton(Button.Reset()
+            .on2(WidgetEvents.clicked, () => {
+                this.colorSchemeBackup.copy(this._colorScheme);
+                if (this._colorScheme.current) {
+                    this.service.activate(this._colorScheme);
+                }
+                this.service.save(this._colorScheme);
+            }), FlexAlign.end);
+        this.addButton(Button.Activate().on2(WidgetEvents.clicked, () => {
+            this.service.activate(this._colorScheme);
+            this.service.save(this._colorScheme);
+        }), FlexAlign.end);
+    }
+
+    public build(suppressCallback: boolean = false): JQuery<HTMLElement> {
+        super.build(true);
+        this.domObject.addClass("color-scheme-info-dialog");
+
+        this.buildTop();
+        this.buildContent();
+        this.buildButtons();
+
+        this.buildCallback(suppressCallback);
+        return this.domObject;
+    }
+
+    public rebuild(suppressCallback: boolean = false): JQuery<HTMLElement> {
+        super.rebuild(true);
+
+
+        this.rebuildCallback(suppressCallback);
+        return this.domObject;
+    }
+
+    protected setValue(): ColorScheme {
+        return this._colorScheme;
+    }
+
+    public get colorScheme(): ColorScheme {
+        return this._colorScheme;
+    }
+
+    public setColorScheme(colorScheme: ColorScheme): this {
+        this._colorScheme = colorScheme;
+        colorScheme.copy(this.colorSchemeBackup);
         return this;
     }
 }

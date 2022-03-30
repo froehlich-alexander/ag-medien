@@ -359,14 +359,18 @@ class CheckboxContaining extends Mixin {
         this.addChild("checkBoxIcon");
     }
     buildCheckbox() {
-        return this.checkBoxIcon.on2(IconEvents.clicked, () => this.setChecked(!this._checked))
-            .build();
+        this.domObject.addClass("checkable");
+        this.on2(WidgetEvents.clicked, () => this.setChecked(!this._checked));
+        if (!this.checkBoxIcon.built) {
+            this.checkBoxIcon.build();
+        }
+        return this.checkBoxIcon.domObject;
     }
     rebuildCheckbox() {
+        this.domObject.toggleClass("checkable", this.checkboxEnabled);
         if (this.checkboxEnabled) {
             this.checkBoxIcon.set(this._checked ? "check_box" : "check_box_outline_blank", IconType.material)
-                .domObject.addClass(this._checked ? "checked" : null)
-                .removeClass(this._checked ? null : "checked");
+                .domObject.toggleClass("checked", this._checked);
         }
         return this;
     }
@@ -393,6 +397,9 @@ class CheckboxContaining extends Mixin {
             this.rebuildCheckbox();
         }
         return this;
+    }
+    get checkbox() {
+        return this.checkBoxIcon;
     }
 }
 export { Util, OneIconContaining, LeadingTrailingIconContaining, IconContainingEvents, EventCallbacks, ColorEditable, SpacingEditable, ItemContaining, ItemContainingEvents, Item, CheckboxContaining, CheckboxEvents };

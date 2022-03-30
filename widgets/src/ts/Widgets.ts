@@ -2,6 +2,7 @@ import {Dialog, DialogEvents} from "./Dialog.js";
 import {Widget, WidgetEvents} from "./Widget.js";
 import {mixin, MixinImplementing, Pair, Tripel} from "./base.js";
 import {
+    CheckboxContaining,
     ColorEditable,
     EventCallbacks, IconContainingEvents, ItemContaining, ItemContainingEvents,
     LeadingTrailingIconContaining,
@@ -25,8 +26,7 @@ class Item {
 }
 
 const IconEvents = {
-    ...WidgetEvents,
-    clicked: "clicked",
+    ...WidgetEvents
 };
 type IconEvents = (typeof IconEvents)[keyof typeof IconEvents];
 
@@ -133,8 +133,7 @@ interface Icon extends MixinImplementing, SpacingEditable<IconEvents> {
 }
 
 const ButtonEvents = {
-    ...WidgetEvents,
-    clicked: "clicked",
+    ...WidgetEvents
 };
 
 type ButtonEvents = (typeof IconEvents)[keyof typeof IconEvents];
@@ -149,9 +148,9 @@ class Button extends Widget<ButtonEvents> {
     public static Next = () => new Button().setLabel("Next").setIcon(Icon.of("arrow_forward", IconType.material));
     public static Agree = () => new Button().setLabel("Agree").setIcon(Icon.Done());
     public static Delete = () => new Button().setLabel("Delete").setIcon(Icon.Delete());
-    // public static Agree = () => new Button().setLabel("Agree").setIcon(Icon.of("done", IconType.material));
-    // public static Agree = () => new Button().setLabel("Agree").setIcon(Icon.of("done", IconType.material));
-    // public static Agree = () => new Button().setLabel("Agree").setIcon(Icon.of("done", IconType.material));
+    public static Save = () => new Button().setLabel("Save").setIcon(Icon.of("save", IconType.material));
+    public static Activate = () => new Button().setLabel("Activate").setIcon(Icon.of("favorite", IconType.material));
+    public static Reset = () => new Button().setLabel("Reset").setIcon(Icon.of("restart_alt", IconType.material));
     // public static Agree = () => new Button().setLabel("Agree").setIcon(Icon.of("done", IconType.material));
     // public static Agree = () => new Button().setLabel("Agree").setIcon(Icon.of("done", IconType.material));
     // public static Agree = () => new Button().setLabel("Agree").setIcon(Icon.of("done", IconType.material));
@@ -635,14 +634,14 @@ class Top extends FlexBox<TopEvents> {
 interface Top extends MixinImplementing, OneIconContaining<WidgetEvents> {
 }
 
-@mixin(Item, ColorEditable, SpacingEditable, LeadingTrailingIconContaining)
+@mixin(Item, ColorEditable, SpacingEditable, LeadingTrailingIconContaining, CheckboxContaining)
 class ListTile<EventType extends WidgetEvents> extends FlexBox<EventType> {
     private readonly _label: Text = new Text();
     private readonly _description: Text = new Text();
 
     constructor() {
         super();
-        this.mixinConstructor(SpacingEditable, LeadingTrailingIconContaining, ColorEditable);
+        this.mixinConstructor(SpacingEditable, LeadingTrailingIconContaining, ColorEditable, CheckboxContaining);
         // createMixinFields(this, new ColorEditable(), new SpacingEditable(), new LeadingTrailingIconContaining());
 
         this._label.setInheritVisibility(true);
@@ -653,6 +652,9 @@ class ListTile<EventType extends WidgetEvents> extends FlexBox<EventType> {
         this.addItem(this.getLeadingIcon(), FlexAlign.start);
         this.addItem(this._label, FlexAlign.start);
         this.addItem(this.getTrailingIcon(), FlexAlign.end);
+        this.addItem(this.checkbox, FlexAlign.end);
+        this.setSpacing("1rem", "1rem", "1rem");
+        this.enableCheckbox(false);
     }
 
     public build(suppressCallback: boolean = false): JQuery<HTMLElement> {
@@ -664,8 +666,16 @@ class ListTile<EventType extends WidgetEvents> extends FlexBox<EventType> {
 
         this.buildColor();
         this.buildSpacing();
+        this.buildCheckbox();
 
         this.buildCallback(suppressCallback);
+        return this.domObject;
+    }
+
+    public rebuild(suppressCallback: boolean = false): JQuery<HTMLElement> {
+        super.rebuild(true);
+        this.rebuildCheckbox();
+        this.rebuildCallback(suppressCallback);
         return this.domObject;
     }
 
@@ -688,7 +698,7 @@ class ListTile<EventType extends WidgetEvents> extends FlexBox<EventType> {
     }
 }
 
-interface ListTile<EventType extends WidgetEvents | IconContainingEvents> extends MixinImplementing, Item, ColorEditable<EventType>, SpacingEditable<EventType>, LeadingTrailingIconContaining<EventType> {
+interface ListTile<EventType extends WidgetEvents | IconContainingEvents> extends MixinImplementing, Item, ColorEditable<EventType>, SpacingEditable<EventType>, LeadingTrailingIconContaining<EventType>, CheckboxContaining<EventType> {
 }
 
 const TextInputEvents = {

@@ -11,7 +11,8 @@ const WidgetEvents = {
     sizeSet: "sizeSet",
     initialize: "initialize",
     rebuild: "rebuild",
-    needVisibilityUpdate: "needVisibilityUpdate"
+    needVisibilityUpdate: "needVisibilityUpdate",
+    clicked: "clicked"
 };
 
 type WidgetEvents = (typeof WidgetEvents)[keyof typeof WidgetEvents];
@@ -92,7 +93,8 @@ abstract class Widget<EventType extends WidgetEvents> extends _EventHandler impl
     public build(suppressCallback: boolean = false): JQuery<HTMLElement> {
         this._domObject = $(`<${this.htmlElementType}></${this.htmlElementType}>`)
             .addClass("widget")
-            .addClass(this._hidingIfNotShown ? "hidingIfNotShown" : null);
+            .addClass(this._hidingIfNotShown ? "hidingIfNotShown" : null)
+            .on("click", () => this.dispatchEvent(WidgetEvents.clicked));
         // this.sizeSetObserver.observe(this._domObject.get()[0], {
         //     attributeFilter: ["style", "class"],
         // });

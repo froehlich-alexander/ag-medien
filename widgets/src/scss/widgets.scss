@@ -160,6 +160,26 @@
       height: 100%;
       vertical-align: center;
     }
+
+    &.default-item {
+      padding: 1rem;
+      margin: 0.5rem;
+      border-radius: 1rem;
+      font-size: 1rem;
+      background-color: var(--background-color-2);
+
+      &:hover {
+        background-color: var(--background-color-3);
+      }
+
+      &.checked {
+        background-color: var(--background-color-4);
+      }
+
+      &.checkable {
+        cursor: pointer;
+      }
+    }
   }
 
   &.overlay-widget {

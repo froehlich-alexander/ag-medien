@@ -7,7 +7,8 @@ const WidgetEvents = {
     sizeSet: "sizeSet",
     initialize: "initialize",
     rebuild: "rebuild",
-    needVisibilityUpdate: "needVisibilityUpdate"
+    needVisibilityUpdate: "needVisibilityUpdate",
+    clicked: "clicked"
 };
 class _EventHandler {
 }
@@ -47,7 +48,8 @@ class Widget extends _EventHandler {
     build(suppressCallback = false) {
         this._domObject = $(`<${this.htmlElementType}></${this.htmlElementType}>`)
             .addClass("widget")
-            .addClass(this._hidingIfNotShown ? "hidingIfNotShown" : null);
+            .addClass(this._hidingIfNotShown ? "hidingIfNotShown" : null)
+            .on("click", () => this.dispatchEvent(WidgetEvents.clicked));
         this.buildCallback(suppressCallback);
         return this._domObject;
     }
