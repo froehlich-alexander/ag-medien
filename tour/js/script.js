@@ -1,5 +1,6 @@
 var finished_last = true;
 let idPrefix = "tour_pg_";
+let lastScroll = 0;
 
 window.onresize = function () {
     let bgImgs = $(".bg");
@@ -99,34 +100,67 @@ function createHtml(json) {
         }
 
         let imgUrl = "./img/" + page.img;
-        $("<div></div>")
-            .addClass("page")
-            .attr("id", idPrefix + page.id)
-            .addClass(page.is_panorama ? "pg_panorama" : null)
-            .append(
-                $("<div></div>")
-                    .addClass("pg_wrapper")
-                    .append($("<img>")
-                        .addClass("bg")
-                        .attr("src", imgUrl)
-                        .on("load", function () {
-                            $(this).removeClass("fill-width");
-                            $(this).removeClass("fill-height");
-                            let imgRatio = this.naturalWidth / this.naturalHeight;
-                            let screenRatio = window.innerWidth / window.innerHeight;
-                            if (imgRatio > screenRatio)
-                                $(this).addClass("fill-width");
-                            else
-                                $(this).addClass("fill-height");
-                        }).each(function () {
-                            if (this.complete) {
-                                $(this).trigger('load');
-                            }
-                        })
-                    )
-                    .append(clickables)
-            )
-            .appendTo("body");
+        let img = $("<img>")
+            .addClass("bg")
+            .attr("src", imgUrl)
+            .on("load", function () {
+                $(this).removeClass("fill-width");
+                $(this).removeClass("fill-height");
+                let imgRatio = this.naturalWidth / this.naturalHeight;
+                let screenRatio = window.innerWidth / window.innerHeight;
+                if (imgRatio > screenRatio)
+                    $(this).addClass("fill-width");
+                else
+                    $(this).addClass("fill-height");
+            }).each(function () {
+                if (this.complete) {
+                    $(this).trigger('load');
+                }
+            });
+
+        if (page.is_360 || page.is_panorama) {
+            let pageElement = $("<div></div>")
+                .addClass("page")
+                .attr("id", idPrefix + page.id)
+                .toggleClass("pg_panorama", page.is_panorama)
+                .addClass("deg360")
+                .append(
+                    $("<div></div>")
+                        .addClass("pg_wrapper")
+                        .append(img.addClass("bg0"))
+                        .append(img.clone().addClass("bg1"))
+                        .append(img.clone().addClass("bg2"))
+                        .append(clickables)
+                )
+                .appendTo("body");
+
+            pageElement
+                .on("load", function () {
+                    page.innerWidth(img.outerWidth)
+                        .scrollLeft(img.outerWidth);
+                })
+                .each(function () {
+                    if (this.complete) {
+                        $(this).trigger('load');
+                    }
+                });
+
+            pageElement.on("scroll", function (event) {
+                console.log(pageElement.scrollLeft())
+            });
+        } else {
+            $("<div></div>")
+                .addClass("page")
+                .attr("id", idPrefix + page.id)
+                .toggleClass("pg_panorama", page.is_panorama)
+                .append(
+                    $("<div></div>")
+                        .addClass("pg_wrapper")
+                        .append(img)
+                        .append(clickables)
+                )
+                .appendTo("body")
+        }
     }
     adjust_clickables();
 }
@@ -152,9 +186,9 @@ function init(pagesJsonPath) {
             });
         })
         .catch(function () {
-            console.log("Error fetching the json file");
-        }
-    );
+                console.log("Error fetching the json file");
+            }
+        );
 }
 
 init("pages.js");
