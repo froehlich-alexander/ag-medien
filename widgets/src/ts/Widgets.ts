@@ -62,7 +62,9 @@ class Icon extends Widget<IconEvents> {
             super.build(true)
                 .addClass("icon-widget")
                 .css("cursor", this._clickable ? "pointer" : null)
-                .on("click", () => this.dispatchEvent("clicked"));
+                .on("click", () => {
+                    this.dispatchEvent(WidgetEvents.clicked);
+                });
             this.buildCallback();
         }
         if (this.built) {
@@ -373,8 +375,7 @@ class FlexBox<EventType extends WidgetEvents> extends Widget<EventType> {
 
     build(suppressCallback: boolean = false): JQuery<HTMLElement> {
         super.build(true)
-            .addClass("flex-box-widget")
-            .css("column-gap", this.itemSpacing);
+            .addClass("flex-box-widget");
 
         //add spacer at the start of the item box (main axis)
         // this.domObject.append($("<div></div>")
@@ -422,10 +423,22 @@ class FlexBox<EventType extends WidgetEvents> extends Widget<EventType> {
             this.buildAlign(i);
         }
 
-        Util.addCssProperty(this.domObject, "padding-left", this.startSpacing);
-        Util.addCssProperty(this.domObject, "padding-right", this.endSpacing);
+        // Util.addCssProperty(this.domObject, "padding-left", this.startSpacing);
+        // Util.addCssProperty(this.domObject, "padding-right", this.endSpacing);
 
         this.buildCallback(suppressCallback);
+        return this.domObject;
+    }
+
+    public rebuild(suppressCallback: boolean = false): JQuery<HTMLElement> {
+        super.rebuild(true);
+        this.domObject
+            .css("column-gap", this.itemSpacing)
+            .css("padding-left", this.startSpacing)
+            .css("padding-right", this.endSpacing);
+        this.items.map(v => v.first.rebuild());
+
+        this.rebuildCallback(suppressCallback);
         return this.domObject;
     }
 
@@ -525,14 +538,21 @@ class Text extends Widget<WidgetEvents> {
         return this;
     }
 
-    build(suppressCallback: boolean = false): JQuery<HTMLElement> {
+    public build(suppressCallback: boolean = false): JQuery<HTMLElement> {
         super.build(true)
-            .addClass("text-widget")
+            .addClass("text-widget");
+        this.buildCallback(suppressCallback);
+        return this.domObject;
+    }
+
+    public rebuild(suppressCallback: boolean = false): JQuery<HTMLElement> {
+        super.rebuild(true);
+        this.domObject
             .text(this.value)
             .css("font-size", this._font.size)
             .css("font-weight", this._font.weight)
             .css("font-family", this._font.family);
-        this.buildCallback(suppressCallback);
+        this.rebuildCallback(suppressCallback);
         return this.domObject;
     }
 
@@ -571,7 +591,7 @@ interface Text extends MixinImplementing, ColorEditable<WidgetEvents>, SpacingEd
 const TopEvents = {
     ...WidgetEvents,
     ...IconContainingEvents
-}
+};
 type TopEvents = (typeof TopEvents[keyof typeof TopEvents]);
 
 @mixin(MixinImplementing, OneIconContaining)
@@ -619,7 +639,6 @@ class Top extends FlexBox<TopEvents> {
         this.label.set(value);
         return this;
     }
-
 
     public get defaultTop(): boolean {
         return this._defaultTop;
@@ -726,19 +745,11 @@ class TextInput extends Widget<TextInputEvents> {
     public build(suppressCallback: boolean = false): JQuery<HTMLElement> {
         super.build(suppressCallback)
             .addClass("text-input")
-            .append($("<input>")
+            .append($<HTMLInputElement>("<input>")
                 .addClass("field")
                 .attr("id", this._id)
-                .attr("placeholder", this._placeHolder)
-                .attr("minLength", this._minLength)
-                .attr("maxLength", this._maxLength)
-                .prop("readonly", this._readonly)
-                .prop("spellcheck", this._spellcheck)
-                .attr("size", this._size)
-                .attr("pattern", this._pattern)
             )
             .append($("<label></label>")
-                .text(this._label)
                 .addClass("label")
                 .attr("for", this._id))
             .append($("<span></span>")
@@ -753,52 +764,83 @@ class TextInput extends Widget<TextInputEvents> {
         return this.domObject;
     }
 
+    public rebuild(suppressCallback: boolean = false): JQuery<HTMLElement> {
+        super.rebuild(suppressCallback);
+        this.domObject.find("input")
+            .attr("placeholder", this._placeHolder)
+            .attr("minLength", this._minLength)
+            .attr("maxLength", this._maxLength)
+            .prop("readonly", this._readonly)
+            .prop("spellcheck", this._spellcheck)
+            .attr("size", this._size)
+            .attr("pattern", this._pattern);
+        this.domObject.find("label")
+            .text(this._label);
+        return this.domObject;
+    }
+
     get value(): string {
-        return this.domObject.find("input").get(0).value;
+        return <string>this.domObject.find("input").val();
+    }
+
+    setValue(value: string): this {
+        this.domObject.find("input").val(value);
+        return this;
     }
 
     public setLabel(_label: string): this {
         this._label = _label;
+        this.tryRebuild();
         return this;
     }
 
     public setId(id: string): this {
+        if (this.built) {
+            throw Error("You are not allowed to change the id of an input after it has been built!!!");
+        }
         this._id = id;
         return this;
     }
 
     public setPlaceHolder(placeHolder: string): this {
         this._placeHolder = placeHolder;
+        this.tryRebuild();
         return this;
     }
 
     public setMinLength(minLength: number): this {
         this._minLength = minLength;
+        this.tryRebuild();
         return this;
     }
 
     public setMaxLength(maxLength: number): this {
         this._maxLength = maxLength;
+        this.tryRebuild();
         return this;
     }
 
     public setReadonly(readonly: boolean): this {
         this._readonly = readonly;
+        this.tryRebuild();
         return this;
     }
 
     public setSpellcheck(spellcheck: boolean): this {
         this._spellcheck = spellcheck;
+        this.tryRebuild();
         return this;
     }
 
     public setSize(size: number): this {
         this._size = size;
+        this.tryRebuild();
         return this;
     }
 
     public setPattern(pattern: string): this {
         this._pattern = pattern;
+        this.tryRebuild();
         return this;
     }
 

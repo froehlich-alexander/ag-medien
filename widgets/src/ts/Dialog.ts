@@ -99,11 +99,12 @@ abstract class Dialog<EventType extends DialogEvents, ValueType> extends Widget<
         return this.opened;
     }
 
-    public open(): this {
+    public open(value?: ValueType): this {
         this.opened = true;
         this.result = null;
-        this.value = null;
+        this.value = value;
         this.setVisibility(true);
+        this.rebuild();
         return this;
     }
 

@@ -60,6 +60,12 @@ class Widget extends _EventHandler {
         this.rebuildCallback(suppressCallback);
         return this.domObject;
     }
+    tryRebuild(suppressCallback = false) {
+        if (this.built) {
+            this.rebuild(suppressCallback);
+        }
+        return this.domObject;
+    }
     destroy() {
         console.assert(this._built);
         this._built = false;

@@ -4,7 +4,7 @@ import { Dialog, DialogEvents } from "./Dialog.js";
 import { Overlay } from "./Overlay.js";
 import { WidgetEvents } from "./Widget.js";
 import { FontSize, FontWeight } from "./WidgetBase.js";
-import { Button, ButtonEvents, ContentBox, FlexAlign, FlexBox, Icon, IconType, ListTile, Text, TextInput, Top, TopEvents } from "./Widgets.js";
+import { Button, ButtonEvents, ContentBox, FlexAlign, FlexBox, Icon, IconType, ListTile, Text, TextInput, TextInputEvents, Top, TopEvents } from "./Widgets.js";
 class ColorMap extends Map {
 }
 class ColorScheme {
@@ -347,13 +347,14 @@ class ColorPicker extends Dialog {
 }
 var ColorSchemeItemEvents;
 (function (ColorSchemeItemEvents) {
-    ColorSchemeItemEvents["a"] = "a";
+    ColorSchemeItemEvents["infoCLicked"] = "infoCLicked";
 })(ColorSchemeItemEvents || (ColorSchemeItemEvents = {}));
 class ColorSchemeItem extends ListTile {
     constructor(colorScheme) {
         super();
         this._colorScheme = colorScheme;
         this.setLeadingIcon(Icon.Info());
+        this.getLeadingIcon().on2(WidgetEvents.clicked, () => console.log("icon clicked")).on2(WidgetEvents.clicked, () => this.dispatchEvent(ColorSchemeItemEvents.infoCLicked));
         this.addItem(Icon.Back(), FlexAlign.start);
         this.setLabel(colorScheme.name);
         this.enableCheckbox(true);
@@ -382,6 +383,7 @@ class ColorSchemeDialog extends Dialog {
             console.log(value);
             this.rebuild();
         }));
+        this.colorSchemeInfoDialog = new Overlay(new ColorSchemeInfoDialog(this.colorPickerService, this.colorPickerService.getCurrent()));
         this.enableTop(true);
         this.aTop.setLabel("Color Schemes");
         this.aTop.on2(TopEvents.iconClicked, () => this.reject());
@@ -399,6 +401,7 @@ class ColorSchemeDialog extends Dialog {
             this.colorSchemeNewDialog.widget.open();
         }), FlexAlign.end);
         this.addChild("colorSchemeNewDialog");
+        this.addChild("colorSchemeInfoDialog");
     }
     rebuild(suppressCallback = false) {
         super.rebuild(true);
@@ -420,9 +423,16 @@ class ColorSchemeDialog extends Dialog {
     build(suppressCallback = false) {
         super.build(true)
             .addClass("color-scheme-dialog")
-            .append(this.colorSchemeNewDialog.build());
+            .append(this.colorSchemeNewDialog.build())
+            .append(this.colorSchemeInfoDialog.build());
         this.aContent.addItems(...[...this.colorPickerService.all.values()].map(value => new ColorSchemeItem(value)
-            .setInheritVisibility(true)));
+            .setInheritVisibility(true)
+            .on2(ColorSchemeItemEvents.infoCLicked, (event) => {
+            console.log("info clicked");
+            console.log(event.target);
+            this.colorSchemeInfoDialog.widget
+                .open(event.target.colorScheme);
+        })));
         this.buildTop();
         this.buildContent();
         this.buildButtons();
@@ -525,12 +535,20 @@ class ColorSchemeInfoDialog extends Dialog {
             .setLabel("Name")
             .setMinLength(3)
             .setSpellcheck(true)
-            .setPlaceHolder(this._colorScheme.name);
+            .on2(TextInputEvents.input, (event, value) => {
+            this._colorScheme.setName(value);
+            this.nameInput.rebuild();
+            this.service.save(this._colorScheme);
+        });
         this.authorInput = new TextInput()
             .setId(ColorSchemeInfoDialog.name + "_author")
             .setLabel("Author")
             .setMinLength(5)
-            .setPlaceHolder(this._colorScheme.author);
+            .on2(TextInputEvents.input, (event, value) => {
+            this._colorScheme.setAuthor(value);
+            this.nameInput.rebuild();
+            this.service.save(this._colorScheme);
+        });
         this.aContent.addItems(this.nameInput, this.authorInput);
         this.enableTop(true);
         this.enableContent(true);
@@ -545,6 +563,7 @@ class ColorSchemeInfoDialog extends Dialog {
                 this.service.activate(this._colorScheme);
             }
             this.service.save(this._colorScheme);
+            this.rebuild();
         }), FlexAlign.end);
         this.addButton(Button.Activate().on2(WidgetEvents.clicked, () => {
             this.service.activate(this._colorScheme);
@@ -562,8 +581,23 @@ class ColorSchemeInfoDialog extends Dialog {
     }
     rebuild(suppressCallback = false) {
         super.rebuild(true);
+        this.nameInput.setPlaceHolder(this._colorScheme.name);
+        this.authorInput.setPlaceHolder(this._colorScheme.author);
+        this.aTop.rebuild();
+        this.aContent.rebuild();
+        this.buttonBox.rebuild();
+        this.nameInput.rebuild();
+        this.authorInput.rebuild();
         this.rebuildCallback(suppressCallback);
         return this.domObject;
+    }
+    open(value) {
+        super.open(value);
+        this.setColorScheme(value);
+        this.aTop.setLabel(this._colorScheme.name);
+        this.nameInput.setValue(this._colorScheme.name);
+        this.authorInput.setValue(this._colorScheme.author);
+        return this;
     }
     setValue() {
         return this._colorScheme;
@@ -574,6 +608,7 @@ class ColorSchemeInfoDialog extends Dialog {
     setColorScheme(colorScheme) {
         this._colorScheme = colorScheme;
         colorScheme.copy(this.colorSchemeBackup);
+        this.tryRebuild();
         return this;
     }
 }

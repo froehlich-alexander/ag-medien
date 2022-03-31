@@ -14,7 +14,7 @@ import {
     IconType,
     ListTile,
     Text,
-    TextInput,
+    TextInput, TextInputEvents,
     Top,
     TopEvents
 } from "./Widgets.js";
@@ -554,7 +554,7 @@ class ColorPicker extends Dialog<WidgetEvents, ColorScheme> {
 }
 
 enum ColorSchemeItemEvents {
-    a = "a"
+    infoCLicked = "infoCLicked",
 }
 
 class ColorSchemeItem extends ListTile<WidgetEvents | CheckboxEvents | ColorSchemeItemEvents> {
@@ -564,6 +564,7 @@ class ColorSchemeItem extends ListTile<WidgetEvents | CheckboxEvents | ColorSche
         super();
         this._colorScheme = colorScheme;
         this.setLeadingIcon(Icon.Info());
+        this.getLeadingIcon().on2(WidgetEvents.clicked, () => console.log("icon clicked")).on2(WidgetEvents.clicked, () => this.dispatchEvent(ColorSchemeItemEvents.infoCLicked));
         this.addItem(Icon.Back(), FlexAlign.start);
         this.setLabel(colorScheme.name);
         this.enableCheckbox(true);
@@ -589,6 +590,7 @@ class ColorSchemeItem extends ListTile<WidgetEvents | CheckboxEvents | ColorSche
 
 class ColorSchemeDialog extends Dialog<any, null> {
     private readonly colorSchemeNewDialog: Overlay<ColorSchemeNewDialog>;
+    private readonly colorSchemeInfoDialog: Overlay<ColorSchemeInfoDialog>;
     private readonly colorPickerService: ColorPickerService;
 
     constructor(colorPickerService: ColorPickerService) {
@@ -600,6 +602,7 @@ class ColorSchemeDialog extends Dialog<any, null> {
                 this.rebuild();
                 // this.aContent.addItems(value);
             }));
+        this.colorSchemeInfoDialog = new Overlay<ColorSchemeInfoDialog>(new ColorSchemeInfoDialog(this.colorPickerService, this.colorPickerService.getCurrent()));
 
         this.enableTop(true);
         this.aTop.setLabel("Color Schemes");
@@ -621,6 +624,7 @@ class ColorSchemeDialog extends Dialog<any, null> {
                 }), FlexAlign.end);
 
         this.addChild("colorSchemeNewDialog");
+        this.addChild("colorSchemeInfoDialog");
     }
 
     public rebuild(suppressCallback: boolean = false): JQuery<HTMLElement> {
@@ -654,11 +658,19 @@ class ColorSchemeDialog extends Dialog<any, null> {
     public build(suppressCallback: boolean = false): JQuery<HTMLElement> {
         super.build(true)
             .addClass("color-scheme-dialog")
-            .append(this.colorSchemeNewDialog.build());
+            .append(this.colorSchemeNewDialog.build())
+            .append(this.colorSchemeInfoDialog.build());
 
         //color schemes
         this.aContent.addItems(...[...this.colorPickerService.all.values()].map(value => new ColorSchemeItem(value)
-            .setInheritVisibility(true)));
+            .setInheritVisibility(true)
+            .on2(ColorSchemeItemEvents.infoCLicked, (event) => {
+                console.log("info clicked");
+                console.log(event.target);
+                this.colorSchemeInfoDialog.widget
+                    // .setColorScheme((<ColorSchemeItem>event.target).colorScheme)
+                    .open((<ColorSchemeItem>event.target).colorScheme);
+            })));
 
         this.buildTop();
         this.buildContent();
@@ -778,9 +790,9 @@ class ColorSchemeNewDialog extends Dialog<any, ColorScheme> {
 
 class ColorSchemeInfoDialog extends Dialog<DialogEvents, ColorScheme> {
     private _colorScheme: ColorScheme;
+    private readonly colorSchemeBackup: ColorScheme;
     private readonly nameInput: TextInput;
     private readonly authorInput: TextInput;
-    private readonly colorSchemeBackup: ColorScheme;
     private readonly service: ColorPickerService;
 
     constructor(service: ColorPickerService, colorScheme: ColorScheme) {
@@ -795,13 +807,21 @@ class ColorSchemeInfoDialog extends Dialog<DialogEvents, ColorScheme> {
             .setLabel("Name")
             .setMinLength(3)
             .setSpellcheck(true)
-            .setPlaceHolder(this._colorScheme.name);
+            .on2(TextInputEvents.input, (event, value) => {
+                this._colorScheme.setName(value);
+                this.nameInput.rebuild();
+                this.service.save(this._colorScheme);
+            });
 
         this.authorInput = new TextInput()
             .setId(ColorSchemeInfoDialog.name + "_author")
             .setLabel("Author")
             .setMinLength(5)
-            .setPlaceHolder(this._colorScheme.author);
+            .on2(TextInputEvents.input, (event, value) => {
+                this._colorScheme.setAuthor(value);
+                this.nameInput.rebuild();
+                this.service.save(this._colorScheme);
+            });
 
         this.aContent.addItems(this.nameInput, this.authorInput);
 
@@ -818,6 +838,7 @@ class ColorSchemeInfoDialog extends Dialog<DialogEvents, ColorScheme> {
                     this.service.activate(this._colorScheme);
                 }
                 this.service.save(this._colorScheme);
+                this.rebuild();
             }), FlexAlign.end);
         this.addButton(Button.Activate().on2(WidgetEvents.clicked, () => {
             this.service.activate(this._colorScheme);
@@ -840,9 +861,28 @@ class ColorSchemeInfoDialog extends Dialog<DialogEvents, ColorScheme> {
     public rebuild(suppressCallback: boolean = false): JQuery<HTMLElement> {
         super.rebuild(true);
 
+        this.nameInput.setPlaceHolder(this._colorScheme.name);
+        // this.nameInput.setLabel(this._colorScheme.name);
+        this.authorInput.setPlaceHolder(this._colorScheme.author);
+        // this.authorInput.setLabel(this._colorScheme.author);
+
+        this.aTop.rebuild();
+        this.aContent.rebuild();
+        this.buttonBox.rebuild();
+        this.nameInput.rebuild();
+        this.authorInput.rebuild();
 
         this.rebuildCallback(suppressCallback);
         return this.domObject;
+    }
+
+    public open(value?: ColorScheme): this {
+        super.open(value);
+        this.setColorScheme(value);
+        this.aTop.setLabel(this._colorScheme.name);
+        this.nameInput.setValue(this._colorScheme.name);
+        this.authorInput.setValue(this._colorScheme.author);
+        return this;
     }
 
     protected setValue(): ColorScheme {
@@ -856,6 +896,7 @@ class ColorSchemeInfoDialog extends Dialog<DialogEvents, ColorScheme> {
     public setColorScheme(colorScheme: ColorScheme): this {
         this._colorScheme = colorScheme;
         colorScheme.copy(this.colorSchemeBackup);
+        this.tryRebuild();
         return this;
     }
 }

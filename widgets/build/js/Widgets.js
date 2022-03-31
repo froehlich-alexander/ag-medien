@@ -7,7 +7,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var Icon_1;
 import { Widget, WidgetEvents } from "./Widget.js";
 import { mixin, MixinImplementing, Tripel } from "./base.js";
-import { CheckboxContaining, ColorEditable, EventCallbacks, IconContainingEvents, ItemContaining, LeadingTrailingIconContaining, OneIconContaining, SpacingEditable, Util } from "./AbstractWidgets.js";
+import { CheckboxContaining, ColorEditable, EventCallbacks, IconContainingEvents, ItemContaining, LeadingTrailingIconContaining, OneIconContaining, SpacingEditable } from "./AbstractWidgets.js";
 import { Font, FontWeight } from "./WidgetBase.js";
 class Item {
     get index() {
@@ -35,7 +35,9 @@ let Icon = Icon_1 = class Icon extends Widget {
             super.build(true)
                 .addClass("icon-widget")
                 .css("cursor", this._clickable ? "pointer" : null)
-                .on("click", () => this.dispatchEvent("clicked"));
+                .on("click", () => {
+                this.dispatchEvent(WidgetEvents.clicked);
+            });
             this.buildCallback();
         }
         if (this.built) {
@@ -183,14 +185,21 @@ class FlexBox extends Widget {
     }
     build(suppressCallback = false) {
         super.build(true)
-            .addClass("flex-box-widget")
-            .css("column-gap", this.itemSpacing);
+            .addClass("flex-box-widget");
         for (let i of Object.values(FlexAlign)) {
             this.buildAlign(i);
         }
-        Util.addCssProperty(this.domObject, "padding-left", this.startSpacing);
-        Util.addCssProperty(this.domObject, "padding-right", this.endSpacing);
         this.buildCallback(suppressCallback);
+        return this.domObject;
+    }
+    rebuild(suppressCallback = false) {
+        super.rebuild(true);
+        this.domObject
+            .css("column-gap", this.itemSpacing)
+            .css("padding-left", this.startSpacing)
+            .css("padding-right", this.endSpacing);
+        this.items.map(v => v.first.rebuild());
+        this.rebuildCallback(suppressCallback);
         return this.domObject;
     }
     addItem(item, mainAlign = FlexAlign.center, crossAlign = FlexAlign.center) {
@@ -262,12 +271,18 @@ let Text = class Text extends Widget {
     }
     build(suppressCallback = false) {
         super.build(true)
-            .addClass("text-widget")
+            .addClass("text-widget");
+        this.buildCallback(suppressCallback);
+        return this.domObject;
+    }
+    rebuild(suppressCallback = false) {
+        super.rebuild(true);
+        this.domObject
             .text(this.value)
             .css("font-size", this._font.size)
             .css("font-weight", this._font.weight)
             .css("font-family", this._font.family);
-        this.buildCallback(suppressCallback);
+        this.rebuildCallback(suppressCallback);
         return this.domObject;
     }
     get() {
@@ -405,16 +420,8 @@ class TextInput extends Widget {
             .addClass("text-input")
             .append($("<input>")
             .addClass("field")
-            .attr("id", this._id)
-            .attr("placeholder", this._placeHolder)
-            .attr("minLength", this._minLength)
-            .attr("maxLength", this._maxLength)
-            .prop("readonly", this._readonly)
-            .prop("spellcheck", this._spellcheck)
-            .attr("size", this._size)
-            .attr("pattern", this._pattern))
+            .attr("id", this._id))
             .append($("<label></label>")
-            .text(this._label)
             .addClass("label")
             .attr("for", this._id))
             .append($("<span></span>")
@@ -428,43 +435,72 @@ class TextInput extends Widget {
         this.buildCallback(suppressCallback);
         return this.domObject;
     }
+    rebuild(suppressCallback = false) {
+        super.rebuild(suppressCallback);
+        this.domObject.find("input")
+            .attr("placeholder", this._placeHolder)
+            .attr("minLength", this._minLength)
+            .attr("maxLength", this._maxLength)
+            .prop("readonly", this._readonly)
+            .prop("spellcheck", this._spellcheck)
+            .attr("size", this._size)
+            .attr("pattern", this._pattern);
+        this.domObject.find("label")
+            .text(this._label);
+        return this.domObject;
+    }
     get value() {
-        return this.domObject.find("input").get(0).value;
+        return this.domObject.find("input").val();
+    }
+    setValue(value) {
+        this.domObject.find("input").val(value);
+        return this;
     }
     setLabel(_label) {
         this._label = _label;
+        this.tryRebuild();
         return this;
     }
     setId(id) {
+        if (this.built) {
+            throw Error("You are not allowed to change the id of an input after it has been built!!!");
+        }
         this._id = id;
         return this;
     }
     setPlaceHolder(placeHolder) {
         this._placeHolder = placeHolder;
+        this.tryRebuild();
         return this;
     }
     setMinLength(minLength) {
         this._minLength = minLength;
+        this.tryRebuild();
         return this;
     }
     setMaxLength(maxLength) {
         this._maxLength = maxLength;
+        this.tryRebuild();
         return this;
     }
     setReadonly(readonly) {
         this._readonly = readonly;
+        this.tryRebuild();
         return this;
     }
     setSpellcheck(spellcheck) {
         this._spellcheck = spellcheck;
+        this.tryRebuild();
         return this;
     }
     setSize(size) {
         this._size = size;
+        this.tryRebuild();
         return this;
     }
     setPattern(pattern) {
         this._pattern = pattern;
+        this.tryRebuild();
         return this;
     }
     get id() {

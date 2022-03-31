@@ -68,11 +68,12 @@ class Dialog extends Widget {
     isOpened() {
         return this.opened;
     }
-    open() {
+    open(value) {
         this.opened = true;
         this.result = null;
-        this.value = null;
+        this.value = value;
         this.setVisibility(true);
+        this.rebuild();
         return this;
     }
     accept() {

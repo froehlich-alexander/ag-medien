@@ -111,6 +111,13 @@ abstract class Widget<EventType extends WidgetEvents> extends _EventHandler impl
         return this.domObject;
     }
 
+    public tryRebuild(suppressCallback: boolean = false): JQuery<HTMLElement> {
+        if (this.built) {
+            this.rebuild(suppressCallback);
+        }
+        return this.domObject;
+    }
+
     public destroy(): this {
         console.assert(this._built);
         this._built = false;
