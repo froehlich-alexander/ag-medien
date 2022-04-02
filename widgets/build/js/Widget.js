@@ -40,7 +40,6 @@ class Widget extends _EventHandler {
             }
         });
         this.on(undefined, new Pair(WidgetEvents.sizeSet, () => {
-            console.log("size set ");
             this.dispatchEvent(WidgetEvents.needVisibilityUpdate);
             this.buildVisibility();
         }));
@@ -94,9 +93,6 @@ class Widget extends _EventHandler {
     }
     on(events, event) {
         if (this._built) {
-            console.log("on called after element is built");
-            console.log(events);
-            console.log(this);
         }
         if (event != null) {
             this.callbacks.push(event);
@@ -109,19 +105,12 @@ class Widget extends _EventHandler {
         return this;
     }
     on2(events, handler) {
-        console.log("on2");
         if (this._built) {
-            console.log("on called after element is built");
-            console.log(events);
-            console.log(this);
         }
         if (handler !== undefined) {
             this.callbacks.push(new Pair(events, handler));
-            console.log("handler!== undefined");
-            console.log(new Pair(events, handler));
         }
         else if (events != null) {
-            console.log("else");
             for (let i in events) {
                 this.callbacks.push(new Pair(i, events[i]));
                 console.log(new Pair(i, events[i]));
@@ -149,7 +138,6 @@ class Widget extends _EventHandler {
         this.children.set(childName, child);
         child.on(undefined, new Pair(WidgetEvents.needVisibilityUpdate, (event) => {
             if (event.target.inheritVisibility) {
-                console.log("set vis");
                 event.target.setVisibility(this.visibility);
             }
         }));

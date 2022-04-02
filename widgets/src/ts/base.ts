@@ -28,13 +28,17 @@ class Tripel<T, T1, T2> {
  * Classes which inherit {@link Mixin} are kind of abstract so <b> don't use them as normal classes</b> That's not what they are intended to
  */
 abstract class Mixin {
+    public static __mixinDependencies: typeof Mixin[] = [];
 }
 
 /**
  * This class should be implemented by all classes which uses mixins
  */
-abstract class MixinImplementing {
+abstract class MixinImplementing extends Mixin {
+    // protected abstract __mixin_dependencies(): typeof Mixin[];
+
     protected mixinConstructor(...mixins: typeof Mixin[]) {
+        mixins = (<typeof Mixin><unknown>this.constructor).__mixinDependencies;
         let mixinObjs = [];
         for (let type of mixins) {
             // @ts-ignore
@@ -108,6 +112,20 @@ function applyMixins(derivedCtor: any, constructors: any[]) {
 }
 
 /**
+ * Order mixins so that lower dependencies (super classes) are applied first so that overriding works
+ * @param {typeof Mixin} mixins
+ * @return {typeof Mixin[]}
+ */
+function orderMixins(mixins: typeof Mixin[] = []): typeof Mixin[] {
+    let orderedMixins: typeof Mixin[] = [MixinImplementing];
+    for (let mixin of mixins.filter(value => value !== MixinImplementing)) {
+        orderedMixins.push(...orderMixins(mixin.__mixinDependencies));
+        orderedMixins.push(mixin);
+    }
+    return orderedMixins.filter((value, index) => orderedMixins.indexOf(value) === index);
+}
+
+/**
  * Use this annotation on every class which implements mixins<br>
  * You still have to use the {@link mixinConstructor} method inside your constructor<br>
  * Example:<br>
@@ -123,8 +141,22 @@ function applyMixins(derivedCtor: any, constructors: any[]) {
  */
 function mixin(...mixins: typeof Mixin[]): Function {
     // applyMixins(constructor, mixins);
+    mixins = orderMixins(mixins);
+    console.log(mixins);
     return function (constructor: Function) {
-        applyMixins(constructor, [MixinImplementing, ...mixins]);
+        if (!(constructor instanceof Mixin)) {
+            applyMixins(constructor, [...mixins]);
+        }
+        Object.defineProperty(
+            constructor,
+            "__mixinDependencies",
+            {
+                configurable: false,
+                enumerable: false,
+                writable: false,
+                value: mixins
+            }
+        );
     };
 }
 

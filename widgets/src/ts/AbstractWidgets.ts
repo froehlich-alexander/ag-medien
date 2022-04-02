@@ -1,7 +1,7 @@
-import {Mixin, Pair} from "./base.js";
+import {mixin, Mixin, Pair} from "./base.js";
 import {EventHandler, Widget, WidgetEvents} from "./Widget.js";
 import {CSSColorValue} from "./WidgetBase.js";
-import {Icon, IconEvents, IconType, ListTile} from "./Widgets.js";
+import {Icon, IconEvents, IconType, ListTile, TextInputEvents} from "./Widgets.js";
 
 class Util {
     static setHeight(element: JQuery<HTMLElement>): void {
@@ -566,6 +566,148 @@ class CheckboxContaining<EventType extends WidgetEvents | CheckboxEvents> extend
 interface CheckboxContaining<EventType extends WidgetEvents | CheckboxEvents> extends Widget<EventType> {
 }
 
+class IdContaining extends Mixin {
+    protected _id: string;
+
+    public setId(id: string): this {
+        this._id = id;
+        return this;
+    }
+
+    public get id(): string {
+        return this._id;
+    }
+}
+
+enum InputEvents {
+    change = "change",
+    input = "input",
+}
+
+@mixin(IdContaining)
+class Input<ValueType extends string | number, EventType extends WidgetEvents | InputEvents> extends Mixin {
+    private _disabled: boolean;
+    private _name: string;
+    private _readonly: boolean;
+    private _required: boolean;
+    private _type: string;
+
+    protected rebuildInput(inputElement: JQuery<HTMLInputElement> = this.domObject.find("input")): JQuery<HTMLInputElement> {
+        inputElement.attr("id", this._id)
+            .prop("disabled", this._disabled)
+            .attr("name", this._name)
+            .prop("readonly", this._readonly)
+            .prop("required", this._required)
+            .attr("type", this._type);
+        return inputElement;
+    }
+
+    protected buildInput(): JQuery<HTMLInputElement> {
+        return <JQuery<HTMLInputElement>>$("<input>")
+            .on("change", (event) => {
+                this.dispatchEvent(TextInputEvents.change, [(<HTMLInputElement>event.target).value]);
+            })
+            .on("input", (event) => {
+                this.dispatchEvent(TextInputEvents.input, [(<HTMLInputElement>event.target).value]);
+            });
+    }
+
+    public get value(): ValueType {
+        return <ValueType>this.domObject.find("input").val();
+    }
+
+    public setValue(value: ValueType): this {
+        this.domObject.find("input").val(value);
+        return this;
+    }
+
+    public setId(id: string): this {
+        this._id = id;
+        console.log("input id");
+        return this;
+    }
+
+    public setDisabled(disabled: boolean): this {
+        this._disabled = disabled;
+        return this;
+    }
+
+    public setName(name: string): this {
+        this._name = name;
+        return this;
+    }
+
+    public setReadonly(readonly: boolean): this {
+        this._readonly = readonly;
+        return this;
+    }
+
+    public setRequired(required: boolean): this {
+        this._required = required;
+        return this;
+    }
+
+    public setType(type: string): this {
+        this._type = type;
+        return this;
+    }
+
+    public get id(): string {
+        return this._id;
+    }
+
+    public get disabled(): boolean {
+        return this._disabled;
+    }
+
+    public get name(): string {
+        return this._name;
+    }
+
+    public get readonly(): boolean {
+        return this._readonly;
+    }
+
+    public get required(): boolean {
+        return this._required;
+    }
+
+    public get type(): string {
+        return this._type;
+    }
+}
+
+interface Input<ValueType extends string | number, EventType extends WidgetEvents | InputEvents> extends IdContaining, Widget<EventType> {
+}
+
+@mixin(IdContaining)
+class InputLabel<EventType extends WidgetEvents> extends Mixin {
+    private _label: string;
+
+    protected buildLabel(): JQuery<HTMLLabelElement> {
+        return $("<label></label>");
+    }
+
+    protected rebuildLabel(labelElement: JQuery<HTMLLabelElement> = this.domObject.find("label")): JQuery<HTMLLabelElement> {
+        return labelElement
+            .text(this._label)
+            .attr("for", this._id);
+    }
+
+    public setLabel(label: string): this {
+        this._label = label;
+        return this;
+    }
+
+    public get label(): string {
+        return this._label;
+    }
+}
+
+interface InputLabel<EventType extends WidgetEvents> extends IdContaining, Widget<EventType> {
+}
+
+
 export {
     Util,
     OneIconContaining,
@@ -578,5 +720,8 @@ export {
     ItemContainingEvents,
     Item,
     CheckboxContaining,
-    CheckboxEvents
+    CheckboxEvents,
+    Input,
+    InputEvents,
+    InputLabel
 };

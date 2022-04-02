@@ -6,10 +6,10 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 };
 var Icon_1;
 import { Widget, WidgetEvents } from "./Widget.js";
-import { mixin, MixinImplementing, Tripel } from "./base.js";
-import { CheckboxContaining, ColorEditable, EventCallbacks, IconContainingEvents, ItemContaining, LeadingTrailingIconContaining, OneIconContaining, SpacingEditable } from "./AbstractWidgets.js";
+import { Mixin, mixin, MixinImplementing, Tripel } from "./base.js";
+import { CheckboxContaining, ColorEditable, EventCallbacks, IconContainingEvents, Input, InputEvents, InputLabel, ItemContaining, LeadingTrailingIconContaining, OneIconContaining, SpacingEditable } from "./AbstractWidgets.js";
 import { Font, FontWeight } from "./WidgetBase.js";
-class Item {
+class Item extends Mixin {
     get index() {
         return this._index;
     }
@@ -309,7 +309,7 @@ let Text = class Text extends Widget {
     }
 };
 Text = __decorate([
-    mixin(MixinImplementing, ColorEditable, SpacingEditable)
+    mixin(ColorEditable, SpacingEditable)
 ], Text);
 const TopEvents = {
     ...WidgetEvents,
@@ -356,7 +356,7 @@ let Top = class Top extends FlexBox {
     }
 };
 Top = __decorate([
-    mixin(MixinImplementing, OneIconContaining)
+    mixin(OneIconContaining)
 ], Top);
 let ListTile = class ListTile extends FlexBox {
     constructor() {
@@ -408,65 +408,36 @@ ListTile = __decorate([
 ], ListTile);
 const TextInputEvents = {
     ...WidgetEvents,
-    change: "change",
-    input: "input",
+    ...InputEvents
 };
-class TextInput extends Widget {
+let TextInput = class TextInput extends Widget {
     constructor() {
         super();
+        this.mixinConstructor(Input, InputLabel);
     }
     build(suppressCallback = false) {
         super.build(suppressCallback)
             .addClass("text-input")
-            .append($("<input>")
-            .addClass("field")
-            .attr("id", this._id))
-            .append($("<label></label>")
-            .addClass("label")
-            .attr("for", this._id))
+            .append(this.buildInput()
+            .addClass("field"))
+            .append(this.buildLabel()
+            .addClass("label"))
             .append($("<span></span>")
-            .addClass("underline"))
-            .on("change", (event) => {
-            this.dispatchEvent(TextInputEvents.change, [event.target.value]);
-        })
-            .on("input", (event) => {
-            this.dispatchEvent(TextInputEvents.input, [event.target.value]);
-        });
+            .addClass("underline"));
         this.buildCallback(suppressCallback);
         return this.domObject;
     }
     rebuild(suppressCallback = false) {
         super.rebuild(suppressCallback);
-        this.domObject.find("input")
+        this.rebuildInput()
             .attr("placeholder", this._placeHolder)
             .attr("minLength", this._minLength)
             .attr("maxLength", this._maxLength)
-            .prop("readonly", this._readonly)
             .prop("spellcheck", this._spellcheck)
             .attr("size", this._size)
             .attr("pattern", this._pattern);
-        this.domObject.find("label")
-            .text(this._label);
+        this.rebuildLabel();
         return this.domObject;
-    }
-    get value() {
-        return this.domObject.find("input").val();
-    }
-    setValue(value) {
-        this.domObject.find("input").val(value);
-        return this;
-    }
-    setLabel(_label) {
-        this._label = _label;
-        this.tryRebuild();
-        return this;
-    }
-    setId(id) {
-        if (this.built) {
-            throw Error("You are not allowed to change the id of an input after it has been built!!!");
-        }
-        this._id = id;
-        return this;
     }
     setPlaceHolder(placeHolder) {
         this._placeHolder = placeHolder;
@@ -480,11 +451,6 @@ class TextInput extends Widget {
     }
     setMaxLength(maxLength) {
         this._maxLength = maxLength;
-        this.tryRebuild();
-        return this;
-    }
-    setReadonly(readonly) {
-        this._readonly = readonly;
         this.tryRebuild();
         return this;
     }
@@ -503,12 +469,6 @@ class TextInput extends Widget {
         this.tryRebuild();
         return this;
     }
-    get id() {
-        return this._id;
-    }
-    get label() {
-        return this._label;
-    }
     get placeHolder() {
         return this._placeHolder;
     }
@@ -517,9 +477,6 @@ class TextInput extends Widget {
     }
     get maxLength() {
         return this._maxLength;
-    }
-    get readonly() {
-        return this._readonly;
     }
     get spellcheck() {
         return this._spellcheck;
@@ -530,7 +487,77 @@ class TextInput extends Widget {
     get pattern() {
         return this._pattern;
     }
+};
+TextInput = __decorate([
+    mixin(Input, InputLabel)
+], TextInput);
+let SelectBoxItemValue = class SelectBoxItemValue extends Widget {
+    constructor() {
+        super();
+        this.setType("radio");
+    }
+    build(suppressCallback = false) {
+        super.build(true)
+            .append(this.buildInput())
+            .append($("<p></p>")
+            .text(this._label)
+            .addClass("input-text"));
+        this.buildCallback(suppressCallback);
+        return this.domObject;
+    }
+    rebuild(suppressCallback = false) {
+        super.rebuild(true);
+        this.rebuildInput();
+        this.rebuildCallback(suppressCallback);
+        return this.domObject;
+    }
+    setLabel(label) {
+        this._label = label;
+        return this;
+    }
+    get label() {
+        return this._label;
+    }
+};
+SelectBoxItemValue = __decorate([
+    mixin(Input)
+], SelectBoxItemValue);
+let SelectBoxListItem = class SelectBoxListItem extends Widget {
+    constructor() {
+        super("li");
+    }
+    build(suppressCallback = false) {
+        super.build(true)
+            .append(this.buildLabel()
+            .addClass("option")
+            .attr("aria-hidden", "aria-hidden"));
+        this.buildCallback(suppressCallback);
+        return this.domObject;
+    }
+    rebuild(suppressCallback = false) {
+        super.rebuild(true);
+        this.rebuildLabel();
+        this.rebuildCallback(suppressCallback);
+        return this.domObject;
+    }
+};
+SelectBoxListItem = __decorate([
+    mixin(InputLabel)
+], SelectBoxListItem);
+class SelectBoxItem {
+    constructor() {
+    }
 }
+const ComboBoxEvents = {
+    ...WidgetEvents,
+    change: "change",
+    input: "input",
+};
+let ComboBoxInput = class ComboBoxInput extends Widget {
+};
+ComboBoxInput = __decorate([
+    mixin()
+], ComboBoxInput);
 let Box = class Box extends Widget {
     constructor(htmlElementType) {
         super(htmlElementType);

@@ -81,7 +81,6 @@ abstract class Widget<EventType extends WidgetEvents> extends _EventHandler impl
             }
         });
         this.on(undefined, new Pair(WidgetEvents.sizeSet, () => {
-            console.log("size set ");
             this.dispatchEvent(WidgetEvents.needVisibilityUpdate);
             this.buildVisibility();
         }));
@@ -149,9 +148,9 @@ abstract class Widget<EventType extends WidgetEvents> extends _EventHandler impl
 
     public on(events?: EventCallback<EventType, Widget<EventType>>, event?: Pair<string, EventHandler<string, Widget<EventType>>>): this {
         if (this._built) {
-            console.log("on called after element is built");
-            console.log(events);
-            console.log(this);
+            // console.log("on called after element is built");
+            // console.log(events);
+            // console.log(this);
             // this.domObject.on(events);
         }
         if (event != null) {
@@ -167,20 +166,16 @@ abstract class Widget<EventType extends WidgetEvents> extends _EventHandler impl
     }
 
     public on2(events?: EventCallback<EventType, Widget<EventType>> | string, handler?: EventHandler<string, Widget<EventType>>): this {
-        console.log("on2");
         if (this._built) {
-            console.log("on called after element is built");
-            console.log(events);
-            console.log(this);
+            // console.log("on called after element is built");
+            // console.log(events);
+            // console.log(this);
             // this.domObject.on(events);
         }
         if (handler !== undefined) {
             // @ts-ignore
             this.callbacks.push(new Pair(events, handler));
-            console.log("handler!== undefined");
-            console.log(new Pair(events, handler));
         } else if (events != null) {
-            console.log("else");
             // @ts-ignore
             for (let i in events) {
                 // @ts-ignore
@@ -220,7 +215,6 @@ abstract class Widget<EventType extends WidgetEvents> extends _EventHandler impl
         this.children.set(childName, child);
         child.on(undefined, new Pair(WidgetEvents.needVisibilityUpdate, (event) => {
             if (event.target.inheritVisibility) {
-                console.log("set vis");
                 event.target.setVisibility(this.visibility);
             }
         }));

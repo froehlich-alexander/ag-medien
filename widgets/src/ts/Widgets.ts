@@ -1,10 +1,10 @@
 import {Dialog, DialogEvents} from "./Dialog.js";
 import {Widget, WidgetEvents} from "./Widget.js";
-import {mixin, MixinImplementing, Pair, Tripel} from "./base.js";
+import {Mixin, mixin, MixinImplementing, Pair, Tripel} from "./base.js";
 import {
     CheckboxContaining,
     ColorEditable,
-    EventCallbacks, IconContainingEvents, ItemContaining, ItemContainingEvents,
+    EventCallbacks, IconContainingEvents, Input, InputEvents, InputLabel, ItemContaining, ItemContainingEvents,
     LeadingTrailingIconContaining,
     OneIconContaining,
     SpacingEditable,
@@ -13,7 +13,7 @@ import {
 import {Font, FontFamily, FontSize, FontWeight} from "./WidgetBase.js";
 import ChangeEvent = JQuery.ChangeEvent;
 
-class Item {
+class Item extends Mixin {
     private _index: number;
 
     public get index(): number {
@@ -521,7 +521,7 @@ class ButtonBox extends FlexBox<WidgetEvents> {
     }
 }
 
-@mixin(MixinImplementing, ColorEditable, SpacingEditable)
+@mixin( ColorEditable, SpacingEditable)
 class Text extends Widget<WidgetEvents> {
     private value: string;
     private _font: Font;
@@ -594,7 +594,7 @@ const TopEvents = {
 };
 type TopEvents = (typeof TopEvents[keyof typeof TopEvents]);
 
-@mixin(MixinImplementing, OneIconContaining)
+@mixin( OneIconContaining)
 class Top extends FlexBox<TopEvents> {
     private readonly label: Text;
     private _defaultTop = true;
@@ -722,85 +722,113 @@ interface ListTile<EventType extends WidgetEvents | IconContainingEvents> extend
 
 const TextInputEvents = {
     ...WidgetEvents,
-    change: "change",
-    input: "input",
+    ...InputEvents
 };
 type TextInputEvents = (typeof TextInputEvents[keyof typeof TextInputEvents]);
 
+@mixin(Input, InputLabel)
 class TextInput extends Widget<TextInputEvents> {
-    private _id: string;
-    private _label: string;
+    // private _id: string;
+    // private _label: string;
     private _placeHolder: string;
     private _minLength: number;
     private _maxLength: number;
-    private _readonly: boolean;
+    // private _readonly: boolean;
     private _spellcheck: boolean;
     private _size: number;
     private _pattern: string;
 
     constructor() {
         super();
+        this.mixinConstructor(Input, InputLabel);
     }
+
+    // public build(suppressCallback: boolean = false): JQuery<HTMLElement> {
+    //     super.build(suppressCallback)
+    //         .addClass("text-input")
+    //         .append($<HTMLInputElement>("<input>")
+    //             .addClass("field")
+    //             .attr("id", this._id)
+    //         )
+    //         .append($("<label></label>")
+    //             .addClass("label")
+    //             .attr("for", this._id))
+    //         .append($("<span></span>")
+    //             .addClass("underline"))
+    //         .on("change", (event) => {
+    //             this.dispatchEvent(TextInputEvents.change, [(<HTMLInputElement>event.target).value]);
+    //         })
+    //         .on("input", (event) => {
+    //             this.dispatchEvent(TextInputEvents.input, [(<HTMLInputElement>event.target).value]);
+    //         });
+    //     this.buildCallback(suppressCallback);
+    //     return this.domObject;
+    // }
 
     public build(suppressCallback: boolean = false): JQuery<HTMLElement> {
         super.build(suppressCallback)
             .addClass("text-input")
-            .append($<HTMLInputElement>("<input>")
-                .addClass("field")
-                .attr("id", this._id)
-            )
-            .append($("<label></label>")
-                .addClass("label")
-                .attr("for", this._id))
+            .append(this.buildInput()
+                .addClass("field"))
+            .append(this.buildLabel()
+                .addClass("label"))
             .append($("<span></span>")
-                .addClass("underline"))
-            .on("change", (event) => {
-                this.dispatchEvent(TextInputEvents.change, [(<HTMLInputElement>event.target).value]);
-            })
-            .on("input", (event) => {
-                this.dispatchEvent(TextInputEvents.input, [(<HTMLInputElement>event.target).value]);
-            });
+                .addClass("underline"));
+            // .on("change", (event) => {
+            //     this.dispatchEvent(TextInputEvents.change, [(<HTMLInputElement>event.target).value]);
+            // })
+            // .on("input", (event) => {
+            //     this.dispatchEvent(TextInputEvents.input, [(<HTMLInputElement>event.target).value]);
+            // });
         this.buildCallback(suppressCallback);
         return this.domObject;
     }
 
     public rebuild(suppressCallback: boolean = false): JQuery<HTMLElement> {
         super.rebuild(suppressCallback);
-        this.domObject.find("input")
+        this.rebuildInput()
             .attr("placeholder", this._placeHolder)
             .attr("minLength", this._minLength)
             .attr("maxLength", this._maxLength)
-            .prop("readonly", this._readonly)
             .prop("spellcheck", this._spellcheck)
             .attr("size", this._size)
             .attr("pattern", this._pattern);
-        this.domObject.find("label")
-            .text(this._label);
+        // this.domObject.find("input")
+        //     .attr("placeholder", this._placeHolder)
+        //     .attr("minLength", this._minLength)
+        //     .attr("maxLength", this._maxLength)
+        //     .prop("readonly", this._readonly)
+        //     .prop("spellcheck", this._spellcheck)
+        //     .attr("size", this._size)
+        //     .attr("pattern", this._pattern);
+        // this.domObject.find("label")
+        //     .text(this._label);
+        this.rebuildLabel();
         return this.domObject;
     }
 
-    get value(): string {
-        return <string>this.domObject.find("input").val();
-    }
+    // get value(): string {
+    //     return <string>this.domObject.find("input").val();
+    // }
+    //
+    // setValue(value: string): this {
+    //     this.domObject.find("input").val(value);
+    //     return this;
+    // }
 
-    setValue(value: string): this {
-        this.domObject.find("input").val(value);
-        return this;
-    }
-
-    public setLabel(_label: string): this {
-        this._label = _label;
-        this.tryRebuild();
-        return this;
-    }
-
-    public setId(id: string): this {
-        if (this.built) {
-            throw Error("You are not allowed to change the id of an input after it has been built!!!");
-        }
-        this._id = id;
-        return this;
-    }
+    // public setLabel(_label: string): this {
+    //     this._label = _label;
+    //     this.tryRebuild();
+    //     return this;
+    // }
+    //
+    // public setId(id: string): this {
+    //     if (this.built) {
+    //         throw Error("You are not allowed to change the id of an input after it has been built!!!");
+    //     }
+    //     this._id = id;
+    //     return this;
+    // }
 
     public setPlaceHolder(placeHolder: string): this {
         this._placeHolder = placeHolder;
@@ -820,11 +848,11 @@ class TextInput extends Widget<TextInputEvents> {
         return this;
     }
 
-    public setReadonly(readonly: boolean): this {
-        this._readonly = readonly;
-        this.tryRebuild();
-        return this;
-    }
+    // public setReadonly(readonly: boolean): this {
+    //     this._readonly = readonly;
+    //     this.tryRebuild();
+    //     return this;
+    // }
 
     public setSpellcheck(spellcheck: boolean): this {
         this._spellcheck = spellcheck;
@@ -843,14 +871,14 @@ class TextInput extends Widget<TextInputEvents> {
         this.tryRebuild();
         return this;
     }
-
-    public get id() {
-        return this._id;
-    }
-
-    public get label(): string {
-        return this._label;
-    }
+    //
+    // public get id() {
+    //     return this._id;
+    // }
+    //
+    // public get label(): string {
+    //     return this._label;
+    // }
 
     public get placeHolder(): string {
         return this._placeHolder;
@@ -864,9 +892,9 @@ class TextInput extends Widget<TextInputEvents> {
         return this._maxLength;
     }
 
-    public get readonly(): boolean {
-        return this._readonly;
-    }
+    // public get readonly(): boolean {
+    //     return this._readonly;
+    // }
 
     public get spellcheck(): boolean {
         return this._spellcheck;
@@ -879,6 +907,92 @@ class TextInput extends Widget<TextInputEvents> {
     public get pattern(): string {
         return this._pattern;
     }
+}
+
+interface TextInput extends MixinImplementing, Input<string, WidgetEvents | InputEvents>, InputLabel<WidgetEvents> {}
+
+@mixin(Input)
+class SelectBoxItemValue extends Widget<WidgetEvents | InputEvents> {
+    private _label: string;
+
+    constructor() {
+        super();
+        this.setType("radio");
+    }
+
+    public build(suppressCallback: boolean = false): JQuery<HTMLElement> {
+        super.build(true)
+            .append(this.buildInput())
+            .append($("<p></p>")
+                .text(this._label)
+                .addClass("input-text"));
+        this.buildCallback(suppressCallback);
+        return this.domObject;
+    }
+
+    public rebuild(suppressCallback: boolean = false): JQuery<HTMLElement> {
+        super.rebuild(true);
+        this.rebuildInput();
+        this.rebuildCallback(suppressCallback);
+        return this.domObject;
+    }
+
+    public setLabel(label: string): this {
+        this._label = label;
+        return this;
+    }
+
+    public get label(): string {
+        return this._label;
+    }
+}
+interface SelectBoxItemValue extends MixinImplementing, Input<string, WidgetEvents | InputEvents>{}
+
+@mixin(InputLabel)
+class SelectBoxListItem extends Widget<WidgetEvents> {
+
+    constructor() {
+        super("li");
+    }
+
+    public build(suppressCallback: boolean = false): JQuery<HTMLElement> {
+        super.build(true)
+            .append(this.buildLabel()
+                .addClass("option")
+                .attr("aria-hidden", "aria-hidden"));
+        this.buildCallback(suppressCallback);
+        return this.domObject;
+    }
+
+    public rebuild(suppressCallback: boolean = false): JQuery<HTMLElement> {
+        super.rebuild(true);
+        this.rebuildLabel();
+        this.rebuildCallback(suppressCallback);
+        return this.domObject;
+    }
+}
+
+interface SelectBoxListItem extends MixinImplementing, InputLabel<WidgetEvents>{}
+
+class SelectBoxItem {
+    private value: SelectBoxItemValue;
+    private listItem: SelectBoxListItem;
+
+    constructor() {
+
+    }
+}
+
+const ComboBoxEvents = {
+    ...WidgetEvents,
+    change: "change",
+    input: "input",
+};
+type ComboBoxEvents = (typeof ComboBoxEvents[keyof typeof ComboBoxEvents]);
+
+@mixin()
+class ComboBoxInput extends Widget<ComboBoxEvents> {
+
 }
 
 @mixin(ItemContaining, SpacingEditable)

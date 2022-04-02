@@ -1,7 +1,13 @@
-import { Mixin, Pair } from "./base.js";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+import { mixin, Mixin, Pair } from "./base.js";
 import { WidgetEvents } from "./Widget.js";
 import { CSSColorValue } from "./WidgetBase.js";
-import { Icon, IconEvents, IconType } from "./Widgets.js";
+import { Icon, IconEvents, IconType, TextInputEvents } from "./Widgets.js";
 class Util {
     static setHeight(element) {
         element.outerHeight(element.outerHeight(false), false);
@@ -402,4 +408,111 @@ class CheckboxContaining extends Mixin {
         return this.checkBoxIcon;
     }
 }
-export { Util, OneIconContaining, LeadingTrailingIconContaining, IconContainingEvents, EventCallbacks, ColorEditable, SpacingEditable, ItemContaining, ItemContainingEvents, Item, CheckboxContaining, CheckboxEvents };
+class IdContaining extends Mixin {
+    setId(id) {
+        this._id = id;
+        return this;
+    }
+    get id() {
+        return this._id;
+    }
+}
+var InputEvents;
+(function (InputEvents) {
+    InputEvents["change"] = "change";
+    InputEvents["input"] = "input";
+})(InputEvents || (InputEvents = {}));
+let Input = class Input extends Mixin {
+    rebuildInput(inputElement = this.domObject.find("input")) {
+        inputElement.attr("id", this._id)
+            .prop("disabled", this._disabled)
+            .attr("name", this._name)
+            .prop("readonly", this._readonly)
+            .prop("required", this._required)
+            .attr("type", this._type);
+        return inputElement;
+    }
+    buildInput() {
+        return $("<input>")
+            .on("change", (event) => {
+            this.dispatchEvent(TextInputEvents.change, [event.target.value]);
+        })
+            .on("input", (event) => {
+            this.dispatchEvent(TextInputEvents.input, [event.target.value]);
+        });
+    }
+    get value() {
+        return this.domObject.find("input").val();
+    }
+    setValue(value) {
+        this.domObject.find("input").val(value);
+        return this;
+    }
+    setId(id) {
+        this._id = id;
+        console.log("input id");
+        return this;
+    }
+    setDisabled(disabled) {
+        this._disabled = disabled;
+        return this;
+    }
+    setName(name) {
+        this._name = name;
+        return this;
+    }
+    setReadonly(readonly) {
+        this._readonly = readonly;
+        return this;
+    }
+    setRequired(required) {
+        this._required = required;
+        return this;
+    }
+    setType(type) {
+        this._type = type;
+        return this;
+    }
+    get id() {
+        return this._id;
+    }
+    get disabled() {
+        return this._disabled;
+    }
+    get name() {
+        return this._name;
+    }
+    get readonly() {
+        return this._readonly;
+    }
+    get required() {
+        return this._required;
+    }
+    get type() {
+        return this._type;
+    }
+};
+Input = __decorate([
+    mixin(IdContaining)
+], Input);
+let InputLabel = class InputLabel extends Mixin {
+    buildLabel() {
+        return $("<label></label>");
+    }
+    rebuildLabel(labelElement = this.domObject.find("label")) {
+        return labelElement
+            .text(this._label)
+            .attr("for", this._id);
+    }
+    setLabel(label) {
+        this._label = label;
+        return this;
+    }
+    get label() {
+        return this._label;
+    }
+};
+InputLabel = __decorate([
+    mixin(IdContaining)
+], InputLabel);
+export { Util, OneIconContaining, LeadingTrailingIconContaining, IconContainingEvents, EventCallbacks, ColorEditable, SpacingEditable, ItemContaining, ItemContainingEvents, Item, CheckboxContaining, CheckboxEvents, Input, InputEvents, InputLabel };

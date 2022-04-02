@@ -13,8 +13,10 @@ class Tripel {
 }
 class Mixin {
 }
-class MixinImplementing {
+Mixin.__mixinDependencies = [];
+class MixinImplementing extends Mixin {
     mixinConstructor(...mixins) {
+        mixins = this.constructor.__mixinDependencies;
         let mixinObjs = [];
         for (let type of mixins) {
             mixinObjs.push(new type());
@@ -47,9 +49,27 @@ function applyMixins(derivedCtor, constructors) {
         });
     });
 }
+function orderMixins(mixins = []) {
+    let orderedMixins = [MixinImplementing];
+    for (let mixin of mixins.filter(value => value !== MixinImplementing)) {
+        orderedMixins.push(...orderMixins(mixin.__mixinDependencies));
+        orderedMixins.push(mixin);
+    }
+    return orderedMixins.filter((value, index) => orderedMixins.indexOf(value) === index);
+}
 function mixin(...mixins) {
+    mixins = orderMixins(mixins);
+    console.log(mixins);
     return function (constructor) {
-        applyMixins(constructor, [MixinImplementing, ...mixins]);
+        if (!(constructor instanceof Mixin)) {
+            applyMixins(constructor, [...mixins]);
+        }
+        Object.defineProperty(constructor, "__mixinDependencies", {
+            configurable: false,
+            enumerable: false,
+            writable: false,
+            value: mixins
+        });
     };
 }
 function toObject(input) {
