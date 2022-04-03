@@ -585,7 +585,7 @@ enum InputEvents {
 }
 
 @mixin(IdContaining)
-class Input<ValueType extends string | number, EventType extends WidgetEvents | InputEvents> extends Mixin {
+class Input<ValueType extends string | number, EventType extends WidgetEvents | InputEvents, HtmlElementType extends HTMLElement = HTMLInputElement> extends Mixin {
     private _disabled: boolean;
     private _name: string;
     private _readonly: boolean;
@@ -602,13 +602,22 @@ class Input<ValueType extends string | number, EventType extends WidgetEvents | 
         return inputElement;
     }
 
-    protected buildInput(): JQuery<HTMLInputElement> {
-        return <JQuery<HTMLInputElement>>$("<input>")
+    protected buildInput(element: JQuery<HTMLInputElement> = $("<input>")): JQuery<HTMLInputElement> {
+        if (this._type === ("checkbox" || "radio")) {
+            return element
+                .on("change", (event) => {
+                    this.dispatchEvent(TextInputEvents.change, [event.target.checked]);
+                })
+                .on("input", (event) => {
+                    this.dispatchEvent(TextInputEvents.input, [event.target.checked]);
+                });
+        }
+        return element
             .on("change", (event) => {
-                this.dispatchEvent(TextInputEvents.change, [(<HTMLInputElement>event.target).value]);
+                this.dispatchEvent(TextInputEvents.change, [event.target.value]);
             })
             .on("input", (event) => {
-                this.dispatchEvent(TextInputEvents.input, [(<HTMLInputElement>event.target).value]);
+                this.dispatchEvent(TextInputEvents.input, [event.target.value]);
             });
     }
 
@@ -677,7 +686,7 @@ class Input<ValueType extends string | number, EventType extends WidgetEvents | 
     }
 }
 
-interface Input<ValueType extends string | number, EventType extends WidgetEvents | InputEvents> extends IdContaining, Widget<EventType> {
+interface Input<ValueType extends string | number, EventType extends WidgetEvents | InputEvents, HtmlElementType extends HTMLElement = HTMLInputElement> extends IdContaining, Widget<EventType, HtmlElementType> {
 }
 
 @mixin(IdContaining)

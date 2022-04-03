@@ -57,13 +57,13 @@ class Widget extends _EventHandler {
             attributeFilter: ["style", "class"],
         });
         this.rebuildCallback(suppressCallback);
-        return this.domObject;
+        return this._domObject;
     }
     tryRebuild(suppressCallback = false) {
         if (this.built) {
             this.rebuild(suppressCallback);
         }
-        return this.domObject;
+        return this._domObject;
     }
     destroy() {
         console.assert(this._built);

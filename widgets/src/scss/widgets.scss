@@ -295,4 +295,171 @@
     padding-top: 1rem;
     border-radius: 1rem;
   }
+
+  &.select-box-widget {
+    box-sizing: border-box;
+    display: block;
+    width: 100%;
+    margin: 0 auto;
+    font-family: 'Open Sans', 'Helvetica Neue', 'Segoe UI', 'Calibri', 'Arial', sans-serif;
+    font-size: 18px;
+    color: #60666d;
+    border-radius: 1rem;
+
+    @media (min-width: 768px) {
+      width: 70%;
+    }
+
+    @media (min-width: 992px) {
+      width: 50%;
+    }
+
+    @media (min-width: 1200px) {
+      width: 30%;
+    }
+
+    .options-view-button {
+      position: absolute;
+      height: 100%;
+      width: 100%;
+      left: 0;
+      top: 0;
+      opacity: 0;
+      cursor: pointer;
+      margin: 0;
+      padding: 0;
+      z-index: 1;
+    }
+
+    .current {
+      position: relative;
+      box-shadow: 0 15px 30px - 10px transparentize(#000, 0.9);
+      cursor: pointer;
+      outline: none;
+
+      .options-view-button:checked { //&:has(.options-view-button:checked) is currently not supported by browsers (except safari) so this has to be done via js
+        & + .icon {
+          transform: translateY(-50%) rotate(180deg);
+        }
+      }
+
+      &.options-view-button-checked { //class which gets applied to .current via js
+        & + ul {
+          opacity: 1;
+
+          // We have to set "animation-name: none;" to make the list visible (read below how it works)
+
+          animation-name: none;
+
+          .option {
+            cursor: pointer;
+          }
+        }
+      }
+
+      //&:has(.options-view-button:checked){ //&:has(.options-view-button:checked) is currently not supported by browsers (except safari) (04.2022)
+      //  & + ul {
+      //    opacity: 1;
+      //
+      //    // We have to set "animation-name: none;" to make the list visible (read below how it works)
+      //
+      //    animation-name: none;
+      //
+      //    .option {
+      //      cursor: pointer;
+      //    }
+      //  }
+      //
+      //  .icon {
+      //    transform: translateY(-50%) rotate(180deg);
+      //  }
+      //}
+
+      $icon-width: 30px;
+      .value {
+        display: flex;
+        overflow: hidden;
+        max-width: calc(100% - #{$icon-width});
+
+        input {
+          display: none;
+
+          &:checked + .input-text {
+            display: block;
+          }
+        }
+
+        .input-text {
+          display: none;
+          width: 100%;
+          margin: 0;
+          padding: 15px;
+        }
+      }
+
+      .icon {
+        background-color: white;
+        position: absolute;
+        top: 50%;
+        right: 0;
+        padding: 0 3px;
+        transform: translateY(-50%);
+        width: $icon-width;
+        transition: 0.2s ease;
+        box-sizing: border-box;
+      }
+    }
+
+    ul {
+      position: absolute;
+      width: 100%;
+      padding: 0;
+      list-style: none;
+      opacity: 0;
+
+      // We need to use animation with delay.
+      // Otherwise the click event will not have time to run on label, because this element disappears immediately when .select-box__current element loses the focus.
+      // This delay will not be noticed because we set "opacity" to "0".
+      // We also use "animation-fill-mode: forwards" to make the list stay hidden.
+
+      animation-name: HideList;
+      animation-duration: 0.5s;
+      animation-delay: 0.5s;
+      animation-fill-mode: forwards;
+      animation-timing-function: step-start;
+      box-shadow: 0 15px 30px -10px transparentize(#000, 0.9);
+
+      .option {
+        box-sizing: border-box;
+        display: block;
+        background-color: #fff;
+        overflow: hidden;
+        width: 100%;
+        padding: 15px;
+
+        &:hover,
+        &:focus {
+          color: #546c84;
+          background-color: #fbfbfb;
+        }
+      }
+    }
+  }
+
+  @keyframes HideList {
+    from {
+      transform: scaleY(1);
+    }
+    to {
+      transform: scaleY(0);
+    }
+  }
+
+}
+
+body, html {
+  padding: 30px;
+  box-sizing: border-box;
+  height: 100%;
+  margin: 0;
 }

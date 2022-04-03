@@ -1,3 +1,5 @@
+import {OneIconContaining} from "./AbstractWidgets.js";
+
 class Pair<T, T1> {
     first: T;
     second: T1;

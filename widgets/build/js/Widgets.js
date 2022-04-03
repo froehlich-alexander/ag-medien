@@ -491,23 +491,69 @@ let TextInput = class TextInput extends Widget {
 TextInput = __decorate([
     mixin(Input, InputLabel)
 ], TextInput);
-let SelectBoxItemValue = class SelectBoxItemValue extends Widget {
+let CheckBoxInput = class CheckBoxInput extends Widget {
     constructor() {
-        super();
-        this.setType("radio");
+        super("input");
+        this.mixinConstructor();
+        this.setType("checkbox");
     }
     build(suppressCallback = false) {
-        super.build(true)
-            .append(this.buildInput())
-            .append($("<p></p>")
-            .text(this._label)
-            .addClass("input-text"));
+        super.build(true);
+        this.buildInput(this.domObject);
         this.buildCallback(suppressCallback);
         return this.domObject;
     }
     rebuild(suppressCallback = false) {
         super.rebuild(true);
-        this.rebuildInput();
+        this.rebuildInput(this.domObject);
+        let update = this.domObject.get(0).checked !== this._checked;
+        this.domObject
+            .get(0)
+            .checked = this._checked;
+        if (update) {
+            this.dispatchEvent(InputEvents.input, [this.checked]);
+            this.dispatchEvent(InputEvents.change, [this.checked]);
+        }
+        this.rebuildCallback(suppressCallback);
+        return this.domObject;
+    }
+    get checked() {
+        this._checked = this.domObject
+            .get(0)
+            .checked;
+        return this._checked;
+    }
+    setChecked(checked) {
+        this._checked = checked;
+        return this;
+    }
+};
+CheckBoxInput = __decorate([
+    mixin(Input)
+], CheckBoxInput);
+let SelectBoxItemValue = class SelectBoxItemValue extends Widget {
+    constructor() {
+        super();
+        this.setType("radio");
+        this._checked = false;
+        this.setName("42");
+    }
+    build(suppressCallback = false) {
+        super.build(true)
+            .addClass("value")
+            .append(this.buildInput())
+            .append($("<p></p>")
+            .text(this._label)
+            .addClass("input-text"));
+        this.buildCallback(suppressCallback);
+        this.show();
+        return this.domObject;
+    }
+    rebuild(suppressCallback = false) {
+        super.rebuild(true);
+        this.rebuildInput()
+            .get(0)
+            .checked = this._checked;
         this.rebuildCallback(suppressCallback);
         return this.domObject;
     }
@@ -517,6 +563,16 @@ let SelectBoxItemValue = class SelectBoxItemValue extends Widget {
     }
     get label() {
         return this._label;
+    }
+    setChecked(checked) {
+        this._checked = checked;
+        return this;
+    }
+    get checked() {
+        this._checked = this.domObject.find("input")
+            .get(0)
+            .checked;
+        return this._checked;
     }
 };
 SelectBoxItemValue = __decorate([
@@ -546,18 +602,111 @@ SelectBoxListItem = __decorate([
 ], SelectBoxListItem);
 class SelectBoxItem {
     constructor() {
+        this._value = new SelectBoxItemValue();
+        this._listItem = new SelectBoxListItem();
+    }
+    setId(id) {
+        this._value.setId(id);
+        this._listItem.setId(id);
+        return this;
+    }
+    get id() {
+        return this._value.id;
+    }
+    get value() {
+        return this._value;
+    }
+    get listItem() {
+        return this._listItem;
+    }
+    setLabel(label) {
+        this._value.setLabel(label);
+        this._listItem.setLabel(label);
+        return this;
+    }
+    get label() {
+        return this._value.label;
     }
 }
-const ComboBoxEvents = {
+const SelectBoxEvents = {
     ...WidgetEvents,
     change: "change",
     input: "input",
 };
-let ComboBoxInput = class ComboBoxInput extends Widget {
+let SelectBox = class SelectBox extends Widget {
+    constructor() {
+        super();
+        this.items = [];
+        this.mixinConstructor();
+        this.setIcon(Icon.of("expand_more", IconType.material));
+        this.enableIcon(true);
+        this.optionsViewButton = new CheckBoxInput()
+            .setInheritVisibility(true)
+            .show()
+            .on2(InputEvents.change, (_, value) => this.domObject.find(".current")
+            .toggleClass("options-view-button-checked", value));
+        $(document).on("click", (event) => {
+            if ($(event.target).closest(this.optionsViewButton.domObject).length < 1) {
+                this.optionsViewButton.setChecked(false).tryRebuild();
+            }
+        });
+        this.addChild("optionsViewButton");
+    }
+    build(suppressCallback = false) {
+        super.build(true)
+            .addClass("select-box-widget")
+            .append($("<div></div>")
+            .addClass("current")
+            .append(this.optionsViewButton.build()
+            .addClass("options-view-button"))
+            .append(this.getIcon().build()
+            .addClass("icon")))
+            .append("<ul></ul>");
+        this.buildCallback(suppressCallback);
+        return this.domObject;
+    }
+    rebuild(suppressCallback = false) {
+        super.rebuild(true);
+        for (let i of this.items) {
+            if (i.value.built) {
+                i.value.domObject.detach();
+            }
+            if (i.listItem.built) {
+                i.listItem.domObject.detach();
+            }
+        }
+        this.domObject.children(".current")
+            .prepend(this.items.map(value => value.value.built ? value.value.domObject : value.value.build()));
+        this.domObject.children("ul")
+            .append(this.items.map(value => value.listItem.built ? value.listItem.domObject : value.listItem.build()));
+        for (let i of this.items) {
+            i.value.rebuild();
+            i.listItem.rebuild();
+        }
+        this.optionsViewButton.rebuild();
+        this.rebuildCallback(suppressCallback);
+        return this.domObject;
+    }
+    addItem(...items) {
+        for (let item of items) {
+            item.value.on2(InputEvents.input, () => this.dispatchEvent(SelectBoxEvents.input, [item.value.value]));
+            item.value.on2(InputEvents.change, () => this.dispatchEvent(SelectBoxEvents.change, [item.value.value]));
+            item.listItem.setInheritVisibility(true);
+            let index = this.items.push(item);
+            this.addChild("item" + index + "li", item.listItem);
+            this.addChild("item" + index + "value", item.value);
+        }
+        return this;
+    }
+    setChecked(index, value = true) {
+        this.items[index].value.setChecked(value)
+            .tryRebuild();
+        return this;
+    }
 };
-ComboBoxInput = __decorate([
-    mixin()
-], ComboBoxInput);
+SelectBox = __decorate([
+    mixin(OneIconContaining)
+], SelectBox);
 let Box = class Box extends Widget {
     constructor(htmlElementType) {
         super(htmlElementType);
@@ -593,4 +742,4 @@ class ContentBox extends Box {
         return this.domObject;
     }
 }
-export { Icon, IconEvents, IconType, Button, ButtonEvents, ButtonBox, FlexAlign, Top, TopEvents, Text, ListTile, FlexBox, TextInput, TextInputEvents, Box, ContentBox };
+export { Icon, IconEvents, IconType, Button, ButtonEvents, ButtonBox, FlexAlign, Top, TopEvents, Text, ListTile, FlexBox, TextInput, TextInputEvents, Box, ContentBox, SelectBoxItem, SelectBox, SelectBoxEvents };

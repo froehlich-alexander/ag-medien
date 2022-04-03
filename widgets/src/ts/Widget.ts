@@ -45,9 +45,9 @@ interface _Widget {
     setVisibility(visible: boolean): this;
 }
 
-abstract class Widget<EventType extends WidgetEvents> extends _EventHandler implements _Widget {
+abstract class Widget<EventType extends WidgetEvents, HtmlElementType extends HTMLElement = HTMLElement> extends _EventHandler implements _Widget {
     private _built: boolean = false;
-    private _domObject: JQuery<HTMLElement>;
+    private _domObject: JQuery<HtmlElementType>;
     protected readonly children: Map<string, Widget<WidgetEvents> | null> = new Map();
     private readonly callbacks: Array<Pair<string, EventHandler<string, Widget<EventType>>>> = [];
     private readonly _disabledEvents: Set<string> = new Set();
@@ -89,8 +89,8 @@ abstract class Widget<EventType extends WidgetEvents> extends _EventHandler impl
     /**
      * This method should call {@link buildCallback} before it returns
      */
-    public build(suppressCallback: boolean = false): JQuery<HTMLElement> {
-        this._domObject = $(`<${this.htmlElementType}></${this.htmlElementType}>`)
+    public build(suppressCallback: boolean = false): JQuery<HtmlElementType> {
+        this._domObject = <JQuery<HtmlElementType>>$(`<${this.htmlElementType}></${this.htmlElementType}>`)
             .addClass("widget")
             .addClass(this._hidingIfNotShown ? "hidingIfNotShown" : null)
             .on("click", () => this.dispatchEvent(WidgetEvents.clicked));
@@ -102,19 +102,19 @@ abstract class Widget<EventType extends WidgetEvents> extends _EventHandler impl
         return this._domObject;
     }
 
-    public rebuild(suppressCallback: boolean = false): JQuery<HTMLElement> {
+    public rebuild(suppressCallback: boolean = false): JQuery<HtmlElementType> {
         this.sizeSetObserver.observe(this._domObject.get(0), {
             attributeFilter: ["style", "class"],
         });
         this.rebuildCallback(suppressCallback);
-        return this.domObject;
+        return this._domObject;
     }
 
-    public tryRebuild(suppressCallback: boolean = false): JQuery<HTMLElement> {
+    public tryRebuild(suppressCallback: boolean = false): JQuery<HtmlElementType> {
         if (this.built) {
             this.rebuild(suppressCallback);
         }
-        return this.domObject;
+        return this._domObject;
     }
 
     public destroy(): this {
@@ -146,7 +146,7 @@ abstract class Widget<EventType extends WidgetEvents> extends _EventHandler impl
         this.buildVisibility();//todo do we need this? remove???
     }
 
-    public on(events?: EventCallback<EventType, Widget<EventType>>, event?: Pair<string, EventHandler<string, Widget<EventType>>>): this {
+    public on(events?: EventCallback<EventType, Widget<EventType, HtmlElementType>>, event?: Pair<string, EventHandler<string, Widget<EventType, HtmlElementType>>>): this {
         if (this._built) {
             // console.log("on called after element is built");
             // console.log(events);
@@ -165,7 +165,7 @@ abstract class Widget<EventType extends WidgetEvents> extends _EventHandler impl
         return this;
     }
 
-    public on2(events?: EventCallback<EventType, Widget<EventType>> | string, handler?: EventHandler<string, Widget<EventType>>): this {
+    public on2(events?: EventCallback<EventType, Widget<EventType, HtmlElementType>> | string, handler?: EventHandler<string, Widget<EventType, HtmlElementType>>): this {
         if (this._built) {
             // console.log("on called after element is built");
             // console.log(events);
@@ -309,7 +309,7 @@ abstract class Widget<EventType extends WidgetEvents> extends _EventHandler impl
         return this._built;
     }
 
-    public get domObject(): JQuery<HTMLElement> {
+    public get domObject(): JQuery<HtmlElementType> {
         return this._domObject;
     }
 
