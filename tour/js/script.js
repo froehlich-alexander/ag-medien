@@ -73,6 +73,8 @@ function adjust_clickables() {
 }
 
 function createHtml(json) {
+    scrollSensitivity = 20;
+
     console.log(json);
     for (let page of json) {
         let clickables = [];
@@ -104,21 +106,33 @@ function createHtml(json) {
             .addClass("bg")
             .attr("src", imgUrl)
             .on("load", function () {
-                $(this).removeClass("fill-width");
-                $(this).removeClass("fill-height");
+                let self = $(this);
+                self.removeClass("fill-width");
+                self.removeClass("fill-height");
                 let imgRatio = this.naturalWidth / this.naturalHeight;
                 let screenRatio = window.innerWidth / window.innerHeight;
                 if (imgRatio > screenRatio)
-                    $(this).addClass("fill-width");
+                    self.addClass("fill-width");
                 else
-                    $(this).addClass("fill-height");
+                    self.addClass("fill-height");
+
+                if (self.closest(".deg360").length >= 1) {
+                    self.closest(".pg_wrapper")
+                        .scrollLeft(self.width());
+                }
             }).each(function () {
                 if (this.complete) {
-                    $(this).trigger('load');
+                    self.trigger('load');
                 }
             });
 
         if (page.is_360 || page.is_panorama) {
+            console.log("is_360")
+            let bgContainer = $("<div></div>")
+                .addClass("bg_container")
+                .append(img)
+                .append(clickables);
+
             let pageElement = $("<div></div>")
                 .addClass("page")
                 .attr("id", idPrefix + page.id)
@@ -127,26 +141,17 @@ function createHtml(json) {
                 .append(
                     $("<div></div>")
                         .addClass("pg_wrapper")
-                        .append(img.addClass("bg0"))
-                        .append(img.clone().addClass("bg1"))
-                        .append(img.clone().addClass("bg2"))
-                        .append(clickables)
-                )
+                        .append(bgContainer)
+                        .append(bgContainer.clone(true)))
                 .appendTo("body");
 
-            pageElement
-                .on("load", function () {
-                    page.innerWidth(img.outerWidth)
-                        .scrollLeft(img.outerWidth);
-                })
-                .each(function () {
-                    if (this.complete) {
-                        $(this).trigger('load');
-                    }
-                });
-
-            pageElement.on("scroll", function (event) {
-                console.log(pageElement.scrollLeft())
+            pageElement.find(".pg_wrapper").on("scroll", function () {
+                let self = $(this);
+                if (this.scrollWidth - this.clientWidth - self.scrollLeft() < scrollSensitivity) {
+                    self.scrollLeft(self.scrollLeft() - self.find("img").width())
+                } else if (self.scrollLeft() < scrollSensitivity) {
+                    self.scrollLeft(self.scrollLeft() + self.find("img").width());
+                }
             });
         } else {
             $("<div></div>")
@@ -159,7 +164,7 @@ function createHtml(json) {
                         .append(img)
                         .append(clickables)
                 )
-                .appendTo("body")
+                .appendTo("body");
         }
     }
     adjust_clickables();
@@ -187,6 +192,15 @@ function init(pagesJsonPath) {
         })
         .catch(function () {
                 console.log("Error fetching the json file");
+                //    for testing
+                $(() => {
+                    createHtml(json);
+                    if (window.location.hash !== "") {
+                        $("#" + idPrefix + window.location.hash.slice(1)).addClass("show");
+                    } else {
+                        $(".page").eq(0).addClass("show");
+                    }
+                });
             }
         );
 }

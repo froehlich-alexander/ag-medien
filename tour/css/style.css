@@ -31,6 +31,7 @@ body {
     width: max-content;
     height: max-content;
     position: relative;
+    white-space: nowrap;
 }
 
 .page .clickable {
@@ -106,26 +107,46 @@ body {
     height: 100vh;
 }
 
-.page.pg_panorama {
+.page.pg_panorama .pg_wrapper, .page.deg360 .pg_wrapper {
     overflow-x: auto;
 }
 
-.page.pg_panorama .bg {
-    height: 100vh;
+.page.pg_panorama .bg, .page.deg360 .bg {
+    height: 100%;
     width: inherit;
 }
 
-.page .deg360 {
-    white-space: nowrap;
-    overflow-x: scroll;
+/*.page .deg360 {*/
+/*    white-space: nowrap;*/
+/*    overflow-x: scroll;*/
+/*}*/
+
+.page.deg360 .pg_wrapper {
+    /*Hide scrollbar because of infinite scrolling*/
+    scrollbar-width: none;
 }
 
-.page .deg360 .bg {
+.page.deg360 .bg_container {
+    position: relative;
+    display: inline-block;
 }
 
-.page .deg360 .bg_container {
-    height: 100%;
-}
+/*.page.deg360 .bg_container0 {*/
+/*    !*height: 100%;*!*/
+/*    position: relative;*/
+/*    !*white-space: nowrap;*!*/
+/*    display: inline-block;*/
+/*    !*left: 0;*!*/
+/*}*/
+
+/*.page.deg360 .bg_container1 {*/
+/*    !*height: 100%;*!*/
+/*    !*left: 0;*!*/
+/*    !*top: 0;*!*/
+/*    display: inline-block;*/
+/*    position: relative;*/
+/*    !*white-space: nowrap;*!*/
+/*}*/
 
 .page.walk_in_in {
     animation: walk_in_in ease 0.5s forwards;
