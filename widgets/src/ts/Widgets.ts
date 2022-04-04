@@ -1089,8 +1089,7 @@ class SelectBoxItem {
 
 const SelectBoxEvents = {
     ...WidgetEvents,
-    change: "change",
-    input: "input",
+    ...InputEvents
 };
 type SelectBoxEvents = (typeof SelectBoxEvents[keyof typeof SelectBoxEvents]);
 

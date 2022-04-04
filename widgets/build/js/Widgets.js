@@ -630,8 +630,7 @@ class SelectBoxItem {
 }
 const SelectBoxEvents = {
     ...WidgetEvents,
-    change: "change",
-    input: "input",
+    ...InputEvents
 };
 let SelectBox = class SelectBox extends Widget {
     constructor() {
