@@ -1,6 +1,8 @@
 var finished_last = true;
 let idPrefix = "tour_pg_";
 let lastScroll = 0;
+let imgFolder = "./img1";
+let baustellenFotoUrl = imgFolder + "/baustelle.png";
 
 window.onresize = function () {
     let bgImgs = $(".bg");
@@ -101,10 +103,11 @@ function createHtml(json) {
                 .attr("data-backward", clickable.backward != null ? clickable.backward : null));
         }
 
-        let imgUrl = "./img1/" + page.img;
+        let imgUrl = imgFolder + "/" + page.img;
         let img = $("<img>")
             .addClass("bg")
             .attr("src", imgUrl)
+            .attr("initial_direction", page.initial_direction != null ? page.initial_direction : 50)
             .on("load", function () {
                 let self = $(this);
                 self.removeClass("fill-width");
@@ -116,15 +119,30 @@ function createHtml(json) {
                 else
                     self.addClass("fill-height");
 
+                if (self.attr("initial_direction")) {
+                    let initialDirection = (self.attr("initial_direction") / 100) * self.width();
+                    self.scrollLeft(initialDirection);
+                    console.log("inittial dir")
+                    console.log(self.attr("src"))
+                }
+
                 if (self.closest(".deg360").length >= 1) {
                     self.closest(".pg_wrapper")
                         .scrollLeft(self.width());
                 }
-            }).each(function () {
+            })
+            .on("error", function () {
+                $(this).attr("src", baustellenFotoUrl);
+            })
+            .each(function () {
                 if (this.complete) {
                     self.trigger('load');
                 }
             });
+
+        if (page.is_panorama) {
+            img.attr("initial_direction", page.initial_direction);
+        }
 
         if (page.is_360 || page.is_panorama) {
             console.log("is_360")
@@ -146,10 +164,16 @@ function createHtml(json) {
                 .appendTo("body");
 
             pageElement.find(".pg_wrapper").on("scroll", function () {
+                console.log("scroll")
                 let self = $(this);
                 if (this.scrollWidth - this.clientWidth - self.scrollLeft() < scrollSensitivity) {
-                    self.scrollLeft(self.scrollLeft() - self.find("img").width())
+                    if (self.scrollLeft() < scrollSensitivity) {
+                        return;
+                    }
+                    console.log("left")
+                    self.scrollLeft(self.scrollLeft() - self.find("img").width());
                 } else if (self.scrollLeft() < scrollSensitivity) {
+                    console.log("r")
                     self.scrollLeft(self.scrollLeft() + self.find("img").width());
                 }
             });
