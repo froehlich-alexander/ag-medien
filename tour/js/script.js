@@ -1,6 +1,7 @@
 var finished_last = true;
 let idPrefix = "tour_pg_";
 let lastScroll = 0;
+let imgFolder = "./img1";
 
 window.onresize = function () {
     let bgImgs = $(".bg");
@@ -101,7 +102,7 @@ function createHtml(json) {
                 .attr("data-backward", clickable.backward != null ? clickable.backward : null));
         }
 
-        let imgUrl = "./img1/" + page.img;
+        let imgUrl = imgFolder + "/" + page.img;
         let img = $("<img>")
             .addClass("bg")
             .attr("src", imgUrl)
