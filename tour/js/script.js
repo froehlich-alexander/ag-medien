@@ -101,7 +101,7 @@ function createHtml(json) {
                 .attr("data-backward", clickable.backward != null ? clickable.backward : null));
         }
 
-        let imgUrl = "./img/" + page.img;
+        let imgUrl = "./img1/" + page.img;
         let img = $("<img>")
             .addClass("bg")
             .attr("src", imgUrl)
