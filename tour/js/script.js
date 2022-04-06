@@ -1,8 +1,27 @@
 var finished_last = true;
 let idPrefix = "tour_pg_";
-let lastScroll = 0;
 let imgFolder = "./img1";
 let baustellenFotoUrl = imgFolder + "/baustelle.png";
+let animationDuration = 500;
+let lastest = "";
+
+class Page {
+    id;
+    img;
+    is_panorama = false;
+    is_360 = false;
+    initialDirection = 50;
+    clickables = [];
+}
+
+class Clickable {
+    title;
+    x;
+    y;
+    goto;
+    icon = "arrow_l";
+    backward = false;
+}
 
 window.onresize = function () {
     let bgImgs = $(".bg");
@@ -32,31 +51,34 @@ function goTo(pg, backward) {
     console.log(pg)
     if (finished_last) {
         finished_last = false;
+
+        let next = $("#" + pg);
+        let prev = $(".page.show");
+        next.addClass("show");
+        adjust_clickables();
+        lastest = prev.attr("id").substring(idPrefix.length, prev.attr("id").length);
+        console.log(lastest)
         if (!backward) {
-            $(".page.show").addClass("walk_in_out");
-            let o = $("#" + pg);
-            o.addClass("show");
-            o.addClass("walk_in_in");
+            prev.addClass("walk_in_out");
+            next.addClass("walk_in_in");
             setTimeout(function () {
                 $(".page.walk_in_in").removeClass("walk_in_in");
                 $(".page.walk_in_out").removeClass("show")
                     .removeClass("walk_in_out");
                 finished_last = true;
-            }, 500);
+            }, animationDuration);
         } else {
-            $(".page.show").addClass("walk_out_out");
-            $("#" + pg).addClass("show")
-                .addClass("walk_out_in");
+            prev.addClass("walk_out_out");
+            next.addClass("walk_out_in");
             setTimeout(function () {
                 $(".page.walk_out_in").removeClass("walk_out_in");
-                let o = $(".page.walk_out_out");
-                o.removeClass("show");
-                o.removeClass("walk_out_out");
+                $(".page.walk_out_out").removeClass("show")
+                    .removeClass("walk_out_out");
                 finished_last = true;
-            }, 500);
+            }, animationDuration);
         }
         window.location.hash = pg.substring(idPrefix.length, pg.length);
-        adjust_clickables();
+        createLastestClickable(pg);
     }
 }
 
@@ -74,8 +96,20 @@ function adjust_clickables() {
     // }
 }
 
+function createLastestClickable(pageId) {
+    $(".clickable").removeClass("lastest-clickable");
+    $("#" + pageId).find(".clickable")
+        .each(function () {
+            let self = $(this);
+            console.log("lastest")
+            if (self.attr("goto") === lastest) {
+                self.addClass("lastest-clickable");
+            }
+        });
+}
+
 function createHtml(json) {
-    scrollSensitivity = 20;
+    let scrollSensitivity = 20;
 
     console.log(json);
     for (let page of json) {
@@ -87,6 +121,7 @@ function createHtml(json) {
             }
             clickables.push($("<div></div>")
                 .addClass("clickable")
+                .attr("goto", clickable.goto)
                 .append($("<div></div>")
                     .addClass("title")
                     .text(clickable.title))
@@ -110,6 +145,8 @@ function createHtml(json) {
             .attr("initial_direction", page.initial_direction != null ? page.initial_direction : 50)
             .on("load", function () {
                 let self = $(this);
+                let wrapper = self.closest(".pg_wrapper");
+
                 self.removeClass("fill-width");
                 self.removeClass("fill-height");
                 let imgRatio = this.naturalWidth / this.naturalHeight;
@@ -121,15 +158,9 @@ function createHtml(json) {
 
                 if (self.attr("initial_direction")) {
                     let initialDirection = (self.attr("initial_direction") / 100) * self.width();
-                    self.scrollLeft(initialDirection);
-                    console.log("inittial dir")
-                    console.log(self.attr("src"))
+                    wrapper.scrollLeft(initialDirection);
                 }
-
-                if (self.closest(".deg360").length >= 1) {
-                    self.closest(".pg_wrapper")
-                        .scrollLeft(self.width());
-                }
+                adjust_clickables();
             })
             .on("error", function () {
                 $(this).attr("src", baustellenFotoUrl);
@@ -144,7 +175,7 @@ function createHtml(json) {
             img.attr("initial_direction", page.initial_direction);
         }
 
-        if (page.is_360 || page.is_panorama) {
+        if (page.is_360) {
             console.log("is_360")
             let bgContainer = $("<div></div>")
                 .addClass("bg_container")
@@ -164,16 +195,18 @@ function createHtml(json) {
                 .appendTo("body");
 
             pageElement.find(".pg_wrapper").on("scroll", function () {
-                console.log("scroll")
                 let self = $(this);
                 if (this.scrollWidth - this.clientWidth - self.scrollLeft() < scrollSensitivity) {
-                    if (self.scrollLeft() < scrollSensitivity) {
+                    // if new scroll would trigger this event again
+                    if (self.scrollLeft() - self.find("img").width() < scrollSensitivity) {
                         return;
                     }
-                    console.log("left")
                     self.scrollLeft(self.scrollLeft() - self.find("img").width());
                 } else if (self.scrollLeft() < scrollSensitivity) {
-                    console.log("r")
+                    // if new scroll would trigger this event again
+                    if (this.scrollWidth - this.clientWidth - (self.scrollLeft() + self.find("img").width()) < scrollSensitivity) {
+                        return;
+                    }
                     self.scrollLeft(self.scrollLeft() + self.find("img").width());
                 }
             });

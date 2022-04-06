@@ -38,9 +38,7 @@ body {
     position: absolute;
     background-color: rgba(0, 0, 0, 0.5);
     color: white;
-    border-radius: 0.5rem;
-    border-top-left-radius: 3rem;
-    border-bottom-left-radius: 3rem;
+    border-radius: 3rem 0.5rem 0.5rem 3rem;
     display: flex;
     align-items: center;
     flex-flow: row-reverse;
@@ -68,9 +66,7 @@ body {
 .page .clickable.right {
     flex-flow: row;
     transform: translateX(calc((100% - 1.5rem) * -1));
-    border-radius: 0.5rem;
-    border-top-right-radius: 3rem;
-    border-bottom-right-radius: 3rem;
+    border-radius: 0.5rem 3rem 3rem 0.5rem;
 }
 
 .page .clickable .icon::after {
@@ -123,7 +119,7 @@ body {
 
 .page.deg360 .pg_wrapper {
     /*Hide scrollbar because of infinite scrolling*/
-    scrollbar-width: none;
+    scrollbar-width: thin;
 }
 
 .page.deg360 .bg_container {
@@ -131,22 +127,10 @@ body {
     display: inline-block;
 }
 
-/*.page.deg360 .bg_container0 {*/
-/*    !*height: 100%;*!*/
-/*    position: relative;*/
-/*    !*white-space: nowrap;*!*/
-/*    display: inline-block;*/
-/*    !*left: 0;*!*/
-/*}*/
+/*Clickable which goes to the place where we came from*/
+.page .clickable.lastest-clickable {
 
-/*.page.deg360 .bg_container1 {*/
-/*    !*height: 100%;*!*/
-/*    !*left: 0;*!*/
-/*    !*top: 0;*!*/
-/*    display: inline-block;*/
-/*    position: relative;*/
-/*    !*white-space: nowrap;*!*/
-/*}*/
+}
 
 .page.walk_in_in {
     animation: walk_in_in ease 0.5s forwards;

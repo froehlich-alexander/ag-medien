@@ -1,15 +1,15 @@
-pages = [
+var pages = [
     {
         "id": "01_hof",
         "img": "01_hof.jpg",
-        "is_panorama": false,
+        "is_panorama": false, //TODO 06.04.2022 fix img src and enable panorama
         "clickables": [
             {
                 "title": "Zum Eingang",
-                "x": "70",
-                "y": "45",
+                "x": "45",
+                "y": "75",
                 "goto": "15_eingang",
-                "icon": "arrow_r"
+                "icon": "arrow_l"
             },
             {
                 "title": "Zur Sporthalle",
@@ -30,8 +30,7 @@ pages = [
                 "x": "10",
                 "y": "50",
                 "goto": "01_hof",
-                "icon": "arrow_l",
-                "backward": true
+                "icon": "arrow_l"
             }
         ]
     },
@@ -58,36 +57,36 @@ pages = [
     },
     {
         "id": "15_flur_eg",
-        "img": "15_flur_eg.jpg",
-        "is_panorama": false,
+        "img": "15_flur_eg.JPG",
+        "is_panorama": false, //TODO 06.04.2022 fix img src and enable panorama
         "clickables": [
             {
                 "title": "Zum Sekretariat",
-                "x": "35",
-                "y": "60",
+                "x": "30",
+                "y": "57",
                 "goto": "16_sekretariat",
-                "icon": "arrow_l"
+                "icon": "arrow_u"
             },
             {
                 "title": "Zum Eingang",
-                "x": "60",
+                "x": "80",
                 "y": "50",
                 "goto": "15_eingang",
-                "icon": "arrow_r"
+                "icon": "arrow_u"
             },
             {
                 "title": "Zum Foyer",
-                "x": "50",
-                "y": "35",
+                "x": "58",
+                "y": "45",
                 "goto": "20_foyer",
                 "icon": "arrow_u"
             },
             {
                 "title": "Zum Glaskasten",
-                "x": "50",
-                "y": "85",
+                "x": "11.5",
+                "y": "45",
                 "goto": "15_glaskasten",
-                "icon": "arrow_d"
+                "icon": "arrow_u"
             }
         ]
     },
@@ -97,12 +96,11 @@ pages = [
         "is_panorama": false,
         "clickables": [
             {
-                "title": "ZurÃ¼ck",
+                "title": "Zurück",
                 "x": "50",
                 "y": "85",
                 "goto": "15_flur_eg",
-                "icon": "arrow_d",
-                "backward": true
+                "icon": "arrow_d"
             }
         ]
     },
@@ -112,19 +110,19 @@ pages = [
         "is_panorama": false,
         "clickables": [
             {
-                "title": "ZurÃ¼ck",
+                "title": "Zurück",
                 "x": "10",
                 "y": "10",
                 "goto": "15_flur_eg",
-                "icon": "arrow_l",
-                "backward": true
+                "icon": "arrow_l"
             }
         ]
     },
     {
         "id": "20_foyer",
         "img": "20_foyer.jpg",
-        "is_panorama": true,
+        "is_360": true,
+        "initial_direction": 0,
         "clickables": [
             {
                 "title": "in das 1.OG",
@@ -139,6 +137,13 @@ pages = [
                 "y": "50",
                 "goto": "15_flur_eg",
                 "icon": "arrow_u"
+            },
+            {
+                "title": "Zum lehrerzimmer",
+                "x": "90",
+                "y": "50",
+                "goto": "25_lehrerzimmer",
+                "icon": "arrow_u"
             }
         ]
     },
@@ -151,9 +156,65 @@ pages = [
                 "title": "in das 1.OG",
                 "x": "50",
                 "y": "50",
-                "goto": "UNDEFINED",
+                "goto": "20_1stock_foyer",
                 "icon": "arrow_u"
             }
         ]
+    },
+    {
+        "id": "25_lehrerzimmer",
+        "img": "25_lehrerzimmer.JPG",
+        "is_panorama": false,
+        "clickables": [
+            {
+                "title": "zum foyer",
+                "x": "50",
+                "y": "50",
+                "goto": "20_foyer",
+                "icon": "arrow_r"
+            }
+        ]
+    },
+    {
+        "id": "20_1stock_foyer",
+        "img": "20_1stock_foyer.jpg",
+        "is_360": true,
+        "clickables": [
+            {
+                "title": "zum foyer",
+                "x": "50",
+                "y": "50",
+                "goto": "30_flur",
+                "icon": "arrow_u"
+            }
+        ]
+    },
+    {
+        "id": "30_flur",
+        "img": "30_aula_foyer_flur.JPG",
+        "is_panorama": false,
+        "clickables": [
+            {
+                "title": "Aula Vorraum",
+                "x": "50",
+                "y": "50",
+                "goto": "",
+                "icon": "arrow_u"
+            }
+        ]
+    },
+    {
+        "id": "30_aula_foyer",
+        "img": "vor der Aula.jpg",
+        "is_panorama": true,
+        "clickables": [
+            {
+                "title": "1.stock Foyer",
+                "x": "23",
+                "y": "45",
+                "goto": "20_1stock_foyer",
+                "icon": "arrow_l"
+            }
+        ]
     }
-];
+]
