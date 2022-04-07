@@ -114,6 +114,9 @@ function createHtml(json) {
     console.log(json);
     for (let page of json) {
         let clickables = [];
+        page.is_360 = page.is_360 != null ? page.is_360 : false;
+        page.is_panorama = (page.is_panorama != null ? page.is_panorama : false) || page.is_panorama;
+
         for (let clickable of page.clickables) {
             let gotoExist = json.filter(value => value.id == clickable.goto).length > 0;
             if (!gotoExist) {
@@ -145,7 +148,6 @@ function createHtml(json) {
             .attr("initial_direction", page.initial_direction != null ? page.initial_direction : 50)
             .on("load", function () {
                 let self = $(this);
-                let wrapper = self.closest(".pg_wrapper");
 
                 self.removeClass("fill-width");
                 self.removeClass("fill-height");
@@ -156,11 +158,41 @@ function createHtml(json) {
                 else
                     self.addClass("fill-height");
 
-                if (self.attr("initial_direction")) {
-                    let initialDirection = (self.attr("initial_direction") / 100) * self.width();
-                    wrapper.scrollLeft(initialDirection);
+
+                let onVisible = (a, b) => {
+                    console.log("st")
+                    let self = $(a[0]);
+                    let wrapper = self.closest(".pg_wrapper");
+                    console.log(self);
+                    console.log(wrapper)
+
+                    if (self.is(":hidden")) {
+                        console.log(self.is(":hidden"))
+                        return;
+                    }
+                    // if (self.closest(".deg360").length > 0) {
+                    //     self.scrollLeft(self.width());
+                    //     console.log(self.width())
+                    // }
+                    if (self.attr("initial_direction")) {
+                        let initialDirection = (self.attr("initial_direction") / 100) * self.width();
+                        wrapper.scrollLeft(initialDirection);
+                    }
+                    adjust_clickables();
+                    if (b) {
+                        b.disconnect();
+                    }
                 }
-                adjust_clickables();
+                if (self.is(":visible")) {
+                    console.log("vis")
+                    onVisible([this], null);
+                } else {
+                    console.log("obsever")
+                    let observer = new MutationObserver(onVisible.bind(this));
+                    observer.observe(this, {
+                        attributeFilter: ["style", "class"]
+                    });
+                }
             })
             .on("error", function () {
                 $(this).attr("src", baustellenFotoUrl);
@@ -171,9 +203,18 @@ function createHtml(json) {
                 }
             });
 
-        if (page.is_panorama) {
-            img.attr("initial_direction", page.initial_direction);
-        }
+        // if (page.is_panorama || page.is_360) {
+        //     img.attr("initial_direction", page.initial_direction);
+        // }
+
+        let pageElement = $("<div></div>")
+            .addClass("page")
+            .attr("id", idPrefix + page.id)
+            .toggleClass("pg_panorama", page.is_panorama)
+            .toggleClass("deg360", page.is_360)
+            .append(
+                $("<div></div>")
+                    .addClass("pg_wrapper"));
 
         if (page.is_360) {
             console.log("is_360")
@@ -182,47 +223,36 @@ function createHtml(json) {
                 .append(img)
                 .append(clickables);
 
-            let pageElement = $("<div></div>")
-                .addClass("page")
-                .attr("id", idPrefix + page.id)
-                .toggleClass("pg_panorama", page.is_panorama)
-                .addClass("deg360")
-                .append(
-                    $("<div></div>")
-                        .addClass("pg_wrapper")
-                        .append(bgContainer)
-                        .append(bgContainer.clone(true)))
-                .appendTo("body");
+            pageElement.children(".pg_wrapper")
+                .append(bgContainer)
+                .append(bgContainer.clone(true));
 
             pageElement.find(".pg_wrapper").on("scroll", function () {
                 let self = $(this);
-                if (this.scrollWidth - this.clientWidth - self.scrollLeft() < scrollSensitivity) {
+                console.log("scroll " + self.scrollLeft() + " " + this.scrollLeft);
+                if (this.scrollLeft !== self.scrollLeft()) {
+                    console.log("hmm")
+                }
+                if (this.scrollWidth - this.clientWidth - this.scrollLeft < scrollSensitivity) {
                     // if new scroll would trigger this event again
-                    if (self.scrollLeft() - self.find("img").width() < scrollSensitivity) {
+                    if (this.scrollLeft - self.find("img").width() < scrollSensitivity) {
                         return;
                     }
-                    self.scrollLeft(self.scrollLeft() - self.find("img").width());
+                    self.scrollLeft(this.scrollLeft - self.find("img").width());
                 } else if (self.scrollLeft() < scrollSensitivity) {
                     // if new scroll would trigger this event again
-                    if (this.scrollWidth - this.clientWidth - (self.scrollLeft() + self.find("img").width()) < scrollSensitivity) {
+                    if (this.scrollWidth - this.clientWidth - (this.scrollLeft + self.find("img").width()) < scrollSensitivity) {
                         return;
                     }
-                    self.scrollLeft(self.scrollLeft() + self.find("img").width());
+                    self.scrollLeft(this.scrollLeft + self.find("img").width());
                 }
             });
         } else {
-            $("<div></div>")
-                .addClass("page")
-                .attr("id", idPrefix + page.id)
-                .toggleClass("pg_panorama", page.is_panorama)
-                .append(
-                    $("<div></div>")
-                        .addClass("pg_wrapper")
-                        .append(img)
-                        .append(clickables)
-                )
-                .appendTo("body");
+            pageElement.children(".pg_wrapper")
+                .append(img)
+                .append(clickables);
         }
+        pageElement.appendTo("body");
     }
     adjust_clickables();
 }
