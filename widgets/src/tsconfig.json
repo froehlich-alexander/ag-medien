@@ -3,18 +3,28 @@
   "compilerOptions": {
     "experimentalDecorators": true,
     "baseUrl": "./",
-//    "importHelpers": true,
     "module": "ES2020",
-    "target": "ES2020",
+    "target": "ES2021",
     "moduleResolution": "node",
     "lib": [
-      "ES2020",
+      "ESNext",
       "DOM"
     ],
     "noImplicitAny": true,
-    "removeComments": true,
-    "sourceMap": false,
-    "outDir": "../build/js"
+    "removeComments": false,
+    "sourceMap": true,
+    "outDir": "../build/js",
+    "declarationDir": "../declarations",
+    "declaration": true,
+    "declarationMap": false,
+    "strictNullChecks": true,
+    "alwaysStrict": true,
+    "noImplicitOverride": true,
+    "noImplicitThis": true,
+    "noImplicitReturns": true,
+    "noUnusedLocals": true,
+    "strict": true,
+    "useDefineForClassFields": true
   },
   "include": [
     "./ts/**/*"

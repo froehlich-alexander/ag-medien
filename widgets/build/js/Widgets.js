@@ -4,12 +4,21 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
-var Icon_1;
+var Icon_1, Button_1;
+import { Mixin, mixin, Tripel } from "./base.js";
 import { Widget, WidgetEvents } from "./Widget.js";
-import { Mixin, mixin, MixinImplementing, Tripel } from "./base.js";
-import { CheckboxContaining, ColorEditable, EventCallbacks, IconContainingEvents, Input, InputEvents, InputLabel, ItemContaining, LeadingTrailingIconContaining, OneIconContaining, SpacingEditable } from "./AbstractWidgets.js";
 import { Font, FontWeight } from "./WidgetBase.js";
+import { CheckboxContaining, ColorEditable, EventCallbacks, IconContainingEvents, Input, InputEvents, InputLabel, ItemContaining, LeadingTrailingIconContaining, OneIconContaining, SpacingEditable } from "./AbstractWidgets.js";
 class Item extends Mixin {
+    constructor() {
+        super(...arguments);
+        Object.defineProperty(this, "_index", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+    }
     get index() {
         return this._index;
     }
@@ -25,10 +34,30 @@ var IconType;
     IconType[IconType["material"] = 0] = "material";
 })(IconType || (IconType = {}));
 let Icon = Icon_1 = class Icon extends Widget {
+    // public static Info = () => Icon.of("info", IconType.material);
+    // public static Info = () => Icon.of("info", IconType.material);
     constructor() {
         super();
-        this._clickable = true;
+        Object.defineProperty(this, "type", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "value", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "_clickable", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: true
+        });
         this.mixinConstructor(SpacingEditable);
+        // createMixinFields(this, new SpacingEditable());
     }
     build(force = true) {
         if (!this.built && force) {
@@ -96,25 +125,80 @@ let Icon = Icon_1 = class Icon extends Widget {
         return new Icon_1().set(value, type);
     }
 };
-Icon.Close = () => Icon_1.of("close", IconType.material);
-Icon.Edit = () => Icon_1.of("edit", IconType.material);
-Icon.Done = () => Icon_1.of("done", IconType.material);
-Icon.Back = () => Icon_1.of("arrow_back", IconType.material);
-Icon.Next = () => Icon_1.of("arrow_forward", IconType.material);
-Icon.Delete = () => Icon_1.of("delete", IconType.material);
-Icon.Cancel = () => Icon_1.of("cancel", IconType.material);
-Icon.Info = () => Icon_1.of("info", IconType.material);
+Object.defineProperty(Icon, "Close", {
+    enumerable: true,
+    configurable: true,
+    writable: true,
+    value: () => Icon_1.of("close", IconType.material)
+});
+Object.defineProperty(Icon, "Edit", {
+    enumerable: true,
+    configurable: true,
+    writable: true,
+    value: () => Icon_1.of("edit", IconType.material)
+});
+Object.defineProperty(Icon, "Done", {
+    enumerable: true,
+    configurable: true,
+    writable: true,
+    value: () => Icon_1.of("done", IconType.material)
+});
+Object.defineProperty(Icon, "Back", {
+    enumerable: true,
+    configurable: true,
+    writable: true,
+    value: () => Icon_1.of("arrow_back", IconType.material)
+});
+Object.defineProperty(Icon, "Next", {
+    enumerable: true,
+    configurable: true,
+    writable: true,
+    value: () => Icon_1.of("arrow_forward", IconType.material)
+});
+Object.defineProperty(Icon, "Delete", {
+    enumerable: true,
+    configurable: true,
+    writable: true,
+    value: () => Icon_1.of("delete", IconType.material)
+});
+Object.defineProperty(Icon, "Cancel", {
+    enumerable: true,
+    configurable: true,
+    writable: true,
+    value: () => Icon_1.of("cancel", IconType.material)
+});
+Object.defineProperty(Icon, "Info", {
+    enumerable: true,
+    configurable: true,
+    writable: true,
+    value: () => Icon_1.of("info", IconType.material)
+});
 Icon = Icon_1 = __decorate([
-    mixin(MixinImplementing, SpacingEditable)
+    mixin(SpacingEditable)
 ], Icon);
 const ButtonEvents = {
     ...WidgetEvents
 };
-class Button extends Widget {
+let Button = Button_1 = class Button extends Widget {
+    // public static Agree = () => new Button().setLabel("Agree").setIcon(Icon.of("done", IconType.material));
+    // public static Agree = () => new Button().setLabel("Agree").setIcon(Icon.of("done", IconType.material));
+    // public static Agree = () => new Button().setLabel("Agree").setIcon(Icon.of("done", IconType.material));
+    // public static Agree = () => new Button().setLabel("Agree").setIcon(Icon.of("done", IconType.material));
+    constructor() {
+        super();
+        Object.defineProperty(this, "label", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        this.mixinConstructor();
+        this.enableIcon(true);
+    }
     build(suppressCallback = false) {
         super.build(true)
             .addClass("button-widget")
-            .append(this.icon != null ? this.icon.build() : null)
+            .append(this.getIcon().build())
             .append($("<div></div>")
             .text(this.label)
             .addClass("text"))
@@ -133,37 +217,238 @@ class Button extends Widget {
         this.label = value;
         return this;
     }
-    getIcon() {
-        return this.icon;
-    }
-    setIcon(value) {
-        this.icon = value;
-        if (this.icon != null) {
-            this.icon.setInheritVisibility(true);
-        }
-        this.addChild("icon", this.icon);
-        return this;
-    }
-}
-Button.Cancel = () => new Button().setLabel("Cancel").setIcon(Icon.Cancel());
-Button.Ok = () => new Button().setLabel("Ok").setIcon(Icon.Done());
-Button.Back = () => new Button().setLabel("Back").setIcon(Icon.of("arrow_back", IconType.material));
-Button.Next = () => new Button().setLabel("Next").setIcon(Icon.of("arrow_forward", IconType.material));
-Button.Agree = () => new Button().setLabel("Agree").setIcon(Icon.Done());
-Button.Delete = () => new Button().setLabel("Delete").setIcon(Icon.Delete());
-Button.Save = () => new Button().setLabel("Save").setIcon(Icon.of("save", IconType.material));
-Button.Activate = () => new Button().setLabel("Activate").setIcon(Icon.of("favorite", IconType.material));
-Button.Reset = () => new Button().setLabel("Reset").setIcon(Icon.of("restart_alt", IconType.material));
+};
+// private readonly icon: Icon | null;
+Object.defineProperty(Button, "Cancel", {
+    enumerable: true,
+    configurable: true,
+    writable: true,
+    value: () => new Button_1().setLabel("Cancel").setIcon(Icon.Cancel())
+});
+Object.defineProperty(Button, "Ok", {
+    enumerable: true,
+    configurable: true,
+    writable: true,
+    value: () => new Button_1().setLabel("Ok").setIcon(Icon.Done())
+});
+Object.defineProperty(Button, "Back", {
+    enumerable: true,
+    configurable: true,
+    writable: true,
+    value: () => new Button_1().setLabel("Back").setIcon(Icon.of("arrow_back", IconType.material))
+});
+Object.defineProperty(Button, "Next", {
+    enumerable: true,
+    configurable: true,
+    writable: true,
+    value: () => new Button_1().setLabel("Next").setIcon(Icon.of("arrow_forward", IconType.material))
+});
+Object.defineProperty(Button, "Agree", {
+    enumerable: true,
+    configurable: true,
+    writable: true,
+    value: () => new Button_1().setLabel("Agree").setIcon(Icon.Done())
+});
+Object.defineProperty(Button, "Delete", {
+    enumerable: true,
+    configurable: true,
+    writable: true,
+    value: () => new Button_1().setLabel("Delete").setIcon(Icon.Delete())
+});
+Object.defineProperty(Button, "Save", {
+    enumerable: true,
+    configurable: true,
+    writable: true,
+    value: () => new Button_1().setLabel("Save").setIcon(Icon.of("save", IconType.material))
+});
+Object.defineProperty(Button, "Activate", {
+    enumerable: true,
+    configurable: true,
+    writable: true,
+    value: () => new Button_1().setLabel("Activate").setIcon(Icon.of("favorite", IconType.material))
+});
+Object.defineProperty(Button, "Reset", {
+    enumerable: true,
+    configurable: true,
+    writable: true,
+    value: () => new Button_1().setLabel("Reset").setIcon(Icon.of("restart_alt", IconType.material))
+});
+Button = Button_1 = __decorate([
+    mixin(OneIconContaining)
+], Button);
 var FlexAlign;
 (function (FlexAlign) {
     FlexAlign["start"] = "start";
     FlexAlign["center"] = "center";
     FlexAlign["end"] = "end";
 })(FlexAlign || (FlexAlign = {}));
+// class _ButtonBox extends Widget<WidgetEvents> {
+//     private buttons: Tripel<Button, FlexAlign, FlexAlign>[] = [];//hello
+//     private startEndSpacing: number = 10;
+//     private itemSpacing: number = 1;
+//     private alignSpacing: number = 10;
+//
+//     constructor() {
+//         super();
+//         this.on({
+//             "sizeSet": () => {
+//                 //set spacer width
+//                 //doesn't work when the widget has display: none!!!
+//                 let completeButtonWidth = 0;
+//                 let availableWidth = this.domObject.innerWidth();
+//                 let spacers = this.domObject.find(".spacer");
+//                 for (let i of this.buttons) {
+//                     completeButtonWidth += i.first.domObject.outerWidth();
+//                     console.log("a");
+//                     console.log("button" + i.first.domObject.outerWidth(true));
+//                 }
+//                 let massEinheit = (availableWidth - completeButtonWidth) / (spacers.filter(".start-end-spacer").length * this.startEndSpacing + spacers.filter(".align-spacer").length * this.alignSpacing + spacers.filter(".button-spacer").length * this.itemSpacing);
+//                 spacers.filter(".start-end-spacer")
+//                     .width((massEinheit * this.startEndSpacing * 100) / availableWidth + "%");
+//                 spacers.filter(".button-spacer")
+//                     .width((massEinheit * this.itemSpacing * 100) / availableWidth + "%");
+//                 spacers.filter(".align-spacer")
+//                     .width((massEinheit * this.alignSpacing * 100) / availableWidth + "%");
+//                 console.log(completeButtonWidth);
+//                 console.log(massEinheit);
+//                 console.log(this.domObject.innerWidth());
+//                 console.log(spacers);
+//                 console.log(spacers.filter(".start-end-spacer"));
+//             }
+//         });
+//     }
+//
+//     build(): JQuery<HTMLElement> {
+//         super.build(true)
+//             .addClass("button-box-widget");
+//
+//         let completeButtonWidth = 0;
+//         //add spacer at the start / end of the button box (main axis)
+//         this.domObject.append($("<div></div>")
+//             .addClass("spacer")
+//             .addClass("start-end-spacer"));
+//
+//         for (let i of this.buttons) {
+//             i.first.build()
+//                 .css("align-self", i.third);
+//         }
+//
+//         let count = 0;
+//         for (let i of this.buttons.filter(value => value.second == FlexAlign.start)) {
+//             count++;
+//             this.domObject.append(i.first.domObject)
+//                 .append($("<div></div>")
+//                     .addClass("spacer")
+//                     .addClass(count < this.buttons.filter(value => value.second == FlexAlign.start).length ? "button-spacer" : "align-spacer"));
+//         }
+//         count = 0;
+//         for (let i of this.buttons.filter(value => value.second == FlexAlign.center)) {
+//             count++;
+//             this.domObject.append(i.first.domObject)
+//                 .append($("<div></div>")
+//                     .addClass("spacer")
+//                     .addClass(count < this.buttons.filter(value => value.second == FlexAlign.center).length ? "button-spacer" : "align-spacer"));
+//         }
+//         count = 0;
+//         for (let i of this.buttons.filter(value => value.second == FlexAlign.end)) {
+//             count++;
+//             //don't append after last button
+//             this.domObject.append(i.first.domObject)
+//                 .append($("<div></div>")
+//                     .addClass("spacer")
+//                     .addClass(count < this.buttons.filter(value => value.second == FlexAlign.end).length ? "button-spacer" : "start-end-spacer"));
+//         }
+//
+//         this.buildCallback();
+//         return this.domObject;
+//     }
+//
+//     public addButton(button: Button, mainAlign: FlexAlign = FlexAlign.center, crossAlign: FlexAlign = FlexAlign.center): this {
+//         console.assert(!this.built);
+//         button.setInheritVisibility(true);
+//         this.children.set(this.buttons.push(new Tripel<Button, FlexAlign, FlexAlign>(button, mainAlign, crossAlign)).toString(10), button);
+//         return this;
+//     }
+//
+//     public isEmpty(): boolean {
+//         return this.buttons.length > 0;
+//     }
+//
+//     /**
+//      * Set the spacing<br>
+//      * the actual value doesn't really matter, the important thing is their ratio
+//      * @param startEnd the spacing at the start (right) and end (left)
+//      * @param align the spacing between the different alignments
+//      * @param item the spacing between all buttons of the same alignment
+//      */
+//     public setSpacing(startEnd: number, align: number, item: number): this {
+//         this.setStartEndSpacing(startEnd);
+//         this.setAlignSpacing(align);
+//         this.setItemSpacing(item);
+//         return this;
+//     }
+//
+//     getStartEndSpacing(): number {
+//         return this.startEndSpacing;
+//     }
+//
+//     setStartEndSpacing(value: number): this {
+//         this.startEndSpacing = value;
+//         return this;
+//     }
+//
+//     getItemSpacing(): number {
+//         return this.itemSpacing;
+//     }
+//
+//     setItemSpacing(value: number): this {
+//         this.itemSpacing = value;
+//         return this;
+//     }
+//
+//     getAlignSpacing(): number {
+//         return this.alignSpacing;
+//     }
+//
+//     setAlignSpacing(value: number): this {
+//         this.alignSpacing = value;
+//         return this;
+//     }
+// }
+/**
+ * This class uses a flex container (display: flex)<br>
+ * The items are aligned vertically (cross axis) via align-self (or align-items as default value)<br>
+ * The items are aligned horizontally (main axis) via auto margin<br>
+ * Padding is used for space at the start / end of the whole container<br>
+ * CSS column-gap is used for space between the items
+ */
 class FlexBox extends Widget {
     constructor() {
         super();
-        this.items = [];
+        Object.defineProperty(this, "items", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: []
+        });
+        Object.defineProperty(this, "startSpacing", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "endSpacing", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "itemSpacing", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
     }
     buildAlign(align) {
         let items = this.items.filter(value => value.second == align);
@@ -186,9 +471,52 @@ class FlexBox extends Widget {
     build(suppressCallback = false) {
         super.build(true)
             .addClass("flex-box-widget");
+        //add spacer at the start of the item box (main axis)
+        // this.domObject.append($("<div></div>")
+        //     .addClass("spacer")
+        //     .addClass("start-spacer"));
+        //
+        //main-axis-align = start (left)
+        // let itemLength = this.items.length;
+        // let itemCount = 0;
+        // let count = 0;
+        // let startItemCount = this.items.filter(value => value.second == FlexAlign.start).length;
+        // for (let i of this.items.filter(value => value.second == FlexAlign.start)) {
+        //     count++;
+        //     itemCount++;
+        //     this.domObject.append(i.first.domObject)
+        //         .append($("<div></div>")
+        //             .addClass("spacer")
+        //             .addClass(count < this.items.filter(value => value.second == FlexAlign.start).length ? "item-spacer" : (itemCount < itemLength ? "align-spacer" : "start-end-spacer")));
+        // }
+        //
+        // //main-axis-align = center
+        // count = 0;
+        // for (let i of this.items.filter(value => value.second == FlexAlign.center)) {
+        //     count++;
+        //     itemCount++;
+        //     this.domObject.append(i.first.domObject)
+        //         .append($("<div></div>")
+        //             .addClass("spacer")
+        //             .addClass(count < this.items.filter(value => value.second == FlexAlign.center).length ? "item-spacer" : (itemCount < itemLength ? "align-spacer" : "start-end-spacer")));
+        // }
+        //
+        // //main-axis-align = end (right)
+        // count = 0;
+        // for (let i of this.items.filter(value => value.second == FlexAlign.end)) {
+        //     count++;
+        //     itemCount++;
+        //     //don't append after last button
+        //     this.domObject.append(i.first.domObject)
+        //         .append($("<div></div>")
+        //             .addClass("spacer")
+        //             .addClass(count < this.items.filter(value => value.second == FlexAlign.end).length ? "item-spacer" : "start-end-spacer"));
+        // }
         for (let i of Object.values(FlexAlign)) {
             this.buildAlign(i);
         }
+        // Util.addCssProperty(this.domObject, "padding-left", this.startSpacing);
+        // Util.addCssProperty(this.domObject, "padding-right", this.endSpacing);
         this.buildCallback(suppressCallback);
         return this.domObject;
     }
@@ -211,6 +539,14 @@ class FlexBox extends Widget {
     isEmpty() {
         return this.items.length > 0;
     }
+    /**
+     * Set the spacing related to this flex container<br>
+     * The values can be any css <length> value
+     * @param start the spacing at the start (right)
+     * @param end the spacing at the end (left)
+     * @param item the spacing between the items.
+     * This is using the column-gap flex property
+     */
     setSpacing(start, end, item) {
         this.setStartSpacing(start);
         this.setEndSpacing(end);
@@ -262,7 +598,20 @@ class ButtonBox extends FlexBox {
 let Text = class Text extends Widget {
     constructor() {
         super();
-        this.mixinConstructor(ColorEditable, SpacingEditable);
+        Object.defineProperty(this, "value", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "_font", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        this.mixinConstructor();
+        // createMixinFields(this, new ColorEditable(), new SpacingEditable());
         this._font = new Font();
     }
     set(value) {
@@ -318,9 +667,22 @@ const TopEvents = {
 let Top = class Top extends FlexBox {
     constructor() {
         super();
-        this._defaultTop = true;
+        Object.defineProperty(this, "label", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "_defaultTop", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: true
+        });
         this.mixinConstructor(OneIconContaining);
+        // createMixinFields(this, new OneIconContaining());
         this.setIcon(Icon.Close());
+        // this.enableIcon(true);
         this.label = new Text().setFontWeight(FontWeight.bold);
         this.addItem(this.label);
         this.addItem(this.getIcon(), FlexAlign.end);
@@ -330,6 +692,8 @@ let Top = class Top extends FlexBox {
     build(suppressCallback = false) {
         super.build(true)
             .addClass("title-widget");
+        // .append(this.label.build(suppressCallback))
+        // .append(this.icon != null ? this.icon.build() : null);
         this.buildCallback(suppressCallback);
         return this.domObject;
     }
@@ -361,11 +725,24 @@ Top = __decorate([
 let ListTile = class ListTile extends FlexBox {
     constructor() {
         super();
-        this._label = new Text();
-        this._description = new Text();
+        Object.defineProperty(this, "_label", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: new Text()
+        });
+        Object.defineProperty(this, "_description", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: new Text()
+        });
         this.mixinConstructor(SpacingEditable, LeadingTrailingIconContaining, ColorEditable, CheckboxContaining);
+        // createMixinFields(this, new ColorEditable(), new SpacingEditable(), new LeadingTrailingIconContaining());
         this._label.setInheritVisibility(true);
         this._description.setInheritVisibility(false);
+        // this.children.set("lable", this._label);
+        // this.children.set("description", this._description);
         this.addItem(this.getLeadingIcon(), FlexAlign.start);
         this.addItem(this._label, FlexAlign.start);
         this.addItem(this.getTrailingIcon(), FlexAlign.end);
@@ -376,6 +753,9 @@ let ListTile = class ListTile extends FlexBox {
     build(suppressCallback = false) {
         super.build(true)
             .addClass("list-tile-widget");
+        // .append(this.getLeadingIcon().build())
+        // .append(this._label.build())
+        // .append(this.getTrailingIcon().build());
         this.buildColor();
         this.buildSpacing();
         this.buildCheckbox();
@@ -413,8 +793,68 @@ const TextInputEvents = {
 let TextInput = class TextInput extends Widget {
     constructor() {
         super();
+        // private _id: string;
+        // private _label: string;
+        Object.defineProperty(this, "_placeHolder", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "_minLength", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "_maxLength", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        // private _readonly: boolean;
+        Object.defineProperty(this, "_spellcheck", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "_size", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "_pattern", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
         this.mixinConstructor(Input, InputLabel);
     }
+    // public build(suppressCallback: boolean = false): JQuery<HTMLElement> {
+    //     super.build(suppressCallback)
+    //         .addClass("text-input")
+    //         .append($<HTMLInputElement>("<input>")
+    //             .addClass("field")
+    //             .attr("id", this._id)
+    //         )
+    //         .append($("<label></label>")
+    //             .addClass("label")
+    //             .attr("for", this._id))
+    //         .append($("<span></span>")
+    //             .addClass("underline"))
+    //         .on("change", (event) => {
+    //             this.dispatchEvent(TextInputEvents.change, [(<HTMLInputElement>event.target).value]);
+    //         })
+    //         .on("input", (event) => {
+    //             this.dispatchEvent(TextInputEvents.input, [(<HTMLInputElement>event.target).value]);
+    //         });
+    //     this.buildCallback(suppressCallback);
+    //     return this.domObject;
+    // }
     build(suppressCallback = false) {
         super.build(suppressCallback)
             .addClass("text-input")
@@ -424,6 +864,12 @@ let TextInput = class TextInput extends Widget {
             .addClass("label"))
             .append($("<span></span>")
             .addClass("underline"));
+        // .on("change", (event) => {
+        //     this.dispatchEvent(TextInputEvents.change, [(<HTMLInputElement>event.target).value]);
+        // })
+        // .on("input", (event) => {
+        //     this.dispatchEvent(TextInputEvents.input, [(<HTMLInputElement>event.target).value]);
+        // });
         this.buildCallback(suppressCallback);
         return this.domObject;
     }
@@ -436,9 +882,40 @@ let TextInput = class TextInput extends Widget {
             .prop("spellcheck", this._spellcheck)
             .attr("size", this._size)
             .attr("pattern", this._pattern);
+        // this.domObject.find("input")
+        //     .attr("placeholder", this._placeHolder)
+        //     .attr("minLength", this._minLength)
+        //     .attr("maxLength", this._maxLength)
+        //     .prop("readonly", this._readonly)
+        //     .prop("spellcheck", this._spellcheck)
+        //     .attr("size", this._size)
+        //     .attr("pattern", this._pattern);
+        // this.domObject.find("label")
+        //     .text(this._label);
         this.rebuildLabel();
         return this.domObject;
     }
+    // get value(): string {
+    //     return <string>this.domObject.find("input").val();
+    // }
+    //
+    // setValue(value: string): this {
+    //     this.domObject.find("input").val(value);
+    //     return this;
+    // }
+    // public setLabel(_label: string): this {
+    //     this._label = _label;
+    //     this.tryRebuild();
+    //     return this;
+    // }
+    //
+    // public setId(id: string): this {
+    //     if (this.built) {
+    //         throw Error("You are not allowed to change the id of an input after it has been built!!!");
+    //     }
+    //     this._id = id;
+    //     return this;
+    // }
     setPlaceHolder(placeHolder) {
         this._placeHolder = placeHolder;
         this.tryRebuild();
@@ -454,6 +931,11 @@ let TextInput = class TextInput extends Widget {
         this.tryRebuild();
         return this;
     }
+    // public setReadonly(readonly: boolean): this {
+    //     this._readonly = readonly;
+    //     this.tryRebuild();
+    //     return this;
+    // }
     setSpellcheck(spellcheck) {
         this._spellcheck = spellcheck;
         this.tryRebuild();
@@ -469,6 +951,14 @@ let TextInput = class TextInput extends Widget {
         this.tryRebuild();
         return this;
     }
+    //
+    // public get id() {
+    //     return this._id;
+    // }
+    //
+    // public get label(): string {
+    //     return this._label;
+    // }
     get placeHolder() {
         return this._placeHolder;
     }
@@ -478,6 +968,9 @@ let TextInput = class TextInput extends Widget {
     get maxLength() {
         return this._maxLength;
     }
+    // public get readonly(): boolean {
+    //     return this._readonly;
+    // }
     get spellcheck() {
         return this._spellcheck;
     }
@@ -494,6 +987,12 @@ TextInput = __decorate([
 let CheckBoxInput = class CheckBoxInput extends Widget {
     constructor() {
         super("input");
+        Object.defineProperty(this, "_checked", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
         this.mixinConstructor();
         this.setType("checkbox");
     }
@@ -534,9 +1033,21 @@ CheckBoxInput = __decorate([
 let SelectBoxItemValue = class SelectBoxItemValue extends Widget {
     constructor() {
         super();
+        Object.defineProperty(this, "_label", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "_checked", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
         this.setType("radio");
         this._checked = false;
-        this.setName("42");
+        this.setName("42"); //we need any name so that only 1 item can be selected at once
     }
     build(suppressCallback = false) {
         super.build(true)
@@ -602,6 +1113,18 @@ SelectBoxListItem = __decorate([
 ], SelectBoxListItem);
 class SelectBoxItem {
     constructor() {
+        Object.defineProperty(this, "_value", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "_listItem", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
         this._value = new SelectBoxItemValue();
         this._listItem = new SelectBoxListItem();
     }
@@ -635,7 +1158,18 @@ const SelectBoxEvents = {
 let SelectBox = class SelectBox extends Widget {
     constructor() {
         super();
-        this.items = [];
+        Object.defineProperty(this, "_items", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: []
+        });
+        Object.defineProperty(this, "optionsViewButton", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
         this.mixinConstructor();
         this.setIcon(Icon.of("expand_more", IconType.material));
         this.enableIcon(true);
@@ -649,6 +1183,7 @@ let SelectBox = class SelectBox extends Widget {
                 this.optionsViewButton.setChecked(false).tryRebuild();
             }
         });
+        this.on2(SelectBoxEvents.change, (event, ...args) => console.log(args));
         this.addChild("optionsViewButton");
     }
     build(suppressCallback = false) {
@@ -666,7 +1201,9 @@ let SelectBox = class SelectBox extends Widget {
     }
     rebuild(suppressCallback = false) {
         super.rebuild(true);
-        for (let i of this.items) {
+        this.domObject.find(".current").children(".value").detach();
+        this.domObject.find("ul").children("li").detach();
+        for (let i of this._items) {
             if (i.value.built) {
                 i.value.domObject.detach();
             }
@@ -675,10 +1212,10 @@ let SelectBox = class SelectBox extends Widget {
             }
         }
         this.domObject.children(".current")
-            .prepend(this.items.map(value => value.value.built ? value.value.domObject : value.value.build()));
+            .prepend(this._items.map(value => value.value.built ? value.value.domObject : value.value.build()));
         this.domObject.children("ul")
-            .append(this.items.map(value => value.listItem.built ? value.listItem.domObject : value.listItem.build()));
-        for (let i of this.items) {
+            .append(this._items.map(value => value.listItem.built ? value.listItem.domObject : value.listItem.build()));
+        for (let i of this._items) {
             i.value.rebuild();
             i.listItem.rebuild();
         }
@@ -686,21 +1223,32 @@ let SelectBox = class SelectBox extends Widget {
         this.rebuildCallback(suppressCallback);
         return this.domObject;
     }
-    addItem(...items) {
+    addItems(...items) {
         for (let item of items) {
-            item.value.on2(InputEvents.input, () => this.dispatchEvent(SelectBoxEvents.input, [item.value.value]));
-            item.value.on2(InputEvents.change, () => this.dispatchEvent(SelectBoxEvents.change, [item.value.value]));
+            item.value.on2(InputEvents.input, () => this.dispatchEvent(SelectBoxEvents.input, [item.value]));
+            item.value.on2(InputEvents.change, () => this.dispatchEvent(SelectBoxEvents.change, [item.value]));
             item.listItem.setInheritVisibility(true);
-            let index = this.items.push(item);
+            let index = this._items.push(item);
             this.addChild("item" + index + "li", item.listItem);
             this.addChild("item" + index + "value", item.value);
         }
         return this;
     }
+    removeItems(...items) {
+        for (let item of items) {
+            for (let i of this._items.splice(this._items.indexOf(item), 1)) {
+                //TODO 09.04.2022 clean up event handlers
+            }
+        }
+        return this;
+    }
     setChecked(index, value = true) {
-        this.items[index].value.setChecked(value)
+        this._items[index].value.setChecked(value)
             .tryRebuild();
         return this;
+    }
+    get items() {
+        return this._items;
     }
 };
 SelectBox = __decorate([
@@ -742,3 +1290,4 @@ class ContentBox extends Box {
     }
 }
 export { Icon, IconEvents, IconType, Button, ButtonEvents, ButtonBox, FlexAlign, Top, TopEvents, Text, ListTile, FlexBox, TextInput, TextInputEvents, Box, ContentBox, SelectBoxItem, SelectBox, SelectBoxEvents };
+//# sourceMappingURL=Widgets.js.map

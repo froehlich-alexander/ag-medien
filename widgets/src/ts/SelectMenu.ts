@@ -102,7 +102,7 @@ export class SelectMenuItem<T> extends Widget<SelectMenuItemEvents> {
         return this;
     }
 
-    setVisibility(visible: boolean): this {
+    public override setVisibility(visible: boolean): this {
         if (this.icon != null) {
             this.icon.setVisibility(visible);
         }
@@ -125,7 +125,7 @@ export class SelectMenuItem<T> extends Widget<SelectMenuItemEvents> {
         return this;
     }
 
-    public build(suppressCallback: boolean = false): JQuery<HTMLElement> {
+    public override build(suppressCallback: boolean = false): JQuery<HTMLElement> {
         super.build(true)
             .addClass("item")
             .addClass(this.selected ? "selected" : null)
@@ -135,7 +135,7 @@ export class SelectMenuItem<T> extends Widget<SelectMenuItemEvents> {
                 .text(this.label))
             .append($("<div></div>")
                 .addClass("material-icons checkbox")
-                .addClass(this.checkbox ? "show" : null)
+                .toggleClass("show", this.checkbox)
                 .text(this.selected ? "check_box" : "check_box_outline_blank"))
             .on({
                 click: () => {

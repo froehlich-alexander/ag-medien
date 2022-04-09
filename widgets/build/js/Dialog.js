@@ -7,14 +7,49 @@ const DialogEvents = {
     rejected: "rejected",
 };
 class Dialog extends Widget {
-    constructor(htmlElementType) {
+    constructor(htmlElementType, contentHtmlType) {
         super(htmlElementType);
-        this.buttonBox = new ButtonBox();
-        this.aTop = new Top();
-        this.aContent = new ContentBox();
+        Object.defineProperty(this, "result", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "value", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "opened", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "buttonBox", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: new ButtonBox()
+        });
+        Object.defineProperty(this, "aTop", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: new Top()
+        });
+        Object.defineProperty(this, "aContent", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        this.aContent = new ContentBox(contentHtmlType);
         this.addChild("buttons", this.buttonBox);
         this.addChild("atop", this.aTop);
         this.addChild("aContent", this.aContent);
+        // this.buttonBox.setSpacing("2rem", "2rem", "1rem");
     }
     buildTop() {
         let top = this.aTop.build();
@@ -100,3 +135,4 @@ class Dialog extends Widget {
     }
 }
 export { Dialog, DialogEvents };
+//# sourceMappingURL=Dialog.js.map

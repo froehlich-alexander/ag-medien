@@ -15,6 +15,12 @@ class Util {
     static setWidth(element) {
         element.outerWidth(element.outerWidth(false), false);
     }
+    /**
+     * Add something to a css-property of a Html Element
+     * @param element the {@link JQuery} Html Element
+     * @param property the name of the css property
+     * @param value the value to add to
+     */
     static addCssProperty(element, property, value) {
         if (value == null || value == "") {
             return element;
@@ -46,44 +52,214 @@ class Util {
 }
 class EventCallbacks {
 }
-EventCallbacks.setHeight = new Pair(WidgetEvents.sizeSet, function (event) {
-    Util.setHeight(event.target.domObject);
+/**
+ * Calculates and sets the height of an element
+ * @type Pair
+ */
+Object.defineProperty(EventCallbacks, "setHeight", {
+    enumerable: true,
+    configurable: true,
+    writable: true,
+    value: new Pair(WidgetEvents.sizeSet, function (event) {
+        Util.setHeight(event.target.domObject);
+    })
 });
-EventCallbacks.setWidth = new Pair(WidgetEvents.sizeSet, function (event) {
-    Util.setWidth(event.target.domObject);
+/**
+ * Calculates and sets the width of an element
+ * @type Pair
+ */
+Object.defineProperty(EventCallbacks, "setWidth", {
+    enumerable: true,
+    configurable: true,
+    writable: true,
+    value: new Pair(WidgetEvents.sizeSet, function (event) {
+        Util.setWidth(event.target.domObject);
+    })
 });
-EventCallbacks.setWidthToRemaining = new Pair(WidgetEvents.sizeSet, function (event) {
-    Util.setWidthToRemaining(event.target.domObject.parent(), event.target.domObject);
+// static setWidthToRemaining = (child: Widget<WidgetEvents>) => new Pair<WidgetEvents, EventHandler<WidgetEvents, Widget<WidgetEvents>>>(WidgetEvents.sizeSet, function (event) {
+//     Util.setWidthToRemaining(event.target.domObject, child.domObject);
+// });
+//
+// static setHeightToRemaining = (child: Widget<WidgetEvents>) => new Pair<WidgetEvents, EventHandler<WidgetEvents, Widget<WidgetEvents>>>(WidgetEvents.sizeSet, function (event) {
+//     Util.setHeightToRemaining(event.target.domObject, child.domObject);
+// });
+Object.defineProperty(EventCallbacks, "setWidthToRemaining", {
+    enumerable: true,
+    configurable: true,
+    writable: true,
+    value: new Pair(WidgetEvents.sizeSet, function (event) {
+        Util.setWidthToRemaining(event.target.domObject.parent(), event.target.domObject);
+    })
 });
-EventCallbacks.setHeightToRemaining = new Pair(WidgetEvents.sizeSet, function (event) {
-    Util.setHeightToRemaining(event.target.domObject.parent(), event.target.domObject);
+Object.defineProperty(EventCallbacks, "setHeightToRemaining", {
+    enumerable: true,
+    configurable: true,
+    writable: true,
+    value: new Pair(WidgetEvents.sizeSet, function (event) {
+        Util.setHeightToRemaining(event.target.domObject.parent(), event.target.domObject);
+    })
 });
+class ColorEditable extends Mixin {
+    constructor() {
+        super(...arguments);
+        Object.defineProperty(this, "_backgroundColor", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: new CSSColorValue()
+        });
+        Object.defineProperty(this, "_textColor", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: new CSSColorValue()
+        });
+    }
+    /**
+     * Do not use this in a class which does not have the field "domObject" defined (does not extend {@link Widget})
+     * @return {this}
+     * @protected
+     */
+    buildColor() {
+        this.domObject.css("background-color", this._backgroundColor.get());
+        this.domObject.css("color", this._textColor.get());
+        return this;
+    }
+    get backgroundColor() {
+        return this._backgroundColor;
+    }
+    get textColor() {
+        return this._textColor;
+    }
+}
+class SpacingEditable extends Mixin {
+    constructor() {
+        super(...arguments);
+        Object.defineProperty(this, "_padding", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: [null, null, null, null]
+        });
+        Object.defineProperty(this, "_margin", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: [null, null, null, null]
+        });
+    }
+    buildSpacing() {
+        this.domObject.css("padding-top", this._padding[0]);
+        this.domObject.css("padding-right", this._padding[1]);
+        this.domObject.css("padding-bottom", this._padding[2]);
+        this.domObject.css("padding-left", this._padding[3]);
+        this.domObject.css("margin-top", this._margin[0]);
+        this.domObject.css("margin-right", this._margin[1]);
+        this.domObject.css("margin-bottom", this._margin[2]);
+        this.domObject.css("margin-left", this._margin[3]);
+        return this;
+    }
+    /**
+     * Set them to {@link undefined} or {@link null} to avoid overwriting the original value
+     * @param {string} top
+     * @param {string} right
+     * @param {string} bottom
+     * @param {string} left
+     * @return {this}
+     */
+    setPadding(top, right, bottom, left) {
+        if (top != null) {
+            this._padding[0] = top;
+        }
+        if (right != null) {
+            this._padding[1] = right;
+        }
+        if (bottom != null) {
+            this._padding[2] = bottom;
+        }
+        if (left != null) {
+            this._padding[3] = left;
+        }
+        return this;
+    }
+    /**
+     * Set them to {@link undefined} or {@link null} to avoid overwriting the original value
+     * @param {string} top
+     * @param {string} right
+     * @param {string} bottom
+     * @param {string} left
+     * @return {this}
+     */
+    setMargin(top, right, bottom, left) {
+        if (top != null) {
+            this._margin[0] = top;
+        }
+        if (right != null) {
+            this._margin[1] = right;
+        }
+        if (bottom != null) {
+            this._margin[2] = bottom;
+        }
+        if (left != null) {
+            this._margin[3] = left;
+        }
+        return this;
+    }
+    /**
+     * returns a copy
+     * @return {[string, string, string, string]}
+     */
+    get padding() {
+        return [...this._padding];
+    }
+    /**
+     * returns a copy
+     * @return {[string, string, string, string]}
+     */
+    get margin() {
+        return [...this._margin];
+    }
+}
 var IconContainingEvents;
 (function (IconContainingEvents) {
     IconContainingEvents["iconClicked"] = "iconClicked";
 })(IconContainingEvents || (IconContainingEvents = {}));
 class IconContaining extends Mixin {
     _setIcon(fieldName, icon) {
+        // @ts-ignore
         this[fieldName].set(icon.getValue(), icon.getType());
+        // if (this[fieldName] != null) {
+        //
+        //     this.children.set(fieldName, this[fieldName]);
+        // }
         return this;
     }
     _getIcon(fieldName) {
+        // @ts-ignore
         return this[fieldName];
     }
     _enableIcon(fieldName, value) {
+        // @ts-ignore
         if (this[fieldName] != null) {
+            // @ts-ignore
             this[fieldName].setInheritVisibility(value);
         }
         return this;
     }
     _iconEnabled(fieldName) {
+        // @ts-ignore
         return this[fieldName].inheritVisibility;
     }
 }
 class OneIconContaining extends IconContaining {
     constructor() {
         super(...arguments);
-        this.icon = new Icon();
+        Object.defineProperty(this, "icon", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: new Icon()
+        });
     }
     _constructor() {
         this.addChild("icon", this.icon);
@@ -105,8 +281,18 @@ class OneIconContaining extends IconContaining {
 class LeadingTrailingIconContaining extends IconContaining {
     constructor() {
         super(...arguments);
-        this.leadingIcon = new Icon();
-        this.trailingIcon = new Icon();
+        Object.defineProperty(this, "leadingIcon", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: new Icon()
+        });
+        Object.defineProperty(this, "trailingIcon", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: new Icon()
+        });
     }
     _constructor() {
         this.addChild("leadingIcon", this.leadingIcon);
@@ -139,78 +325,6 @@ class LeadingTrailingIconContaining extends IconContaining {
         return super._iconEnabled("trailingIcon");
     }
 }
-class ColorEditable extends Mixin {
-    constructor() {
-        super(...arguments);
-        this._backgroundColor = new CSSColorValue();
-        this._textColor = new CSSColorValue();
-    }
-    buildColor() {
-        this.domObject.css("background-color", this._backgroundColor.get());
-        this.domObject.css("color", this._textColor.get());
-        return this;
-    }
-    get backgroundColor() {
-        return this._backgroundColor;
-    }
-    get textColor() {
-        return this._textColor;
-    }
-}
-class SpacingEditable extends Mixin {
-    constructor() {
-        super(...arguments);
-        this._padding = [null, null, null, null];
-        this._margin = [null, null, null, null];
-    }
-    buildSpacing() {
-        this.domObject.css("padding-top", this._padding[0]);
-        this.domObject.css("padding-right", this._padding[1]);
-        this.domObject.css("padding-bottom", this._padding[2]);
-        this.domObject.css("padding-left", this._padding[3]);
-        this.domObject.css("margin-top", this._margin[0]);
-        this.domObject.css("margin-right", this._margin[1]);
-        this.domObject.css("margin-bottom", this._margin[2]);
-        this.domObject.css("margin-left", this._margin[3]);
-        return this;
-    }
-    setPadding(top, right, bottom, left) {
-        if (top != null) {
-            this._padding[0] = top;
-        }
-        if (right != null) {
-            this._padding[1] = right;
-        }
-        if (bottom != null) {
-            this._padding[2] = bottom;
-        }
-        if (left != null) {
-            this._padding[3] = left;
-        }
-        return this;
-    }
-    setMargin(top, right, bottom, left) {
-        if (top != null) {
-            this._margin[0] = top;
-        }
-        if (right != null) {
-            this._margin[1] = right;
-        }
-        if (bottom != null) {
-            this._margin[2] = bottom;
-        }
-        if (left != null) {
-            this._margin[3] = left;
-        }
-        return this;
-    }
-    get padding() {
-        return [...this._padding];
-    }
-    get margin() {
-        return [...this._margin];
-    }
-}
 var ItemContainingEvents;
 (function (ItemContainingEvents) {
     ItemContainingEvents["itemAdded"] = "";
@@ -218,7 +332,12 @@ var ItemContainingEvents;
 })(ItemContainingEvents || (ItemContainingEvents = {}));
 class Item {
     constructor() {
-        this._index = -1;
+        Object.defineProperty(this, "_index", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: -1
+        });
     }
     get index() {
         return this._index;
@@ -231,7 +350,12 @@ class Item {
 class ItemContaining extends Mixin {
     constructor() {
         super(...arguments);
-        this.itemCount = 0;
+        Object.defineProperty(this, "itemCount", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: 0
+        });
     }
     buildItem(item, inheritVisibility = true) {
         item.setInheritVisibility(inheritVisibility);
@@ -253,6 +377,7 @@ class ItemContaining extends Mixin {
             .filter(value => ItemContaining.isItem(value[0]))
             .sort()
             .map(value => value[1])) {
+            //insert items
             if (!(this.domObject.find(i.domObject).length > 0)) {
                 if (pre !== undefined) {
                     console.log(this.domObject);
@@ -289,22 +414,34 @@ class ItemContaining extends Mixin {
     static itemIndex(key) {
         return Number.parseInt(key.substring(ItemContaining.itemChildrenPrefix.length, key.length), 10);
     }
+    /**
+     * This orders the items new if some items are removed<br>
+     * e.g. you delete item 2 from this list {1 -> x, 2 -> y, 3 -> e, 4 -> r} -> {1 -> x, 3 -> e, 4 -> r} -><br>
+     * End product produced by this function: {1 -> x, 2 -> e, 3 -> r}<br>
+     * (indexes still start at 0)
+     * @param {number} indexes
+     * @private
+     */
     reassignDeletedIndexes(...indexes) {
         indexes.sort();
         let removed = new Map();
         for (let i = 0; i < this.itemCount; i++) {
             let item = this.children.get(ItemContaining.itemChildrenPrefix + i);
             let newIndex = i;
+            //item does not exist
             if (item === undefined) {
                 continue;
             }
+            //delete items
             if (indexes.indexOf(i) !== -1) {
                 this.children.delete(ItemContaining.itemChildrenPrefix + i);
                 removed.set(i, item);
                 item.domObject.detach();
                 continue;
             }
+            //moving items
             for (let j of indexes) {
+                //item does not have to move
                 if (j > i) {
                     break;
                 }
@@ -317,9 +454,11 @@ class ItemContaining extends Mixin {
             }
         }
         this.itemCount -= removed.size;
+        //callback
         for (let [k, v] of removed.entries()) {
             this.dispatchEvent(ItemContainingEvents.itemRemoved, [k, v]);
         }
+        //rebuild
         if (this.built && removed.size > 0) {
             this.rebuild();
         }
@@ -329,6 +468,8 @@ class ItemContaining extends Mixin {
         let indexes = [];
         for (let [k, v] of this.children) {
             if (items.indexOf(v) !== -1 && ItemContaining.isItem(k)) {
+                // this.children.delete(k);
+                // this.dispatchEvent(ItemContainingEvents.itemRemoved, [ItemContaining.itemIndex(k), v]);
                 indexes.push(ItemContaining.itemIndex(k));
             }
         }
@@ -336,6 +477,11 @@ class ItemContaining extends Mixin {
         return this;
     }
     removeItem(...indexes) {
+        // for (let index of indexes) {
+        //     let item = this.children.get(ItemContaining.itemChildrenPrefix + indexes);
+        //     this.children.delete(ItemContaining.itemChildrenPrefix + index);
+        //     this.dispatchEvent(ItemContainingEvents.itemRemoved, [index, item]);
+        // }
         this.reassignDeletedIndexes(...indexes);
         return this;
     }
@@ -349,7 +495,12 @@ class ItemContaining extends Mixin {
         return this.itemCount;
     }
 }
-ItemContaining.itemChildrenPrefix = "item";
+Object.defineProperty(ItemContaining, "itemChildrenPrefix", {
+    enumerable: true,
+    configurable: true,
+    writable: true,
+    value: "item"
+});
 var CheckboxEvents;
 (function (CheckboxEvents) {
     CheckboxEvents["selected"] = "selected";
@@ -359,7 +510,18 @@ var CheckboxEvents;
 class CheckboxContaining extends Mixin {
     constructor() {
         super(...arguments);
-        this.checkBoxIcon = Icon.of("check_box_outline_blank", IconType.material);
+        Object.defineProperty(this, "checkBoxIcon", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: Icon.of("check_box_outline_blank", IconType.material)
+        });
+        Object.defineProperty(this, "_checked", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
     }
     _constructor() {
         this.addChild("checkBoxIcon");
@@ -371,12 +533,17 @@ class CheckboxContaining extends Mixin {
             this.checkBoxIcon.build();
         }
         return this.checkBoxIcon.domObject;
+        // .addClass(this.checked ? "checked" : null)
+        // .text(this.checked ? "check_box" : "check_box_outline_blank");
     }
     rebuildCheckbox() {
         this.domObject.toggleClass("checkable", this.checkboxEnabled);
         if (this.checkboxEnabled) {
             this.checkBoxIcon.set(this._checked ? "check_box" : "check_box_outline_blank", IconType.material)
                 .domObject.toggleClass("checked", this._checked);
+            // this.checkBoxIcon.domObject
+            //     .text(this._checked ? "check_box" : "check_box_outline_blank")
+            //     .addClass(this._checked ? "checked" : null);
         }
         return this;
     }
@@ -409,6 +576,15 @@ class CheckboxContaining extends Mixin {
     }
 }
 class IdContaining extends Mixin {
+    constructor() {
+        super(...arguments);
+        Object.defineProperty(this, "_id", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+    }
     setId(id) {
         this._id = id;
         return this;
@@ -423,6 +599,45 @@ var InputEvents;
     InputEvents["input"] = "input";
 })(InputEvents || (InputEvents = {}));
 let Input = class Input extends Mixin {
+    constructor() {
+        super(...arguments);
+        Object.defineProperty(this, "_disabled", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "_name", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "_readonly", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "_required", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "_type", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "_value", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+    }
     rebuildInput(inputElement = this.domObject.find("input")) {
         inputElement.attr("id", this._id)
             .prop("disabled", this._disabled)
@@ -451,10 +666,11 @@ let Input = class Input extends Mixin {
         });
     }
     get value() {
-        return this.domObject.find("input").val();
+        return this.domObject.find("input").val() !== "" ? this.domObject.find("input").val() : null;
     }
     setValue(value) {
-        this.domObject.find("input").val(value);
+        this._value = value;
+        this.domObject?.find("input").val(value);
         return this;
     }
     setId(id) {
@@ -505,6 +721,15 @@ Input = __decorate([
     mixin(IdContaining)
 ], Input);
 let InputLabel = class InputLabel extends Mixin {
+    constructor() {
+        super(...arguments);
+        Object.defineProperty(this, "_label", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+    }
     buildLabel() {
         return $("<label></label>");
     }
@@ -525,3 +750,4 @@ InputLabel = __decorate([
     mixin(IdContaining)
 ], InputLabel);
 export { Util, OneIconContaining, LeadingTrailingIconContaining, IconContainingEvents, EventCallbacks, ColorEditable, SpacingEditable, ItemContaining, ItemContainingEvents, Item, CheckboxContaining, CheckboxEvents, Input, InputEvents, InputLabel };
+//# sourceMappingURL=AbstractWidgets.js.map

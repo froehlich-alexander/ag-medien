@@ -85,123 +85,6 @@ class EventCallbacks {
     });
 }
 
-// interface IconContainingInterface {
-//     setIcon(icon: Icon): this;
-//
-//     getIcon(): Icon;
-//
-//     enableIcon(value: boolean): this;
-//
-//     iconEnabled(): boolean;
-// }
-
-enum IconContainingEvents {
-    iconClicked = "iconClicked"
-}
-
-abstract class IconContaining<EventType extends WidgetEvents | IconContainingEvents> extends Mixin {
-    protected _setIcon(fieldName: string, icon: Icon): this {
-        // @ts-ignore
-        this[fieldName].set(icon.getValue(), icon.getType());
-        // if (this[fieldName] != null) {
-        //
-        //     this.children.set(fieldName, this[fieldName]);
-        // }
-        return this;
-    }
-
-    protected _getIcon(fieldName: string): Icon {
-        // @ts-ignore
-        return this[fieldName];
-    }
-
-    protected _enableIcon(fieldName: string, value: boolean): this {
-        // @ts-ignore
-        if (this[fieldName] != null) {
-            // @ts-ignore
-            this[fieldName].setInheritVisibility(value);
-        }
-        return this;
-    }
-
-    protected _iconEnabled(fieldName: string): boolean {
-        // @ts-ignore
-        return this[fieldName].inheritVisibility;
-    }
-}
-
-interface IconContaining<EventType extends WidgetEvents | IconContainingEvents> extends Mixin, Widget<EventType> {
-}
-
-class OneIconContaining<EventType extends WidgetEvents> extends IconContaining<EventType> {
-    private readonly icon: Icon = new Icon();
-
-    _constructor() {
-        this.addChild("icon", this.icon);
-        this.icon.on(undefined, new Pair(IconEvents.clicked, () => this.dispatchEvent(IconContainingEvents.iconClicked, [this.icon, 0])));
-    }
-
-    public setIcon(icon: Icon): this {
-        return super._setIcon("icon", icon);
-    }
-
-    public getIcon(): Icon {
-        return super._getIcon("icon");
-    }
-
-    public enableIcon(value: boolean): this {
-        return super._enableIcon("icon", value);
-    }
-
-    public iconEnabled(): boolean {
-        return super._iconEnabled("icon");
-    }
-}
-
-class LeadingTrailingIconContaining<EventType extends WidgetEvents | IconContainingEvents> extends IconContaining<EventType> {
-    private readonly leadingIcon: Icon = new Icon();
-    private readonly trailingIcon: Icon = new Icon();
-
-    _constructor() {
-        this.addChild("leadingIcon", this.leadingIcon);
-        this.leadingIcon.on(undefined, new Pair(IconEvents.clicked, () => this.dispatchEvent(IconContainingEvents.iconClicked, [this.leadingIcon, 0])));
-        this.addChild("trailingIcon", this.trailingIcon);
-        this.trailingIcon.on(undefined, new Pair(IconEvents.clicked, () => this.dispatchEvent(IconContainingEvents.iconClicked, [this.trailingIcon, 1])));
-    }
-
-    public setLeadingIcon(icon: Icon): this {
-        return super._setIcon("leadingIcon", icon);
-    }
-
-    public getLeadingIcon(): Icon {
-        return super._getIcon("leadingIcon");
-    }
-
-    public enableLeadingIcon(value: boolean): this {
-        return super._enableIcon("leadingIcon", value);
-    }
-
-    public leadingIconEnabled(): boolean {
-        return super._iconEnabled("leadingIcon");
-    }
-
-    public setTrailingIcon(icon: Icon): this {
-        return super._setIcon("trailingIcon", icon);
-    }
-
-    public getTrailingIcon(): Icon {
-        return super._getIcon("trailingIcon");
-    }
-
-    public enableTrailingIcon(value: boolean): this {
-        return super._enableIcon("trailingIcon", value);
-    }
-
-    public trailingIconEnabled(): boolean {
-        return super._iconEnabled("trailingIcon");
-    }
-}
-
 class ColorEditable<EventType extends WidgetEvents> extends Mixin {
     private readonly _backgroundColor: CSSColorValue = new CSSColorValue();
     private readonly _textColor: CSSColorValue = new CSSColorValue();
@@ -314,6 +197,113 @@ class SpacingEditable<EventType extends WidgetEvents> extends Mixin {
 }
 
 interface SpacingEditable<EventType extends WidgetEvents> extends Mixin, Widget<EventType> {
+}
+
+enum IconContainingEvents {
+    iconClicked = "iconClicked"
+}
+
+abstract class IconContaining<EventType extends WidgetEvents | IconContainingEvents> extends Mixin {
+    protected _setIcon(fieldName: string, icon: Icon): this {
+        // @ts-ignore
+        this[fieldName].set(icon.getValue(), icon.getType());
+        // if (this[fieldName] != null) {
+        //
+        //     this.children.set(fieldName, this[fieldName]);
+        // }
+        return this;
+    }
+
+    protected _getIcon(fieldName: string): Icon {
+        // @ts-ignore
+        return this[fieldName];
+    }
+
+    protected _enableIcon(fieldName: string, value: boolean): this {
+        // @ts-ignore
+        if (this[fieldName] != null) {
+            // @ts-ignore
+            this[fieldName].setInheritVisibility(value);
+        }
+        return this;
+    }
+
+    protected _iconEnabled(fieldName: string): boolean {
+        // @ts-ignore
+        return this[fieldName].inheritVisibility;
+    }
+}
+
+interface IconContaining<EventType extends WidgetEvents | IconContainingEvents> extends Mixin, Widget<EventType> {
+}
+
+class OneIconContaining<EventType extends WidgetEvents> extends IconContaining<EventType> {
+    private readonly icon: Icon = new Icon();
+
+    _constructor() {
+        this.addChild("icon", this.icon);
+        this.icon.on(undefined, new Pair(IconEvents.clicked, () => this.dispatchEvent(IconContainingEvents.iconClicked, [this.icon, 0])));
+    }
+
+    public setIcon(icon: Icon): this {
+        return super._setIcon("icon", icon);
+    }
+
+    public getIcon(): Icon {
+        return super._getIcon("icon");
+    }
+
+    public enableIcon(value: boolean): this {
+        return super._enableIcon("icon", value);
+    }
+
+    public iconEnabled(): boolean {
+        return super._iconEnabled("icon");
+    }
+}
+
+class LeadingTrailingIconContaining<EventType extends WidgetEvents | IconContainingEvents> extends IconContaining<EventType> {
+    private readonly leadingIcon: Icon = new Icon();
+    private readonly trailingIcon: Icon = new Icon();
+
+    _constructor() {
+        this.addChild("leadingIcon", this.leadingIcon);
+        this.leadingIcon.on(undefined, new Pair(IconEvents.clicked, () => this.dispatchEvent(IconContainingEvents.iconClicked, [this.leadingIcon, 0])));
+        this.addChild("trailingIcon", this.trailingIcon);
+        this.trailingIcon.on(undefined, new Pair(IconEvents.clicked, () => this.dispatchEvent(IconContainingEvents.iconClicked, [this.trailingIcon, 1])));
+    }
+
+    public setLeadingIcon(icon: Icon): this {
+        return super._setIcon("leadingIcon", icon);
+    }
+
+    public getLeadingIcon(): Icon {
+        return super._getIcon("leadingIcon");
+    }
+
+    public enableLeadingIcon(value: boolean): this {
+        return super._enableIcon("leadingIcon", value);
+    }
+
+    public leadingIconEnabled(): boolean {
+        return super._iconEnabled("leadingIcon");
+    }
+
+    public setTrailingIcon(icon: Icon): this {
+        return super._setIcon("trailingIcon", icon);
+    }
+
+    public getTrailingIcon(): Icon {
+        return super._getIcon("trailingIcon");
+    }
+
+    public enableTrailingIcon(value: boolean): this {
+        return super._enableIcon("trailingIcon", value);
+    }
+
+    public trailingIconEnabled(): boolean {
+        return super._iconEnabled("trailingIcon");
+    }
 }
 
 enum ItemContainingEvents {
@@ -591,6 +581,7 @@ class Input<ValueType extends string | number, EventType extends WidgetEvents | 
     private _readonly: boolean;
     private _required: boolean;
     private _type: string;
+    private _value: ValueType;
 
     protected rebuildInput(inputElement: JQuery<HTMLInputElement> = this.domObject.find("input")): JQuery<HTMLInputElement> {
         inputElement.attr("id", this._id)
@@ -621,12 +612,13 @@ class Input<ValueType extends string | number, EventType extends WidgetEvents | 
             });
     }
 
-    public get value(): ValueType {
-        return <ValueType>this.domObject.find("input").val();
+    public get value(): ValueType | null {
+        return <ValueType>this.domObject.find("input").val() !== "" ? <ValueType>this.domObject.find("input").val() : null;
     }
 
     public setValue(value: ValueType): this {
-        this.domObject.find("input").val(value);
+        this._value = value;
+        this.domObject?.find("input").val(value);
         return this;
     }
 

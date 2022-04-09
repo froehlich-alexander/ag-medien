@@ -1,4 +1,3 @@
-import {CheckboxEvents, EventCallbacks} from "./AbstractWidgets.js";
 import {Pair, toObject} from "./base.js";
 import {Dialog, DialogEvents} from "./Dialog.js";
 import {Overlay} from "./Overlay.js";
@@ -12,12 +11,14 @@ import {
     FlexBox,
     Icon,
     IconType,
-    ListTile,
+    ListTile, SelectBox, SelectBoxEvents, SelectBoxItem,
     Text,
     TextInput, TextInputEvents,
     Top,
     TopEvents
 } from "./Widgets.js";
+import {CheckboxEvents, EventCallbacks} from "./AbstractWidgets.js";
+import nameInput = Utils.nameInput;
 
 type ColorSchemeMap = Map<string, ColorScheme>;
 
@@ -50,7 +51,7 @@ class ColorScheme {
             this._author = author != null ? author : "unknown";
             this._preDefined = false;
             for (let key of colors.keys()) {
-                this._colors.set(key, colors.get(key) != null ? colors.get(key) : "inherit");
+                this._colors.set(key, colors.get(key) ?? "inherit");
             }
             service.all.set(this._id, this);
         } else {
@@ -284,10 +285,10 @@ class ColorPickerService {
      * @return {ColorPickerService}
      * @param forceReload {boolean} whether it's forced to reload the default from the css stylesheet
      */
-    public getDefault(forceReload: boolean = false) {
+    public getDefault(forceReload: boolean = false): ColorScheme {
         let result = this._all.get("default");
         if (forceReload || result == null) {
-            let colors: ColorMap = this.getCSSVariables(document.styleSheets, null);
+            let colors: ColorMap = this.getCSSVariables(document.styleSheets, undefined);
             result = new ColorScheme(this, "default", "default", "default", colors);
             result.setPreDefined(true);
         }
@@ -299,7 +300,8 @@ class ColorPickerService {
      * <b>DO NOT CALL THIS IN A LOOP</b>, That would be very inefficient
      */
     public reloadFromStorage(colorScheme: ColorScheme) {
-        let colors = window.localStorage.getItem("colors") != null ? JSON.parse(window.localStorage.getItem("colors")) : {};
+        // let colors = window.localStorage.getItem("colors") != null ? JSON.parse(window.localStorage.getItem("colors")) : {};
+        let colors = JSON.parse(window.localStorage.getItem("colors") ?? "{}");
         if (colorScheme.id in Object.keys(colors)) {
             colorScheme.setName(colors[colorScheme.id].name);
             colorScheme.setAuthor(colors[colorScheme.id].author);
@@ -340,7 +342,8 @@ class ColorPickerService {
         for (let i of schemes) {
             this._all.set(i.id, i);
         }
-        let colors = window.localStorage.getItem("colors") != null ? JSON.parse(window.localStorage.getItem("colors")) : {};
+        // let colors = window.localStorage.getItem("colors") != null ? JSON.parse(window.localStorage.getItem("colors")) : {};
+        let colors = JSON.parse(window.localStorage.getItem("colors") ?? "{}");
         for (let [id, color] of this._all.entries()) {
             colors[id] = color;
         }
@@ -375,11 +378,11 @@ class ColorPickerService {
      * @param forceReload {boolean}
      * @return {ColorPickerService}
      */
-    public getCurrent(forceReload = false) {
+    public getCurrent(forceReload: boolean = false): ColorScheme {
         if (!forceReload) {
             for (let i in this._all) {
-                if (this._all.get(i).current) {
-                    return this._all.get(i);
+                if (this._all.get(i)?.current) {
+                    return this._all.get(i)!;
                 }
             }
         }
@@ -684,31 +687,59 @@ class ColorSchemeDialog extends Dialog<any, null> {
     }
 }
 
+namespace Utils {
+    export function nameInput(identifier: string): TextInput {
+        return new TextInput()
+            .setId(identifier + "_name")
+            .setLabel("Name")
+            .setMinLength(3)
+            .setSpellcheck(true);
+    }
+
+    export function authorInput(identifier: string): TextInput {
+        return new TextInput()
+            .setId(identifier + "_author")
+            .setLabel("Author")
+            .setMinLength(5);
+    }
+
+    export function colorSchemeSelectBox(service: ColorPickerService, identifier: string): SelectBox {
+        return new SelectBox()
+            .addItems(...[...service.all.values()].map(v => {
+                let item = new SelectBoxItem()
+                    .setLabel(v.name)
+                    .setId(identifier + v.id);
+                item.value.setValue(v.id)
+                    .setChecked(v.current);
+                return item;
+            }));
+    }
+}
+
 class ColorSchemeNewDialog extends Dialog<any, ColorScheme> {
     private baseScheme: ColorScheme;
-    private readonly content: ContentBox;
     private readonly service: ColorPickerService;
+    private readonly nameInput: TextInput;
+    private readonly authorInput: TextInput;
+    private readonly colorSchemeSelectBox: SelectBox;
 
     constructor(service: ColorPickerService, baseScheme: ColorScheme) {
-        super();
+        super(undefined, "form");
         this.service = service;
-        this.content = new ContentBox("form")
-            .setInheritVisibility(true);
+        this.enableContent(true);
         this.enableButtons(true);
         this.addButton(new Button().setLabel("Create").setIcon(Icon.of("add", IconType.material))
             .on(undefined, new Pair(ButtonEvents.clicked, () => this.accept())), FlexAlign.end);
         this.addButton(Button.Cancel().on(undefined, new Pair(ButtonEvents.clicked, () => this.reject())), FlexAlign.end);
         this.enableTop(true);
-        this.aTop.setLabel("New Color-Scheme");
-        this.aTop.on(undefined, new Pair(TopEvents.iconClicked, () => this.reject()));
+        this.aTop.setLabel("New Color-Scheme")
+            .setDefaultTop(true)
+            .on2(TopEvents.iconClicked, () => this.reject());
         // this.aTop.setIcon(Icon.Close().on(undefined, new Pair(IconEvents.clicked, () => {this.reject();
         //     console.log("close");})));
 
-        if (baseScheme != null) {
-            this.baseScheme = baseScheme;
-        }
+        this.baseScheme = baseScheme ?? service.getDefault();
 
-        this.addChild("content", this.content);
         this.on(undefined, new Pair(DialogEvents.accepted, (event, value) => {
             console.log("accepted");
             console.log(event);
@@ -720,66 +751,101 @@ class ColorSchemeNewDialog extends Dialog<any, ColorScheme> {
             console.log(event);
             console.log(value);
         }));
+
+        //ColorScheme field inputs
+        this.nameInput = Utils.nameInput(ColorSchemeNewDialog.name)
+            // .on2(TextInputEvents.input, (event, value) => {
+            //     this._colorScheme.setName(value);
+            //     this.nameInput.rebuild();
+            //     this.service.save(this._colorScheme);
+            // });
+
+        this.authorInput = Utils.authorInput(ColorSchemeNewDialog.name)
+            // .on2(TextInputEvents.input, (event, value) => {
+            //     this._colorScheme.setAuthor(value);
+            //     this.nameInput.rebuild();
+            //     this.service.save(this._colorScheme);
+            // });
+
+        this.colorSchemeSelectBox = Utils.colorSchemeSelectBox(this.service, ColorSchemeNewDialog.name)
+            .on2(SelectBoxEvents.input, (event, value) => this.baseScheme = this.service.getColorScheme(value))
+
+        this.aContent.addItems(this.colorSchemeSelectBox, this.nameInput, this.authorInput);
     }
 
-    public build(suppressCallback: boolean = false): JQuery<HTMLElement> {
+    public override build(suppressCallback: boolean = false): JQuery<HTMLElement> {
         super.build(true)
             .addClass("color-scheme-new-dialog");
 
-        for (let i of Object.keys(ColorScheme)) {
-            this.content.addItems();
-        }
+        // for (let i of Object.keys(ColorScheme)) {
+        //     this.content.addItems();
+        // }
 
         //choose Base Widget
         // this.content.addItems();
 
         //ColorScheme field inputs
-        this.content.addItems(...[
-            new TextInput()
-                .setId("_name")
-                .setLabel("Name")
-                .setMinLength(3)
-                .setSpellcheck(true),
-            new TextInput()
-                .setId("_author")
-                .setLabel("Author")
-                .setMinLength(5)
-        ].map(value => value.setId(ColorSchemeNewDialog.name + value.id)
-            // @ts-ignore
-            .setPlaceHolder(this.baseScheme[value.id.value])));
+        // this.content.addItems(...[
+        //     new TextInput()
+        //         .setId("_name")
+        //         .setLabel("Name")
+        //         .setMinLength(3)
+        //         .setSpellcheck(true),
+        //     new TextInput()
+        //         .setId("_author")
+        //         .setLabel("Author")
+        //         .setMinLength(5)
+        // ].map(value => value.setId(ColorSchemeNewDialog.name + value.id)
+        //     // @ts-ignore
+        //     .setPlaceHolder(this.baseScheme[value.id.value])));
 
-        this.buildTop()
-            .addClass("default");
-        this.domObject.append(this.content.build());
+        this.buildTop();
+        this.buildContent();
         this.buildButtons();
 
         this.buildCallback(suppressCallback);
         return this.domObject;
     }
 
+    public override rebuild(suppressCallback: boolean = false): JQuery<HTMLElement> {
+        super.rebuild(true);
+
+        this.rebuildCallback(suppressCallback);
+        return this.domObject;
+    }
+
     protected setValue(): ColorScheme {
         console.log("setValue");
-        let inputs = {};
-        for (let i of this.content.items.filter((value: TextInput) => value.id.startsWith(ColorSchemeNewDialog.name))) {
-            let id = (<TextInput>i).id.substring(ColorSchemeNewDialog.name.length, (<TextInput>i).id.length);
-            console.log(id);
-            if ((<TextInput>i).value != null) {
-                // @ts-ignore
-                inputs[id] = (<TextInput>i).value;
-            } else {
-                // @ts-ignore
-                inputs[id] = this.baseScheme[id];
-            }
-        }
-        let tempScheme = new ColorScheme(inputs);
+        // let inputs = {};
+        // for (let i of this.content.items.filter((value: TextInput) => value.id.startsWith(ColorSchemeNewDialog.name))) {
+        //     let id = (<TextInput>i).id.substring(ColorSchemeNewDialog.name.length, (<TextInput>i).id.length);
+        //     console.log(id);
+        //     if ((<TextInput>i).value != null) {
+        //         // @ts-ignore
+        //         inputs[id] = (<TextInput>i).value;
+        //     } else {
+        //         // @ts-ignore
+        //         inputs[id] = this.baseScheme[id];
+        //     }
+        // }
+        // let tempScheme = new ColorScheme(inputs);
         let scheme = this.service.getColorScheme()
             .setColors(this.baseScheme.colors)
             .setCurrent(false)
             .setPreDefined(false)
-            .setName(tempScheme.name)
-            .setAuthor(tempScheme.author);
+            .setName(this.nameInput.value ?? this.baseScheme.name)
+            .setAuthor(this.authorInput.value ?? this.baseScheme.author);
         this.service.save(scheme);
         return scheme;
+    }
+
+    public override open(value?: ColorScheme): this {
+        super.open(value);
+        this.nameInput.setValue("")
+            .setPlaceHolder(this.baseScheme.name);
+        this.authorInput.setValue("")
+            .setPlaceHolder(this.baseScheme.author);
+        return this;
     }
 
     public setBaseScheme(scheme: ColorScheme): this {
@@ -797,26 +863,19 @@ class ColorSchemeInfoDialog extends Dialog<DialogEvents, ColorScheme> {
 
     constructor(service: ColorPickerService, colorScheme: ColorScheme) {
         super();
-        this._colorScheme = colorScheme;
         this.colorSchemeBackup = colorScheme.copy();
         this.service = service;
+        this._colorScheme = colorScheme;
 
         //ColorScheme field inputs
-        this.nameInput = new TextInput()
-            .setId(ColorSchemeInfoDialog.name + "_name")
-            .setLabel("Name")
-            .setMinLength(3)
-            .setSpellcheck(true)
+        this.nameInput = Utils.nameInput(ColorSchemeInfoDialog.name)
             .on2(TextInputEvents.input, (event, value) => {
                 this._colorScheme.setName(value);
                 this.nameInput.rebuild();
                 this.service.save(this._colorScheme);
             });
 
-        this.authorInput = new TextInput()
-            .setId(ColorSchemeInfoDialog.name + "_author")
-            .setLabel("Author")
-            .setMinLength(5)
+        this.authorInput = Utils.authorInput(ColorSchemeInfoDialog.name)
             .on2(TextInputEvents.input, (event, value) => {
                 this._colorScheme.setAuthor(value);
                 this.nameInput.rebuild();
@@ -846,7 +905,7 @@ class ColorSchemeInfoDialog extends Dialog<DialogEvents, ColorScheme> {
         }), FlexAlign.end);
     }
 
-    public build(suppressCallback: boolean = false): JQuery<HTMLElement> {
+    public override build(suppressCallback: boolean = false): JQuery<HTMLElement> {
         super.build(true);
         this.domObject.addClass("color-scheme-info-dialog");
 
@@ -858,7 +917,7 @@ class ColorSchemeInfoDialog extends Dialog<DialogEvents, ColorScheme> {
         return this.domObject;
     }
 
-    public rebuild(suppressCallback: boolean = false): JQuery<HTMLElement> {
+    public override rebuild(suppressCallback: boolean = false): JQuery<HTMLElement> {
         super.rebuild(true);
 
         this.nameInput.setPlaceHolder(this._colorScheme.name);
@@ -876,9 +935,9 @@ class ColorSchemeInfoDialog extends Dialog<DialogEvents, ColorScheme> {
         return this.domObject;
     }
 
-    public open(value?: ColorScheme): this {
+    public override open(value?: ColorScheme): this {
         super.open(value);
-        this.setColorScheme(value);
+        this.setColorScheme(value!);
         this.aTop.setLabel(this._colorScheme.name);
         this.nameInput.setValue(this._colorScheme.name);
         this.authorInput.setValue(this._colorScheme.author);

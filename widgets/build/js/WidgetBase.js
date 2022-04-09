@@ -26,6 +26,26 @@ var FontFamily;
     FontFamily["fantasy"] = "fantasy";
 })(FontFamily || (FontFamily = {}));
 class Font {
+    constructor() {
+        Object.defineProperty(this, "_size", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "_weight", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "_family", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+    }
     setSize(size) {
         this._size = size;
         return this;
@@ -50,7 +70,12 @@ class Font {
 }
 class Color {
     constructor(rgba) {
-        this.value = 0x000000FF;
+        Object.defineProperty(this, "value", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: 0x000000FF
+        }); //a = 255
         this.set(rgba);
     }
     set(rgba) {
@@ -106,8 +131,24 @@ class Color {
 }
 class CSSColorValue {
     constructor() {
-        this.color = new Color();
-        this._type = "null";
+        Object.defineProperty(this, "color", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: new Color()
+        });
+        Object.defineProperty(this, "_type", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: "null"
+        });
+        Object.defineProperty(this, "colorString", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
     }
     get() {
         switch (this._type) {
@@ -143,3 +184,4 @@ class CSSColorValue {
     }
 }
 export { FontWeight, FontSize, FontFamily, Font, Color, CSSColorValue };
+//# sourceMappingURL=WidgetBase.js.map

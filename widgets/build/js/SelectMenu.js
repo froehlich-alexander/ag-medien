@@ -1,4 +1,5 @@
 import { Widget, WidgetEvents } from './Widget.js';
+// import * as $ from 'jquery';
 import { Button, FlexAlign, Icon, Top } from "./Widgets.js";
 import { Dialog, DialogEvents } from "./Dialog.js";
 export var a = "fdf";
@@ -14,13 +15,42 @@ const SelectMenuEvents = {
 export class SelectMenuItem extends Widget {
     constructor() {
         super(...arguments);
-        this.selected = false;
-        this.icon = new Icon();
+        Object.defineProperty(this, "label", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "value", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "selected", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: false
+        });
+        Object.defineProperty(this, "checkbox", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "icon", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: new Icon()
+        });
     }
     getIcon() {
         return this.icon;
     }
     setIcon(icon) {
+        //this.item should never be null
         if (this.icon != null) {
             this.icon.set(icon.getValue(), icon.getType()).show();
         }
@@ -40,6 +70,7 @@ export class SelectMenuItem extends Widget {
                 .text(label);
         }
         this.label = label;
+        //set this.value if not already set
         if (this.value == null) {
             let value;
             value = label;
@@ -71,7 +102,16 @@ export class SelectMenuItem extends Widget {
                 this.domObject.find(".checkbox")
                     .text("check_box_outline_blank");
             }
+            //do this only if the state has changed
             this.dispatchEvent(value ? SelectMenuItemEvents.selected : SelectMenuItemEvents.unselected);
+            // if (value != this.selected) {
+            //     for (let i of this.callbacks.filter(value1 => value1.key == (value ? SelectMenuItemEvents.selected : SelectMenuItemEvents.unselected) || value1.key == SelectMenuItemEvents.all)) {
+            //         i.value({
+            //             type: value ? SelectMenuItemEvents.selected : SelectMenuItemEvents.unselected,
+            //             target: this
+            //         });
+            //     }
+            // }
         }
         this.selected = value;
         return this;
@@ -85,6 +125,10 @@ export class SelectMenuItem extends Widget {
     hasCheckbox() {
         return this.checkbox;
     }
+    /**
+     * Prefer setting the item policy in {@link SelectMenu}
+     * @param value
+     */
     setCheckbox(value) {
         if (this.built && this.checkbox != value) {
             this.domObject.toggleClass("checkbox");
@@ -102,7 +146,7 @@ export class SelectMenuItem extends Widget {
             .text(this.label))
             .append($("<div></div>")
             .addClass("material-icons checkbox")
-            .addClass(this.checkbox ? "show" : null)
+            .toggleClass("show", this.checkbox)
             .text(this.selected ? "check_box" : "check_box_outline_blank"))
             .on({
             click: () => {
@@ -116,9 +160,42 @@ export class SelectMenuItem extends Widget {
 export class SelectMenu extends Dialog {
     constructor(acceptButton = Button.Ok(), rejectButton = Button.Cancel()) {
         super();
-        this.items = [];
-        this.minSelected = 1;
-        this.maxSelected = 1;
+        Object.defineProperty(this, "items", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: []
+        });
+        Object.defineProperty(this, "title", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "minSelected", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: 1
+        });
+        Object.defineProperty(this, "maxSelected", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: 1
+        });
+        Object.defineProperty(this, "values", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "top", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
         if (acceptButton != null) {
             this.addButton(acceptButton.on({ "clicked": () => this.accept() }), FlexAlign.start);
         }
@@ -130,6 +207,18 @@ export class SelectMenu extends Dialog {
             clicked: () => this.reject()
         }).setClickable(true));
         this.children.set("top", this.top);
+        // this.buttonBox.setSpacing(1, 10, 0);
+        // this.on({
+        //     "sizeSet": () => {
+        //         console.log("select sizeSet")
+        //         //set content height
+        //         let contentHeight: number = 0;
+        //         for (let i of this.items) {
+        //             contentHeight += i.domObject.outerHeight(true);
+        //         }
+        //         this.domObject.find(".content").height(contentHeight);
+        //     }
+        // });
         this.on({
             "sizeSet": () => {
                 this.domObject.find(".content").css("max-height", "calc(100% - "
@@ -141,15 +230,22 @@ export class SelectMenu extends Dialog {
         super.build(true)
             .addClass("select-menu");
         this.domObject.append(this.top.build().addClass("top"));
+        //content
         let content = $("<div/>")
             .addClass("content")
             .appendTo(this.domObject);
         for (let i of this.items) {
             i.on({
                 selected: (event) => {
+                    // for (let i of this.callbacks.filter(value => value.key == SelectMenuEvents.checkStateChanged || value.key == SelectMenuEvents.all)) {
+                    //     i.value({type: i.key, target: this}, event.type == SelectMenuItemEvents.selected, event.target);
+                    // }
                     this.dispatchEvent(SelectMenuEvents.checkStateChanged, [event.type == SelectMenuItemEvents.selected, event.target]);
                 },
                 unselected: (event) => {
+                    // for (let i of this.callbacks.filter(value => value.key == SelectMenuEvents.checkStateChanged || value.key == SelectMenuEvents.all)) {
+                    //     i.value({type: i.key, target: this}, event.type == SelectMenuItemEvents.selected, event.target);
+                    // }
                     this.dispatchEvent(SelectMenuEvents.checkStateChanged, [event.type == SelectMenuItemEvents.selected, event.target]);
                 },
             })
@@ -164,6 +260,13 @@ export class SelectMenu extends Dialog {
         return super.buildButtons()
             .addClass("bottom");
     }
+    // public static default(): SelectMenu {
+    //     return new SelectMenu().enableButtons(true);
+    // }
+    // public getValues(): string[] {
+    //     console.assert(this.built && this.getResult() != null && this.values != null);
+    //     return this.values;
+    // }
     setValue() {
         this.value = this.items.filter(value => value.isSelected()).map(value => value.getValue());
         return this.value;
@@ -214,3 +317,4 @@ export class SelectMenu extends Dialog {
         return this;
     }
 }
+//# sourceMappingURL=SelectMenu.js.map

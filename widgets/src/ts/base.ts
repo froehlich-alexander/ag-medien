@@ -1,5 +1,3 @@
-import {OneIconContaining} from "./AbstractWidgets.js";
-
 class Pair<T, T1> {
     first: T;
     second: T1;
@@ -68,7 +66,7 @@ abstract class MixinImplementing extends Mixin {
 function createMixinFields<T>(self: T, ...mixins: Mixin[]): void {
     for (let mixin of mixins) {
         for (let field of Object.keys(mixin)) {
-            Object.defineProperty(self, field, Object.getOwnPropertyDescriptor(mixin, field));
+            Object.defineProperty(self, field, Object.getOwnPropertyDescriptor(mixin, field)!);
             // @ts-ignore
             self[field] = mixin[field];
         }

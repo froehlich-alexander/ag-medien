@@ -23,10 +23,11 @@ abstract class Dialog<EventType extends DialogEvents, ValueType> extends Widget<
     private opened: boolean;
     protected readonly buttonBox: ButtonBox = new ButtonBox();
     protected readonly aTop: Top = new Top();
-    protected readonly aContent: ContentBox = new ContentBox();
+    protected readonly aContent: ContentBox;
 
-    protected constructor(htmlElementType?: string) {
+    protected constructor(htmlElementType?: string, contentHtmlType?: string) {
         super(htmlElementType);
+        this.aContent = new ContentBox(contentHtmlType);
         this.addChild("buttons", this.buttonBox);
         this.addChild("atop", this.aTop);
         this.addChild("aContent", this.aContent);
@@ -35,28 +36,28 @@ abstract class Dialog<EventType extends DialogEvents, ValueType> extends Widget<
 
     protected buildTop(): JQuery<HTMLElement> {
         let top = this.aTop.build();
-        this.domObject.append(top);
+        this.domObject!.append(top);
         return top;
     }
 
     protected buildContent(): JQuery<HTMLElement> {
         let content = this.aContent.build();
-        this.domObject.append(content);
+        this.domObject!.append(content);
         return content;
     }
 
     protected buildButtons(): JQuery<HTMLElement> {
         let buttonBox = this.buttonBox.build();
-        this.domObject.append(buttonBox);
+        this.domObject!.append(buttonBox);
         return buttonBox;
     }
 
-    public build(suppressCallback: boolean = false): JQuery<HTMLElement> {
+    public override build(suppressCallback: boolean = false): JQuery<HTMLElement> {
         super.build(true)
             .addClass("dialog-widget");
 
         this.buildCallback(suppressCallback);
-        return this.domObject;
+        return this.domObject!;
     }
 
     public enableButtons(value: boolean): this {
@@ -133,7 +134,7 @@ abstract class Dialog<EventType extends DialogEvents, ValueType> extends Widget<
         return this;
     }
 
-    destroy(): this {
+    public override destroy(): this {
         super.destroy();
         if (this.opened) {
             this.reject();

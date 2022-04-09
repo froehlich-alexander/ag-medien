@@ -26,15 +26,21 @@ body {
 
   .color-scheme-new-dialog {
     width: 35%;
-    max-height: 50%;
+    //max-height: 50%;
     left: 50%;
     transform: translateX(-50%);
-    top: 25%;
+    top: 0;
     position: relative;
     background-color: var(--background-color-1);
 
     .content {
       padding: 1rem;
+    }
+
+    .select-box-widget {
+      max-height: 50%;
+      max-width: 80%;
+      margin: 0 auto;
     }
   }
 

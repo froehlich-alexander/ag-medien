@@ -47,8 +47,8 @@ interface _Widget {
 
 abstract class Widget<EventType extends WidgetEvents, HtmlElementType extends HTMLElement = HTMLElement> extends _EventHandler implements _Widget {
     private _built: boolean = false;
-    private _domObject: JQuery<HtmlElementType>;
-    protected readonly children: Map<string, Widget<WidgetEvents> | null> = new Map();
+    private _domObject?: JQuery<HtmlElementType>;
+    protected readonly children: Map<string, Widget<WidgetEvents>> = new Map();
     private readonly callbacks: Array<Pair<string, EventHandler<string, Widget<EventType>>>> = [];
     private readonly _disabledEvents: Set<string> = new Set();
     private _visibility: boolean = false;
@@ -92,7 +92,7 @@ abstract class Widget<EventType extends WidgetEvents, HtmlElementType extends HT
     public build(suppressCallback: boolean = false): JQuery<HtmlElementType> {
         this._domObject = <JQuery<HtmlElementType>>$(`<${this.htmlElementType}></${this.htmlElementType}>`)
             .addClass("widget")
-            .addClass(this._hidingIfNotShown ? "hidingIfNotShown" : null)
+            .toggleClass("hidingIfNotShown", this._hidingIfNotShown)
             .on("click", () => this.dispatchEvent(WidgetEvents.clicked));
         // this.sizeSetObserver.observe(this._domObject.get()[0], {
         //     attributeFilter: ["style", "class"],
@@ -103,14 +103,17 @@ abstract class Widget<EventType extends WidgetEvents, HtmlElementType extends HT
     }
 
     public rebuild(suppressCallback: boolean = false): JQuery<HtmlElementType> {
-        this.sizeSetObserver.observe(this._domObject.get(0), {
+        this.sizeSetObserver.observe(this._domObject!.get(0)!, {
             attributeFilter: ["style", "class"],
         });
+        for (let i of this.children.values()) {
+            i?.tryRebuild();
+        }
         this.rebuildCallback(suppressCallback);
-        return this._domObject;
+        return this._domObject!;
     }
 
-    public tryRebuild(suppressCallback: boolean = false): JQuery<HtmlElementType> {
+    public tryRebuild(suppressCallback: boolean = false): JQuery<HtmlElementType> | undefined {
         if (this.built) {
             this.rebuild(suppressCallback);
         }
@@ -120,7 +123,7 @@ abstract class Widget<EventType extends WidgetEvents, HtmlElementType extends HT
     public destroy(): this {
         console.assert(this._built);
         this._built = false;
-        this._domObject.remove().off();
+        this._domObject!.remove().off();
         this.setVisibility(false);
         return this;
     }
@@ -140,7 +143,7 @@ abstract class Widget<EventType extends WidgetEvents, HtmlElementType extends HT
         if (suppress) {
             return;
         }
-        if (this._built == true) {
+        if (this._built) {
             this.dispatchEvent(WidgetEvents.rebuild);
         }
         this.buildVisibility();//todo do we need this? remove???
@@ -165,18 +168,16 @@ abstract class Widget<EventType extends WidgetEvents, HtmlElementType extends HT
         return this;
     }
 
-    public on2(events?: EventCallback<EventType, Widget<EventType, HtmlElementType>> | string, handler?: EventHandler<string, Widget<EventType, HtmlElementType>>): this {
+    public on2(events: EventCallback<EventType, Widget<EventType, HtmlElementType>> | string, handler?: EventHandler<string, Widget<EventType, HtmlElementType>>): this {
         if (this._built) {
             // console.log("on called after element is built");
             // console.log(events);
             // console.log(this);
             // this.domObject.on(events);
         }
-        if (handler !== undefined) {
-            // @ts-ignore
+        if (handler !== undefined && typeof events === "string") {
             this.callbacks.push(new Pair(events, handler));
         } else if (events != null) {
-            // @ts-ignore
             for (let i in events) {
                 // @ts-ignore
                 this.callbacks.push(new Pair(i, events[i]));
@@ -212,12 +213,12 @@ abstract class Widget<EventType extends WidgetEvents, HtmlElementType extends HT
             // @ts-ignore
             child = this[childName];
         }
-        this.children.set(childName, child);
-        child.on(undefined, new Pair(WidgetEvents.needVisibilityUpdate, (event) => {
+        this.children.set(childName, child!);
+        child!.on2(WidgetEvents.needVisibilityUpdate, (event) => {
             if (event.target.inheritVisibility) {
                 event.target.setVisibility(this.visibility);
             }
-        }));
+        });
         return this;
     }
 
@@ -245,14 +246,14 @@ abstract class Widget<EventType extends WidgetEvents, HtmlElementType extends HT
     private buildVisibility(): this {
         if (this._built) {
             if (this._visibility) {
-                this._domObject.addClass("show");
-                if (!this.sizeSet && this._domObject.filter(":visible").length > 0) {
+                this._domObject!.addClass("show");
+                if (!this.sizeSet && this._domObject!.filter(":visible").length > 0) {
                     // this.sizeSet = true;
                     // this.sizeSetObserver.disconnect();
                     // this.dispatchEvent("sizeSet");
                 }
             } else {
-                this._domObject.removeClass("show");
+                this._domObject!.removeClass("show");
             }
             this.dispatchEvent(WidgetEvents.visibilityChanged, [this._visibility]);
         }
@@ -310,7 +311,7 @@ abstract class Widget<EventType extends WidgetEvents, HtmlElementType extends HT
     }
 
     public get domObject(): JQuery<HtmlElementType> {
-        return this._domObject;
+        return this._domObject!;
     }
 
     public get visibility(): boolean {

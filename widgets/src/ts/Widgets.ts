@@ -1,18 +1,14 @@
-import {valHooks} from "jquery";
-import {Dialog, DialogEvents} from "./Dialog.js";
-import {Widget, WidgetEvents} from "./Widget.js";
 import {Mixin, mixin, MixinImplementing, Pair, Tripel} from "./base.js";
+import {Widget, WidgetEvents} from "./Widget.js";
+import {Font, FontFamily, FontSize, FontWeight} from "./WidgetBase.js";
 import {
     CheckboxContaining,
     ColorEditable,
     EventCallbacks, IconContainingEvents, Input, InputEvents, InputLabel, ItemContaining, ItemContainingEvents,
     LeadingTrailingIconContaining,
     OneIconContaining,
-    SpacingEditable,
-    Util
+    SpacingEditable
 } from "./AbstractWidgets.js";
-import {Font, FontFamily, FontSize, FontWeight} from "./WidgetBase.js";
-import ChangeEvent = JQuery.ChangeEvent;
 
 class Item extends Mixin {
     private _index: number;
@@ -35,7 +31,7 @@ enum IconType {
     material
 }
 
-@mixin(MixinImplementing, SpacingEditable)
+@mixin(SpacingEditable)
 class Icon extends Widget<IconEvents> {
     private type: IconType;
     private value: string;
@@ -141,9 +137,10 @@ const ButtonEvents = {
 
 type ButtonEvents = (typeof IconEvents)[keyof typeof IconEvents];
 
+@mixin(OneIconContaining)
 class Button extends Widget<ButtonEvents> {
     private label: string;
-    private icon: Icon | null;
+    // private readonly icon: Icon | null;
 
     public static Cancel = () => new Button().setLabel("Cancel").setIcon(Icon.Cancel());
     public static Ok = () => new Button().setLabel("Ok").setIcon(Icon.Done());
@@ -159,10 +156,16 @@ class Button extends Widget<ButtonEvents> {
     // public static Agree = () => new Button().setLabel("Agree").setIcon(Icon.of("done", IconType.material));
     // public static Agree = () => new Button().setLabel("Agree").setIcon(Icon.of("done", IconType.material));
 
-    build(suppressCallback: boolean = false): JQuery<HTMLElement> {
+    constructor() {
+        super();
+        this.mixinConstructor();
+        this.enableIcon(true);
+    }
+
+    public override build(suppressCallback: boolean = false): JQuery<HTMLElement> {
         super.build(true)
             .addClass("button-widget")
-            .append(this.icon != null ? this.icon.build() : null)
+            .append(this.getIcon().build())
             .append($("<div></div>")
                 .text(this.label)
                 .addClass("text"))
@@ -184,18 +187,21 @@ class Button extends Widget<ButtonEvents> {
         return this;
     }
 
-    getIcon(): Icon {
-        return this.icon;
-    }
+    // getIcon(): Icon {
+    //     return this.icon;
+    // }
+    //
+    // setIcon(value: Icon | null): Button {
+    //     this.icon = value;
+    //     if (this.icon != null) {
+    //         this.icon.setInheritVisibility(true);
+    //     }
+    //     this.addChild("icon", this.icon);
+    //     return this;
+    // }
+}
 
-    setIcon(value: Icon | null): Button {
-        this.icon = value;
-        if (this.icon != null) {
-            this.icon.setInheritVisibility(true);
-        }
-        this.addChild("icon", this.icon);
-        return this;
-    }
+interface Button extends MixinImplementing, OneIconContaining<ButtonEvents> {
 }
 
 enum FlexAlign {
@@ -529,7 +535,7 @@ class Text extends Widget<WidgetEvents> {
 
     constructor() {
         super();
-        this.mixinConstructor(ColorEditable, SpacingEditable);
+        this.mixinConstructor();
         // createMixinFields(this, new ColorEditable(), new SpacingEditable());
         this._font = new Font();
     }
@@ -1095,7 +1101,7 @@ type SelectBoxEvents = (typeof SelectBoxEvents[keyof typeof SelectBoxEvents]);
 
 @mixin(OneIconContaining)
 class SelectBox extends Widget<SelectBoxEvents> {
-    private items: SelectBoxItem[] = [];
+    private _items: SelectBoxItem[] = [];
     private optionsViewButton: CheckBoxInput;
 
     constructor() {
@@ -1113,10 +1119,11 @@ class SelectBox extends Widget<SelectBoxEvents> {
                 this.optionsViewButton.setChecked(false).tryRebuild();
             }
         });
+        this.on2(SelectBoxEvents.change, (event, ...args) => console.log(args));
         this.addChild("optionsViewButton");
     }
 
-    public build(suppressCallback: boolean = false): JQuery<HTMLElement> {
+    public override build(suppressCallback: boolean = false): JQuery<HTMLElement> {
         super.build(true)
             .addClass("select-box-widget")
             .append($("<div></div>")
@@ -1131,9 +1138,13 @@ class SelectBox extends Widget<SelectBoxEvents> {
         return this.domObject;
     }
 
-    public rebuild(suppressCallback: boolean = false): JQuery<HTMLElement> {
+    public override rebuild(suppressCallback: boolean = false): JQuery<HTMLElement> {
         super.rebuild(true);
-        for (let i of this.items) {
+
+        this.domObject.find(".current").children(".value").detach();
+        this.domObject.find("ul").children("li").detach();
+
+        for (let i of this._items) {
             if (i.value.built) {
                 i.value.domObject.detach();
             }
@@ -1142,10 +1153,10 @@ class SelectBox extends Widget<SelectBoxEvents> {
             }
         }
         this.domObject.children(".current")
-            .prepend(this.items.map(value => value.value.built ? value.value.domObject : value.value.build()));
+            .prepend(this._items.map(value => value.value.built ? value.value.domObject : value.value.build()));
         this.domObject.children("ul")
-            .append(this.items.map(value => value.listItem.built ? value.listItem.domObject : value.listItem.build()));
-        for (let i of this.items) {
+            .append(this._items.map(value => value.listItem.built ? value.listItem.domObject : value.listItem.build()));
+        for (let i of this._items) {
             i.value.rebuild();
             i.listItem.rebuild();
         }
@@ -1155,22 +1166,35 @@ class SelectBox extends Widget<SelectBoxEvents> {
         return this.domObject;
     }
 
-    public addItem(...items: SelectBoxItem[]): this {
+    public addItems(...items: SelectBoxItem[]): this {
         for (let item of items) {
-            item.value.on2(InputEvents.input, () => this.dispatchEvent(SelectBoxEvents.input, [item.value.value]));
-            item.value.on2(InputEvents.change, () => this.dispatchEvent(SelectBoxEvents.change, [item.value.value]));
+            item.value.on2(InputEvents.input, () => this.dispatchEvent(SelectBoxEvents.input, [item.value]));
+            item.value.on2(InputEvents.change, () => this.dispatchEvent(SelectBoxEvents.change, [item.value]));
             item.listItem.setInheritVisibility(true);
-            let index = this.items.push(item);
+            let index = this._items.push(item);
             this.addChild("item" + index + "li", item.listItem);
             this.addChild("item" + index + "value", item.value);
         }
         return this;
     }
 
+    public removeItems(...items: SelectBoxItem[]): this {
+        for (let item of items) {
+            for (let i of this._items.splice(this._items.indexOf(item), 1)) {
+                //TODO 09.04.2022 clean up event handlers
+            }
+        }
+        return this;
+    }
+
     public setChecked(index: number, value: boolean = true): this {
-        this.items[index].value.setChecked(value)
+        this._items[index].value.setChecked(value)
             .tryRebuild();
         return this;
+    }
+
+    public get items(): SelectBoxItem[] {
+        return this._items;
     }
 }
 
@@ -1211,7 +1235,7 @@ class ContentBox extends Box<WidgetEvents> {
         this.on(undefined, EventCallbacks.setHeightToRemaining);
     }
 
-    public build(suppressCallback: boolean = false): JQuery<HTMLElement> {
+    public override build(suppressCallback: boolean = false): JQuery<HTMLElement> {
         super.build(true)
             .addClass("default-content");
         this.buildCallback(suppressCallback);

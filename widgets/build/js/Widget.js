@@ -1,4 +1,6 @@
 import { Pair } from "./base.js";
+// import {$, jQuery} from "../lib/jquery";
+// import * as $ from "jquery";
 import "./imports.js";
 const WidgetEvents = {
     build: "build",
@@ -15,15 +17,72 @@ class _EventHandler {
 class Widget extends _EventHandler {
     constructor(htmlElementType) {
         super();
-        this._built = false;
-        this.children = new Map();
-        this.callbacks = [];
-        this._disabledEvents = new Set();
-        this._visibility = false;
-        this._inheritVisibility = false;
-        this._hidingIfNotShown = false;
-        this.sizeSet = false;
-        this.htmlElementType = "div";
+        Object.defineProperty(this, "_built", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: false
+        });
+        Object.defineProperty(this, "_domObject", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "children", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: new Map()
+        });
+        Object.defineProperty(this, "callbacks", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: []
+        });
+        Object.defineProperty(this, "_disabledEvents", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: new Set()
+        });
+        Object.defineProperty(this, "_visibility", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: false
+        });
+        Object.defineProperty(this, "_inheritVisibility", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: false
+        });
+        Object.defineProperty(this, "_hidingIfNotShown", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: false
+        });
+        Object.defineProperty(this, "sizeSet", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: false
+        });
+        Object.defineProperty(this, "sizeSetObserver", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "htmlElementType", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: "div"
+        });
         if (htmlElementType != null) {
             this.htmlElementType = htmlElementType;
         }
@@ -36,6 +95,11 @@ class Widget extends _EventHandler {
                 }
                 this.sizeSet = true;
                 this.dispatchEvent(WidgetEvents.sizeSet);
+                // if (target.filter(".button-box-widget").length > 0) {
+                //     console.log("widget sizeSetObserver");
+                //     console.log(target);
+                //     console.log(mutationList[0]);
+                // }
                 this.sizeSetObserver.disconnect();
             }
         });
@@ -44,11 +108,18 @@ class Widget extends _EventHandler {
             this.buildVisibility();
         }));
     }
+    /**
+     * This method should call {@link buildCallback} before it returns
+     */
     build(suppressCallback = false) {
         this._domObject = $(`<${this.htmlElementType}></${this.htmlElementType}>`)
             .addClass("widget")
-            .addClass(this._hidingIfNotShown ? "hidingIfNotShown" : null)
+            .toggleClass("hidingIfNotShown", this._hidingIfNotShown)
             .on("click", () => this.dispatchEvent(WidgetEvents.clicked));
+        // this.sizeSetObserver.observe(this._domObject.get()[0], {
+        //     attributeFilter: ["style", "class"],
+        // });
+        // this._built = true;
         this.buildCallback(suppressCallback);
         return this._domObject;
     }
@@ -56,6 +127,9 @@ class Widget extends _EventHandler {
         this.sizeSetObserver.observe(this._domObject.get(0), {
             attributeFilter: ["style", "class"],
         });
+        for (let i of this.children.values()) {
+            i?.tryRebuild();
+        }
         this.rebuildCallback(suppressCallback);
         return this._domObject;
     }
@@ -86,13 +160,17 @@ class Widget extends _EventHandler {
         if (suppress) {
             return;
         }
-        if (this._built == true) {
+        if (this._built) {
             this.dispatchEvent(WidgetEvents.rebuild);
         }
-        this.buildVisibility();
+        this.buildVisibility(); //todo do we need this? remove???
     }
     on(events, event) {
         if (this._built) {
+            // console.log("on called after element is built");
+            // console.log(events);
+            // console.log(this);
+            // this.domObject.on(events);
         }
         if (event != null) {
             this.callbacks.push(event);
@@ -106,13 +184,19 @@ class Widget extends _EventHandler {
     }
     on2(events, handler) {
         if (this._built) {
+            // console.log("on called after element is built");
+            // console.log(events);
+            // console.log(this);
+            // this.domObject.on(events);
         }
-        if (handler !== undefined) {
+        if (handler !== undefined && typeof events === "string") {
             this.callbacks.push(new Pair(events, handler));
         }
         else if (events != null) {
             for (let i in events) {
+                // @ts-ignore
                 this.callbacks.push(new Pair(i, events[i]));
+                // @ts-ignore
                 console.log(new Pair(i, events[i]));
             }
         }
@@ -131,16 +215,24 @@ class Widget extends _EventHandler {
         }
         return this;
     }
+    /**
+     * Using this function single parameterized works only if the child is a field (with the same name as {@link childName}) of this object
+     * @param {string} childName
+     * @param {Widget<WidgetEvents>} child
+     * @return {this}
+     * @protected
+     */
     addChild(childName, child) {
         if (child === undefined) {
+            // @ts-ignore
             child = this[childName];
         }
         this.children.set(childName, child);
-        child.on(undefined, new Pair(WidgetEvents.needVisibilityUpdate, (event) => {
+        child.on2(WidgetEvents.needVisibilityUpdate, (event) => {
             if (event.target.inheritVisibility) {
                 event.target.setVisibility(this.visibility);
             }
-        }));
+        });
         return this;
     }
     disableEvent(event, disable = true) {
@@ -158,11 +250,18 @@ class Widget extends _EventHandler {
     hide() {
         return this.setVisibility(false);
     }
+    /**
+     * Loads the visibility into the domObj (if already built)
+     * @private
+     */
     buildVisibility() {
         if (this._built) {
             if (this._visibility) {
                 this._domObject.addClass("show");
                 if (!this.sizeSet && this._domObject.filter(":visible").length > 0) {
+                    // this.sizeSet = true;
+                    // this.sizeSetObserver.disconnect();
+                    // this.dispatchEvent("sizeSet");
                 }
             }
             else {
@@ -182,6 +281,11 @@ class Widget extends _EventHandler {
         }
         return this;
     }
+    /**
+     * Copies all the important data from the other object to this object
+     * @param {this} other the other object
+     * @return {this} self
+     */
     copy(other) {
         this.setInheritVisibility(other._inheritVisibility);
         this.setHidingIfNotShown(other._hidingIfNotShown);
@@ -191,6 +295,10 @@ class Widget extends _EventHandler {
     show() {
         return this.setVisibility(true);
     }
+    /**
+     * Set whether this widget's visibility should always be set to the parent's visibility
+     * @param value
+     */
     setInheritVisibility(value) {
         let changed = this._inheritVisibility !== value;
         this._inheritVisibility = value;
@@ -229,3 +337,4 @@ class Widget extends _EventHandler {
     }
 }
 export { Widget, WidgetEvents };
+//# sourceMappingURL=Widget.js.map

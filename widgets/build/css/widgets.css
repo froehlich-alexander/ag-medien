@@ -223,21 +223,7 @@
   font-size: 18px;
   color: #60666d;
   border-radius: 1rem;
-}
-@media (min-width: 768px) {
-  .widget.select-box-widget {
-    width: 70%;
-  }
-}
-@media (min-width: 992px) {
-  .widget.select-box-widget {
-    width: 50%;
-  }
-}
-@media (min-width: 1200px) {
-  .widget.select-box-widget {
-    width: 30%;
-  }
+  overflow-y: auto;
 }
 .widget.select-box-widget .options-view-button {
   position: absolute;
@@ -253,9 +239,10 @@
 }
 .widget.select-box-widget .current {
   position: relative;
-  box-shadow: 0 15px 20px rgba(0, 0, 0, 0.1);
   cursor: pointer;
   outline: none;
+  border-radius: 1rem;
+  background-color: var(--background-color-3);
 }
 .widget.select-box-widget .current .options-view-button:checked + .icon {
   transform: translateY(-50%) rotate(180deg);
@@ -285,7 +272,6 @@
   padding: 15px;
 }
 .widget.select-box-widget .current .icon {
-  background-color: white;
   position: absolute;
   top: 50%;
   right: 0;
@@ -296,11 +282,13 @@
   box-sizing: border-box;
 }
 .widget.select-box-widget ul {
-  position: absolute;
+  position: relative;
   width: 100%;
   padding: 0;
   list-style: none;
   opacity: 0;
+  background-color: var(--background-color-0);
+  border-radius: 1rem;
   animation-name: HideList;
   animation-duration: 0.5s;
   animation-delay: 0.5s;
@@ -308,17 +296,29 @@
   animation-timing-function: step-start;
   box-shadow: 0 15px 30px -10px rgba(0, 0, 0, 0.1);
 }
+.widget.select-box-widget ul li {
+  border-top: 1px solid var(--background-color-2);
+}
+.widget.select-box-widget ul li:first-of-type {
+  border-top: none;
+  border-top-left-radius: 1rem;
+  border-top-right-radius: 1rem;
+}
+.widget.select-box-widget ul li:last-of-type {
+  border-bottom: none;
+  border-bottom-left-radius: 1rem;
+  border-bottom-right-radius: 1rem;
+}
+.widget.select-box-widget ul li:hover,
+.widget.select-box-widget ul li:focus {
+  background-color: var(--background-color-2);
+}
 .widget.select-box-widget ul .option {
   box-sizing: border-box;
   display: block;
-  background-color: #fff;
   overflow: hidden;
   width: 100%;
   padding: 15px;
-}
-.widget.select-box-widget ul .option:hover, .widget.select-box-widget ul .option:focus {
-  color: #546c84;
-  background-color: #fbfbfb;
 }
 @keyframes HideList {
   from {
@@ -327,13 +327,6 @@
   to {
     transform: scaleY(0);
   }
-}
-
-body, html {
-  padding: 30px;
-  box-sizing: border-box;
-  height: 100%;
-  margin: 0;
 }
 
 /*# sourceMappingURL=widgets.css.map */

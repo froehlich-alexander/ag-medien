@@ -305,18 +305,7 @@
     font-size: 18px;
     color: #60666d;
     border-radius: 1rem;
-
-    @media (min-width: 768px) {
-      width: 70%;
-    }
-
-    @media (min-width: 992px) {
-      width: 50%;
-    }
-
-    @media (min-width: 1200px) {
-      width: 30%;
-    }
+    overflow-y: auto;
 
     .options-view-button {
       position: absolute;
@@ -333,9 +322,12 @@
 
     .current {
       position: relative;
-      box-shadow: 0 15px 30px - 10px transparentize(#000, 0.9);
+      //box-shadow: 0 15px 30px - 10px transparentize(#000, 0.9);
       cursor: pointer;
       outline: none;
+      //border: 1px solid gray;
+      border-radius: 1rem;
+      background-color: var(--background-color-3);
 
       .options-view-button:checked { //&:has(.options-view-button:checked) is currently not supported by browsers (except safari) so this has to be done via js
         & + .icon {
@@ -376,6 +368,7 @@
       //}
 
       $icon-width: 30px;
+
       .value {
         display: flex;
         overflow: hidden;
@@ -398,7 +391,7 @@
       }
 
       .icon {
-        background-color: white;
+        //background-color: white;
         position: absolute;
         top: 50%;
         right: 0;
@@ -411,11 +404,16 @@
     }
 
     ul {
-      position: absolute;
+      position: relative;
       width: 100%;
       padding: 0;
       list-style: none;
       opacity: 0;
+      background-color: var(--background-color-0);
+      //border: black 1px solid;
+      //border-top: black 1px solid;
+      //border-style: wave;
+      border-radius: 1rem;
 
       // We need to use animation with delay.
       // Otherwise the click event will not have time to run on label, because this element disappears immediately when .select-box__current element loses the focus.
@@ -429,19 +427,34 @@
       animation-timing-function: step-start;
       box-shadow: 0 15px 30px -10px transparentize(#000, 0.9);
 
+      li {
+        border-top: 1px solid var(--background-color-2);
+      }
+
+      li:first-of-type {
+        border-top: none;
+        border-top-left-radius: 1rem;
+        border-top-right-radius: 1rem;
+      }
+
+      li:last-of-type {
+        border-bottom: none;
+        border-bottom-left-radius: 1rem;
+        border-bottom-right-radius: 1rem;
+      }
+
+      li:hover,
+      li:focus {
+        //color: #546c84;
+        background-color: var(--background-color-2);
+      }
+
       .option {
         box-sizing: border-box;
         display: block;
-        background-color: #fff;
         overflow: hidden;
         width: 100%;
         padding: 15px;
-
-        &:hover,
-        &:focus {
-          color: #546c84;
-          background-color: #fbfbfb;
-        }
       }
     }
   }
@@ -455,11 +468,4 @@
     }
   }
 
-}
-
-body, html {
-  padding: 30px;
-  box-sizing: border-box;
-  height: 100%;
-  margin: 0;
 }
