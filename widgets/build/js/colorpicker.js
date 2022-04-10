@@ -367,6 +367,15 @@ class ColorPickerService {
     get all() {
         return this._all;
     }
+    delete(...colorScheme) {
+        for (let i of colorScheme) {
+            if (i instanceof ColorScheme) {
+                i = i.id;
+            }
+            this._all.delete(i);
+        }
+        return this;
+    }
     /**
      *
      * @param forceReload {boolean}
@@ -632,6 +641,7 @@ class ColorSchemeDialog extends Dialog {
             .addButton(Button.Delete()
             .on2(ButtonEvents.clicked, (event) => {
             console.log("delete");
+            this.colorPickerService.delete(...this.aContent.items);
         }), FlexAlign.end)
             .addButton(new Button().setLabel("New").setIcon(Icon.of("add", IconType.material))
             .on2(ButtonEvents.clicked, (event) => {
@@ -646,7 +656,9 @@ class ColorSchemeDialog extends Dialog {
         super.rebuild(true);
         //color schemes
         this.aContent.addItems(...[...this.colorPickerService.all.values()]
-            .filter(value => this.aContent.items.map((value1) => value1.colorScheme.id).indexOf(value.id) == -1)
+            .filter(value => this.aContent.items
+            .filter(v => (v instanceof ColorSchemeItem))
+            .map(value1 => value1.colorScheme.id).indexOf(value.id) == -1)
             .map(value => {
             let item = new ColorSchemeItem(value)
                 .setInheritVisibility(true)

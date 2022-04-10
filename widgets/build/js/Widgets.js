@@ -32,19 +32,20 @@ const IconEvents = {
 var IconType;
 (function (IconType) {
     IconType[IconType["material"] = 0] = "material";
+    IconType[IconType["undefined"] = 1] = "undefined";
 })(IconType || (IconType = {}));
 let Icon = Icon_1 = class Icon extends Widget {
     // public static Info = () => Icon.of("info", IconType.material);
     // public static Info = () => Icon.of("info", IconType.material);
     constructor() {
         super();
-        Object.defineProperty(this, "type", {
+        Object.defineProperty(this, "_type", {
             enumerable: true,
             configurable: true,
             writable: true,
-            value: void 0
+            value: IconType.undefined
         });
-        Object.defineProperty(this, "value", {
+        Object.defineProperty(this, "_value", {
             enumerable: true,
             configurable: true,
             writable: true,
@@ -59,36 +60,55 @@ let Icon = Icon_1 = class Icon extends Widget {
         this.mixinConstructor(SpacingEditable);
         // createMixinFields(this, new SpacingEditable());
     }
-    build(force = true) {
-        if (!this.built && force) {
-            super.build(true)
-                .addClass("icon-widget")
-                .css("cursor", this._clickable ? "pointer" : null)
-                .on("click", () => {
-                this.dispatchEvent(WidgetEvents.clicked);
-            });
-            this.buildCallback();
-        }
-        if (this.built) {
-            switch (this.type) {
-                case IconType.material: {
-                    this.domObject.text(this.value)
-                        .addClass("material-icons");
-                    break;
-                }
-                case null: {
-                    this.domObject.text(null)
-                        .removeClass("material-icons");
-                    this.hide();
-                }
+    static of(value, type) {
+        return new Icon_1().set(value, type);
+    }
+    build(suppressCallback = false) {
+        super.build(true)
+            .addClass("icon-widget")
+            .on("click", () => {
+            this.dispatchEvent(WidgetEvents.clicked);
+        });
+        return this.buildCallback(suppressCallback);
+    }
+    rebuild(suppressCallback = false) {
+        super.rebuild(true)
+            .css("cursor", this._clickable ? "pointer" : "");
+        console.assert(this._value !== undefined, "Value of this icon is not set. Maybe you forgot it?");
+        switch (this._type) {
+            case IconType.material: {
+                this.domObject.text(this._value ?? "")
+                    .addClass("material-icons");
+                break;
             }
-            if (this.value == null) {
+            case IconType.undefined: {
+                this.domObject.text("")
+                    .removeClass("material-icons");
                 this.hide();
             }
         }
-        if (this.built) {
-            return this.domObject;
+        if (this._value === null) {
+            this.hide();
         }
+        return this.rebuildCallback(suppressCallback);
+    }
+    set(value, type) {
+        this._value = value;
+        if (type != undefined) {
+            this._type = type;
+            switch (type) {
+                case IconType.material:
+                    console.assert(typeof this._value === "string", "The type of the value of this icon must be string when type == " + IconType[IconType.material]);
+            }
+        }
+        this.tryRebuild();
+        return this;
+    }
+    copy(other) {
+        super.copy(other);
+        this.setClickable(other._clickable);
+        this.set(other._value, other._type);
+        return this;
     }
     setClickable(clickable) {
         this._clickable = clickable;
@@ -97,32 +117,11 @@ let Icon = Icon_1 = class Icon extends Widget {
     get clickable() {
         return this._clickable;
     }
-    set(value, type) {
-        this.value = value;
-        if (type != undefined) {
-            this.type = type;
-            switch (type) {
-                case IconType.material:
-                    console.assert(typeof this.value === "string", "The type of the value of this icon must be string when type == " + IconType[IconType.material]);
-            }
-        }
-        this.build(false);
-        return this;
+    get type() {
+        return this._type;
     }
-    getType() {
-        return this.type;
-    }
-    getValue() {
-        return this.value;
-    }
-    copy(other) {
-        super.copy(other);
-        this.setClickable(other._clickable);
-        this.set(other.value, other.type);
-        return this;
-    }
-    static of(value, type) {
-        return new Icon_1().set(value, type);
+    get value() {
+        return this._value;
     }
 };
 Object.defineProperty(Icon, "Close", {
@@ -186,22 +185,24 @@ let Button = Button_1 = class Button extends Widget {
     // public static Agree = () => new Button().setLabel("Agree").setIcon(Icon.of("done", IconType.material));
     constructor() {
         super();
-        Object.defineProperty(this, "label", {
+        Object.defineProperty(this, "_label", {
             enumerable: true,
             configurable: true,
             writable: true,
-            value: void 0
+            value: new Text()
         });
         this.mixinConstructor();
         this.enableIcon(true);
+        this.addChild("_label");
     }
     build(suppressCallback = false) {
         super.build(true)
             .addClass("button-widget")
             .append(this.getIcon().build())
-            .append($("<div></div>")
-            .text(this.label)
-            .addClass("text"))
+            // .append($("<div></div>")
+            //     .text(this.label)
+            //     .addClass("text"))
+            .append(this._label.build())
             .on({
             click: () => {
                 this.dispatchEvent(ButtonEvents.clicked);
@@ -210,12 +211,18 @@ let Button = Button_1 = class Button extends Widget {
         this.buildCallback(suppressCallback);
         return this.domObject;
     }
-    getLabel() {
-        return this.label;
+    rebuild(suppressCallback = false) {
+        super.rebuild(true);
+        this.getIcon().rebuild();
+        this._label.rebuild();
+        return this.rebuildCallback(suppressCallback);
     }
     setLabel(value) {
-        this.label = value;
+        this._label.set(value);
         return this;
+    }
+    get label() {
+        return this._label.get();
     }
 };
 // private readonly icon: Icon | null;
@@ -431,23 +438,23 @@ class FlexBox extends Widget {
             writable: true,
             value: []
         });
-        Object.defineProperty(this, "startSpacing", {
+        Object.defineProperty(this, "_startSpacing", {
             enumerable: true,
             configurable: true,
             writable: true,
-            value: void 0
+            value: ""
         });
-        Object.defineProperty(this, "endSpacing", {
+        Object.defineProperty(this, "_endSpacing", {
             enumerable: true,
             configurable: true,
             writable: true,
-            value: void 0
+            value: ""
         });
-        Object.defineProperty(this, "itemSpacing", {
+        Object.defineProperty(this, "_itemSpacing", {
             enumerable: true,
             configurable: true,
             writable: true,
-            value: void 0
+            value: ""
         });
     }
     buildAlign(align) {
@@ -523,9 +530,9 @@ class FlexBox extends Widget {
     rebuild(suppressCallback = false) {
         super.rebuild(true);
         this.domObject
-            .css("column-gap", this.itemSpacing)
-            .css("padding-left", this.startSpacing)
-            .css("padding-right", this.endSpacing);
+            .css("column-gap", this._itemSpacing)
+            .css("padding-left", this._startSpacing)
+            .css("padding-right", this._endSpacing);
         this.items.map(v => v.first.rebuild());
         this.rebuildCallback(suppressCallback);
         return this.domObject;
@@ -553,30 +560,30 @@ class FlexBox extends Widget {
         this.setItemSpacing(item);
         return this;
     }
-    getStartSpacing() {
-        return this.startSpacing;
-    }
-    getEndSpacing() {
-        return this.endSpacing;
-    }
     setStartSpacing(value) {
-        this.startSpacing = value;
+        this._startSpacing = value;
         return this;
     }
     setEndSpacing(value) {
-        this.endSpacing = value;
+        this._endSpacing = value;
         return this;
     }
     setStartEndSpacing(value) {
         this.setStartSpacing(value);
         return this.setEndSpacing(value);
     }
-    getItemSpacing() {
-        return this.itemSpacing;
-    }
     setItemSpacing(value) {
-        this.itemSpacing = value;
+        this._itemSpacing = value;
         return this;
+    }
+    get startSpacing() {
+        return this._startSpacing;
+    }
+    get endSpacing() {
+        return this._endSpacing;
+    }
+    get itemSpacing() {
+        return this._itemSpacing;
     }
 }
 class ButtonBox extends FlexBox {
@@ -602,7 +609,7 @@ let Text = class Text extends Widget {
             enumerable: true,
             configurable: true,
             writable: true,
-            value: void 0
+            value: ""
         });
         Object.defineProperty(this, "_font", {
             enumerable: true,
@@ -799,38 +806,38 @@ let TextInput = class TextInput extends Widget {
             enumerable: true,
             configurable: true,
             writable: true,
-            value: void 0
+            value: null
         });
         Object.defineProperty(this, "_minLength", {
             enumerable: true,
             configurable: true,
             writable: true,
-            value: void 0
+            value: null
         });
         Object.defineProperty(this, "_maxLength", {
             enumerable: true,
             configurable: true,
             writable: true,
-            value: void 0
+            value: null
         });
         // private _readonly: boolean;
         Object.defineProperty(this, "_spellcheck", {
             enumerable: true,
             configurable: true,
             writable: true,
-            value: void 0
+            value: undefined
         });
         Object.defineProperty(this, "_size", {
             enumerable: true,
             configurable: true,
             writable: true,
-            value: void 0
+            value: null
         });
         Object.defineProperty(this, "_pattern", {
             enumerable: true,
             configurable: true,
             writable: true,
-            value: void 0
+            value: null
         });
         this.mixinConstructor(Input, InputLabel);
     }
@@ -951,14 +958,6 @@ let TextInput = class TextInput extends Widget {
         this.tryRebuild();
         return this;
     }
-    //
-    // public get id() {
-    //     return this._id;
-    // }
-    //
-    // public get label(): string {
-    //     return this._label;
-    // }
     get placeHolder() {
         return this._placeHolder;
     }
@@ -968,9 +967,6 @@ let TextInput = class TextInput extends Widget {
     get maxLength() {
         return this._maxLength;
     }
-    // public get readonly(): boolean {
-    //     return this._readonly;
-    // }
     get spellcheck() {
         return this._spellcheck;
     }
@@ -991,7 +987,7 @@ let CheckBoxInput = class CheckBoxInput extends Widget {
             enumerable: true,
             configurable: true,
             writable: true,
-            value: void 0
+            value: false
         });
         this.mixinConstructor();
         this.setType("checkbox");
@@ -1007,8 +1003,7 @@ let CheckBoxInput = class CheckBoxInput extends Widget {
         this.rebuildInput(this.domObject);
         let update = this.domObject.get(0).checked !== this._checked;
         this.domObject
-            .get(0)
-            .checked = this._checked;
+            .prop("checked", this._checked);
         if (update) {
             this.dispatchEvent(InputEvents.input, [this.checked]);
             this.dispatchEvent(InputEvents.change, [this.checked]);
@@ -1017,9 +1012,7 @@ let CheckBoxInput = class CheckBoxInput extends Widget {
         return this.domObject;
     }
     get checked() {
-        this._checked = this.domObject
-            .get(0)
-            .checked;
+        this._checked = this.domObject.prop("checked");
         return this._checked;
     }
     setChecked(checked) {
@@ -1037,16 +1030,15 @@ let SelectBoxItemValue = class SelectBoxItemValue extends Widget {
             enumerable: true,
             configurable: true,
             writable: true,
-            value: void 0
+            value: ""
         });
         Object.defineProperty(this, "_checked", {
             enumerable: true,
             configurable: true,
             writable: true,
-            value: void 0
+            value: false
         });
         this.setType("radio");
-        this._checked = false;
         this.setName("42"); //we need any name so that only 1 item can be selected at once
     }
     build(suppressCallback = false) {
@@ -1063,8 +1055,7 @@ let SelectBoxItemValue = class SelectBoxItemValue extends Widget {
     rebuild(suppressCallback = false) {
         super.rebuild(true);
         this.rebuildInput()
-            .get(0)
-            .checked = this._checked;
+            .prop("checked", this._checked);
         this.rebuildCallback(suppressCallback);
         return this.domObject;
     }
@@ -1081,8 +1072,7 @@ let SelectBoxItemValue = class SelectBoxItemValue extends Widget {
     }
     get checked() {
         this._checked = this.domObject.find("input")
-            .get(0)
-            .checked;
+            .prop("checked");
         return this._checked;
     }
 };
@@ -1238,6 +1228,7 @@ let SelectBox = class SelectBox extends Widget {
         for (let item of items) {
             for (let i of this._items.splice(this._items.indexOf(item), 1)) {
                 //TODO 09.04.2022 clean up event handlers
+                i; //suppress ts waring xD
             }
         }
         return this;
@@ -1285,8 +1276,7 @@ class ContentBox extends Box {
     build(suppressCallback = false) {
         super.build(true)
             .addClass("default-content");
-        this.buildCallback(suppressCallback);
-        return this.domObject;
+        return this.buildCallback(suppressCallback);
     }
 }
 export { Icon, IconEvents, IconType, Button, ButtonEvents, ButtonBox, FlexAlign, Top, TopEvents, Text, ListTile, FlexBox, TextInput, TextInputEvents, Box, ContentBox, SelectBoxItem, SelectBox, SelectBoxEvents };

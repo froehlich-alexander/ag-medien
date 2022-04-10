@@ -123,7 +123,7 @@
 }
 .widget.overlay-widget {
   left: 0;
-  right: 0;
+  top: 0;
   width: 100vw;
   height: 100vh;
   user-select: none;
@@ -216,8 +216,8 @@
 }
 .widget.select-box-widget {
   box-sizing: border-box;
-  display: block;
   width: 100%;
+  max-height: 50%;
   margin: 0 auto;
   font-family: "Open Sans", "Helvetica Neue", "Segoe UI", "Calibri", "Arial", sans-serif;
   font-size: 18px;
@@ -249,6 +249,7 @@
 }
 .widget.select-box-widget .current.options-view-button-checked + ul {
   opacity: 1;
+  display: inline-block;
   animation-name: none;
 }
 .widget.select-box-widget .current.options-view-button-checked + ul .option {
@@ -287,6 +288,7 @@
   padding: 0;
   list-style: none;
   opacity: 0;
+  display: none;
   background-color: var(--background-color-0);
   border-radius: 1rem;
   animation-name: HideList;

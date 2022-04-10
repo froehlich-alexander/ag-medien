@@ -1,15 +1,16 @@
-import {mixin, Mixin, Pair} from "./base.js";
+import {hasMixins, mixin, Mixin, Pair} from "./base.js";
 import {EventHandler, Widget, WidgetEvents} from "./Widget.js";
 import {CSSColorValue} from "./WidgetBase.js";
 import {Icon, IconEvents, IconType, ListTile, TextInputEvents} from "./Widgets.js";
+import htmlString = JQuery.htmlString;
 
 class Util {
     static setHeight(element: JQuery<HTMLElement>): void {
-        element.outerHeight(element.outerHeight(false), false);
+        element.outerHeight(element.outerHeight(false) ?? 0, false);
     }
 
     static setWidth(element: JQuery<HTMLElement>): void {
-        element.outerWidth(element.outerWidth(false), false);
+        element.outerWidth(element.outerWidth(false) ?? 0, false);
     }
 
     /**
@@ -22,10 +23,10 @@ class Util {
         if (value == null || value == "") {
             return element;
         }
-        if (element.get(0).style.getPropertyValue(property) === "") {
+        if (element.get(0)!.style.getPropertyValue(property) === "") {
             element.css(property, value);
         } else {
-            element.css(property, "calc(" + element.get(0).style.getPropertyValue(property) + "+" + value + ")");
+            element.css(property, "calc(" + element.get(0)!.style.getPropertyValue(property) + "+" + value + ")");
         }
         return element;
     }
@@ -34,7 +35,7 @@ class Util {
         let children = parent.children().not(child).not(".overlay-widget");
         let w = 0;
         for (let i = 0; i < children.length; i++) {
-            w += children.eq(i).outerHeight(true);
+            w += children.eq(i).outerHeight(true) ?? 0;
         }
         child.css("max-height", `calc(100% - ${w}px`);
     }
@@ -43,7 +44,7 @@ class Util {
         let children = parent.children().not(child).not(".overlay-widget");
         let w = 0;
         for (let i = 0; i < children.length; i++) {
-            w += children.eq(i).outerWidth(true);
+            w += children.eq(i).outerWidth(true) ?? 0;
         }
         child.css("max-width", `calc(100% - ${w}px`);
     }
@@ -85,7 +86,7 @@ class EventCallbacks {
     });
 }
 
-class ColorEditable<EventType extends WidgetEvents> extends Mixin {
+class ColorEditable<EventType extends WidgetEvents, HtmlElementType extends HTMLElement> extends Mixin {
     private readonly _backgroundColor: CSSColorValue = new CSSColorValue();
     private readonly _textColor: CSSColorValue = new CSSColorValue();
 
@@ -109,14 +110,16 @@ class ColorEditable<EventType extends WidgetEvents> extends Mixin {
     }
 }
 
-interface ColorEditable<EventType extends WidgetEvents> extends Mixin, Widget<EventType> {
+interface ColorEditable<EventType extends WidgetEvents, HtmlElementType extends HTMLElement> extends Mixin, Widget<EventType, HtmlElementType> {
 }
 
-class SpacingEditable<EventType extends WidgetEvents> extends Mixin {
+class SpacingEditable<EventType extends WidgetEvents, HtmlElementType extends HTMLElement> extends Mixin {
+    // @ts-ignore
     private readonly _padding: [string, string, string, string] = [null, null, null, null];
+    // @ts-ignore
     private readonly _margin: [string, string, string, string] = [null, null, null, null];
 
-    buildSpacing(): this {
+    protected buildSpacing(): this {
         this.domObject.css("padding-top", this._padding[0]);
         this.domObject.css("padding-right", this._padding[1]);
         this.domObject.css("padding-bottom", this._padding[2]);
@@ -196,17 +199,17 @@ class SpacingEditable<EventType extends WidgetEvents> extends Mixin {
     }
 }
 
-interface SpacingEditable<EventType extends WidgetEvents> extends Mixin, Widget<EventType> {
+interface SpacingEditable<EventType extends WidgetEvents, HtmlElementType extends HTMLElement> extends Mixin, Widget<EventType, HtmlElementType> {
 }
 
 enum IconContainingEvents {
     iconClicked = "iconClicked"
 }
 
-abstract class IconContaining<EventType extends WidgetEvents | IconContainingEvents> extends Mixin {
+abstract class IconContaining<EventType extends WidgetEvents | IconContainingEvents, HtmlElementType extends HTMLElement> extends Mixin {
     protected _setIcon(fieldName: string, icon: Icon): this {
         // @ts-ignore
-        this[fieldName].set(icon.getValue(), icon.getType());
+        this[fieldName].set(icon.value, icon.type);
         // if (this[fieldName] != null) {
         //
         //     this.children.set(fieldName, this[fieldName]);
@@ -234,10 +237,10 @@ abstract class IconContaining<EventType extends WidgetEvents | IconContainingEve
     }
 }
 
-interface IconContaining<EventType extends WidgetEvents | IconContainingEvents> extends Mixin, Widget<EventType> {
+interface IconContaining<EventType extends WidgetEvents | IconContainingEvents, HtmlElementType extends HTMLElement> extends Mixin, Widget<EventType, HtmlElementType> {
 }
 
-class OneIconContaining<EventType extends WidgetEvents> extends IconContaining<EventType> {
+class OneIconContaining<EventType extends WidgetEvents, HtmlElementType extends HTMLElement> extends IconContaining<EventType, HtmlElementType> {
     private readonly icon: Icon = new Icon();
 
     _constructor() {
@@ -262,7 +265,7 @@ class OneIconContaining<EventType extends WidgetEvents> extends IconContaining<E
     }
 }
 
-class LeadingTrailingIconContaining<EventType extends WidgetEvents | IconContainingEvents> extends IconContaining<EventType> {
+class LeadingTrailingIconContaining<EventType extends WidgetEvents | IconContainingEvents, HtmlElementType extends HTMLElement> extends IconContaining<EventType, HtmlElementType> {
     private readonly leadingIcon: Icon = new Icon();
     private readonly trailingIcon: Icon = new Icon();
 
@@ -311,7 +314,7 @@ enum ItemContainingEvents {
     itemRemoved = "",
 }
 
-class Item {
+class Item extends Mixin {
     private _index: number = -1;
 
     public get index(): number {
@@ -324,7 +327,7 @@ class Item {
     }
 }
 
-class ItemContaining<EventType extends WidgetEvents> extends Mixin {
+class ItemContaining<EventType extends WidgetEvents, HtmlElementType extends HTMLElement, ItemType extends Widget<WidgetEvents>> extends Mixin {
     private static itemChildrenPrefix: string = "item";
     private itemCount = 0;
 
@@ -370,7 +373,8 @@ class ItemContaining<EventType extends WidgetEvents> extends Mixin {
         for (let i of items) {
             this.addChild(ItemContaining.itemChildrenPrefix + this.itemCount, i);
             this.dispatchEvent(ItemContainingEvents.itemAdded, [this.itemCount, i]);
-            if (i instanceof Item) {
+            if (hasMixins<Item>(i, Item)) {
+                console.log(i.constructor);
                 i.setIndex(this.itemCount);
             }
             this.itemCount++;
@@ -426,7 +430,7 @@ class ItemContaining<EventType extends WidgetEvents> extends Mixin {
             }
             this.children.delete(ItemContaining.itemChildrenPrefix + i);
             this.addChild(ItemContaining.itemChildrenPrefix + newIndex, item);
-            if (item instanceof Item) {
+            if (hasMixins<Item>(item, Item)) {
                 item.setIndex(newIndex);
             }
         }
@@ -480,7 +484,7 @@ class ItemContaining<EventType extends WidgetEvents> extends Mixin {
     }
 }
 
-interface ItemContaining<EventType extends WidgetEvents | ItemContainingEvents> extends Mixin, Widget<EventType> {
+interface ItemContaining<EventType extends WidgetEvents, HtmlElementType extends HTMLElement, ItemType extends Widget<WidgetEvents>> extends Mixin, Widget<EventType, HtmlElementType> {
 }
 
 enum CheckboxEvents {
@@ -489,9 +493,9 @@ enum CheckboxEvents {
     checkStateChanged = "checkStateChanged"
 }
 
-class CheckboxContaining<EventType extends WidgetEvents | CheckboxEvents> extends Mixin {
+class CheckboxContaining<EventType extends WidgetEvents | CheckboxEvents, HtmlElementType extends HTMLElement> extends Mixin {
     private readonly checkBoxIcon: Icon = Icon.of("check_box_outline_blank", IconType.material);
-    private _checked: boolean;
+    private _checked: boolean = false;
 
     _constructor() {
         this.addChild("checkBoxIcon");
@@ -553,7 +557,7 @@ class CheckboxContaining<EventType extends WidgetEvents | CheckboxEvents> extend
     }
 }
 
-interface CheckboxContaining<EventType extends WidgetEvents | CheckboxEvents> extends Widget<EventType> {
+interface CheckboxContaining<EventType extends WidgetEvents | CheckboxEvents, HtmlElementType extends HTMLElement> extends Widget<EventType, HtmlElementType> {
 }
 
 class IdContaining extends Mixin {
@@ -576,10 +580,10 @@ enum InputEvents {
 
 @mixin(IdContaining)
 class Input<ValueType extends string | number, EventType extends WidgetEvents | InputEvents, HtmlElementType extends HTMLElement = HTMLInputElement> extends Mixin {
-    private _disabled: boolean;
+    private _disabled: boolean = false;
     private _name: string;
-    private _readonly: boolean;
-    private _required: boolean;
+    private _readonly: boolean = false;
+    private _required: boolean = false;
     private _type: string;
     private _value: ValueType;
 
@@ -682,7 +686,7 @@ interface Input<ValueType extends string | number, EventType extends WidgetEvent
 }
 
 @mixin(IdContaining)
-class InputLabel<EventType extends WidgetEvents> extends Mixin {
+class InputLabel<EventType extends WidgetEvents, HtmlElementType extends HTMLElement> extends Mixin {
     private _label: string;
 
     protected buildLabel(): JQuery<HTMLLabelElement> {
@@ -705,7 +709,7 @@ class InputLabel<EventType extends WidgetEvents> extends Mixin {
     }
 }
 
-interface InputLabel<EventType extends WidgetEvents> extends IdContaining, Widget<EventType> {
+interface InputLabel<EventType extends WidgetEvents, HtmlElementType extends HTMLElement> extends IdContaining, Widget<EventType, HtmlElementType> {
 }
 
 

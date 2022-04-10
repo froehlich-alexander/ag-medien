@@ -98,8 +98,7 @@ abstract class Widget<EventType extends WidgetEvents, HtmlElementType extends HT
         //     attributeFilter: ["style", "class"],
         // });
         // this._built = true;
-        this.buildCallback(suppressCallback);
-        return this._domObject;
+        return this.buildCallback(suppressCallback);
     }
 
     public rebuild(suppressCallback: boolean = false): JQuery<HtmlElementType> {
@@ -109,8 +108,7 @@ abstract class Widget<EventType extends WidgetEvents, HtmlElementType extends HT
         for (let i of this.children.values()) {
             i?.tryRebuild();
         }
-        this.rebuildCallback(suppressCallback);
-        return this._domObject!;
+        return this.rebuildCallback(suppressCallback);
     }
 
     public tryRebuild(suppressCallback: boolean = false): JQuery<HtmlElementType> | undefined {
@@ -121,32 +119,34 @@ abstract class Widget<EventType extends WidgetEvents, HtmlElementType extends HT
     }
 
     public destroy(): this {
-        console.assert(this._built);
+        console.assert(this.built);
         this._built = false;
         this._domObject!.remove().off();
         this.setVisibility(false);
         return this;
     }
 
-    protected buildCallback(suppress: boolean = false): void {
+    protected buildCallback(suppress: boolean = false): JQuery<HtmlElementType> {
         this._built = true;
         if (suppress) {
-            return;
+            return this._domObject!;
         }
         this.rebuild(true);
         this._built = true;
         this.dispatchEvent(WidgetEvents.build);
         this.buildVisibility();
+        return this.domObject!;
     }
 
-    protected rebuildCallback(suppress: boolean = false): void {
+    protected rebuildCallback(suppress: boolean = false): JQuery<HtmlElementType> {
         if (suppress) {
-            return;
+            return this._domObject!;
         }
-        if (this._built) {
+        if (this.built) {
             this.dispatchEvent(WidgetEvents.rebuild);
         }
         this.buildVisibility();//todo do we need this? remove???
+        return this._domObject!;
     }
 
     public on(events?: EventCallback<EventType, Widget<EventType, HtmlElementType>>, event?: Pair<string, EventHandler<string, Widget<EventType, HtmlElementType>>>): this {
@@ -307,7 +307,7 @@ abstract class Widget<EventType extends WidgetEvents, HtmlElementType extends HT
 
 
     public get built(): boolean {
-        return this._built;
+        return this._built && this._domObject !== undefined && this._domObject !== null;
     }
 
     public get domObject(): JQuery<HtmlElementType> {

@@ -120,8 +120,7 @@ class Widget extends _EventHandler {
         //     attributeFilter: ["style", "class"],
         // });
         // this._built = true;
-        this.buildCallback(suppressCallback);
-        return this._domObject;
+        return this.buildCallback(suppressCallback);
     }
     rebuild(suppressCallback = false) {
         this.sizeSetObserver.observe(this._domObject.get(0), {
@@ -130,8 +129,7 @@ class Widget extends _EventHandler {
         for (let i of this.children.values()) {
             i?.tryRebuild();
         }
-        this.rebuildCallback(suppressCallback);
-        return this._domObject;
+        return this.rebuildCallback(suppressCallback);
     }
     tryRebuild(suppressCallback = false) {
         if (this.built) {
@@ -140,7 +138,7 @@ class Widget extends _EventHandler {
         return this._domObject;
     }
     destroy() {
-        console.assert(this._built);
+        console.assert(this.built);
         this._built = false;
         this._domObject.remove().off();
         this.setVisibility(false);
@@ -149,21 +147,23 @@ class Widget extends _EventHandler {
     buildCallback(suppress = false) {
         this._built = true;
         if (suppress) {
-            return;
+            return this._domObject;
         }
         this.rebuild(true);
         this._built = true;
         this.dispatchEvent(WidgetEvents.build);
         this.buildVisibility();
+        return this.domObject;
     }
     rebuildCallback(suppress = false) {
         if (suppress) {
-            return;
+            return this._domObject;
         }
-        if (this._built) {
+        if (this.built) {
             this.dispatchEvent(WidgetEvents.rebuild);
         }
         this.buildVisibility(); //todo do we need this? remove???
+        return this._domObject;
     }
     on(events, event) {
         if (this._built) {
@@ -312,7 +312,7 @@ class Widget extends _EventHandler {
         return this;
     }
     get built() {
-        return this._built;
+        return this._built && this._domObject !== undefined && this._domObject !== null;
     }
     get domObject() {
         return this._domObject;

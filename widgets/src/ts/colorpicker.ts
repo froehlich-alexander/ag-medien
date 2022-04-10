@@ -373,6 +373,16 @@ class ColorPickerService {
         return this._all;
     }
 
+    public delete(...colorScheme: (ColorScheme | string)[]): this {
+        for (let i of colorScheme) {
+            if (i instanceof ColorScheme) {
+                i = i.id;
+            }
+            this._all.delete(i);
+        }
+        return this;
+    }
+
     /**
      *
      * @param forceReload {boolean}
@@ -573,14 +583,14 @@ class ColorSchemeItem extends ListTile<WidgetEvents | CheckboxEvents | ColorSche
         this.enableCheckbox(true);
     }
 
-    public build(suppressCallback: boolean = false): JQuery<HTMLElement> {
+    public override build(suppressCallback: boolean = false): JQuery<HTMLElement> {
         super.build(true)
             .addClass("default-item");
         this.buildCallback(suppressCallback);
         return this.domObject;
     }
 
-    public rebuild(suppressCallback: boolean = false): JQuery<HTMLElement> {
+    public override rebuild(suppressCallback: boolean = false): JQuery<HTMLElement> {
         super.rebuild(true);
         this.rebuildCallback(suppressCallback);
         return this.domObject;
@@ -618,6 +628,7 @@ class ColorSchemeDialog extends Dialog<any, null> {
             .addButton(Button.Delete()
                 .on2(ButtonEvents.clicked, (event) => {
                     console.log("delete");
+                    this.colorPickerService.delete(...<ColorScheme[]><unknown>this.aContent.items)
                 }), FlexAlign.end)
             .addButton(new Button().setLabel("New").setIcon(Icon.of("add", IconType.material))
                 .on2(ButtonEvents.clicked, (event) => {
@@ -630,11 +641,13 @@ class ColorSchemeDialog extends Dialog<any, null> {
         this.addChild("colorSchemeInfoDialog");
     }
 
-    public rebuild(suppressCallback: boolean = false): JQuery<HTMLElement> {
+    public override rebuild(suppressCallback: boolean = false): JQuery<HTMLElement> {
         super.rebuild(true);
         //color schemes
         this.aContent.addItems(...[...this.colorPickerService.all.values()]
-            .filter(value => this.aContent.items.map((value1: ColorSchemeItem) => value1.colorScheme.id).indexOf(value.id) == -1)
+            .filter(value => this.aContent.items
+                .filter(v => (<ColorSchemeItem>v instanceof ColorSchemeItem))
+                .map(value1 => (<ColorSchemeItem>value1).colorScheme.id).indexOf(value.id) == -1)
             .map(value => {
                 let item = new ColorSchemeItem(value)
                     .setInheritVisibility(true)
@@ -658,7 +671,7 @@ class ColorSchemeDialog extends Dialog<any, null> {
         return this.domObject;
     }
 
-    public build(suppressCallback: boolean = false): JQuery<HTMLElement> {
+    public override build(suppressCallback: boolean = false): JQuery<HTMLElement> {
         super.build(true)
             .addClass("color-scheme-dialog")
             .append(this.colorSchemeNewDialog.build())

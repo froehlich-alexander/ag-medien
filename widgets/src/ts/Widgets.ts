@@ -1,4 +1,4 @@
-import {Mixin, mixin, MixinImplementing, Pair, Tripel} from "./base.js";
+import {Mixin, mixin, MixinImplementing, Tripel} from "./base.js";
 import {Widget, WidgetEvents} from "./Widget.js";
 import {Font, FontFamily, FontSize, FontWeight} from "./WidgetBase.js";
 import {
@@ -28,13 +28,14 @@ const IconEvents = {
 type IconEvents = (typeof IconEvents)[keyof typeof IconEvents];
 
 enum IconType {
-    material
+    material,
+    undefined
 }
 
 @mixin(SpacingEditable)
-class Icon extends Widget<IconEvents> {
-    private type: IconType;
-    private value: string;
+class Icon extends Widget<IconEvents, HTMLDivElement> {
+    private _type: IconType = IconType.undefined;
+    private _value: string | undefined;
     private _clickable: boolean = true;
 
     public static Close = () => Icon.of("close", IconType.material);
@@ -54,36 +55,60 @@ class Icon extends Widget<IconEvents> {
         // createMixinFields(this, new SpacingEditable());
     }
 
-    public build(force: boolean = true): JQuery<HTMLElement> {
-        if (!this.built && force) {
-            super.build(true)
-                .addClass("icon-widget")
-                .css("cursor", this._clickable ? "pointer" : null)
-                .on("click", () => {
-                    this.dispatchEvent(WidgetEvents.clicked);
-                });
-            this.buildCallback();
-        }
-        if (this.built) {
-            switch (this.type) {
-                case IconType.material: {
-                    this.domObject.text(this.value)
-                        .addClass("material-icons");
-                    break;
-                }
-                case null: {
-                    this.domObject.text(null)
-                        .removeClass("material-icons");
-                    this.hide();
-                }
+    public static of(value: any, type?: IconType): Icon {
+        return new Icon().set(value, type);
+    }
+
+    public override build(suppressCallback: boolean = false): JQuery<HTMLDivElement> {
+        super.build(true)
+            .addClass("icon-widget")
+            .on("click", () => {
+                this.dispatchEvent(WidgetEvents.clicked);
+            });
+        return this.buildCallback(suppressCallback);
+    }
+
+    public override rebuild(suppressCallback: boolean = false): JQuery<HTMLDivElement> {
+        super.rebuild(true)
+            .css("cursor", this._clickable ? "pointer" : "");
+        console.assert(this._value !== undefined, "Value of this icon is not set. Maybe you forgot it?");
+        switch (this._type) {
+            case IconType.material: {
+                this.domObject.text(this._value ?? "")
+                    .addClass("material-icons");
+                break;
             }
-            if (this.value == null) {
+            case IconType.undefined: {
+                this.domObject.text("")
+                    .removeClass("material-icons");
                 this.hide();
             }
         }
-        if (this.built) {
-            return this.domObject;
+        if (this._value === null) {
+            this.hide();
         }
+
+        return this.rebuildCallback(suppressCallback);
+    }
+
+    public set(value: any, type?: IconType): Icon {
+        this._value = value;
+        if (type != undefined) {
+            this._type = type;
+            switch (type) {
+                case IconType.material:
+                    console.assert(typeof this._value === "string", "The type of the value of this icon must be string when type == " + IconType[IconType.material]);
+            }
+        }
+        this.tryRebuild();
+        return this;
+    }
+
+    public override copy(other: this): this {
+        super.copy(other);
+        this.setClickable(other._clickable);
+        this.set(other._value, other._type);
+        return this;
     }
 
     public setClickable(clickable: boolean): this {
@@ -95,40 +120,16 @@ class Icon extends Widget<IconEvents> {
         return this._clickable;
     }
 
-    set(value: any, type?: IconType): Icon {
-        this.value = value;
-        if (type != undefined) {
-            this.type = type;
-            switch (type) {
-                case IconType.material:
-                    console.assert(typeof this.value === "string", "The type of the value of this icon must be string when type == " + IconType[IconType.material]);
-            }
-        }
-        this.build(false);
-        return this;
+    public get type(): IconType {
+        return this._type;
     }
 
-    getType(): IconType {
-        return this.type;
-    }
-
-    getValue(): string {
-        return this.value;
-    }
-
-    public copy(other: this): this {
-        super.copy(other);
-        this.setClickable(other._clickable);
-        this.set(other.value, other.type);
-        return this;
-    }
-
-    static of(value: any, type?: IconType): Icon {
-        return new Icon().set(value, type);
+    public get value(): string | undefined {
+        return this._value;
     }
 }
 
-interface Icon extends MixinImplementing, SpacingEditable<IconEvents> {
+interface Icon extends MixinImplementing, SpacingEditable<IconEvents, HTMLDivElement> {
 }
 
 const ButtonEvents = {
@@ -138,8 +139,8 @@ const ButtonEvents = {
 type ButtonEvents = (typeof IconEvents)[keyof typeof IconEvents];
 
 @mixin(OneIconContaining)
-class Button extends Widget<ButtonEvents> {
-    private label: string;
+class Button extends Widget<ButtonEvents, HTMLDivElement> {
+    private readonly _label: Text = new Text();
     // private readonly icon: Icon | null;
 
     public static Cancel = () => new Button().setLabel("Cancel").setIcon(Icon.Cancel());
@@ -160,15 +161,17 @@ class Button extends Widget<ButtonEvents> {
         super();
         this.mixinConstructor();
         this.enableIcon(true);
+        this.addChild("_label");
     }
 
-    public override build(suppressCallback: boolean = false): JQuery<HTMLElement> {
+    public override build(suppressCallback: boolean = false): JQuery<HTMLDivElement> {
         super.build(true)
             .addClass("button-widget")
             .append(this.getIcon().build())
-            .append($("<div></div>")
-                .text(this.label)
-                .addClass("text"))
+            // .append($("<div></div>")
+            //     .text(this.label)
+            //     .addClass("text"))
+            .append(this._label.build())
             .on({
                 click: () => {
                     this.dispatchEvent(ButtonEvents.clicked);
@@ -178,30 +181,25 @@ class Button extends Widget<ButtonEvents> {
         return this.domObject;
     }
 
-    getLabel(): string {
-        return this.label;
+    public override rebuild(suppressCallback: boolean = false): JQuery<HTMLDivElement> {
+        super.rebuild(true)
+        this.getIcon().rebuild();
+        this._label.rebuild();
+
+        return this.rebuildCallback(suppressCallback);
     }
 
-    setLabel(value: string): Button {
-        this.label = value;
+    public setLabel(value: string): Button {
+        this._label.set(value);
         return this;
     }
 
-    // getIcon(): Icon {
-    //     return this.icon;
-    // }
-    //
-    // setIcon(value: Icon | null): Button {
-    //     this.icon = value;
-    //     if (this.icon != null) {
-    //         this.icon.setInheritVisibility(true);
-    //     }
-    //     this.addChild("icon", this.icon);
-    //     return this;
-    // }
+    public get label(): string {
+        return this._label.get();
+    }
 }
 
-interface Button extends MixinImplementing, OneIconContaining<ButtonEvents> {
+interface Button extends MixinImplementing, OneIconContaining<ButtonEvents, HTMLDivElement> {
 }
 
 enum FlexAlign {
@@ -351,11 +349,11 @@ enum FlexAlign {
  * Padding is used for space at the start / end of the whole container<br>
  * CSS column-gap is used for space between the items
  */
-class FlexBox<EventType extends WidgetEvents> extends Widget<EventType> {
+class FlexBox<EventType extends WidgetEvents, HtmlElementType extends HTMLElement> extends Widget<EventType, HtmlElementType> {
     private readonly items: Tripel<Widget<WidgetEvents>, FlexAlign, FlexAlign>[] = [];
-    private startSpacing: string;
-    private endSpacing: string;
-    private itemSpacing: string;
+    private _startSpacing: string = "";
+    private _endSpacing: string = "";
+    private _itemSpacing: string = "";
 
     constructor() {
         super();
@@ -380,7 +378,7 @@ class FlexBox<EventType extends WidgetEvents> extends Widget<EventType> {
         }
     }
 
-    build(suppressCallback: boolean = false): JQuery<HTMLElement> {
+    public override build(suppressCallback: boolean = false): JQuery<HtmlElementType> {
         super.build(true)
             .addClass("flex-box-widget");
 
@@ -437,12 +435,12 @@ class FlexBox<EventType extends WidgetEvents> extends Widget<EventType> {
         return this.domObject;
     }
 
-    public rebuild(suppressCallback: boolean = false): JQuery<HTMLElement> {
+    public override rebuild(suppressCallback: boolean = false): JQuery<HtmlElementType> {
         super.rebuild(true);
         this.domObject
-            .css("column-gap", this.itemSpacing)
-            .css("padding-left", this.startSpacing)
-            .css("padding-right", this.endSpacing);
+            .css("column-gap", this._itemSpacing)
+            .css("padding-left", this._startSpacing)
+            .css("padding-right", this._endSpacing);
         this.items.map(v => v.first.rebuild());
 
         this.rebuildCallback(suppressCallback);
@@ -475,36 +473,36 @@ class FlexBox<EventType extends WidgetEvents> extends Widget<EventType> {
         return this;
     }
 
-    getStartSpacing(): string {
-        return this.startSpacing;
-    }
-
-    getEndSpacing(): string {
-        return this.endSpacing;
-    }
-
-    setStartSpacing(value: string): this {
-        this.startSpacing = value;
+    public setStartSpacing(value: string): this {
+        this._startSpacing = value;
         return this;
     }
 
-    setEndSpacing(value: string): this {
-        this.endSpacing = value;
+    public setEndSpacing(value: string): this {
+        this._endSpacing = value;
         return this;
     }
 
-    setStartEndSpacing(value: string): this {
+    public setStartEndSpacing(value: string): this {
         this.setStartSpacing(value);
         return this.setEndSpacing(value);
     }
 
-    getItemSpacing(): string {
-        return this.itemSpacing;
+    public setItemSpacing(value: string): this {
+        this._itemSpacing = value;
+        return this;
     }
 
-    setItemSpacing(value: string): this {
-        this.itemSpacing = value;
-        return this;
+    public get startSpacing(): string {
+        return this._startSpacing;
+    }
+
+    public get endSpacing(): string {
+        return this._endSpacing;
+    }
+
+    public get itemSpacing(): string {
+        return this._itemSpacing;
     }
 }
 
@@ -516,7 +514,7 @@ class ButtonBox extends FlexBox<WidgetEvents> {
         this.setSpacing("2rem", "2rem", "1rem");
     }
 
-    public build(suppressCallback: boolean = false): JQuery<HTMLElement> {
+    public override build(suppressCallback: boolean = false): JQuery<HTMLElement> {
         super.build(true)
             .addClass("button-box-widget");
         this.buildCallback(suppressCallback);
@@ -528,9 +526,12 @@ class ButtonBox extends FlexBox<WidgetEvents> {
     }
 }
 
+interface Text extends MixinImplementing, ColorEditable<WidgetEvents, HTMLDivElement>, SpacingEditable<WidgetEvents, HTMLDivElement> {
+}
+
 @mixin(ColorEditable, SpacingEditable)
-class Text extends Widget<WidgetEvents> {
-    private value: string;
+class Text extends Widget<WidgetEvents, HTMLDivElement> {
+    private value: string = "";
     private _font: Font;
 
     constructor() {
@@ -545,14 +546,14 @@ class Text extends Widget<WidgetEvents> {
         return this;
     }
 
-    public build(suppressCallback: boolean = false): JQuery<HTMLElement> {
+    public override build(suppressCallback: boolean = false): JQuery<HTMLDivElement> {
         super.build(true)
             .addClass("text-widget");
         this.buildCallback(suppressCallback);
         return this.domObject;
     }
 
-    public rebuild(suppressCallback: boolean = false): JQuery<HTMLElement> {
+    public override rebuild(suppressCallback: boolean = false): JQuery<HTMLDivElement> {
         super.rebuild(true);
         this.domObject
             .text(this.value)
@@ -592,9 +593,6 @@ class Text extends Widget<WidgetEvents> {
     }
 }
 
-interface Text extends MixinImplementing, ColorEditable<WidgetEvents>, SpacingEditable<WidgetEvents> {
-}
-
 const TopEvents = {
     ...WidgetEvents,
     ...IconContainingEvents
@@ -602,7 +600,7 @@ const TopEvents = {
 type TopEvents = (typeof TopEvents[keyof typeof TopEvents]);
 
 @mixin(OneIconContaining)
-class Top extends FlexBox<TopEvents> {
+class Top<HtmlElementType extends HTMLElement = HTMLDivElement> extends FlexBox<TopEvents, HtmlElementType> {
     private readonly label: Text;
     private _defaultTop = true;
 
@@ -621,7 +619,7 @@ class Top extends FlexBox<TopEvents> {
         this.on(undefined, EventCallbacks.setHeight);
     }
 
-    build(suppressCallback: boolean = false): JQuery<HTMLElement> {
+    public override build(suppressCallback: boolean = false): JQuery<HtmlElementType> {
         super.build(true)
             .addClass("title-widget");
         // .append(this.label.build(suppressCallback))
@@ -630,7 +628,7 @@ class Top extends FlexBox<TopEvents> {
         return this.domObject;
     }
 
-    public rebuild(suppressCallback: boolean = false): JQuery<HTMLElement> {
+    public override rebuild(suppressCallback: boolean = false): JQuery<HtmlElementType> {
         super.rebuild(true);
         this.domObject
             .toggleClass("default", this._defaultTop);
@@ -657,11 +655,14 @@ class Top extends FlexBox<TopEvents> {
     }
 }
 
-interface Top extends MixinImplementing, OneIconContaining<WidgetEvents> {
+interface Top<HtmlElementType extends HTMLElement = HTMLDivElement> extends MixinImplementing, OneIconContaining<WidgetEvents, HtmlElementType> {
+}
+
+interface ListTile<EventType extends WidgetEvents | IconContainingEvents, HtmlElementType extends HTMLElement = HTMLDivElement> extends FlexBox<EventType, HtmlElementType>, MixinImplementing, Item, ColorEditable<EventType, HtmlElementType>, SpacingEditable<EventType, HtmlElementType>, LeadingTrailingIconContaining<EventType, HtmlElementType>, CheckboxContaining<EventType, HtmlElementType> {
 }
 
 @mixin(Item, ColorEditable, SpacingEditable, LeadingTrailingIconContaining, CheckboxContaining)
-class ListTile<EventType extends WidgetEvents> extends FlexBox<EventType> {
+class ListTile<EventType extends WidgetEvents |IconContainingEvents, HtmlElementType extends HTMLElement = HTMLDivElement> extends FlexBox<EventType, HtmlElementType> {
     private readonly _label: Text = new Text();
     private readonly _description: Text = new Text();
 
@@ -683,7 +684,7 @@ class ListTile<EventType extends WidgetEvents> extends FlexBox<EventType> {
         this.enableCheckbox(false);
     }
 
-    public build(suppressCallback: boolean = false): JQuery<HTMLElement> {
+    public override build(suppressCallback: boolean = false): JQuery<HtmlElementType> {
         super.build(true)
             .addClass("list-tile-widget");
         // .append(this.getLeadingIcon().build())
@@ -698,7 +699,7 @@ class ListTile<EventType extends WidgetEvents> extends FlexBox<EventType> {
         return this.domObject;
     }
 
-    public rebuild(suppressCallback: boolean = false): JQuery<HTMLElement> {
+    public override rebuild(suppressCallback: boolean = false): JQuery<HtmlElementType> {
         super.rebuild(true);
         this.rebuildCheckbox();
         this.rebuildCallback(suppressCallback);
@@ -724,9 +725,6 @@ class ListTile<EventType extends WidgetEvents> extends FlexBox<EventType> {
     }
 }
 
-interface ListTile<EventType extends WidgetEvents | IconContainingEvents> extends MixinImplementing, Item, ColorEditable<EventType>, SpacingEditable<EventType>, LeadingTrailingIconContaining<EventType>, CheckboxContaining<EventType> {
-}
-
 const TextInputEvents = {
     ...WidgetEvents,
     ...InputEvents
@@ -734,16 +732,16 @@ const TextInputEvents = {
 type TextInputEvents = (typeof TextInputEvents[keyof typeof TextInputEvents]);
 
 @mixin(Input, InputLabel)
-class TextInput extends Widget<TextInputEvents> {
+class TextInput<HtmlElementType extends HTMLElement = HTMLDivElement> extends Widget<TextInputEvents, HtmlElementType> {
     // private _id: string;
     // private _label: string;
-    private _placeHolder: string;
-    private _minLength: number;
-    private _maxLength: number;
+    private _placeHolder: string | null = null;
+    private _minLength: number | null = null;
+    private _maxLength: number | null = null;
     // private _readonly: boolean;
-    private _spellcheck: boolean;
-    private _size: number;
-    private _pattern: string;
+    private _spellcheck: boolean | undefined = undefined;
+    private _size: number | null = null;
+    private _pattern: string | null = null;
 
     constructor() {
         super();
@@ -772,7 +770,7 @@ class TextInput extends Widget<TextInputEvents> {
     //     return this.domObject;
     // }
 
-    public build(suppressCallback: boolean = false): JQuery<HTMLElement> {
+    public override build(suppressCallback: boolean = false): JQuery<HtmlElementType> {
         super.build(suppressCallback)
             .addClass("text-input")
             .append(this.buildInput()
@@ -791,7 +789,7 @@ class TextInput extends Widget<TextInputEvents> {
         return this.domObject;
     }
 
-    public rebuild(suppressCallback: boolean = false): JQuery<HTMLElement> {
+    public override rebuild(suppressCallback: boolean = false): JQuery<HtmlElementType> {
         super.rebuild(suppressCallback);
         this.rebuildInput()
             .attr("placeholder", this._placeHolder)
@@ -879,50 +877,37 @@ class TextInput extends Widget<TextInputEvents> {
         return this;
     }
 
-    //
-    // public get id() {
-    //     return this._id;
-    // }
-    //
-    // public get label(): string {
-    //     return this._label;
-    // }
-
-    public get placeHolder(): string {
+    public get placeHolder(): string | null {
         return this._placeHolder;
     }
 
-    public get minLength(): number {
+    public get minLength(): number | null {
         return this._minLength;
     }
 
-    public get maxLength(): number {
+    public get maxLength(): number | null {
         return this._maxLength;
     }
 
-    // public get readonly(): boolean {
-    //     return this._readonly;
-    // }
-
-    public get spellcheck(): boolean {
+    public get spellcheck(): boolean | undefined {
         return this._spellcheck;
     }
 
-    public get size(): number {
+    public get size(): number | null {
         return this._size;
     }
 
-    public get pattern(): string {
+    public get pattern(): string | null {
         return this._pattern;
     }
 }
 
-interface TextInput extends MixinImplementing, Input<string, WidgetEvents | InputEvents, HTMLElement>, InputLabel<WidgetEvents> {
+interface TextInput<HtmlElementType extends HTMLElement = HTMLDivElement> extends MixinImplementing, Input<string, WidgetEvents | InputEvents, HtmlElementType>, InputLabel<WidgetEvents, HtmlElementType> {
 }
 
 @mixin(Input)
 class CheckBoxInput extends Widget<WidgetEvents | InputEvents, HTMLInputElement> {
-    private _checked: boolean;
+    private _checked: boolean = false;
 
     constructor() {
         super("input");
@@ -930,21 +915,20 @@ class CheckBoxInput extends Widget<WidgetEvents | InputEvents, HTMLInputElement>
         this.setType("checkbox");
     }
 
-    public build(suppressCallback: boolean = false): JQuery<HTMLInputElement> {
+    public override build(suppressCallback: boolean = false): JQuery<HTMLInputElement> {
         super.build(true);
         this.buildInput(<JQuery<HTMLInputElement>>this.domObject);
         this.buildCallback(suppressCallback);
         return this.domObject;
     }
 
-    public rebuild(suppressCallback: boolean = false): JQuery<HTMLInputElement> {
+    public override rebuild(suppressCallback: boolean = false): JQuery<HTMLInputElement> {
         super.rebuild(true);
         this.rebuildInput(<JQuery<HTMLInputElement>>this.domObject);
 
-        let update = this.domObject.get(0).checked !== this._checked;
+        let update = this.domObject.get(0)!.checked !== this._checked;
         this.domObject
-            .get(0)
-            .checked = this._checked;
+            .prop("checked", this._checked);
         if (update) {
             this.dispatchEvent(InputEvents.input, [this.checked]);
             this.dispatchEvent(InputEvents.change, [this.checked]);
@@ -955,9 +939,7 @@ class CheckBoxInput extends Widget<WidgetEvents | InputEvents, HTMLInputElement>
     }
 
     public get checked(): boolean {
-        this._checked = this.domObject
-            .get(0)
-            .checked;
+        this._checked = this.domObject.prop("checked");
         return this._checked;
     }
 
@@ -972,17 +954,16 @@ interface CheckBoxInput extends MixinImplementing, Input<string, WidgetEvents | 
 
 @mixin(Input)
 class SelectBoxItemValue extends Widget<WidgetEvents | InputEvents> {
-    private _label: string;
-    private _checked: boolean;
+    private _label: string = "";
+    private _checked: boolean = false;
 
     constructor() {
         super();
         this.setType("radio");
-        this._checked = false;
         this.setName("42"); //we need any name so that only 1 item can be selected at once
     }
 
-    public build(suppressCallback: boolean = false): JQuery<HTMLElement> {
+    public override build(suppressCallback: boolean = false): JQuery<HTMLElement> {
         super.build(true)
             .addClass("value")
             .append(this.buildInput())
@@ -994,11 +975,10 @@ class SelectBoxItemValue extends Widget<WidgetEvents | InputEvents> {
         return this.domObject;
     }
 
-    public rebuild(suppressCallback: boolean = false): JQuery<HTMLElement> {
+    public override rebuild(suppressCallback: boolean = false): JQuery<HTMLElement> {
         super.rebuild(true);
         this.rebuildInput()
-            .get(0)
-            .checked = this._checked;
+            .prop("checked", this._checked);
         this.rebuildCallback(suppressCallback);
         return this.domObject;
     }
@@ -1019,8 +999,7 @@ class SelectBoxItemValue extends Widget<WidgetEvents | InputEvents> {
 
     public get checked(): boolean {
         this._checked = this.domObject.find("input")
-            .get(0)
-            .checked;
+            .prop("checked");
         return this._checked;
     }
 }
@@ -1029,13 +1008,13 @@ interface SelectBoxItemValue extends MixinImplementing, Input<string, WidgetEven
 }
 
 @mixin(InputLabel)
-class SelectBoxListItem extends Widget<WidgetEvents> {
+class SelectBoxListItem extends Widget<WidgetEvents, HTMLLIElement> {
 
     constructor() {
         super("li");
     }
 
-    public build(suppressCallback: boolean = false): JQuery<HTMLElement> {
+    public override build(suppressCallback: boolean = false): JQuery<HTMLLIElement> {
         super.build(true)
             .append(this.buildLabel()
                 .addClass("option")
@@ -1044,7 +1023,7 @@ class SelectBoxListItem extends Widget<WidgetEvents> {
         return this.domObject;
     }
 
-    public rebuild(suppressCallback: boolean = false): JQuery<HTMLElement> {
+    public override rebuild(suppressCallback: boolean = false): JQuery<HTMLLIElement> {
         super.rebuild(true);
         this.rebuildLabel();
         this.rebuildCallback(suppressCallback);
@@ -1052,7 +1031,7 @@ class SelectBoxListItem extends Widget<WidgetEvents> {
     }
 }
 
-interface SelectBoxListItem extends MixinImplementing, InputLabel<WidgetEvents> {
+interface SelectBoxListItem extends MixinImplementing, InputLabel<WidgetEvents, HTMLLIElement> {
 }
 
 class SelectBoxItem {
@@ -1100,7 +1079,7 @@ const SelectBoxEvents = {
 type SelectBoxEvents = (typeof SelectBoxEvents[keyof typeof SelectBoxEvents]);
 
 @mixin(OneIconContaining)
-class SelectBox extends Widget<SelectBoxEvents> {
+class SelectBox<HtmlElementType extends HTMLElement = HTMLDivElement> extends Widget<SelectBoxEvents, HtmlElementType> {
     private _items: SelectBoxItem[] = [];
     private optionsViewButton: CheckBoxInput;
 
@@ -1123,7 +1102,7 @@ class SelectBox extends Widget<SelectBoxEvents> {
         this.addChild("optionsViewButton");
     }
 
-    public override build(suppressCallback: boolean = false): JQuery<HTMLElement> {
+    public override build(suppressCallback: boolean = false): JQuery<HtmlElementType> {
         super.build(true)
             .addClass("select-box-widget")
             .append($("<div></div>")
@@ -1138,7 +1117,7 @@ class SelectBox extends Widget<SelectBoxEvents> {
         return this.domObject;
     }
 
-    public override rebuild(suppressCallback: boolean = false): JQuery<HTMLElement> {
+    public override rebuild(suppressCallback: boolean = false): JQuery<HtmlElementType> {
         super.rebuild(true);
 
         this.domObject.find(".current").children(".value").detach();
@@ -1182,6 +1161,7 @@ class SelectBox extends Widget<SelectBoxEvents> {
         for (let item of items) {
             for (let i of this._items.splice(this._items.indexOf(item), 1)) {
                 //TODO 09.04.2022 clean up event handlers
+                i; //suppress ts waring xD
             }
         }
         return this;
@@ -1198,24 +1178,24 @@ class SelectBox extends Widget<SelectBoxEvents> {
     }
 }
 
-interface SelectBox extends MixinImplementing, OneIconContaining<SelectBoxEvents> {
+interface SelectBox<HtmlElementType extends HTMLElement = HTMLDivElement> extends MixinImplementing, OneIconContaining<SelectBoxEvents, HtmlElementType> {
 }
 
 @mixin(ItemContaining, SpacingEditable)
-class Box<EventType extends WidgetEvents | ItemContainingEvents> extends Widget<EventType> {
+class Box<EventType extends WidgetEvents | ItemContainingEvents, HtmlElementType extends HTMLElement = HTMLDivElement, ItemType extends Widget<WidgetEvents> = Widget<WidgetEvents>> extends Widget<EventType, HtmlElementType> {
     constructor(htmlElementType?: string) {
         super(htmlElementType);
         this.mixinConstructor(ItemContaining, SpacingEditable);
     }
 
-    public rebuild(suppressCallback: boolean = false): JQuery<HTMLElement> {
+    public override rebuild(suppressCallback: boolean = false): JQuery<HtmlElementType> {
         super.rebuild(true);
         this.rebuildItems();
         this.rebuildCallback(suppressCallback);
         return this.domObject;
     }
 
-    public build(suppressCallback: boolean = false): JQuery<HTMLElement> {
+    public override build(suppressCallback: boolean = false): JQuery<HtmlElementType> {
         super.build(true)
             .addClass("box");
         this.buildSpacing();
@@ -1225,21 +1205,20 @@ class Box<EventType extends WidgetEvents | ItemContainingEvents> extends Widget<
     }
 }
 
-interface Box<EventType extends WidgetEvents> extends MixinImplementing, ItemContaining<EventType>, SpacingEditable<EventType> {
+interface Box<EventType extends WidgetEvents | ItemContainingEvents, HtmlElementType extends HTMLElement = HTMLDivElement, ItemType extends Widget<WidgetEvents> = Widget<WidgetEvents>> extends MixinImplementing, ItemContaining<EventType, HtmlElementType, ItemType>, SpacingEditable<EventType, HtmlElementType> {
 }
 
-class ContentBox extends Box<WidgetEvents> {
+class ContentBox<HtmlElementType extends HTMLElement = HTMLDivElement, ItemType extends Widget<WidgetEvents> = Widget<WidgetEvents>> extends Box<WidgetEvents, HtmlElementType, ItemType> {
 
     constructor(htmlElementType?: string) {
         super(htmlElementType);
         this.on(undefined, EventCallbacks.setHeightToRemaining);
     }
 
-    public override build(suppressCallback: boolean = false): JQuery<HTMLElement> {
+    public override build(suppressCallback: boolean = false): JQuery<HtmlElementType> {
         super.build(true)
             .addClass("default-content");
-        this.buildCallback(suppressCallback);
-        return this.domObject;
+        return this.buildCallback(suppressCallback);
     }
 }
 

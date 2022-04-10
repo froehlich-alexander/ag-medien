@@ -6,132 +6,140 @@ const DialogEvents = {
     finished: "finished",
     rejected: "rejected",
 };
+var DialogState;
+(function (DialogState) {
+    DialogState["accepted"] = "accepted";
+    DialogState["rejected"] = "rejected";
+    DialogState["closed"] = "closed";
+    DialogState["open"] = "open";
+    DialogState["notOpen"] = "notOpen";
+})(DialogState || (DialogState = {}));
 class Dialog extends Widget {
     constructor(htmlElementType, contentHtmlType) {
         super(htmlElementType);
-        Object.defineProperty(this, "result", {
+        Object.defineProperty(this, "_state", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: DialogState.notOpen
+        });
+        Object.defineProperty(this, "_value", {
             enumerable: true,
             configurable: true,
             writable: true,
             value: void 0
         });
-        Object.defineProperty(this, "value", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        Object.defineProperty(this, "opened", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        Object.defineProperty(this, "buttonBox", {
+        Object.defineProperty(this, "_buttonBox", {
             enumerable: true,
             configurable: true,
             writable: true,
             value: new ButtonBox()
         });
-        Object.defineProperty(this, "aTop", {
+        Object.defineProperty(this, "_aTop", {
             enumerable: true,
             configurable: true,
             writable: true,
             value: new Top()
         });
-        Object.defineProperty(this, "aContent", {
+        Object.defineProperty(this, "_aContent", {
             enumerable: true,
             configurable: true,
             writable: true,
             value: void 0
         });
-        this.aContent = new ContentBox(contentHtmlType);
-        this.addChild("buttons", this.buttonBox);
-        this.addChild("atop", this.aTop);
-        this.addChild("aContent", this.aContent);
+        this._aContent = new ContentBox(contentHtmlType);
+        this.addChild("buttons", this._buttonBox);
+        this.addChild("atop", this._aTop);
+        this.addChild("aContent", this._aContent);
         // this.buttonBox.setSpacing("2rem", "2rem", "1rem");
     }
     buildTop() {
-        let top = this.aTop.build();
-        this.domObject.append(top);
-        return top;
+        return this._aTop.build()
+            .appendTo(this.domObject);
     }
     buildContent() {
-        let content = this.aContent.build();
-        this.domObject.append(content);
-        return content;
+        return this._aContent.build()
+            .appendTo(this.domObject);
     }
     buildButtons() {
-        let buttonBox = this.buttonBox.build();
-        this.domObject.append(buttonBox);
-        return buttonBox;
+        return this._buttonBox.build()
+            .appendTo(this.domObject);
     }
     build(suppressCallback = false) {
         super.build(true)
             .addClass("dialog-widget");
-        this.buildCallback(suppressCallback);
-        return this.domObject;
-    }
-    enableButtons(value) {
-        this.buttonBox.setInheritVisibility(value);
-        return this;
-    }
-    buttonsEnabled() {
-        return this.buttonBox.inheritVisibility;
+        return this.buildCallback(suppressCallback);
     }
     enableTop(value) {
-        this.aTop.setInheritVisibility(value);
+        this._aTop.setInheritVisibility(value);
         return this;
-    }
-    topEnabled() {
-        return this.aTop.inheritVisibility;
     }
     enableContent(value) {
-        this.aContent.setInheritVisibility(value);
+        this._aContent.setInheritVisibility(value);
         return this;
     }
-    contentEnabled() {
-        return this.aContent.inheritVisibility;
+    enableButtons(value) {
+        this._buttonBox.setInheritVisibility(value);
+        return this;
     }
     addButton(button, mainAlign = FlexAlign.center, crossAlign = FlexAlign.center) {
-        this.buttonBox.addButton(button, mainAlign, crossAlign);
+        this._buttonBox.addButton(button, mainAlign, crossAlign);
         return this;
     }
-    getResult() {
-        return this.result;
-    }
-    isOpened() {
-        return this.opened;
-    }
     open(value) {
-        this.opened = true;
-        this.result = null;
-        this.value = value;
+        this._state = DialogState.open;
+        this._value = value;
         this.setVisibility(true);
         this.rebuild();
         return this;
     }
     accept() {
-        this.result = DialogEvents.accepted;
+        this._state = DialogState.accepted;
         this.close();
         return (this.dispatchEvent(DialogEvents.accepted, [this.setValue()], DialogEvents.finished));
     }
     reject() {
-        this.result = DialogEvents.rejected;
+        this._state = DialogState.rejected;
         this.close();
         return (this.dispatchEvent(DialogEvents.rejected, [], DialogEvents.finished));
     }
     close() {
-        this.opened = false;
+        if (this._state !== DialogState.accepted && this._state !== DialogState.rejected) {
+            this._state = DialogState.closed;
+        }
         this.setVisibility(false);
         return this;
     }
     destroy() {
         super.destroy();
-        if (this.opened) {
+        if (this._state === DialogState.open) {
             this.reject();
         }
         return this;
+    }
+    get topEnabled() {
+        return this._aTop.inheritVisibility;
+    }
+    get contentEnabled() {
+        return this._aContent.inheritVisibility;
+    }
+    get buttonsEnabled() {
+        return this._buttonBox.inheritVisibility;
+    }
+    get state() {
+        return this._state;
+    }
+    get value() {
+        return this._value;
+    }
+    get buttonBox() {
+        return this._buttonBox;
+    }
+    get aTop() {
+        return this._aTop;
+    }
+    get aContent() {
+        return this._aContent;
     }
 }
 export { Dialog, DialogEvents };

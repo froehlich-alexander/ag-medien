@@ -35,10 +35,8 @@ abstract class Mixin {
  * This class should be implemented by all classes which uses mixins
  */
 abstract class MixinImplementing extends Mixin {
-    // protected abstract __mixin_dependencies(): typeof Mixin[];
-
     protected mixinConstructor(...mixins: typeof Mixin[]) {
-        mixins = (<typeof Mixin><unknown>this.constructor).__mixinDependencies;
+        mixins = (<typeof Mixin>this.constructor).__mixinDependencies;
         let mixinObjs = [];
         for (let type of mixins) {
             // @ts-ignore
@@ -53,6 +51,54 @@ abstract class MixinImplementing extends Mixin {
             }
         }
     }
+
+    // /**
+    //  * Whether the instance implements <b>all</b> given mixins
+    //  * @param {typeof Mixin} mixins
+    //  * @return {boolean}
+    //  */
+    // public hasMixins<T extends Mixin, T1 extends Mixin = MixinImplementing, T2 extends Mixin = MixinImplementing,
+    //     T3 extends Mixin = MixinImplementing, T4 extends Mixin = MixinImplementing, T5 extends Mixin = MixinImplementing,
+    //     T6 extends Mixin = MixinImplementing, T7 extends Mixin = MixinImplementing, T8 extends Mixin = MixinImplementing,
+    //     T9 extends Mixin = MixinImplementing, T10 extends Mixin = MixinImplementing, T11 extends Mixin = MixinImplementing>
+    // (self = this as MixinImplementing, ...mixins: typeof Mixin[]): self is (MixinImplementing & T & T1 & T2 & T3 & T4 & T5 & T6 & T7 & T8 & T9 & T10 & T11) {
+    //     for (let value of mixins) {
+    //         if ((<typeof Mixin>this.constructor).__mixinDependencies.indexOf(value) !== -1) {
+    //             return false;
+    //         }
+    //     }
+    //     return true;
+    // }
+    //
+    // public hasMixins1<T extends Mixin, T1 extends Mixin = MixinImplementing, T2 extends Mixin = MixinImplementing,
+    //     T3 extends Mixin = MixinImplementing, T4 extends Mixin = MixinImplementing, T5 extends Mixin = MixinImplementing,
+    //     T6 extends Mixin = MixinImplementing, T7 extends Mixin = MixinImplementing, T8 extends Mixin = MixinImplementing,
+    //     T9 extends Mixin = MixinImplementing, T10 extends Mixin = MixinImplementing, T11 extends Mixin = MixinImplementing>
+    // (...mixins: typeof Mixin[]): boolean {
+    //     return hasMixins<T>(this, ...mixins);
+    // }
+}
+
+/**
+ * Whether the instance implements <b>all</b> given mixins
+ * @param obj
+ * @param {typeof Mixin} mixins
+ * @return {obj is {@link MixinImplementing} & T & T1 & T2 & T3 & T4 & T5 & T6 & T7 & T8 & T9 & T10 & T11}
+ */
+function hasMixins<T extends Mixin = MixinImplementing, T1 extends Mixin = MixinImplementing, T2 extends Mixin = MixinImplementing,
+    T3 extends Mixin = MixinImplementing, T4 extends Mixin = MixinImplementing, T5 extends Mixin = MixinImplementing,
+    T6 extends Mixin = MixinImplementing, T7 extends Mixin = MixinImplementing, T8 extends Mixin = MixinImplementing,
+    T9 extends Mixin = MixinImplementing, T10 extends Mixin = MixinImplementing, T11 extends Mixin = MixinImplementing>
+(obj: any, ...mixins: typeof Mixin[]): obj is (MixinImplementing & T & T1 & T2 & T3 & T4 & T5 & T6 & T7 & T8 & T9 & T10 & T11) {
+    if (!obj.constructor.__mixinDependencies) {
+        return false;
+    }
+    for (let value of mixins) {
+        if (obj.constructor.__mixinDependencies.indexOf(value) === -1) {
+            return false;
+        }
+    }
+    return true;
 }
 
 /**
@@ -174,4 +220,4 @@ function toObject(input: any): Object {
     }
 }
 
-export {Pair, Tripel, Mixin, MixinImplementing, mixin, toObject};
+export {Pair, Tripel, Mixin, MixinImplementing, mixin, toObject, hasMixins};

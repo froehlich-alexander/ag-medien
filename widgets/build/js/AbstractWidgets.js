@@ -4,16 +4,16 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
-import { mixin, Mixin, Pair } from "./base.js";
+import { hasMixins, mixin, Mixin, Pair } from "./base.js";
 import { WidgetEvents } from "./Widget.js";
 import { CSSColorValue } from "./WidgetBase.js";
 import { Icon, IconEvents, IconType, TextInputEvents } from "./Widgets.js";
 class Util {
     static setHeight(element) {
-        element.outerHeight(element.outerHeight(false), false);
+        element.outerHeight(element.outerHeight(false) ?? 0, false);
     }
     static setWidth(element) {
-        element.outerWidth(element.outerWidth(false), false);
+        element.outerWidth(element.outerWidth(false) ?? 0, false);
     }
     /**
      * Add something to a css-property of a Html Element
@@ -37,7 +37,7 @@ class Util {
         let children = parent.children().not(child).not(".overlay-widget");
         let w = 0;
         for (let i = 0; i < children.length; i++) {
-            w += children.eq(i).outerHeight(true);
+            w += children.eq(i).outerHeight(true) ?? 0;
         }
         child.css("max-height", `calc(100% - ${w}px`);
     }
@@ -45,7 +45,7 @@ class Util {
         let children = parent.children().not(child).not(".overlay-widget");
         let w = 0;
         for (let i = 0; i < children.length; i++) {
-            w += children.eq(i).outerWidth(true);
+            w += children.eq(i).outerWidth(true) ?? 0;
         }
         child.css("max-width", `calc(100% - ${w}px`);
     }
@@ -135,12 +135,14 @@ class ColorEditable extends Mixin {
 class SpacingEditable extends Mixin {
     constructor() {
         super(...arguments);
+        // @ts-ignore
         Object.defineProperty(this, "_padding", {
             enumerable: true,
             configurable: true,
             writable: true,
             value: [null, null, null, null]
         });
+        // @ts-ignore
         Object.defineProperty(this, "_margin", {
             enumerable: true,
             configurable: true,
@@ -227,7 +229,7 @@ var IconContainingEvents;
 class IconContaining extends Mixin {
     _setIcon(fieldName, icon) {
         // @ts-ignore
-        this[fieldName].set(icon.getValue(), icon.getType());
+        this[fieldName].set(icon.value, icon.type);
         // if (this[fieldName] != null) {
         //
         //     this.children.set(fieldName, this[fieldName]);
@@ -330,8 +332,9 @@ var ItemContainingEvents;
     ItemContainingEvents["itemAdded"] = "";
     ItemContainingEvents["itemRemoved"] = "";
 })(ItemContainingEvents || (ItemContainingEvents = {}));
-class Item {
+class Item extends Mixin {
     constructor() {
+        super(...arguments);
         Object.defineProperty(this, "_index", {
             enumerable: true,
             configurable: true,
@@ -397,7 +400,8 @@ class ItemContaining extends Mixin {
         for (let i of items) {
             this.addChild(ItemContaining.itemChildrenPrefix + this.itemCount, i);
             this.dispatchEvent(ItemContainingEvents.itemAdded, [this.itemCount, i]);
-            if (i instanceof Item) {
+            if (hasMixins(i, Item)) {
+                console.log(i.constructor);
                 i.setIndex(this.itemCount);
             }
             this.itemCount++;
@@ -449,7 +453,7 @@ class ItemContaining extends Mixin {
             }
             this.children.delete(ItemContaining.itemChildrenPrefix + i);
             this.addChild(ItemContaining.itemChildrenPrefix + newIndex, item);
-            if (item instanceof Item) {
+            if (hasMixins(item, Item)) {
                 item.setIndex(newIndex);
             }
         }
@@ -520,7 +524,7 @@ class CheckboxContaining extends Mixin {
             enumerable: true,
             configurable: true,
             writable: true,
-            value: void 0
+            value: false
         });
     }
     _constructor() {
@@ -605,7 +609,7 @@ let Input = class Input extends Mixin {
             enumerable: true,
             configurable: true,
             writable: true,
-            value: void 0
+            value: false
         });
         Object.defineProperty(this, "_name", {
             enumerable: true,
@@ -617,13 +621,13 @@ let Input = class Input extends Mixin {
             enumerable: true,
             configurable: true,
             writable: true,
-            value: void 0
+            value: false
         });
         Object.defineProperty(this, "_required", {
             enumerable: true,
             configurable: true,
             writable: true,
-            value: void 0
+            value: false
         });
         Object.defineProperty(this, "_type", {
             enumerable: true,

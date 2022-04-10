@@ -24,9 +24,10 @@ body {
 }
 .color-picker .color-scheme-new-dialog {
   width: 35%;
+  height: 50%;
   left: 50%;
-  transform: translateX(-50%);
-  top: 0;
+  top: 50%;
+  transform: translateX(-50%) translateY(-50%);
   position: relative;
   background-color: var(--background-color-1);
 }
@@ -34,7 +35,7 @@ body {
   padding: 1rem;
 }
 .color-picker .color-scheme-new-dialog .select-box-widget {
-  max-height: 50%;
+  max-height: 20%;
   max-width: 80%;
   margin: 0 auto;
 }

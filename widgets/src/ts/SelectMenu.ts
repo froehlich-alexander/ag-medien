@@ -33,11 +33,11 @@ export class SelectMenuItem<T> extends Widget<SelectMenuItemEvents> {
     setIcon(icon: Icon): this {
         //this.item should never be null
         if (this.icon != null) {
-            this.icon.set(icon.getValue(), icon.getType()).show();
+            this.icon.set(icon.value, icon.type).show();
         } else {
             this.icon = (<Icon>icon.show());
         }
-        this.icon.build(false);
+        this.icon.tryRebuild();
         return this;
     }
 
