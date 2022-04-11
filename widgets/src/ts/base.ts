@@ -1,3 +1,5 @@
+import {cssNumber} from "jquery";
+
 class Pair<T, T1> {
     first: T;
     second: T1;
@@ -188,7 +190,6 @@ function orderMixins(mixins: typeof Mixin[] = []): typeof Mixin[] {
 function mixin(...mixins: typeof Mixin[]): Function {
     // applyMixins(constructor, mixins);
     mixins = orderMixins(mixins);
-    console.log(mixins);
     return function (constructor: Function) {
         if (!(constructor instanceof Mixin)) {
             applyMixins(constructor, [...mixins]);
@@ -212,7 +213,8 @@ function mixin(...mixins: typeof Mixin[]): Function {
  * @param input
  * @return {Object}
  */
-function toObject(input: any): Object {
+function toObject(input: Object): Object {
+    // assertType<[Pair<string, number>]>(input, Pair);
     if (input instanceof Map) {
         return Object.fromEntries(input);
     } else {
@@ -220,4 +222,86 @@ function toObject(input: any): Object {
     }
 }
 
-export {Pair, Tripel, Mixin, MixinImplementing, mixin, toObject, hasMixins};
+function assertType<T extends Object, T1 extends Object = Object, T2 extends Object = Object,
+    T3 extends Object = Object, T4 extends Object = Object, T5 extends Object = Object,
+    T6 extends Object = Object, T7 extends object = Object, T8 extends Object = Object,
+    T9 extends Object = Object, T10 extends Object = Object, T11 extends Object = Object>
+(obj: Object | number | string | bigint | symbol | boolean | undefined, ...types: (Function | ("undefined" | "number" | "function" | "string" | "bigint" | "object" | "boolean" | "symbol") | undefined)[]): asserts obj is (T & T1 & T2 & T3 & T4 & T5 & T6 & T7 & T8 & T9 & T10 & T11) {
+    let typeNameList: string[] = [];
+    let objList: string[] = [];
+    for (let i of types) {
+        if (obj === undefined) {
+            if (i !== undefined && i !== "undefined") {
+                typeNameList.push(typeof i === "string" ? i : i.name);
+                continue;
+            }
+        }
+        if (typeof i === "string") {
+            if (typeof obj !== i) {
+                switch (i) {
+                    case "number":
+                        if (obj instanceof Number) {
+                            break;
+                        }
+                    case "string":
+                        if (obj instanceof String) {
+                            break;
+                        }
+                    case "bigint":
+                        if (obj instanceof BigInt) {
+                            break;
+                        }
+                    case "symbol":
+                        if (obj instanceof Symbol) {
+                            break;
+                        }
+                    case "boolean":
+                        if (obj instanceof Boolean) {
+                            break;
+                        }
+                    default:
+                        typeNameList.push(i);
+                }
+            }
+        } else if (typeof i === "function") {
+            if (!(obj instanceof i)) {
+                {
+                    switch (i) {
+                        case Number:
+                            if (typeof obj === "number") {
+                                break;
+                            }
+                        case String:
+                            if (typeof obj === "string") {
+                                break;
+                            }
+                        case BigInt:
+                            if (typeof obj === "bigint") {
+                                break;
+                            }
+                        case Symbol:
+                            if (typeof obj === "symbol") {
+                                break;
+                            }
+                        case Boolean:
+                            if (typeof obj === "boolean") {
+                                break;
+                            }
+                        default:
+                            typeNameList.push(i.name);
+                    }
+                }
+            }
+        } else {
+            objList.push((i as Object).constructor.name);
+        }
+    }
+    if (typeNameList.length > 0) {
+        console.error(`${typeof obj === "symbol" || typeof obj === "object" ? obj.toString() : obj} is not of type(s) "${typeNameList.join(" & ")}"`);
+    }
+    if (objList.length > 0) {
+        console.error(`Do not pass objects as types!!!\nObjects were of types "${objList.join(", ")}"`);
+    }
+}
+
+export {Pair, Tripel, Mixin, MixinImplementing, mixin, toObject, assertType, hasMixins};

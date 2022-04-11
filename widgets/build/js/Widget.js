@@ -103,10 +103,10 @@ class Widget extends _EventHandler {
                 this.sizeSetObserver.disconnect();
             }
         });
-        this.on(undefined, new Pair(WidgetEvents.sizeSet, () => {
+        this.on(WidgetEvents.sizeSet, () => {
             this.dispatchEvent(WidgetEvents.needVisibilityUpdate);
             this.buildVisibility();
-        }));
+        });
     }
     /**
      * This method should call {@link buildCallback} before it returns
@@ -165,38 +165,21 @@ class Widget extends _EventHandler {
         this.buildVisibility(); //todo do we need this? remove???
         return this._domObject;
     }
-    on(events, event) {
+    on(events, handler) {
         if (this._built) {
             // console.log("on called after element is built");
             // console.log(events);
             // console.log(this);
             // this.domObject.on(events);
         }
-        if (event != null) {
-            this.callbacks.push(event);
-        }
-        if (events != null) {
-            for (let i in events) {
-                this.callbacks.push(new Pair(i, events[i]));
-            }
-        }
-        return this;
-    }
-    on2(events, handler) {
-        if (this._built) {
-            // console.log("on called after element is built");
-            // console.log(events);
-            // console.log(this);
-            // this.domObject.on(events);
-        }
-        if (handler !== undefined && typeof events === "string") {
+        console.assert(events != null);
+        if (typeof events === "string") {
+            console.assert(handler != null);
             this.callbacks.push(new Pair(events, handler));
         }
-        else if (events != null) {
+        else {
             for (let i in events) {
-                // @ts-ignore
                 this.callbacks.push(new Pair(i, events[i]));
-                // @ts-ignore
                 console.log(new Pair(i, events[i]));
             }
         }
@@ -227,8 +210,11 @@ class Widget extends _EventHandler {
             // @ts-ignore
             child = this[childName];
         }
+        if (childName.startsWith("_")) {
+            childName = childName.replaceAll(new RegExp("^[_#]*", "g"), "");
+        }
         this.children.set(childName, child);
-        child.on2(WidgetEvents.needVisibilityUpdate, (event) => {
+        child.on(WidgetEvents.needVisibilityUpdate, (event) => {
             if (event.target.inheritVisibility) {
                 event.target.setVisibility(this.visibility);
             }

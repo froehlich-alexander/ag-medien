@@ -16,7 +16,7 @@ class Item extends Mixin {
             enumerable: true,
             configurable: true,
             writable: true,
-            value: void 0
+            value: -1
         });
     }
     get index() {
@@ -74,7 +74,8 @@ let Icon = Icon_1 = class Icon extends Widget {
     rebuild(suppressCallback = false) {
         super.rebuild(true)
             .css("cursor", this._clickable ? "pointer" : "");
-        console.assert(this._value !== undefined, "Value of this icon is not set. Maybe you forgot it?");
+        // console.assert(this._value !== undefined, "Value of this icon is not set. Maybe you forgot it?");
+        // console.log(this.domObject);
         switch (this._type) {
             case IconType.material: {
                 this.domObject.text(this._value ?? "")
@@ -93,21 +94,29 @@ let Icon = Icon_1 = class Icon extends Widget {
         return this.rebuildCallback(suppressCallback);
     }
     set(value, type) {
-        this._value = value;
+        this.setValue(value);
         if (type != undefined) {
-            this._type = type;
-            switch (type) {
-                case IconType.material:
-                    console.assert(typeof this._value === "string", "The type of the value of this icon must be string when type == " + IconType[IconType.material]);
-            }
+            this.setType(type);
         }
-        this.tryRebuild();
+        return this;
+    }
+    setValue(value) {
+        this._value = value;
+        return this;
+    }
+    setType(type) {
+        this._type = type;
+        switch (type) {
+            case IconType.material:
+                console.assert(typeof this._value === "string", "The type of the value of this icon must be string when type == " + IconType[IconType.material]);
+        }
         return this;
     }
     copy(other) {
         super.copy(other);
         this.setClickable(other._clickable);
-        this.set(other._value, other._type);
+        this.setType(other.type);
+        this._value = other._value;
         return this;
     }
     setClickable(clickable) {
@@ -189,31 +198,28 @@ let Button = Button_1 = class Button extends Widget {
             enumerable: true,
             configurable: true,
             writable: true,
-            value: new Text()
+            value: void 0
         });
         this.mixinConstructor();
         this.enableIcon(true);
+        this._label = new Text().setInheritVisibility(true);
         this.addChild("_label");
     }
     build(suppressCallback = false) {
         super.build(true)
             .addClass("button-widget")
-            .append(this.getIcon().build())
+            .append(this.icon.build())
             // .append($("<div></div>")
             //     .text(this.label)
             //     .addClass("text"))
             .append(this._label.build())
-            .on({
-            click: () => {
-                this.dispatchEvent(ButtonEvents.clicked);
-            }
-        });
+            .on("click", () => this.dispatchEvent(ButtonEvents.clicked));
         this.buildCallback(suppressCallback);
         return this.domObject;
     }
     rebuild(suppressCallback = false) {
         super.rebuild(true);
-        this.getIcon().rebuild();
+        this.icon.rebuild();
         this._label.rebuild();
         return this.rebuildCallback(suppressCallback);
     }
@@ -589,7 +595,7 @@ class FlexBox extends Widget {
 class ButtonBox extends FlexBox {
     constructor() {
         super();
-        this.on(undefined, EventCallbacks.setHeight);
+        this.on(...EventCallbacks.setHeight);
         this.setSpacing("2rem", "2rem", "1rem");
     }
     build(suppressCallback = false) {
@@ -692,9 +698,9 @@ let Top = class Top extends FlexBox {
         // this.enableIcon(true);
         this.label = new Text().setFontWeight(FontWeight.bold);
         this.addItem(this.label);
-        this.addItem(this.getIcon(), FlexAlign.end);
+        this.addItem(this.icon, FlexAlign.end);
         this.setSpacing("20px", "20px", "10px");
-        this.on(undefined, EventCallbacks.setHeight);
+        this.on(...EventCallbacks.setHeight);
     }
     build(suppressCallback = false) {
         super.build(true)
@@ -750,9 +756,9 @@ let ListTile = class ListTile extends FlexBox {
         this._description.setInheritVisibility(false);
         // this.children.set("lable", this._label);
         // this.children.set("description", this._description);
-        this.addItem(this.getLeadingIcon(), FlexAlign.start);
+        this.addItem(this.leadingIcon, FlexAlign.start);
         this.addItem(this._label, FlexAlign.start);
-        this.addItem(this.getTrailingIcon(), FlexAlign.end);
+        this.addItem(this.trailingIcon, FlexAlign.end);
         this.addItem(this.checkbox, FlexAlign.end);
         this.setSpacing("1rem", "1rem", "1rem");
         this.enableCheckbox(false);
@@ -1166,14 +1172,14 @@ let SelectBox = class SelectBox extends Widget {
         this.optionsViewButton = new CheckBoxInput()
             .setInheritVisibility(true)
             .show()
-            .on2(InputEvents.change, (_, value) => this.domObject.find(".current")
+            .on(InputEvents.change, (_, value) => this.domObject.find(".current")
             .toggleClass("options-view-button-checked", value));
         $(document).on("click", (event) => {
             if ($(event.target).closest(this.optionsViewButton.domObject).length < 1) {
                 this.optionsViewButton.setChecked(false).tryRebuild();
             }
         });
-        this.on2(SelectBoxEvents.change, (event, ...args) => console.log(args));
+        this.on(SelectBoxEvents.change, (event, ...args) => console.log(args));
         this.addChild("optionsViewButton");
     }
     build(suppressCallback = false) {
@@ -1183,7 +1189,7 @@ let SelectBox = class SelectBox extends Widget {
             .addClass("current")
             .append(this.optionsViewButton.build()
             .addClass("options-view-button"))
-            .append(this.getIcon().build()
+            .append(this.icon.build()
             .addClass("icon")))
             .append("<ul></ul>");
         this.buildCallback(suppressCallback);
@@ -1215,8 +1221,8 @@ let SelectBox = class SelectBox extends Widget {
     }
     addItems(...items) {
         for (let item of items) {
-            item.value.on2(InputEvents.input, () => this.dispatchEvent(SelectBoxEvents.input, [item.value]));
-            item.value.on2(InputEvents.change, () => this.dispatchEvent(SelectBoxEvents.change, [item.value]));
+            item.value.on(InputEvents.input, () => this.dispatchEvent(SelectBoxEvents.input, [item.value]));
+            item.value.on(InputEvents.change, () => this.dispatchEvent(SelectBoxEvents.change, [item.value]));
             item.listItem.setInheritVisibility(true);
             let index = this._items.push(item);
             this.addChild("item" + index + "li", item.listItem);
@@ -1271,7 +1277,7 @@ Box = __decorate([
 class ContentBox extends Box {
     constructor(htmlElementType) {
         super(htmlElementType);
-        this.on(undefined, EventCallbacks.setHeightToRemaining);
+        this.on(...EventCallbacks.setHeightToRemaining);
     }
     build(suppressCallback = false) {
         super.build(true)

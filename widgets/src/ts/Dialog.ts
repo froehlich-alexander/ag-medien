@@ -25,12 +25,12 @@ interface _Dialog extends _Widget {
     open(): this;
 }
 
-abstract class Dialog<EventType extends DialogEvents, ValueType, ContentBoxItemType extends Widget<WidgetEvents> = Widget<WidgetEvents>> extends Widget<EventType> implements _Dialog {
+abstract class Dialog<EventType extends DialogEvents, ValueType, ContentBoxHtmlElementType extends HTMLElement = HTMLDivElement, ContentBoxItemType extends Widget<WidgetEvents> = Widget<WidgetEvents>> extends Widget<EventType> implements _Dialog {
     private _state: DialogState = DialogState.notOpen;
     private _value: ValueType | undefined;
     private readonly _buttonBox: ButtonBox = new ButtonBox();
     private readonly _aTop: Top = new Top();
-    private readonly _aContent: ContentBox<ContentBoxItemType>;
+    private readonly _aContent: ContentBox<ContentBoxHtmlElementType, ContentBoxItemType>;
 
     protected constructor(htmlElementType?: string, contentHtmlType?: string) {
         super(htmlElementType);
@@ -46,7 +46,7 @@ abstract class Dialog<EventType extends DialogEvents, ValueType, ContentBoxItemT
             .appendTo(this.domObject);
     }
 
-    protected buildContent(): JQuery<HTMLDivElement> {
+    protected buildContent(): JQuery<ContentBoxHtmlElementType> {
         return this._aContent.build()
             .appendTo(this.domObject);
     }
@@ -154,7 +154,7 @@ abstract class Dialog<EventType extends DialogEvents, ValueType, ContentBoxItemT
         return this._aTop;
     }
 
-    public get aContent(): ContentBox<ContentBoxItemType> {
+    public get aContent(): ContentBox<ContentBoxHtmlElementType, ContentBoxItemType> {
         return this._aContent;
     }
 }

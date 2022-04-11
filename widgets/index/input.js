@@ -9,12 +9,12 @@ for (let i = 0; i < 10; i++) {
         .setPlaceHolder("Placeholder :)")
         .setLabel("Label ...")
         .show()
-        .on(undefined, new Pair(TextInputEvents.change, (event, value) => {
+        .on2(TextInputEvents.change, (event, value) => {
             console.log("change" + value)
-        }))
-        .on(undefined, new Pair(TextInputEvents.input, (event, value) => {
+        })
+        .on2(TextInputEvents.input, (event, value) => {
             console.log("input" + value)
-        }));
+        });
     inputs.push(input.build());
 }
 

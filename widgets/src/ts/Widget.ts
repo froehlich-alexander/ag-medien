@@ -1,4 +1,3 @@
-import {EventCallbacks} from "./AbstractWidgets.js";
 import {Pair} from "./base.js";
 // import {$, jQuery} from "../lib/jquery";
 // import * as $ from "jquery";
@@ -17,14 +16,14 @@ const WidgetEvents = {
 
 type WidgetEvents = (typeof WidgetEvents)[keyof typeof WidgetEvents];
 
-type EventCallback<T extends WidgetEvents, T2 extends Widget<T>> = {
-    [type in T]?: EventHandler<T, T2>;
+type EventCallback<T extends WidgetEvents, T1 extends HTMLElement, T2 extends Widget<T, T1> = Widget<T, T1>> = {
+    [type in T]?: EventHandler<T, T1, T2>;
 };
 
-type EventHandler<T extends WidgetEvents, T2 extends Widget<T>> = (event: { type: T, target: T2 }, ...args: any[]) => void;
+type EventHandler<T extends WidgetEvents, T1 extends HTMLElement, T2 extends Widget<T, T1> = Widget<T, T1>> = (event: { type: T, target: T2 }, ...args: any[]) => void;
 
-abstract class _EventHandler {
-    public abstract on(events: EventCallback<any, any>): this;
+abstract class _EventHandler<HtmlElementType extends HTMLElement> {
+    public abstract on(events: EventCallback<string, HtmlElementType> | string, handler?: EventHandler<string, HtmlElementType>): this;
 
     protected abstract dispatchEvent(type: string, args?: any[], ...acceptedTypes: string[]): this;
 }
@@ -45,11 +44,11 @@ interface _Widget {
     setVisibility(visible: boolean): this;
 }
 
-abstract class Widget<EventType extends WidgetEvents, HtmlElementType extends HTMLElement = HTMLElement> extends _EventHandler implements _Widget {
+abstract class Widget<EventType extends WidgetEvents, HtmlElementType extends HTMLElement = HTMLElement> extends _EventHandler<HtmlElementType> implements _Widget {
     private _built: boolean = false;
     private _domObject?: JQuery<HtmlElementType>;
     protected readonly children: Map<string, Widget<WidgetEvents>> = new Map();
-    private readonly callbacks: Array<Pair<string, EventHandler<string, Widget<EventType>>>> = [];
+    private readonly callbacks: Array<Pair<string, EventHandler<string, HtmlElementType>>> = [];
     private readonly _disabledEvents: Set<string> = new Set();
     private _visibility: boolean = false;
     private _inheritVisibility: boolean = false;
@@ -80,10 +79,10 @@ abstract class Widget<EventType extends WidgetEvents, HtmlElementType extends HT
                 this.sizeSetObserver.disconnect();
             }
         });
-        this.on(undefined, new Pair(WidgetEvents.sizeSet, () => {
+        this.on(WidgetEvents.sizeSet, () => {
             this.dispatchEvent(WidgetEvents.needVisibilityUpdate);
             this.buildVisibility();
-        }));
+        });
     }
 
     /**
@@ -149,39 +148,20 @@ abstract class Widget<EventType extends WidgetEvents, HtmlElementType extends HT
         return this._domObject!;
     }
 
-    public on(events?: EventCallback<EventType, Widget<EventType, HtmlElementType>>, event?: Pair<string, EventHandler<string, Widget<EventType, HtmlElementType>>>): this {
+    public on(events: EventCallback<string, HtmlElementType> | string, handler?: EventHandler<string, HtmlElementType>): this {
         if (this._built) {
             // console.log("on called after element is built");
             // console.log(events);
             // console.log(this);
             // this.domObject.on(events);
         }
-        if (event != null) {
-            this.callbacks.push(event);
-        }
-
-        if (events != null) {
+        console.assert(events != null);
+        if (typeof events === "string") {
+            console.assert(handler != null);
+            this.callbacks.push(new Pair<string, EventHandler<string, HtmlElementType>>(events, handler!));
+        } else {
             for (let i in events) {
-                this.callbacks.push(new Pair(i, events[i]));
-            }
-        }
-        return this;
-    }
-
-    public on2(events: EventCallback<EventType, Widget<EventType, HtmlElementType>> | string, handler?: EventHandler<string, Widget<EventType, HtmlElementType>>): this {
-        if (this._built) {
-            // console.log("on called after element is built");
-            // console.log(events);
-            // console.log(this);
-            // this.domObject.on(events);
-        }
-        if (handler !== undefined && typeof events === "string") {
-            this.callbacks.push(new Pair(events, handler));
-        } else if (events != null) {
-            for (let i in events) {
-                // @ts-ignore
-                this.callbacks.push(new Pair(i, events[i]));
-                // @ts-ignore
+                this.callbacks.push(new Pair<string, EventHandler<string, HtmlElementType>>(i, events[i]!));
                 console.log(new Pair(i, events[i]));
             }
         }
@@ -208,13 +188,16 @@ abstract class Widget<EventType extends WidgetEvents, HtmlElementType extends HT
      * @return {this}
      * @protected
      */
-    protected addChild(childName: string, child?: Widget<WidgetEvents>): this {
+    protected addChild<ChildHtmlElementType extends HTMLElement>(childName: string, child?: Widget<WidgetEvents, ChildHtmlElementType>): this {
         if (child === undefined) {
             // @ts-ignore
             child = this[childName];
         }
+        if (childName.startsWith("_")) {
+            childName = childName.replaceAll(new RegExp("^[_#]*", "g"), "");
+        }
         this.children.set(childName, child!);
-        child!.on2(WidgetEvents.needVisibilityUpdate, (event) => {
+        child!.on(WidgetEvents.needVisibilityUpdate, (event) => {
             if (event.target.inheritVisibility) {
                 event.target.setVisibility(this.visibility);
             }

@@ -1,4 +1,4 @@
-import {hasMixins, mixin, Mixin, Pair} from "./base.js";
+import {assertType, hasMixins, mixin, Mixin, Pair} from "./base.js";
 import {EventHandler, Widget, WidgetEvents} from "./Widget.js";
 import {CSSColorValue} from "./WidgetBase.js";
 import {Icon, IconEvents, IconType, ListTile, TextInputEvents} from "./Widgets.js";
@@ -51,23 +51,41 @@ class Util {
 }
 
 class EventCallbacks {
+    // /**
+    //  * Calculates and sets the height of an element
+    //  * @type Pair
+    //  */
+    // static setHeight = new Pair<WidgetEvents, EventHandler<WidgetEvents, Widget<WidgetEvents>>>(
+    //     WidgetEvents.sizeSet, function (event) {
+    //         Util.setHeight(event.target.domObject);
+    //     });
+
     /**
      * Calculates and sets the height of an element
      * @type Pair
      */
-    static setHeight = new Pair<WidgetEvents, EventHandler<WidgetEvents, Widget<WidgetEvents>>>(
+    static setHeight = <[WidgetEvents, EventHandler<WidgetEvents, HTMLElement>]>[
         WidgetEvents.sizeSet, function (event) {
             Util.setHeight(event.target.domObject);
-        });
+        }];
+
+    // /**
+    //  * Calculates and sets the width of an element
+    //  * @type Pair
+    //  */
+    // static setWidth = new Pair<WidgetEvents, EventHandler<WidgetEvents, Widget<WidgetEvents>>>(
+    //     WidgetEvents.sizeSet, function (event) {
+    //         Util.setWidth(event.target.domObject);
+    //     });
 
     /**
      * Calculates and sets the width of an element
      * @type Pair
      */
-    static setWidth = new Pair<WidgetEvents, EventHandler<WidgetEvents, Widget<WidgetEvents>>>(
+    static setWidth = <[WidgetEvents, EventHandler<WidgetEvents, HTMLElement>]>[
         WidgetEvents.sizeSet, function (event) {
             Util.setWidth(event.target.domObject);
-        });
+        }];
 
     // static setWidthToRemaining = (child: Widget<WidgetEvents>) => new Pair<WidgetEvents, EventHandler<WidgetEvents, Widget<WidgetEvents>>>(WidgetEvents.sizeSet, function (event) {
     //     Util.setWidthToRemaining(event.target.domObject, child.domObject);
@@ -77,13 +95,15 @@ class EventCallbacks {
     //     Util.setHeightToRemaining(event.target.domObject, child.domObject);
     // });
 
-    static setWidthToRemaining = new Pair<WidgetEvents, EventHandler<WidgetEvents, Widget<WidgetEvents>>>(WidgetEvents.sizeSet, function (event) {
+    static setWidthToRemaining = <[WidgetEvents, EventHandler<WidgetEvents, HTMLElement>]>[
+        WidgetEvents.sizeSet, function (event) {
         Util.setWidthToRemaining(event.target.domObject.parent(), event.target.domObject);
-    });
+    }];
 
-    static setHeightToRemaining = new Pair<WidgetEvents, EventHandler<WidgetEvents, Widget<WidgetEvents>>>(WidgetEvents.sizeSet, function (event) {
+    static setHeightToRemaining = <[WidgetEvents, EventHandler<WidgetEvents, HTMLElement>]>[
+        WidgetEvents.sizeSet, function (event) {
         Util.setHeightToRemaining(event.target.domObject.parent(), event.target.domObject);
-    });
+    }];
 }
 
 class ColorEditable<EventType extends WidgetEvents, HtmlElementType extends HTMLElement> extends Mixin {
@@ -207,33 +227,38 @@ enum IconContainingEvents {
 }
 
 abstract class IconContaining<EventType extends WidgetEvents | IconContainingEvents, HtmlElementType extends HTMLElement> extends Mixin {
-    protected _setIcon(fieldName: string, icon: Icon): this {
-        // @ts-ignore
-        this[fieldName].set(icon.value, icon.type);
-        // if (this[fieldName] != null) {
-        //
-        //     this.children.set(fieldName, this[fieldName]);
-        // }
-        return this;
-    }
-
-    protected _getIcon(fieldName: string): Icon {
-        // @ts-ignore
-        return this[fieldName];
-    }
-
-    protected _enableIcon(fieldName: string, value: boolean): this {
-        // @ts-ignore
-        if (this[fieldName] != null) {
-            // @ts-ignore
-            this[fieldName].setInheritVisibility(value);
+    protected _setIcon(fieldName: keyof this, icon: Icon): this {
+        let icon1 = this[fieldName];
+        assertType<Icon>(icon1, Icon);
+        if (icon.value !== undefined){
+            icon1.setValue(icon.value);
         }
+        icon1.setType(icon.type);
         return this;
     }
 
-    protected _iconEnabled(fieldName: string): boolean {
-        // @ts-ignore
-        return this[fieldName].inheritVisibility;
+    protected _getIcon(fieldName: keyof this): Icon {
+        let icon = this[fieldName];
+        assertType<Icon>(icon, Icon);
+        return icon;
+    }
+
+    protected _enableIcon(fieldName: keyof this, value: boolean): this {
+        let icon = this[fieldName];
+        assertType<Icon>(icon, Icon);
+        if (!value) {
+            if (icon.value === undefined) {
+                icon.set(null);
+            }
+        }
+        icon.setInheritVisibility(value);
+        return this;
+    }
+
+    protected _iconEnabled(fieldName: keyof this): boolean {
+        let icon = this[fieldName];
+        assertType<Icon>(icon, Icon);
+        return icon.inheritVisibility;
     }
 }
 
@@ -241,19 +266,15 @@ interface IconContaining<EventType extends WidgetEvents | IconContainingEvents, 
 }
 
 class OneIconContaining<EventType extends WidgetEvents, HtmlElementType extends HTMLElement> extends IconContaining<EventType, HtmlElementType> {
-    private readonly icon: Icon = new Icon();
+    private readonly _icon: Icon = new Icon();
 
     _constructor() {
-        this.addChild("icon", this.icon);
-        this.icon.on(undefined, new Pair(IconEvents.clicked, () => this.dispatchEvent(IconContainingEvents.iconClicked, [this.icon, 0])));
+        this.addChild("icon", this._icon);
+        this._icon.on(IconEvents.clicked, () => this.dispatchEvent(IconContainingEvents.iconClicked, [this._icon, 0]));
     }
 
     public setIcon(icon: Icon): this {
         return super._setIcon("icon", icon);
-    }
-
-    public getIcon(): Icon {
-        return super._getIcon("icon");
     }
 
     public enableIcon(value: boolean): this {
@@ -263,25 +284,25 @@ class OneIconContaining<EventType extends WidgetEvents, HtmlElementType extends 
     public iconEnabled(): boolean {
         return super._iconEnabled("icon");
     }
+
+    public get icon(): Icon {
+        return this._icon;
+    }
 }
 
 class LeadingTrailingIconContaining<EventType extends WidgetEvents | IconContainingEvents, HtmlElementType extends HTMLElement> extends IconContaining<EventType, HtmlElementType> {
-    private readonly leadingIcon: Icon = new Icon();
-    private readonly trailingIcon: Icon = new Icon();
+    private readonly _leadingIcon: Icon = new Icon();
+    private readonly _trailingIcon: Icon = new Icon();
 
     _constructor() {
-        this.addChild("leadingIcon", this.leadingIcon);
-        this.leadingIcon.on(undefined, new Pair(IconEvents.clicked, () => this.dispatchEvent(IconContainingEvents.iconClicked, [this.leadingIcon, 0])));
-        this.addChild("trailingIcon", this.trailingIcon);
-        this.trailingIcon.on(undefined, new Pair(IconEvents.clicked, () => this.dispatchEvent(IconContainingEvents.iconClicked, [this.trailingIcon, 1])));
+        this.addChild("leadingIcon", this._leadingIcon);
+        this._leadingIcon.on(IconEvents.clicked, () => this.dispatchEvent(IconContainingEvents.iconClicked, [this._leadingIcon, 0]));
+        this.addChild("trailingIcon", this._trailingIcon);
+        this._trailingIcon.on(IconEvents.clicked, () => this.dispatchEvent(IconContainingEvents.iconClicked, [this._trailingIcon, 1]));
     }
 
     public setLeadingIcon(icon: Icon): this {
         return super._setIcon("leadingIcon", icon);
-    }
-
-    public getLeadingIcon(): Icon {
-        return super._getIcon("leadingIcon");
     }
 
     public enableLeadingIcon(value: boolean): this {
@@ -296,16 +317,20 @@ class LeadingTrailingIconContaining<EventType extends WidgetEvents | IconContain
         return super._setIcon("trailingIcon", icon);
     }
 
-    public getTrailingIcon(): Icon {
-        return super._getIcon("trailingIcon");
-    }
-
     public enableTrailingIcon(value: boolean): this {
         return super._enableIcon("trailingIcon", value);
     }
 
     public trailingIconEnabled(): boolean {
         return super._iconEnabled("trailingIcon");
+    }
+
+    public get leadingIcon(): Icon {
+        return this._leadingIcon;
+    }
+
+    public get trailingIcon(): Icon {
+        return this._trailingIcon;
     }
 }
 
@@ -356,8 +381,6 @@ class ItemContaining<EventType extends WidgetEvents, HtmlElementType extends HTM
             //insert items
             if (!(this.domObject.find(i.domObject).length > 0)) {
                 if (pre !== undefined) {
-                    console.log(this.domObject);
-                    console.log((<ListTile<any>>pre).label.get());
                     pre.domObject.after(i.domObject);
                 } else {
                     this.domObject.append(i.domObject);
@@ -449,10 +472,10 @@ class ItemContaining<EventType extends WidgetEvents, HtmlElementType extends HTM
         console.assert(this.itemCount === [...this.children.keys()].filter(value => ItemContaining.isItem(value)).length);
     }
 
-    public removeItems(...items: Widget<WidgetEvents>[]): this {
+    public removeItems(...items: ItemType[]): this {
         let indexes = [];
         for (let [k, v] of this.children) {
-            if (items.indexOf(v) !== -1 && ItemContaining.isItem(k)) {
+            if (items.indexOf(v as ItemType) !== -1 && ItemContaining.isItem(k)) {
                 // this.children.delete(k);
                 // this.dispatchEvent(ItemContainingEvents.itemRemoved, [ItemContaining.itemIndex(k), v]);
                 indexes.push(ItemContaining.itemIndex(k));
@@ -472,8 +495,8 @@ class ItemContaining<EventType extends WidgetEvents, HtmlElementType extends HTM
         return this;
     }
 
-    public get items(): Widget<WidgetEvents>[] {
-        return [...this.children.entries()]
+    public get items(): ItemType[] {
+        return ([...this.children.entries()] as [string, ItemType][])
             .filter(value => ItemContaining.isItem(value[0]))
             .sort()
             .map(value => value[1]);
@@ -503,7 +526,7 @@ class CheckboxContaining<EventType extends WidgetEvents | CheckboxEvents, HtmlEl
 
     public buildCheckbox(): JQuery<HTMLElement> {
         this.domObject.addClass("checkable");
-        this.on2(WidgetEvents.clicked, () => this.setChecked(!this._checked));
+        this.on(WidgetEvents.clicked, () => this.setChecked(!this._checked));
         if (!this.checkBoxIcon.built) {
             this.checkBoxIcon.build();
         }
@@ -516,7 +539,8 @@ class CheckboxContaining<EventType extends WidgetEvents | CheckboxEvents, HtmlEl
         this.domObject.toggleClass("checkable", this.checkboxEnabled);
         if (this.checkboxEnabled) {
             this.checkBoxIcon.set(this._checked ? "check_box" : "check_box_outline_blank", IconType.material)
-                .domObject.toggleClass("checked", this._checked);
+                .rebuild()
+                .toggleClass("checked", this._checked);
             // this.checkBoxIcon.domObject
             //     .text(this._checked ? "check_box" : "check_box_outline_blank")
             //     .addClass(this._checked ? "checked" : null);
@@ -581,10 +605,10 @@ enum InputEvents {
 @mixin(IdContaining)
 class Input<ValueType extends string | number, EventType extends WidgetEvents | InputEvents, HtmlElementType extends HTMLElement = HTMLInputElement> extends Mixin {
     private _disabled: boolean = false;
-    private _name: string;
+    private _name: string  = "";
     private _readonly: boolean = false;
     private _required: boolean = false;
-    private _type: string;
+    private _type: string = "";
     private _value: ValueType;
 
     protected rebuildInput(inputElement: JQuery<HTMLInputElement> = this.domObject.find("input")): JQuery<HTMLInputElement> {
@@ -687,13 +711,14 @@ interface Input<ValueType extends string | number, EventType extends WidgetEvent
 
 @mixin(IdContaining)
 class InputLabel<EventType extends WidgetEvents, HtmlElementType extends HTMLElement> extends Mixin {
-    private _label: string;
+    private _label: string | undefined;
 
     protected buildLabel(): JQuery<HTMLLabelElement> {
         return $("<label></label>");
     }
 
     protected rebuildLabel(labelElement: JQuery<HTMLLabelElement> = this.domObject.find("label")): JQuery<HTMLLabelElement> {
+        assertType<string>(this._label, "string");
         return labelElement
             .text(this._label)
             .attr("for", this._id);
@@ -704,7 +729,7 @@ class InputLabel<EventType extends WidgetEvents, HtmlElementType extends HTMLEle
         return this;
     }
 
-    public get label(): string {
+    public get label(): string | undefined {
         return this._label;
     }
 }

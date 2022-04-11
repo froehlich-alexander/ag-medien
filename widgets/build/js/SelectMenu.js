@@ -52,7 +52,7 @@ export class SelectMenuItem extends Widget {
     setIcon(icon) {
         //this.item should never be null
         if (this.icon != null) {
-            this.icon.set(icon.value, icon.type).show();
+            this.icon.set(icon.value, icon.type).show().tryRebuild();
         }
         else {
             this.icon = icon.show();
@@ -139,7 +139,7 @@ export class SelectMenuItem extends Widget {
     build(suppressCallback = false) {
         super.build(true)
             .addClass("item")
-            .addClass(this.selected ? "selected" : null)
+            .toggleClass("selected", this.selected)
             .append(this.icon.build())
             .append($("<div></div>")
             .addClass("text")
@@ -148,11 +148,7 @@ export class SelectMenuItem extends Widget {
             .addClass("material-icons checkbox")
             .toggleClass("show", this.checkbox)
             .text(this.selected ? "check_box" : "check_box_outline_blank"))
-            .on({
-            click: () => {
-                this.setSelected(!this.selected);
-            }
-        });
+            .on("click", () => this.setSelected(!this.selected));
         this.buildCallback(suppressCallback);
         return this.domObject;
     }
@@ -197,15 +193,14 @@ export class SelectMenu extends Dialog {
             value: void 0
         });
         if (acceptButton != null) {
-            this.addButton(acceptButton.on({ "clicked": () => this.accept() }), FlexAlign.start);
+            this.addButton(acceptButton.on("clicked", () => this.accept()), FlexAlign.start);
         }
         if (rejectButton != null) {
-            this.addButton(rejectButton.on({ "clicked": () => this.reject() }), FlexAlign.end);
+            this.addButton(rejectButton.on("clicked", () => this.reject()), FlexAlign.end);
         }
         this.top = new Top().setInheritVisibility(true)
-            .setIcon(Icon.Close().on({
-            clicked: () => this.reject()
-        }).setClickable(true));
+            .setIcon(Icon.Close().on("clicked", () => this.reject())
+            .setClickable(true));
         this.children.set("top", this.top);
         // this.buttonBox.setSpacing(1, 10, 0);
         // this.on({
@@ -219,12 +214,8 @@ export class SelectMenu extends Dialog {
         //         this.domObject.find(".content").height(contentHeight);
         //     }
         // });
-        this.on({
-            "sizeSet": () => {
-                this.domObject.find(".content").css("max-height", "calc(100% - "
-                    + this.domObject.find(".bottom").outerHeight(true) + "px - " + this.domObject.find(".top").outerHeight(true) + "px)");
-            }
-        });
+        this.on("sizeSet", () => this.domObject.find(".content").css("max-height", "calc(100% - "
+            + this.domObject.find(".bottom").outerHeight(true) + "px - " + this.domObject.find(".top").outerHeight(true) + "px)"));
     }
     build() {
         super.build(true)
@@ -235,20 +226,16 @@ export class SelectMenu extends Dialog {
             .addClass("content")
             .appendTo(this.domObject);
         for (let i of this.items) {
-            i.on({
-                selected: (event) => {
-                    // for (let i of this.callbacks.filter(value => value.key == SelectMenuEvents.checkStateChanged || value.key == SelectMenuEvents.all)) {
-                    //     i.value({type: i.key, target: this}, event.type == SelectMenuItemEvents.selected, event.target);
-                    // }
-                    this.dispatchEvent(SelectMenuEvents.checkStateChanged, [event.type == SelectMenuItemEvents.selected, event.target]);
-                },
-                unselected: (event) => {
-                    // for (let i of this.callbacks.filter(value => value.key == SelectMenuEvents.checkStateChanged || value.key == SelectMenuEvents.all)) {
-                    //     i.value({type: i.key, target: this}, event.type == SelectMenuItemEvents.selected, event.target);
-                    // }
-                    this.dispatchEvent(SelectMenuEvents.checkStateChanged, [event.type == SelectMenuItemEvents.selected, event.target]);
-                },
-            })
+            i.on("selected", (event) => 
+            // for (let i of this.callbacks.filter(value => value.key == SelectMenuEvents.checkStateChanged || value.key == SelectMenuEvents.all)) {
+            //     i.value({type: i.key, target: this}, event.type == SelectMenuItemEvents.selected, event.target);
+            // }
+            this.dispatchEvent(SelectMenuEvents.checkStateChanged, [event.type == SelectMenuItemEvents.selected, event.target]))
+                .on("unselected", (event) => 
+            // for (let i of this.callbacks.filter(value => value.key == SelectMenuEvents.checkStateChanged || value.key == SelectMenuEvents.all)) {
+            //     i.value({type: i.key, target: this}, event.type == SelectMenuItemEvents.selected, event.target);
+            // }
+            this.dispatchEvent(SelectMenuEvents.checkStateChanged, [event.type == SelectMenuItemEvents.selected, event.target]))
                 .build()
                 .appendTo(content);
         }

@@ -11,7 +11,7 @@ import {
 } from "./AbstractWidgets.js";
 
 class Item extends Mixin {
-    private _index: number;
+    private _index: number = -1;
 
     public get index(): number {
         return this._index;
@@ -32,10 +32,13 @@ enum IconType {
     undefined
 }
 
+interface Icon extends MixinImplementing, SpacingEditable<IconEvents, HTMLDivElement> {
+}
+
 @mixin(SpacingEditable)
 class Icon extends Widget<IconEvents, HTMLDivElement> {
     private _type: IconType = IconType.undefined;
-    private _value: string | undefined;
+    private _value: string | undefined | null;
     private _clickable: boolean = true;
 
     public static Close = () => Icon.of("close", IconType.material);
@@ -71,7 +74,8 @@ class Icon extends Widget<IconEvents, HTMLDivElement> {
     public override rebuild(suppressCallback: boolean = false): JQuery<HTMLDivElement> {
         super.rebuild(true)
             .css("cursor", this._clickable ? "pointer" : "");
-        console.assert(this._value !== undefined, "Value of this icon is not set. Maybe you forgot it?");
+        // console.assert(this._value !== undefined, "Value of this icon is not set. Maybe you forgot it?");
+        // console.log(this.domObject);
         switch (this._type) {
             case IconType.material: {
                 this.domObject.text(this._value ?? "")
@@ -91,23 +95,33 @@ class Icon extends Widget<IconEvents, HTMLDivElement> {
         return this.rebuildCallback(suppressCallback);
     }
 
-    public set(value: any, type?: IconType): Icon {
-        this._value = value;
+    public set(value: string | null, type?: IconType): Icon {
+        this.setValue(value);
         if (type != undefined) {
-            this._type = type;
-            switch (type) {
-                case IconType.material:
-                    console.assert(typeof this._value === "string", "The type of the value of this icon must be string when type == " + IconType[IconType.material]);
-            }
+            this.setType(type);
         }
-        this.tryRebuild();
+        return this;
+    }
+
+    public setValue(value: string | null): this {
+        this._value = value;
+        return this;
+    }
+
+    public setType(type: IconType): this {
+        this._type = type;
+        switch (type) {
+            case IconType.material:
+                console.assert(typeof this._value === "string", "The type of the value of this icon must be string when type == " + IconType[IconType.material]);
+        }
         return this;
     }
 
     public override copy(other: this): this {
         super.copy(other);
         this.setClickable(other._clickable);
-        this.set(other._value, other._type);
+        this.setType(other.type);
+        this._value = other._value;
         return this;
     }
 
@@ -124,12 +138,9 @@ class Icon extends Widget<IconEvents, HTMLDivElement> {
         return this._type;
     }
 
-    public get value(): string | undefined {
+    public get value(): string | undefined | null {
         return this._value;
     }
-}
-
-interface Icon extends MixinImplementing, SpacingEditable<IconEvents, HTMLDivElement> {
 }
 
 const ButtonEvents = {
@@ -140,7 +151,7 @@ type ButtonEvents = (typeof IconEvents)[keyof typeof IconEvents];
 
 @mixin(OneIconContaining)
 class Button extends Widget<ButtonEvents, HTMLDivElement> {
-    private readonly _label: Text = new Text();
+    private readonly _label: Text;
     // private readonly icon: Icon | null;
 
     public static Cancel = () => new Button().setLabel("Cancel").setIcon(Icon.Cancel());
@@ -161,29 +172,26 @@ class Button extends Widget<ButtonEvents, HTMLDivElement> {
         super();
         this.mixinConstructor();
         this.enableIcon(true);
+        this._label = new Text().setInheritVisibility(true);
         this.addChild("_label");
     }
 
     public override build(suppressCallback: boolean = false): JQuery<HTMLDivElement> {
         super.build(true)
             .addClass("button-widget")
-            .append(this.getIcon().build())
+            .append(this.icon.build())
             // .append($("<div></div>")
             //     .text(this.label)
             //     .addClass("text"))
             .append(this._label.build())
-            .on({
-                click: () => {
-                    this.dispatchEvent(ButtonEvents.clicked);
-                }
-            });
+            .on("click", () => this.dispatchEvent(ButtonEvents.clicked));
         this.buildCallback(suppressCallback);
         return this.domObject;
     }
 
     public override rebuild(suppressCallback: boolean = false): JQuery<HTMLDivElement> {
-        super.rebuild(true)
-        this.getIcon().rebuild();
+        super.rebuild(true);
+        this.icon.rebuild();
         this._label.rebuild();
 
         return this.rebuildCallback(suppressCallback);
@@ -447,7 +455,7 @@ class FlexBox<EventType extends WidgetEvents, HtmlElementType extends HTMLElemen
         return this.domObject;
     }
 
-    public addItem(item: Widget<WidgetEvents>, mainAlign: FlexAlign = FlexAlign.center, crossAlign: FlexAlign = FlexAlign.center): this {
+    public addItem<ItemHtmlElementType extends HTMLElement>(item: Widget<WidgetEvents, ItemHtmlElementType>, mainAlign: FlexAlign = FlexAlign.center, crossAlign: FlexAlign = FlexAlign.center): this {
         console.assert(!this.built);
         item.setInheritVisibility(true);
         this.addChild("flexbox" + this.items.push(new Tripel(item, mainAlign, crossAlign)).toString(10), item);
@@ -506,15 +514,15 @@ class FlexBox<EventType extends WidgetEvents, HtmlElementType extends HTMLElemen
     }
 }
 
-class ButtonBox extends FlexBox<WidgetEvents> {
+class ButtonBox<HtmlElementType extends HTMLElement = HTMLDivElement> extends FlexBox<WidgetEvents, HtmlElementType> {
 
     constructor() {
         super();
-        this.on(undefined, EventCallbacks.setHeight);
+        this.on(...EventCallbacks.setHeight);
         this.setSpacing("2rem", "2rem", "1rem");
     }
 
-    public override build(suppressCallback: boolean = false): JQuery<HTMLElement> {
+    public override build(suppressCallback: boolean = false): JQuery<HtmlElementType> {
         super.build(true)
             .addClass("button-box-widget");
         this.buildCallback(suppressCallback);
@@ -613,10 +621,10 @@ class Top<HtmlElementType extends HTMLElement = HTMLDivElement> extends FlexBox<
 
         this.label = new Text().setFontWeight(FontWeight.bold);
         this.addItem(this.label);
-        this.addItem(this.getIcon(), FlexAlign.end);
+        this.addItem(this.icon, FlexAlign.end);
         this.setSpacing("20px", "20px", "10px");
 
-        this.on(undefined, EventCallbacks.setHeight);
+        this.on(...EventCallbacks.setHeight);
     }
 
     public override build(suppressCallback: boolean = false): JQuery<HtmlElementType> {
@@ -662,7 +670,7 @@ interface ListTile<EventType extends WidgetEvents | IconContainingEvents, HtmlEl
 }
 
 @mixin(Item, ColorEditable, SpacingEditable, LeadingTrailingIconContaining, CheckboxContaining)
-class ListTile<EventType extends WidgetEvents |IconContainingEvents, HtmlElementType extends HTMLElement = HTMLDivElement> extends FlexBox<EventType, HtmlElementType> {
+class ListTile<EventType extends WidgetEvents | IconContainingEvents, HtmlElementType extends HTMLElement = HTMLDivElement> extends FlexBox<EventType, HtmlElementType> {
     private readonly _label: Text = new Text();
     private readonly _description: Text = new Text();
 
@@ -676,9 +684,9 @@ class ListTile<EventType extends WidgetEvents |IconContainingEvents, HtmlElement
 
         // this.children.set("lable", this._label);
         // this.children.set("description", this._description);
-        this.addItem(this.getLeadingIcon(), FlexAlign.start);
+        this.addItem(this.leadingIcon, FlexAlign.start);
         this.addItem(this._label, FlexAlign.start);
-        this.addItem(this.getTrailingIcon(), FlexAlign.end);
+        this.addItem(this.trailingIcon, FlexAlign.end);
         this.addItem(this.checkbox, FlexAlign.end);
         this.setSpacing("1rem", "1rem", "1rem");
         this.enableCheckbox(false);
@@ -1091,14 +1099,14 @@ class SelectBox<HtmlElementType extends HTMLElement = HTMLDivElement> extends Wi
         this.optionsViewButton = new CheckBoxInput()
             .setInheritVisibility(true)
             .show()
-            .on2(InputEvents.change, (_, value) => this.domObject.find(".current")
+            .on(InputEvents.change, (_, value) => this.domObject.find(".current")
                 .toggleClass("options-view-button-checked", value));
         $(document).on("click", (event) => {
             if ($(event.target).closest(this.optionsViewButton.domObject).length < 1) {
                 this.optionsViewButton.setChecked(false).tryRebuild();
             }
         });
-        this.on2(SelectBoxEvents.change, (event, ...args) => console.log(args));
+        this.on(SelectBoxEvents.change, (event, ...args) => console.log(args));
         this.addChild("optionsViewButton");
     }
 
@@ -1109,7 +1117,7 @@ class SelectBox<HtmlElementType extends HTMLElement = HTMLDivElement> extends Wi
                 .addClass("current")
                 .append(this.optionsViewButton.build()
                     .addClass("options-view-button"))
-                .append(this.getIcon().build()
+                .append(this.icon.build()
                     .addClass("icon")))
             .append("<ul></ul>");
 
@@ -1147,8 +1155,8 @@ class SelectBox<HtmlElementType extends HTMLElement = HTMLDivElement> extends Wi
 
     public addItems(...items: SelectBoxItem[]): this {
         for (let item of items) {
-            item.value.on2(InputEvents.input, () => this.dispatchEvent(SelectBoxEvents.input, [item.value]));
-            item.value.on2(InputEvents.change, () => this.dispatchEvent(SelectBoxEvents.change, [item.value]));
+            item.value.on(InputEvents.input, () => this.dispatchEvent(SelectBoxEvents.input, [item.value]));
+            item.value.on(InputEvents.change, () => this.dispatchEvent(SelectBoxEvents.change, [item.value]));
             item.listItem.setInheritVisibility(true);
             let index = this._items.push(item);
             this.addChild("item" + index + "li", item.listItem);
@@ -1212,7 +1220,7 @@ class ContentBox<HtmlElementType extends HTMLElement = HTMLDivElement, ItemType 
 
     constructor(htmlElementType?: string) {
         super(htmlElementType);
-        this.on(undefined, EventCallbacks.setHeightToRemaining);
+        this.on(...EventCallbacks.setHeightToRemaining);
     }
 
     public override build(suppressCallback: boolean = false): JQuery<HtmlElementType> {

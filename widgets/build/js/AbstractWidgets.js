@@ -4,7 +4,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
-import { hasMixins, mixin, Mixin, Pair } from "./base.js";
+import { assertType, hasMixins, mixin, Mixin } from "./base.js";
 import { WidgetEvents } from "./Widget.js";
 import { CSSColorValue } from "./WidgetBase.js";
 import { Icon, IconEvents, IconType, TextInputEvents } from "./Widgets.js";
@@ -52,6 +52,14 @@ class Util {
 }
 class EventCallbacks {
 }
+// /**
+//  * Calculates and sets the height of an element
+//  * @type Pair
+//  */
+// static setHeight = new Pair<WidgetEvents, EventHandler<WidgetEvents, Widget<WidgetEvents>>>(
+//     WidgetEvents.sizeSet, function (event) {
+//         Util.setHeight(event.target.domObject);
+//     });
 /**
  * Calculates and sets the height of an element
  * @type Pair
@@ -60,10 +68,20 @@ Object.defineProperty(EventCallbacks, "setHeight", {
     enumerable: true,
     configurable: true,
     writable: true,
-    value: new Pair(WidgetEvents.sizeSet, function (event) {
-        Util.setHeight(event.target.domObject);
-    })
+    value: [
+        WidgetEvents.sizeSet, function (event) {
+            Util.setHeight(event.target.domObject);
+        }
+    ]
 });
+// /**
+//  * Calculates and sets the width of an element
+//  * @type Pair
+//  */
+// static setWidth = new Pair<WidgetEvents, EventHandler<WidgetEvents, Widget<WidgetEvents>>>(
+//     WidgetEvents.sizeSet, function (event) {
+//         Util.setWidth(event.target.domObject);
+//     });
 /**
  * Calculates and sets the width of an element
  * @type Pair
@@ -72,9 +90,11 @@ Object.defineProperty(EventCallbacks, "setWidth", {
     enumerable: true,
     configurable: true,
     writable: true,
-    value: new Pair(WidgetEvents.sizeSet, function (event) {
-        Util.setWidth(event.target.domObject);
-    })
+    value: [
+        WidgetEvents.sizeSet, function (event) {
+            Util.setWidth(event.target.domObject);
+        }
+    ]
 });
 // static setWidthToRemaining = (child: Widget<WidgetEvents>) => new Pair<WidgetEvents, EventHandler<WidgetEvents, Widget<WidgetEvents>>>(WidgetEvents.sizeSet, function (event) {
 //     Util.setWidthToRemaining(event.target.domObject, child.domObject);
@@ -87,17 +107,21 @@ Object.defineProperty(EventCallbacks, "setWidthToRemaining", {
     enumerable: true,
     configurable: true,
     writable: true,
-    value: new Pair(WidgetEvents.sizeSet, function (event) {
-        Util.setWidthToRemaining(event.target.domObject.parent(), event.target.domObject);
-    })
+    value: [
+        WidgetEvents.sizeSet, function (event) {
+            Util.setWidthToRemaining(event.target.domObject.parent(), event.target.domObject);
+        }
+    ]
 });
 Object.defineProperty(EventCallbacks, "setHeightToRemaining", {
     enumerable: true,
     configurable: true,
     writable: true,
-    value: new Pair(WidgetEvents.sizeSet, function (event) {
-        Util.setHeightToRemaining(event.target.domObject.parent(), event.target.domObject);
-    })
+    value: [
+        WidgetEvents.sizeSet, function (event) {
+            Util.setHeightToRemaining(event.target.domObject.parent(), event.target.domObject);
+        }
+    ]
 });
 class ColorEditable extends Mixin {
     constructor() {
@@ -228,35 +252,40 @@ var IconContainingEvents;
 })(IconContainingEvents || (IconContainingEvents = {}));
 class IconContaining extends Mixin {
     _setIcon(fieldName, icon) {
-        // @ts-ignore
-        this[fieldName].set(icon.value, icon.type);
-        // if (this[fieldName] != null) {
-        //
-        //     this.children.set(fieldName, this[fieldName]);
-        // }
+        let icon1 = this[fieldName];
+        assertType(icon1, Icon);
+        if (icon.value !== undefined) {
+            icon1.setValue(icon.value);
+        }
+        icon1.setType(icon.type);
         return this;
     }
     _getIcon(fieldName) {
-        // @ts-ignore
-        return this[fieldName];
+        let icon = this[fieldName];
+        assertType(icon, Icon);
+        return icon;
     }
     _enableIcon(fieldName, value) {
-        // @ts-ignore
-        if (this[fieldName] != null) {
-            // @ts-ignore
-            this[fieldName].setInheritVisibility(value);
+        let icon = this[fieldName];
+        assertType(icon, Icon);
+        if (!value) {
+            if (icon.value === undefined) {
+                icon.set(null);
+            }
         }
+        icon.setInheritVisibility(value);
         return this;
     }
     _iconEnabled(fieldName) {
-        // @ts-ignore
-        return this[fieldName].inheritVisibility;
+        let icon = this[fieldName];
+        assertType(icon, Icon);
+        return icon.inheritVisibility;
     }
 }
 class OneIconContaining extends IconContaining {
     constructor() {
         super(...arguments);
-        Object.defineProperty(this, "icon", {
+        Object.defineProperty(this, "_icon", {
             enumerable: true,
             configurable: true,
             writable: true,
@@ -264,14 +293,11 @@ class OneIconContaining extends IconContaining {
         });
     }
     _constructor() {
-        this.addChild("icon", this.icon);
-        this.icon.on(undefined, new Pair(IconEvents.clicked, () => this.dispatchEvent(IconContainingEvents.iconClicked, [this.icon, 0])));
+        this.addChild("icon", this._icon);
+        this._icon.on(IconEvents.clicked, () => this.dispatchEvent(IconContainingEvents.iconClicked, [this._icon, 0]));
     }
     setIcon(icon) {
         return super._setIcon("icon", icon);
-    }
-    getIcon() {
-        return super._getIcon("icon");
     }
     enableIcon(value) {
         return super._enableIcon("icon", value);
@@ -279,17 +305,20 @@ class OneIconContaining extends IconContaining {
     iconEnabled() {
         return super._iconEnabled("icon");
     }
+    get icon() {
+        return this._icon;
+    }
 }
 class LeadingTrailingIconContaining extends IconContaining {
     constructor() {
         super(...arguments);
-        Object.defineProperty(this, "leadingIcon", {
+        Object.defineProperty(this, "_leadingIcon", {
             enumerable: true,
             configurable: true,
             writable: true,
             value: new Icon()
         });
-        Object.defineProperty(this, "trailingIcon", {
+        Object.defineProperty(this, "_trailingIcon", {
             enumerable: true,
             configurable: true,
             writable: true,
@@ -297,16 +326,13 @@ class LeadingTrailingIconContaining extends IconContaining {
         });
     }
     _constructor() {
-        this.addChild("leadingIcon", this.leadingIcon);
-        this.leadingIcon.on(undefined, new Pair(IconEvents.clicked, () => this.dispatchEvent(IconContainingEvents.iconClicked, [this.leadingIcon, 0])));
-        this.addChild("trailingIcon", this.trailingIcon);
-        this.trailingIcon.on(undefined, new Pair(IconEvents.clicked, () => this.dispatchEvent(IconContainingEvents.iconClicked, [this.trailingIcon, 1])));
+        this.addChild("leadingIcon", this._leadingIcon);
+        this._leadingIcon.on(IconEvents.clicked, () => this.dispatchEvent(IconContainingEvents.iconClicked, [this._leadingIcon, 0]));
+        this.addChild("trailingIcon", this._trailingIcon);
+        this._trailingIcon.on(IconEvents.clicked, () => this.dispatchEvent(IconContainingEvents.iconClicked, [this._trailingIcon, 1]));
     }
     setLeadingIcon(icon) {
         return super._setIcon("leadingIcon", icon);
-    }
-    getLeadingIcon() {
-        return super._getIcon("leadingIcon");
     }
     enableLeadingIcon(value) {
         return super._enableIcon("leadingIcon", value);
@@ -317,14 +343,17 @@ class LeadingTrailingIconContaining extends IconContaining {
     setTrailingIcon(icon) {
         return super._setIcon("trailingIcon", icon);
     }
-    getTrailingIcon() {
-        return super._getIcon("trailingIcon");
-    }
     enableTrailingIcon(value) {
         return super._enableIcon("trailingIcon", value);
     }
     trailingIconEnabled() {
         return super._iconEnabled("trailingIcon");
+    }
+    get leadingIcon() {
+        return this._leadingIcon;
+    }
+    get trailingIcon() {
+        return this._trailingIcon;
     }
 }
 var ItemContainingEvents;
@@ -383,8 +412,6 @@ class ItemContaining extends Mixin {
             //insert items
             if (!(this.domObject.find(i.domObject).length > 0)) {
                 if (pre !== undefined) {
-                    console.log(this.domObject);
-                    console.log(pre.label.get());
                     pre.domObject.after(i.domObject);
                 }
                 else {
@@ -532,7 +559,7 @@ class CheckboxContaining extends Mixin {
     }
     buildCheckbox() {
         this.domObject.addClass("checkable");
-        this.on2(WidgetEvents.clicked, () => this.setChecked(!this._checked));
+        this.on(WidgetEvents.clicked, () => this.setChecked(!this._checked));
         if (!this.checkBoxIcon.built) {
             this.checkBoxIcon.build();
         }
@@ -544,7 +571,8 @@ class CheckboxContaining extends Mixin {
         this.domObject.toggleClass("checkable", this.checkboxEnabled);
         if (this.checkboxEnabled) {
             this.checkBoxIcon.set(this._checked ? "check_box" : "check_box_outline_blank", IconType.material)
-                .domObject.toggleClass("checked", this._checked);
+                .rebuild()
+                .toggleClass("checked", this._checked);
             // this.checkBoxIcon.domObject
             //     .text(this._checked ? "check_box" : "check_box_outline_blank")
             //     .addClass(this._checked ? "checked" : null);
@@ -615,7 +643,7 @@ let Input = class Input extends Mixin {
             enumerable: true,
             configurable: true,
             writable: true,
-            value: void 0
+            value: ""
         });
         Object.defineProperty(this, "_readonly", {
             enumerable: true,
@@ -633,7 +661,7 @@ let Input = class Input extends Mixin {
             enumerable: true,
             configurable: true,
             writable: true,
-            value: void 0
+            value: ""
         });
         Object.defineProperty(this, "_value", {
             enumerable: true,
@@ -738,6 +766,7 @@ let InputLabel = class InputLabel extends Mixin {
         return $("<label></label>");
     }
     rebuildLabel(labelElement = this.domObject.find("label")) {
+        assertType(this._label, "string");
         return labelElement
             .text(this._label)
             .attr("for", this._id);

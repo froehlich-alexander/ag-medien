@@ -1,24 +1,30 @@
 import {Pair} from "./base.js";
 import {Widget, WidgetEvents} from "./Widget.js";
 
-class Overlay<T extends Widget<WidgetEvents>> extends Widget<WidgetEvents> {
+class Overlay<T extends Widget<WidgetEvents>> extends Widget<WidgetEvents, HTMLDivElement> {
     private readonly _widget: T;
 
     constructor(widget: T) {
         super();
         this._widget = widget;
-        this._widget.on(undefined, new Pair(WidgetEvents.visibilityChanged, (event, value) => this.setVisibility(value)));
+        this._widget.on(WidgetEvents.visibilityChanged, (event, value) => this.setVisibility(value));
         // widget.children.set("widget", this._widget);
         // this.setInheritVisibility(true);
         // this.setVisibility(widget.visibility);
     }
 
-    public build(suppressCallback: boolean = false): JQuery<HTMLElement> {
+    public override build(suppressCallback: boolean = false): JQuery<HTMLDivElement> {
         super.build(true)
             .addClass("overlay-widget")
             .append(this._widget.build());
-        this.buildCallback(suppressCallback);
-        return this.domObject;
+        return this.buildCallback(suppressCallback);
+    }
+
+    public override rebuild(suppressCallback: boolean = false): JQuery<HTMLDivElement> {
+        super.rebuild(true);
+        this._widget.rebuild();
+
+        return this.rebuildCallback(suppressCallback);
     }
 
     public get widget(): T {

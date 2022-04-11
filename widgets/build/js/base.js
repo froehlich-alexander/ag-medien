@@ -172,7 +172,6 @@ function orderMixins(mixins = []) {
 function mixin(...mixins) {
     // applyMixins(constructor, mixins);
     mixins = orderMixins(mixins);
-    console.log(mixins);
     return function (constructor) {
         if (!(constructor instanceof Mixin)) {
             applyMixins(constructor, [...mixins]);
@@ -192,6 +191,7 @@ function mixin(...mixins) {
  * @return {Object}
  */
 function toObject(input) {
+    // assertType<[Pair<string, number>]>(input, Pair);
     if (input instanceof Map) {
         return Object.fromEntries(input);
     }
@@ -199,5 +199,84 @@ function toObject(input) {
         return input;
     }
 }
-export { Pair, Tripel, Mixin, MixinImplementing, mixin, toObject, hasMixins };
+function assertType(obj, ...types) {
+    let typeNameList = [];
+    let objList = [];
+    for (let i of types) {
+        if (obj === undefined) {
+            if (i !== undefined && i !== "undefined") {
+                typeNameList.push(typeof i === "string" ? i : i.name);
+                continue;
+            }
+        }
+        if (typeof i === "string") {
+            if (typeof obj !== i) {
+                switch (i) {
+                    case "number":
+                        if (obj instanceof Number) {
+                            break;
+                        }
+                    case "string":
+                        if (obj instanceof String) {
+                            break;
+                        }
+                    case "bigint":
+                        if (obj instanceof BigInt) {
+                            break;
+                        }
+                    case "symbol":
+                        if (obj instanceof Symbol) {
+                            break;
+                        }
+                    case "boolean":
+                        if (obj instanceof Boolean) {
+                            break;
+                        }
+                    default:
+                        typeNameList.push(i);
+                }
+            }
+        }
+        else if (typeof i === "function") {
+            if (!(obj instanceof i)) {
+                {
+                    switch (i) {
+                        case Number:
+                            if (typeof obj === "number") {
+                                break;
+                            }
+                        case String:
+                            if (typeof obj === "string") {
+                                break;
+                            }
+                        case BigInt:
+                            if (typeof obj === "bigint") {
+                                break;
+                            }
+                        case Symbol:
+                            if (typeof obj === "symbol") {
+                                break;
+                            }
+                        case Boolean:
+                            if (typeof obj === "boolean") {
+                                break;
+                            }
+                        default:
+                            typeNameList.push(i.name);
+                    }
+                }
+            }
+        }
+        else {
+            objList.push(i.constructor.name);
+        }
+    }
+    if (typeNameList.length > 0) {
+        console.error(`${typeof obj === "symbol" || typeof obj === "object" ? obj.toString() : obj} is not of type(s) "${typeNameList.join(" & ")}"`);
+    }
+    if (objList.length > 0) {
+        console.error(`Do not pass objects as types!!!\nObjects were of types "${objList.join(", ")}"`);
+    }
+}
+export { Pair, Tripel, Mixin, MixinImplementing, mixin, toObject, assertType, hasMixins };
 //# sourceMappingURL=base.js.map

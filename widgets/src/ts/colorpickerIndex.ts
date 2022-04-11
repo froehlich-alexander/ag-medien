@@ -1,3 +1,4 @@
+import {assertType, Pair, Tripel} from "./base.js";
 import {SelectBox, ContentBox, ListTile, SelectBoxItem, Text} from "./Widgets.js";
 import {ColorPicker} from "./colorpicker.js";
 import {Overlay} from "./Overlay.js";
@@ -9,7 +10,8 @@ import "./imports.js";
 // $("body")
 //     .addClass("dark");
 // let l = new ListTile();
-//
+let a = new Pair(2, 2);
+assertType(a, Widget);
 let colorPicker = new ColorPicker().show();
 let overlay = new Overlay(colorPicker);
 overlay.build()
