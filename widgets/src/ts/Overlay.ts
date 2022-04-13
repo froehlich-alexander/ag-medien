@@ -1,4 +1,3 @@
-import {Pair} from "./base.js";
 import {Dialog} from "./Dialog.js";
 import {Widget, WidgetEvents} from "./Widget.js";
 

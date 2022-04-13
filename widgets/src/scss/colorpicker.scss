@@ -11,8 +11,8 @@ body {
   background-color: var(--background-color-1);
   width: 50%;
   height: 80%;
-  left: 25%;
-  top: 10%;
+  //left: 25%;
+  //top: 10%;
   position: absolute;
   border-radius: 1rem;
   padding-bottom: 0.5rem;
@@ -20,17 +20,13 @@ body {
   .color-scheme-dialog {
     width: 60%;
     height: 70%;
-    top: 15%;
-    left: 20%;
+    //top: 15%;
+    //left: 20%;
   }
 
   .color-scheme-new-dialog {
     width: 35%;
     height: 50%;
-    left: 50%;
-    top: 50%;
-    transform: translateX(-50%) translateY(-50%);
-    position: relative;
     background-color: var(--background-color-1);
 
     .content {
@@ -41,6 +37,16 @@ body {
       max-height: 20%;
       max-width: 80%;
       margin: 0 auto;
+    }
+  }
+
+  .color-scheme-info-dialog {
+    width: 35%;
+    height: 50%;
+    background-color: var(--background-color-1);
+
+    .content {
+      padding: 1rem;
     }
   }
 

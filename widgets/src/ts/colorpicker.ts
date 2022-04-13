@@ -1,25 +1,26 @@
-import {cssNumber, timers} from "jquery";
-import {mixin, MixinImplementing, Pair, toObject} from "./base.js";
-import {Dialog, DialogEvents} from "./Dialog.js";
-import {Overlay} from "./Overlay.js";
+import {mixin, MixinImplementing, toObject} from "./base.js";
+import {EventCallbacks} from "./Util.js";
 import {Widget, WidgetEvents} from "./Widget.js";
 import {FontSize, FontWeight} from "./WidgetBase.js";
+import {Overlay} from "./Overlay.js";
+import {Dialog, DialogEvents} from "./Dialog.js";
+import {CheckboxEvents, FavoriteContaining, FavoriteEvents, Item} from "./AbstractWidgets.js";
 import {
     Button,
     ButtonEvents,
-    ContentBox,
     FlexAlign,
     FlexBox,
     Icon,
     IconType,
-    ListTile, SelectBox, SelectBoxEvents, SelectBoxItem,
+    ListTile,
+    SelectBox,
+    SelectBoxEvents,
+    SelectBoxItem,
     Text,
-    TextInput, TextInputEvents,
-    Top,
+    TextInput,
+    TextInputEvents,
     TopEvents
 } from "./Widgets.js";
-import {CheckboxEvents, EventCallbacks, Item} from "./AbstractWidgets.js";
-import nameInput = Utils.nameInput;
 
 type ColorSchemeMap = Map<string, ColorScheme>;
 
@@ -232,14 +233,14 @@ class ColorPickerService {
         for (let colorJson of Object.values(all)) {
             let color = ColorScheme.fromJSON(colorJson);
             this._all.set(color.id, color);
-            this.activate(this._all.get(window.localStorage.getItem("current_color") ?? this.getDefault().id) ?? this.getDefault());
-
             // if (this._all.has(window.localStorage.getItem("current_color"))) {
             //     this.activate(this._all.get(window.localStorage.getItem("current_color")));
             // } else {
             //     this.activate(this.getDefault());
             // }
+
         }
+        this.activate(this._all.get([...this._all.values()].find((v) => v.current)?.id ?? this.getDefault().id) ?? this.getDefault());
         this.save(default1);
     }
 
@@ -247,10 +248,19 @@ class ColorPickerService {
      * Writes all colors into body to override the default colors
      */
     public activate(colorScheme: ColorScheme) {
+        if (colorScheme !== this._all.get(colorScheme.id)) {
+            throw "AUAUAUAUAUUA";
+        }
         for (let [type, color] of colorScheme.colors.entries()) {
             document.body.style.setProperty(type, color);
         }
         colorScheme.setCurrent(true);
+        for (let i of this.all.values()) {
+            if (i.id !== colorScheme.id) {
+                i.setCurrent(false);
+            }
+        }
+        this.save();
     }
 
     /**
@@ -320,8 +330,8 @@ class ColorPickerService {
         let result = this._all.get("default");
         if (forceReload || result == null) {
             let colors: ColorMap = this.getCSSVariables(document.styleSheets, undefined);
-            result = new ColorScheme(this, "default", "default", "default", colors);
-            result.setPreDefined(true);
+            result = new ColorScheme(this, "default", "default", "default", colors)
+                .setPreDefined(true);
         }
         return result;
     }
@@ -605,14 +615,14 @@ class ColorPicker extends Dialog<WidgetEvents, ColorScheme, HTMLDivElement, HTML
         //     .append(this.colorSchemeButton.build()
         //         .addClass("button")));
         this.aContent.addItems(this.colorSchemeBox);
-        this.aContent.addItems(...this.colorPickerService.colorTypes
+        this.aContent.addItems(this.colorPickerService.colorTypes
             // not needed because colorType won't change
             // filter old items
             // .filter(v => this.aContent.items.findIndex(value => value.colorType === v) === -1)
             .map(v => {
                 let item = new ColorPickerItem(v);
                 item.backgroundColor.set(`var(${v})`);
-                item.label.set(this.colorPickerService.getDisplayColorName(v));
+                item.setLabel(this.colorPickerService.getDisplayColorName(v));
                 return item.setInheritVisibility(true).on(ColorPickerItemEvents.colorChanged, (event, colorValue) => this.colorPickerService.onChange((<ColorPickerItem>event.target).colorType, colorValue));
             }));
 
@@ -659,7 +669,7 @@ interface ColorSchemeItem extends MixinImplementing, Item {
 }
 
 @mixin(Item)
-class ColorSchemeItem extends ListTile<WidgetEvents | CheckboxEvents | ColorSchemeItemEvents> {
+class ColorSchemeItem extends ListTile<WidgetEvents | CheckboxEvents | FavoriteEvents | ColorSchemeItemEvents> {
     private readonly _colorScheme: ColorScheme;
 
     constructor(colorScheme: ColorScheme) {
@@ -668,8 +678,12 @@ class ColorSchemeItem extends ListTile<WidgetEvents | CheckboxEvents | ColorSche
         this._colorScheme = colorScheme;
         this.setLeadingIcon(Icon.Info());
         this.leadingIcon.on(WidgetEvents.clicked, () => console.log("icon clicked"))
-            .on(WidgetEvents.clicked, () => this.dispatchEvent(ColorSchemeItemEvents.infoClicked));
-        this.addItem(Icon.Back(), FlexAlign.start);
+            .on(WidgetEvents.clicked, (event) => {
+                this.dispatchEvent(ColorSchemeItemEvents.infoClicked);
+                event.originalEvent?.stopPropagation();
+            });
+        // this.addItem(Icon.of("favorite", IconType.material), FlexAlign.start);
+        this.enableFavorite(true);
         this.setLabel(colorScheme.name);
         this.enableCheckbox(true);
     }
@@ -684,6 +698,10 @@ class ColorSchemeItem extends ListTile<WidgetEvents | CheckboxEvents | ColorSche
     public override rebuild(suppressCallback: boolean = false): JQuery<HTMLDivElement> {
         super.rebuild(true);
         this.rebuildCallback(suppressCallback);
+        console.log("item rebuild");
+        this.setLabel(this._colorScheme.name);
+        this.setFavored(this._colorScheme.current);
+        this._label.rebuild();
         return this.domObject;
     }
 
@@ -706,7 +724,8 @@ class ColorSchemeDialog extends Dialog<DialogEvents, null, HTMLDivElement, HTMLD
                 this.rebuild();
                 // this.aContent.addItems(value);
             }));
-        this.colorSchemeInfoDialog = new Overlay<ColorSchemeInfoDialog>(new ColorSchemeInfoDialog(this.colorPickerService, this.colorPickerService.getCurrent()));
+        this.colorSchemeInfoDialog = new Overlay<ColorSchemeInfoDialog>(new ColorSchemeInfoDialog(this.colorPickerService, this.colorPickerService.getCurrent())
+            .on(DialogEvents.accepted, () => this.rebuild()));
 
         this.enableTop(true);
         this.aTop.setLabel("Color Schemes");
@@ -744,6 +763,7 @@ class ColorSchemeDialog extends Dialog<DialogEvents, null, HTMLDivElement, HTMLD
                 // .filter(v => v instanceof ColorSchemeItem)//todo redundant? performance?
                 .map(value1 => value1.colorScheme.id).indexOf(value.id) === -1)
             .map(value => {
+                console.log(value === this.colorPickerService.all.get(value.id));
                 let item = new ColorSchemeItem(value)
                     .setInheritVisibility(true)
                     .show()
@@ -752,6 +772,12 @@ class ColorSchemeDialog extends Dialog<DialogEvents, null, HTMLDivElement, HTMLD
                         console.log(event.target);
                         this.colorSchemeInfoDialog.widget
                             .open((event.target).colorScheme);
+                    })
+                    .on(FavoriteEvents.favored, (event) => {
+                        console.log("item activate");
+                        this.colorPickerService.activate(item.colorScheme);
+                        event.originalEvent?.stopPropagation();
+                        this.aContent.rebuild();
                     });
                 item.build();
                 return item;
@@ -1076,10 +1102,8 @@ class ColorSchemeInfoDialog extends Dialog<DialogEvents, ColorScheme> {
         return this;
     }
 
-    private override acceptOrReject(): this {
-        console.log(this._colorScheme.toJSON());
-        console.log(this.colorSchemeBackup.toJSON());
-        return this._colorScheme.toJSON() !== this.colorSchemeBackup.toJSON() ? this.accept() : this.reject();
+    public override acceptOrReject(): this {
+        return JSON.stringify(this._colorScheme.copy()) !== JSON.stringify(this.colorSchemeBackup.toJSON()) ? this.accept() : this.reject();
     }
 
     protected setValue(): ColorScheme {

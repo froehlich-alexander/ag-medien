@@ -1,3 +1,4 @@
+import {Util} from "./Util.js";
 import {_Widget, Widget, WidgetEvents} from "./Widget.js";
 import {Button, ButtonBox, ContentBox, FlexAlign, Top} from "./Widgets.js";
 
@@ -15,6 +16,7 @@ enum DialogState {
     open = "open",
     notOpen = "notOpen",
 }
+
 type DialogEvents = (typeof DialogEvents)[keyof typeof DialogEvents];
 
 interface _Dialog extends _Widget {
@@ -38,7 +40,6 @@ abstract class Dialog<EventType extends DialogEvents, ValueType, ContentBoxHtmlE
         this.addChild("buttons", this._buttonBox);
         this.addChild("atop", this._aTop);
         this.addChild("aContent", this._aContent);
-        // this.buttonBox.setSpacing("2rem", "2rem", "1rem");
     }
 
     protected buildTop(): JQuery<HTMLElement> {

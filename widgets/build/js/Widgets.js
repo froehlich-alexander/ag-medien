@@ -5,10 +5,11 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
 var Icon_1, Button_1;
+import { CheckboxContaining, ColorEditable, FavoriteContaining, IconContainingEvents, Input, InputEvents, InputLabel, ItemContaining, LabelContaining, LeadingTrailingIconContaining, OneIconContaining, SpacingEditable } from "./AbstractWidgets.js";
 import { Mixin, mixin, Tripel } from "./base.js";
+import { EventCallbacks } from "./Util.js";
 import { Widget, WidgetEvents } from "./Widget.js";
 import { Font, FontWeight } from "./WidgetBase.js";
-import { CheckboxContaining, ColorEditable, EventCallbacks, IconContainingEvents, Input, InputEvents, InputLabel, ItemContaining, LeadingTrailingIconContaining, OneIconContaining, SpacingEditable } from "./AbstractWidgets.js";
 class Item extends Mixin {
     constructor() {
         super(...arguments);
@@ -26,9 +27,7 @@ class Item extends Mixin {
         this._index = value;
     }
 }
-const IconEvents = {
-    ...WidgetEvents
-};
+const IconEvents = Object.assign({}, WidgetEvents);
 var IconType;
 (function (IconType) {
     IconType[IconType["material"] = 0] = "material";
@@ -69,13 +68,14 @@ let Icon = Icon_1 = class Icon extends Widget {
         return this.buildCallback(suppressCallback);
     }
     rebuild(suppressCallback = false) {
+        var _a;
         super.rebuild(true)
             .css("cursor", this._clickable ? "pointer" : "");
         // console.assert(this._value !== undefined, "Value of this icon is not set. Maybe you forgot it?");
         // console.log(this.domObject);
         switch (this._type) {
             case IconType.material: {
-                this.domObject.text(this._value ?? "")
+                this.domObject.text((_a = this._value) !== null && _a !== void 0 ? _a : "")
                     .addClass("material-icons");
                 break;
             }
@@ -181,9 +181,7 @@ Object.defineProperty(Icon, "Info", {
 Icon = Icon_1 = __decorate([
     mixin(SpacingEditable)
 ], Icon);
-const ButtonEvents = {
-    ...WidgetEvents
-};
+const ButtonEvents = Object.assign({}, WidgetEvents);
 let Button = Button_1 = class Button extends Widget {
     // public static Agree = () => new Button().setLabel("Agree").setIcon(Icon.of("done", IconType.material));
     // public static Agree = () => new Button().setLabel("Agree").setIcon(Icon.of("done", IconType.material));
@@ -191,16 +189,11 @@ let Button = Button_1 = class Button extends Widget {
     // public static Agree = () => new Button().setLabel("Agree").setIcon(Icon.of("done", IconType.material));
     constructor() {
         super();
-        Object.defineProperty(this, "_label", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
         this.mixinConstructor();
         this.enableIcon(true);
-        this._label = new Text().setInheritVisibility(true);
-        this.addChild("_label");
+        this.enableLabel(true);
+        this._label.setFontWeight(FontWeight.bold);
+        // this.addChild("_label");
     }
     build(suppressCallback = false) {
         super.build(true)
@@ -220,14 +213,8 @@ let Button = Button_1 = class Button extends Widget {
         this._label.rebuild();
         return this.rebuildCallback(suppressCallback);
     }
-    setLabel(value) {
-        this._label.set(value);
-        return this;
-    }
-    get label() {
-        return this._label.get();
-    }
 };
+// private readonly _label: Text;
 // private readonly icon: Icon | null;
 Object.defineProperty(Button, "Cancel", {
     enumerable: true,
@@ -284,7 +271,7 @@ Object.defineProperty(Button, "Reset", {
     value: () => new Button_1().setLabel("Reset").setIcon(Icon.of("restart_alt", IconType.material))
 });
 Button = Button_1 = __decorate([
-    mixin(OneIconContaining)
+    mixin(OneIconContaining, LabelContaining)
 ], Button);
 var FlexAlign;
 (function (FlexAlign) {
@@ -670,10 +657,7 @@ let Text = class Text extends Widget {
 Text = __decorate([
     mixin(ColorEditable, SpacingEditable)
 ], Text);
-const TopEvents = {
-    ...WidgetEvents,
-    ...IconContainingEvents
-};
+const TopEvents = Object.assign(Object.assign({}, WidgetEvents), IconContainingEvents);
 let Top = class Top extends FlexBox {
     constructor() {
         super();
@@ -735,12 +719,7 @@ Top = __decorate([
 let ListTile = class ListTile extends FlexBox {
     constructor() {
         super();
-        Object.defineProperty(this, "_label", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: new Text()
-        });
+        // private readonly _label: Text = new Text();
         Object.defineProperty(this, "_description", {
             enumerable: true,
             configurable: true,
@@ -748,16 +727,18 @@ let ListTile = class ListTile extends FlexBox {
             value: new Text()
         });
         this.mixinConstructor();
-        this._label.setInheritVisibility(true);
+        this.enableLabel(true);
         this._description.setInheritVisibility(false);
         // this.children.set("lable", this._label);
         // this.children.set("description", this._description);
         this.addItem(this.leadingIcon, FlexAlign.start);
         this.addItem(this._label, FlexAlign.start);
+        this.addItem(this.favorite, FlexAlign.start);
         this.addItem(this.trailingIcon, FlexAlign.end);
         this.addItem(this.checkbox, FlexAlign.end);
         this.setSpacing("1rem", "1rem", "1rem");
         this.enableCheckbox(false);
+        this.enableFavorite(false);
     }
     build(suppressCallback = false) {
         super.build(true)
@@ -767,6 +748,7 @@ let ListTile = class ListTile extends FlexBox {
         // .append(this.getTrailingIcon().build());
         this.buildColor();
         this.buildSpacing();
+        this.buildFavorite(true);
         this.buildCheckbox();
         this.buildCallback(suppressCallback);
         return this.domObject;
@@ -774,15 +756,9 @@ let ListTile = class ListTile extends FlexBox {
     rebuild(suppressCallback = false) {
         super.rebuild(true);
         this.rebuildCheckbox();
+        this.rebuildFavorite();
         this.rebuildCallback(suppressCallback);
         return this.domObject;
-    }
-    get label() {
-        return this._label;
-    }
-    setLabel(label) {
-        this._label.set(label);
-        return this;
     }
     setDescription(description) {
         this._description.set(description);
@@ -793,12 +769,9 @@ let ListTile = class ListTile extends FlexBox {
     }
 };
 ListTile = __decorate([
-    mixin(ColorEditable, SpacingEditable, LeadingTrailingIconContaining, CheckboxContaining)
+    mixin(ColorEditable, SpacingEditable, LeadingTrailingIconContaining, CheckboxContaining, FavoriteContaining, LabelContaining)
 ], ListTile);
-const TextInputEvents = {
-    ...WidgetEvents,
-    ...InputEvents
-};
+const TextInputEvents = Object.assign(Object.assign({}, WidgetEvents), InputEvents);
 let TextInput = class TextInput extends Widget {
     constructor() {
         super();
@@ -1143,10 +1116,7 @@ class SelectBoxItem {
         return this._value.label;
     }
 }
-const SelectBoxEvents = {
-    ...WidgetEvents,
-    ...InputEvents
-};
+const SelectBoxEvents = Object.assign(Object.assign({}, WidgetEvents), InputEvents);
 let SelectBox = class SelectBox extends Widget {
     constructor() {
         super();

@@ -1,110 +1,8 @@
-import {assertType, hasMixins, mixin, Mixin, Pair} from "./base.js";
-import {EventHandler, Widget, WidgetEvents} from "./Widget.js";
+import {assertType, hasMixins, mixin, Mixin} from "./base.js";
+import {Widget, WidgetEvents} from "./Widget.js";
 import {CSSColorValue} from "./WidgetBase.js";
-import {Icon, IconEvents, IconType, ListTile, TextInputEvents} from "./Widgets.js";
-import htmlString = JQuery.htmlString;
-
-class Util {
-    static setHeight(element: JQuery<HTMLElement>): void {
-        element.outerHeight(element.outerHeight(false) ?? 0, false);
-    }
-
-    static setWidth(element: JQuery<HTMLElement>): void {
-        element.outerWidth(element.outerWidth(false) ?? 0, false);
-    }
-
-    /**
-     * Add something to a css-property of a Html Element
-     * @param element the {@link JQuery} Html Element
-     * @param property the name of the css property
-     * @param value the value to add to
-     */
-    static addCssProperty(element: JQuery<HTMLElement>, property: string, value: string | number): JQuery<HTMLElement> {
-        if (value == null || value == "") {
-            return element;
-        }
-        if (element.get(0)!.style.getPropertyValue(property) === "") {
-            element.css(property, value);
-        } else {
-            element.css(property, "calc(" + element.get(0)!.style.getPropertyValue(property) + "+" + value + ")");
-        }
-        return element;
-    }
-
-    static setHeightToRemaining(parent: JQuery<HTMLElement>, child: JQuery<HTMLElement>): void {
-        let children = parent.children().not(child).not(".overlay-widget");
-        let w = 0;
-        for (let i = 0; i < children.length; i++) {
-            w += children.eq(i).outerHeight(true) ?? 0;
-        }
-        child.css("max-height", `calc(100% - ${w}px`);
-    }
-
-    static setWidthToRemaining(parent: JQuery<HTMLElement>, child: JQuery<HTMLElement>): void {
-        let children = parent.children().not(child).not(".overlay-widget");
-        let w = 0;
-        for (let i = 0; i < children.length; i++) {
-            w += children.eq(i).outerWidth(true) ?? 0;
-        }
-        child.css("max-width", `calc(100% - ${w}px`);
-    }
-}
-
-class EventCallbacks {
-    // /**
-    //  * Calculates and sets the height of an element
-    //  * @type Pair
-    //  */
-    // static setHeight = new Pair<WidgetEvents, EventHandler<WidgetEvents, Widget<WidgetEvents>>>(
-    //     WidgetEvents.sizeSet, function (event) {
-    //         Util.setHeight(event.target.domObject);
-    //     });
-
-    /**
-     * Calculates and sets the height of an element
-     * @type Pair
-     */
-    static setHeight = <[WidgetEvents, EventHandler<WidgetEvents, HTMLElement>]>[
-        WidgetEvents.sizeSet, function (event) {
-            Util.setHeight(event.target.domObject);
-        }];
-
-    // /**
-    //  * Calculates and sets the width of an element
-    //  * @type Pair
-    //  */
-    // static setWidth = new Pair<WidgetEvents, EventHandler<WidgetEvents, Widget<WidgetEvents>>>(
-    //     WidgetEvents.sizeSet, function (event) {
-    //         Util.setWidth(event.target.domObject);
-    //     });
-
-    /**
-     * Calculates and sets the width of an element
-     * @type Pair
-     */
-    static setWidth = <[WidgetEvents, EventHandler<WidgetEvents, HTMLElement>]>[
-        WidgetEvents.sizeSet, function (event) {
-            Util.setWidth(event.target.domObject);
-        }];
-
-    // static setWidthToRemaining = (child: Widget<WidgetEvents>) => new Pair<WidgetEvents, EventHandler<WidgetEvents, Widget<WidgetEvents>>>(WidgetEvents.sizeSet, function (event) {
-    //     Util.setWidthToRemaining(event.target.domObject, child.domObject);
-    // });
-    //
-    // static setHeightToRemaining = (child: Widget<WidgetEvents>) => new Pair<WidgetEvents, EventHandler<WidgetEvents, Widget<WidgetEvents>>>(WidgetEvents.sizeSet, function (event) {
-    //     Util.setHeightToRemaining(event.target.domObject, child.domObject);
-    // });
-
-    static setWidthToRemaining = <[WidgetEvents, EventHandler<WidgetEvents, HTMLElement>]>[
-        WidgetEvents.sizeSet, function (event) {
-            Util.setWidthToRemaining(event.target.domObject.parent(), event.target.domObject);
-        }];
-
-    static setHeightToRemaining = <[WidgetEvents, EventHandler<WidgetEvents, HTMLElement>]>[
-        WidgetEvents.sizeSet, function (event) {
-            Util.setHeightToRemaining(event.target.domObject.parent(), event.target.domObject);
-        }];
-}
+import {Icon, IconEvents, IconType, Text, TextInputEvents} from "./Widgets.js";
+import Event = JQuery.Event;
 
 class ColorEditable<EventType extends WidgetEvents, HtmlElementType extends HTMLElement> extends Mixin {
     private readonly _backgroundColor: CSSColorValue = new CSSColorValue();
@@ -475,7 +373,7 @@ class ItemContaining<EventType extends WidgetEvents, HtmlElementType extends HTM
         console.assert(this.itemCount === [...this.children.keys()].filter(value => ItemContaining.isItem(value)).length);
     }
 
-    public orderItems() : this {
+    public orderItems(): this {
         for (let i = 0; i < this.itemCount; i++) {
             let item = this.getItem(i);
             if (hasMixins<Item>(item, Item)) {
@@ -543,6 +441,9 @@ enum CheckboxEvents {
     checkStateChanged = "checkStateChanged"
 }
 
+interface CheckboxContaining<EventType extends WidgetEvents | CheckboxEvents, HtmlElementType extends HTMLElement> extends Widget<EventType, HtmlElementType> {
+}
+
 class CheckboxContaining<EventType extends WidgetEvents | CheckboxEvents, HtmlElementType extends HTMLElement> extends Mixin {
     private readonly checkBoxIcon: Icon = Icon.of("check_box_outline_blank", IconType.material);
     private _checked: boolean = false;
@@ -608,7 +509,110 @@ class CheckboxContaining<EventType extends WidgetEvents | CheckboxEvents, HtmlEl
     }
 }
 
-interface CheckboxContaining<EventType extends WidgetEvents | CheckboxEvents, HtmlElementType extends HTMLElement> extends Widget<EventType, HtmlElementType> {
+enum FavoriteEvents {
+    favoriteStateChanged = "favoriteStateChanged",
+    favored = "favored",
+    unFavored = "unFavored"
+}
+
+interface FavoriteContaining<EventType extends WidgetEvents | FavoriteEvents, HtmlElementType extends HTMLElement> extends Widget<EventType, HtmlElementType> {
+}
+
+class FavoriteContaining<EventType extends WidgetEvents | FavoriteEvents, HtmlElementType extends HTMLElement> extends Mixin {
+    private _favored: boolean = false;
+    private favoriteIcon: Icon = Icon.of("favorite_border", IconType.material);
+
+    _constructor() {
+        this.addChild("favoriteIcon");
+    }
+
+    public buildFavorite(triggerEventOnIcon: boolean = false): JQuery<HTMLDivElement> {
+        this.domObject.addClass("favorable");
+        (triggerEventOnIcon ? this.favoriteIcon : this).on(WidgetEvents.clicked, (event) => this.setFavored(!this._favored, event.originalEvent));
+        if (!this.favoriteIcon.built) {
+            this.favoriteIcon.build();
+        }
+        return this.favoriteIcon.domObject;
+        // .addClass(this.checked ? "checked" : null)
+        // .text(this.checked ? "check_box" : "check_box_outline_blank");
+    }
+
+    protected rebuildFavorite(): this {
+        // this.domObject.toggleClass("favored", this.favoriteEnabled);
+        if (this.favoriteEnabled) {
+            this.favoriteIcon.set(this._favored ? "favorite" : "favorite_border", IconType.material)
+                .rebuild()
+                .toggleClass("favored", this._favored);
+            // this.checkBoxIcon.domObject
+            //     .text(this._checked ? "check_box" : "check_box_outline_blank")
+            //     .addClass(this._checked ? "checked" : null);
+        }
+        return this;
+    }
+
+    public setFavored(value: boolean, originalEvent?: Event | null): this {
+        let changed = this._favored !== value;
+        this._favored = value;
+        if (changed) {
+            this.dispatchEvent(this._favored ? FavoriteEvents.favored : FavoriteEvents.unFavored, [this._favored], originalEvent, FavoriteEvents.favoriteStateChanged);
+            if (this.built) {
+                this.rebuildFavorite();
+            }
+        }
+        return this;
+    }
+
+    public enableFavorite(value: boolean): this {
+        this.favoriteIcon.setInheritVisibility(value);
+        if (this.built) {
+            this.rebuildFavorite();
+        }
+        return this;
+    }
+
+    get favoriteEnabled(): boolean {
+        return this.favoriteIcon.inheritVisibility;
+    }
+
+    public get favored(): boolean {
+        return this._favored;
+    }
+
+    get favorite() {
+        return this.favoriteIcon;
+    }
+}
+
+interface LabelContaining<EventType extends WidgetEvents | FavoriteEvents, HtmlElementType extends HTMLElement> extends Widget<EventType, HtmlElementType> {
+}
+
+class LabelContaining<EventType extends WidgetEvents | FavoriteEvents, HtmlElementType extends HTMLElement> extends Mixin {
+    protected readonly _label: Text = new Text();
+
+    _constructor() {
+        this.addChild("_label");
+    }
+
+    public enableLabel(value: boolean): this {
+        this._label.setInheritVisibility(value);
+        if (this.built) {
+            this._label.rebuild();
+        }
+        return this;
+    }
+
+    get labelEnabled(): boolean {
+        return this._label.inheritVisibility;
+    }
+
+    public get label(): string {
+        return this._label.get();
+    }
+
+    public setLabel(label: string): this {
+        this._label.set(label);
+        return this;
+    }
 }
 
 class IdContaining extends Mixin {
@@ -766,11 +770,9 @@ interface InputLabel<EventType extends WidgetEvents, HtmlElementType extends HTM
 
 
 export {
-    Util,
     OneIconContaining,
     LeadingTrailingIconContaining,
     IconContainingEvents,
-    EventCallbacks,
     ColorEditable,
     SpacingEditable,
     ItemContaining,
@@ -778,6 +780,9 @@ export {
     Item,
     CheckboxContaining,
     CheckboxEvents,
+    FavoriteContaining,
+    FavoriteEvents,
+    LabelContaining,
     Input,
     InputEvents,
     InputLabel

@@ -1,8 +1,7 @@
-import {Pair} from "./base.js";
+import {Dialog, DialogEvents} from "./Dialog.js";
 import {Widget, WidgetEvents} from './Widget.js';
 // import * as $ from 'jquery';
 import {Button, FlexAlign, Icon, Top} from "./Widgets.js";
-import {Dialog, DialogEvents} from "./Dialog.js";
 
 export var a: string = "fdf";
 

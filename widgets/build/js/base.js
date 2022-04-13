@@ -119,11 +119,12 @@ class MixinImplementing extends Mixin {
  * @return {obj is {@link MixinImplementing} & T & T1 & T2 & T3 & T4 & T5 & T6 & T7 & T8 & T9 & T10 & T11}
  */
 function hasMixins(obj, ...mixins) {
+    var _a;
     if (obj.__mixinDependencies === undefined && obj.constructor.__mixinDependencies === undefined) {
         return false;
     }
     for (let value of mixins) {
-        if ((obj.__mixinDependencies ?? obj.constructor.__mixinDependencies).indexOf(value) === -1) {
+        if (((_a = obj.__mixinDependencies) !== null && _a !== void 0 ? _a : obj.constructor.__mixinDependencies).indexOf(value) === -1) {
             return false;
         }
     }

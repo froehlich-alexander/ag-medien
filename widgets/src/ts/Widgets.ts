@@ -1,14 +1,20 @@
-import {Mixin, mixin, MixinImplementing, Tripel} from "./base.js";
-import {Widget, WidgetEvents} from "./Widget.js";
-import {Font, FontFamily, FontSize, FontWeight} from "./WidgetBase.js";
 import {
     CheckboxContaining,
-    ColorEditable,
-    EventCallbacks, IconContainingEvents, Input, InputEvents, InputLabel, ItemContaining, ItemContainingEvents,
+    ColorEditable, FavoriteContaining,
+    IconContainingEvents,
+    Input,
+    InputEvents,
+    InputLabel,
+    ItemContaining,
+    ItemContainingEvents, LabelContaining,
     LeadingTrailingIconContaining,
     OneIconContaining,
     SpacingEditable
 } from "./AbstractWidgets.js";
+import {Mixin, mixin, MixinImplementing, Tripel} from "./base.js";
+import {EventCallbacks} from "./Util.js";
+import {Widget, WidgetEvents} from "./Widget.js";
+import {Font, FontFamily, FontSize, FontWeight} from "./WidgetBase.js";
 
 class Item extends Mixin {
     private _index: number = -1;
@@ -146,9 +152,12 @@ const ButtonEvents = {
 
 type ButtonEvents = (typeof IconEvents)[keyof typeof IconEvents];
 
-@mixin(OneIconContaining)
+interface Button extends MixinImplementing, OneIconContaining<ButtonEvents, HTMLDivElement>, LabelContaining<ButtonEvents, HTMLDivElement> {
+}
+
+@mixin(OneIconContaining, LabelContaining)
 class Button extends Widget<ButtonEvents, HTMLDivElement> {
-    private readonly _label: Text;
+    // private readonly _label: Text;
     // private readonly icon: Icon | null;
 
     public static Cancel = () => new Button().setLabel("Cancel").setIcon(Icon.Cancel());
@@ -169,8 +178,9 @@ class Button extends Widget<ButtonEvents, HTMLDivElement> {
         super();
         this.mixinConstructor();
         this.enableIcon(true);
-        this._label = new Text().setInheritVisibility(true);
-        this.addChild("_label");
+        this.enableLabel(true);
+        this._label.setFontWeight(FontWeight.bold);
+        // this.addChild("_label");
     }
 
     public override build(suppressCallback: boolean = false): JQuery<HTMLDivElement> {
@@ -194,17 +204,14 @@ class Button extends Widget<ButtonEvents, HTMLDivElement> {
         return this.rebuildCallback(suppressCallback);
     }
 
-    public setLabel(value: string): Button {
-        this._label.set(value);
-        return this;
-    }
-
-    public get label(): string {
-        return this._label.get();
-    }
-}
-
-interface Button extends MixinImplementing, OneIconContaining<ButtonEvents, HTMLDivElement> {
+    // public setLabel(value: string): Button {
+    //     this._label.set(value);
+    //     return this;
+    // }
+    //
+    // public get label(): string {
+    //     return this._label.get();
+    // }
 }
 
 enum FlexAlign {
@@ -452,7 +459,7 @@ class FlexBox<EventType extends WidgetEvents, HtmlElementType extends HTMLElemen
         return this.domObject;
     }
 
-    public addItem<ItemHtmlElementType extends HTMLElement>(item: Widget<WidgetEvents, ItemHtmlElementType>, mainAlign: FlexAlign = FlexAlign.center, crossAlign: FlexAlign = FlexAlign.center): this {
+    public addItem<ItemHtmlElementType extends HTMLElement, ItemType extends Widget<WidgetEvents, ItemHtmlElementType>>(item: ItemType, mainAlign: FlexAlign = FlexAlign.center, crossAlign: FlexAlign = FlexAlign.center): this {
         console.assert(!this.built);
         item.setInheritVisibility(true);
         this.addChild("flexbox" + this.items.push(new Tripel(item, mainAlign, crossAlign)).toString(10), item);
@@ -663,26 +670,28 @@ class Top<HtmlElementType extends HTMLElement = HTMLDivElement> extends FlexBox<
 interface Top<HtmlElementType extends HTMLElement = HTMLDivElement> extends MixinImplementing, OneIconContaining<WidgetEvents, HtmlElementType> {
 }
 
-@mixin(ColorEditable, SpacingEditable, LeadingTrailingIconContaining, CheckboxContaining)
+@mixin(ColorEditable, SpacingEditable, LeadingTrailingIconContaining, CheckboxContaining, FavoriteContaining, LabelContaining)
 class ListTile<EventType extends WidgetEvents | IconContainingEvents, HtmlElementType extends HTMLElement = HTMLDivElement> extends FlexBox<EventType, HtmlElementType> {
-    private readonly _label: Text = new Text();
+    // private readonly _label: Text = new Text();
     private readonly _description: Text = new Text();
 
     constructor() {
         super();
         this.mixinConstructor();
 
-        this._label.setInheritVisibility(true);
+        this.enableLabel(true);
         this._description.setInheritVisibility(false);
 
         // this.children.set("lable", this._label);
         // this.children.set("description", this._description);
         this.addItem(this.leadingIcon, FlexAlign.start);
         this.addItem(this._label, FlexAlign.start);
+        this.addItem(this.favorite, FlexAlign.start);
         this.addItem(this.trailingIcon, FlexAlign.end);
         this.addItem(this.checkbox, FlexAlign.end);
         this.setSpacing("1rem", "1rem", "1rem");
         this.enableCheckbox(false);
+        this.enableFavorite(false);
     }
 
     public override build(suppressCallback: boolean = false): JQuery<HtmlElementType> {
@@ -694,6 +703,7 @@ class ListTile<EventType extends WidgetEvents | IconContainingEvents, HtmlElemen
 
         this.buildColor();
         this.buildSpacing();
+        this.buildFavorite(true);
         this.buildCheckbox();
 
         this.buildCallback(suppressCallback);
@@ -703,17 +713,9 @@ class ListTile<EventType extends WidgetEvents | IconContainingEvents, HtmlElemen
     public override rebuild(suppressCallback: boolean = false): JQuery<HtmlElementType> {
         super.rebuild(true);
         this.rebuildCheckbox();
+        this.rebuildFavorite();
         this.rebuildCallback(suppressCallback);
         return this.domObject;
-    }
-
-    public get label(): Text {
-        return this._label;
-    }
-
-    public setLabel(label: string): this {
-        this._label.set(label);
-        return this;
     }
 
     public setDescription(description: string): this {
@@ -726,7 +728,7 @@ class ListTile<EventType extends WidgetEvents | IconContainingEvents, HtmlElemen
     }
 }
 
-interface ListTile<EventType extends WidgetEvents | IconContainingEvents, HtmlElementType extends HTMLElement = HTMLDivElement> extends FlexBox<EventType, HtmlElementType>, MixinImplementing, ColorEditable<EventType, HtmlElementType>, SpacingEditable<EventType, HtmlElementType>, LeadingTrailingIconContaining<EventType, HtmlElementType>, CheckboxContaining<EventType, HtmlElementType> {
+interface ListTile<EventType extends WidgetEvents | IconContainingEvents, HtmlElementType extends HTMLElement = HTMLDivElement> extends FlexBox<EventType, HtmlElementType>, MixinImplementing, ColorEditable<EventType, HtmlElementType>, SpacingEditable<EventType, HtmlElementType>, LeadingTrailingIconContaining<EventType, HtmlElementType>, CheckboxContaining<EventType, HtmlElementType>, FavoriteContaining<EventType, HtmlElementType>, LabelContaining<EventType, HtmlElementType> {
 }
 
 const TextInputEvents = {

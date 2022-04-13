@@ -187,7 +187,7 @@ class Widget extends _EventHandler {
     }
     dispatchEvent(event, args, originalEvent = null, ...acceptedTypes) {
         if (!this.eventDisabled(event)) {
-            for (let i of this.callbacks.filter(value => value.first == event || value.first == WidgetEvents.all || value.first in acceptedTypes)) {
+            for (let i of this.callbacks.filter(value => value.first === event || value.first === WidgetEvents.all || acceptedTypes.indexOf(value.first) !== -1)) {
                 if (args != undefined && args.length > 0) {
                     i.second({ type: event, target: this, originalEvent: originalEvent }, ...args);
                 }

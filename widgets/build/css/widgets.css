@@ -123,13 +123,18 @@
 }
 .widget.overlay-widget {
   left: 0;
+  right: 0;
   top: 0;
+  bottom: 0;
   width: 100vw;
   height: 100vh;
   user-select: none;
   position: fixed;
   background-color: rgba(0, 0, 0, 0.5);
   z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .widget.text-input {
   position: relative;
@@ -197,7 +202,7 @@
 .widget.dialog-widget {
   border-radius: 1rem;
   background-color: var(--background-color-1);
-  position: absolute;
+  position: relative;
   padding-bottom: 0.5rem;
 }
 .widget.box {

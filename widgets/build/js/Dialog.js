@@ -1,11 +1,6 @@
 import { Widget, WidgetEvents } from "./Widget.js";
 import { ButtonBox, ContentBox, FlexAlign, Top } from "./Widgets.js";
-const DialogEvents = {
-    ...WidgetEvents,
-    accepted: "accepted",
-    finished: "finished",
-    rejected: "rejected",
-};
+const DialogEvents = Object.assign(Object.assign({}, WidgetEvents), { accepted: "accepted", finished: "finished", rejected: "rejected" });
 var DialogState;
 (function (DialogState) {
     DialogState["accepted"] = "accepted";
@@ -51,7 +46,6 @@ class Dialog extends Widget {
         this.addChild("buttons", this._buttonBox);
         this.addChild("atop", this._aTop);
         this.addChild("aContent", this._aContent);
-        // this.buttonBox.setSpacing("2rem", "2rem", "1rem");
     }
     buildTop() {
         return this._aTop.build()

@@ -1,4 +1,3 @@
-import {} from "./colorpicker.js";
 import {Widget, WidgetEvents} from "./Widget.js";
 
 const SettingsEvents = {

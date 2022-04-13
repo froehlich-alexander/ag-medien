@@ -171,7 +171,7 @@ abstract class Widget<EventType extends WidgetEvents, HtmlElementType extends HT
 
     protected dispatchEvent(event: string, args?: any[], originalEvent: Event | null = null, ...acceptedTypes: string[]): this {
         if (!this.eventDisabled(event)) {
-            for (let i of this.callbacks.filter(value => value.first == event || value.first == WidgetEvents.all || value.first in acceptedTypes)) {
+            for (let i of this.callbacks.filter(value => value.first === event || value.first === WidgetEvents.all || acceptedTypes.indexOf(value.first) !== -1)) {
                 if (args != undefined && args.length > 0) {
                     i.second({type: event, target: this, originalEvent: originalEvent}, ...args);
                 } else {
@@ -182,6 +182,8 @@ abstract class Widget<EventType extends WidgetEvents, HtmlElementType extends HT
         return this;
     }
 
+    protected addChild(childName: string | keyof this): this;
+    protected addChild<ChildHtmlElementType extends HTMLElement, ChildType extends Widget<WidgetEvents, ChildHtmlElementType>>(childName: string, child: ChildType): this;
     /**
      * Using this function single parameterized works only if the child is a field (with the same name as {@link childName}) of this object
      * @param {string} childName
@@ -189,9 +191,9 @@ abstract class Widget<EventType extends WidgetEvents, HtmlElementType extends HT
      * @return {this}
      * @protected
      */
-    protected addChild<ChildHtmlElementType extends HTMLElement>(childName: string, child?: Widget<WidgetEvents, ChildHtmlElementType>): this {
+    protected addChild<ChildHtmlElementType extends HTMLElement, ChildType extends Widget<WidgetEvents, ChildHtmlElementType>>(childName: string, child?: ChildType): this {
         if (child === undefined) {
-            child = this[childName as keyof this] as unknown as Widget<WidgetEvents, ChildHtmlElementType>;
+            child = this[childName as keyof this] as unknown as ChildType;
         }
         if (childName.startsWith("_")) {
             childName = childName.replaceAll(new RegExp("^[_#]*", "g"), "");

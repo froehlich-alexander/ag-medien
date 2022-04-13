@@ -7,122 +7,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 import { assertType, hasMixins, mixin, Mixin } from "./base.js";
 import { WidgetEvents } from "./Widget.js";
 import { CSSColorValue } from "./WidgetBase.js";
-import { Icon, IconEvents, IconType, TextInputEvents } from "./Widgets.js";
-class Util {
-    static setHeight(element) {
-        element.outerHeight(element.outerHeight(false) ?? 0, false);
-    }
-    static setWidth(element) {
-        element.outerWidth(element.outerWidth(false) ?? 0, false);
-    }
-    /**
-     * Add something to a css-property of a Html Element
-     * @param element the {@link JQuery} Html Element
-     * @param property the name of the css property
-     * @param value the value to add to
-     */
-    static addCssProperty(element, property, value) {
-        if (value == null || value == "") {
-            return element;
-        }
-        if (element.get(0).style.getPropertyValue(property) === "") {
-            element.css(property, value);
-        }
-        else {
-            element.css(property, "calc(" + element.get(0).style.getPropertyValue(property) + "+" + value + ")");
-        }
-        return element;
-    }
-    static setHeightToRemaining(parent, child) {
-        let children = parent.children().not(child).not(".overlay-widget");
-        let w = 0;
-        for (let i = 0; i < children.length; i++) {
-            w += children.eq(i).outerHeight(true) ?? 0;
-        }
-        child.css("max-height", `calc(100% - ${w}px`);
-    }
-    static setWidthToRemaining(parent, child) {
-        let children = parent.children().not(child).not(".overlay-widget");
-        let w = 0;
-        for (let i = 0; i < children.length; i++) {
-            w += children.eq(i).outerWidth(true) ?? 0;
-        }
-        child.css("max-width", `calc(100% - ${w}px`);
-    }
-}
-class EventCallbacks {
-}
-// /**
-//  * Calculates and sets the height of an element
-//  * @type Pair
-//  */
-// static setHeight = new Pair<WidgetEvents, EventHandler<WidgetEvents, Widget<WidgetEvents>>>(
-//     WidgetEvents.sizeSet, function (event) {
-//         Util.setHeight(event.target.domObject);
-//     });
-/**
- * Calculates and sets the height of an element
- * @type Pair
- */
-Object.defineProperty(EventCallbacks, "setHeight", {
-    enumerable: true,
-    configurable: true,
-    writable: true,
-    value: [
-        WidgetEvents.sizeSet, function (event) {
-            Util.setHeight(event.target.domObject);
-        }
-    ]
-});
-// /**
-//  * Calculates and sets the width of an element
-//  * @type Pair
-//  */
-// static setWidth = new Pair<WidgetEvents, EventHandler<WidgetEvents, Widget<WidgetEvents>>>(
-//     WidgetEvents.sizeSet, function (event) {
-//         Util.setWidth(event.target.domObject);
-//     });
-/**
- * Calculates and sets the width of an element
- * @type Pair
- */
-Object.defineProperty(EventCallbacks, "setWidth", {
-    enumerable: true,
-    configurable: true,
-    writable: true,
-    value: [
-        WidgetEvents.sizeSet, function (event) {
-            Util.setWidth(event.target.domObject);
-        }
-    ]
-});
-// static setWidthToRemaining = (child: Widget<WidgetEvents>) => new Pair<WidgetEvents, EventHandler<WidgetEvents, Widget<WidgetEvents>>>(WidgetEvents.sizeSet, function (event) {
-//     Util.setWidthToRemaining(event.target.domObject, child.domObject);
-// });
-//
-// static setHeightToRemaining = (child: Widget<WidgetEvents>) => new Pair<WidgetEvents, EventHandler<WidgetEvents, Widget<WidgetEvents>>>(WidgetEvents.sizeSet, function (event) {
-//     Util.setHeightToRemaining(event.target.domObject, child.domObject);
-// });
-Object.defineProperty(EventCallbacks, "setWidthToRemaining", {
-    enumerable: true,
-    configurable: true,
-    writable: true,
-    value: [
-        WidgetEvents.sizeSet, function (event) {
-            Util.setWidthToRemaining(event.target.domObject.parent(), event.target.domObject);
-        }
-    ]
-});
-Object.defineProperty(EventCallbacks, "setHeightToRemaining", {
-    enumerable: true,
-    configurable: true,
-    writable: true,
-    value: [
-        WidgetEvents.sizeSet, function (event) {
-            Util.setHeightToRemaining(event.target.domObject.parent(), event.target.domObject);
-        }
-    ]
-});
+import { Icon, IconEvents, IconType, Text, TextInputEvents } from "./Widgets.js";
 class ColorEditable extends Mixin {
     constructor() {
         super(...arguments);
@@ -631,6 +516,112 @@ class CheckboxContaining extends Mixin {
         return this.checkBoxIcon;
     }
 }
+var FavoriteEvents;
+(function (FavoriteEvents) {
+    FavoriteEvents["favoriteStateChanged"] = "favoriteStateChanged";
+    FavoriteEvents["favored"] = "favored";
+    FavoriteEvents["unFavored"] = "unFavored";
+})(FavoriteEvents || (FavoriteEvents = {}));
+class FavoriteContaining extends Mixin {
+    constructor() {
+        super(...arguments);
+        Object.defineProperty(this, "_favored", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: false
+        });
+        Object.defineProperty(this, "favoriteIcon", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: Icon.of("favorite_border", IconType.material)
+        });
+    }
+    _constructor() {
+        this.addChild("favoriteIcon");
+    }
+    buildFavorite(triggerEventOnIcon = false) {
+        this.domObject.addClass("favorable");
+        (triggerEventOnIcon ? this.favoriteIcon : this).on(WidgetEvents.clicked, (event) => this.setFavored(!this._favored, event.originalEvent));
+        if (!this.favoriteIcon.built) {
+            this.favoriteIcon.build();
+        }
+        return this.favoriteIcon.domObject;
+        // .addClass(this.checked ? "checked" : null)
+        // .text(this.checked ? "check_box" : "check_box_outline_blank");
+    }
+    rebuildFavorite() {
+        // this.domObject.toggleClass("favored", this.favoriteEnabled);
+        if (this.favoriteEnabled) {
+            this.favoriteIcon.set(this._favored ? "favorite" : "favorite_border", IconType.material)
+                .rebuild()
+                .toggleClass("favored", this._favored);
+            // this.checkBoxIcon.domObject
+            //     .text(this._checked ? "check_box" : "check_box_outline_blank")
+            //     .addClass(this._checked ? "checked" : null);
+        }
+        return this;
+    }
+    setFavored(value, originalEvent) {
+        let changed = this._favored !== value;
+        this._favored = value;
+        if (changed) {
+            this.dispatchEvent(this._favored ? FavoriteEvents.favored : FavoriteEvents.unFavored, [this._favored], originalEvent, FavoriteEvents.favoriteStateChanged);
+            if (this.built) {
+                this.rebuildFavorite();
+            }
+        }
+        return this;
+    }
+    enableFavorite(value) {
+        this.favoriteIcon.setInheritVisibility(value);
+        if (this.built) {
+            this.rebuildFavorite();
+        }
+        return this;
+    }
+    get favoriteEnabled() {
+        return this.favoriteIcon.inheritVisibility;
+    }
+    get favored() {
+        return this._favored;
+    }
+    get favorite() {
+        return this.favoriteIcon;
+    }
+}
+class LabelContaining extends Mixin {
+    constructor() {
+        super(...arguments);
+        Object.defineProperty(this, "_label", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: new Text()
+        });
+    }
+    _constructor() {
+        this.addChild("_label");
+    }
+    enableLabel(value) {
+        this._label.setInheritVisibility(value);
+        if (this.built) {
+            this._label.rebuild();
+        }
+        return this;
+    }
+    get labelEnabled() {
+        return this._label.inheritVisibility;
+    }
+    get label() {
+        return this._label.get();
+    }
+    setLabel(label) {
+        this._label.set(label);
+        return this;
+    }
+}
 class IdContaining extends Mixin {
     constructor() {
         super(...arguments);
@@ -725,8 +716,9 @@ let Input = class Input extends Mixin {
         return this.domObject.find("input").val() !== "" ? this.domObject.find("input").val() : null;
     }
     setValue(value) {
+        var _a;
         this._value = value;
-        this.domObject?.find("input").val(value);
+        (_a = this.domObject) === null || _a === void 0 ? void 0 : _a.find("input").val(value);
         return this;
     }
     setId(id) {
@@ -806,5 +798,5 @@ let InputLabel = class InputLabel extends Mixin {
 InputLabel = __decorate([
     mixin(IdContaining)
 ], InputLabel);
-export { Util, OneIconContaining, LeadingTrailingIconContaining, IconContainingEvents, EventCallbacks, ColorEditable, SpacingEditable, ItemContaining, ItemContainingEvents, Item, CheckboxContaining, CheckboxEvents, Input, InputEvents, InputLabel };
+export { OneIconContaining, LeadingTrailingIconContaining, IconContainingEvents, ColorEditable, SpacingEditable, ItemContaining, ItemContainingEvents, Item, CheckboxContaining, CheckboxEvents, FavoriteContaining, FavoriteEvents, LabelContaining, Input, InputEvents, InputLabel };
 //# sourceMappingURL=AbstractWidgets.js.map

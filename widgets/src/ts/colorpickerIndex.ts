@@ -1,10 +1,8 @@
-import {assertType, Pair, Tripel} from "./base.js";
-import {SelectBox, ContentBox, ListTile, SelectBoxItem, Text} from "./Widgets.js";
+import {assertType, Pair} from "./base.js";
 import {ColorPicker} from "./colorpicker.js";
-import {Overlay} from "./Overlay.js";
-import {SelectMenu, SelectMenuItem} from "./SelectMenu.js";
-import {Widget} from "./Widget.js";
 import "./imports.js";
+import {Overlay} from "./Overlay.js";
+import {Widget} from "./Widget.js";
 
 
 // $("body")
