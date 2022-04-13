@@ -65,10 +65,7 @@ let Icon = Icon_1 = class Icon extends Widget {
     }
     build(suppressCallback = false) {
         super.build(true)
-            .addClass("icon-widget")
-            .on("click", () => {
-            this.dispatchEvent(WidgetEvents.clicked);
-        });
+            .addClass("icon-widget");
         return this.buildCallback(suppressCallback);
     }
     rebuild(suppressCallback = false) {
@@ -212,8 +209,8 @@ let Button = Button_1 = class Button extends Widget {
             // .append($("<div></div>")
             //     .text(this.label)
             //     .addClass("text"))
-            .append(this._label.build())
-            .on("click", () => this.dispatchEvent(ButtonEvents.clicked));
+            .append(this._label.build());
+        // .on("click", () => this.dispatchEvent(ButtonEvents.clicked));
         this.buildCallback(suppressCallback);
         return this.domObject;
     }
@@ -750,8 +747,7 @@ let ListTile = class ListTile extends FlexBox {
             writable: true,
             value: new Text()
         });
-        this.mixinConstructor(SpacingEditable, LeadingTrailingIconContaining, ColorEditable, CheckboxContaining);
-        // createMixinFields(this, new ColorEditable(), new SpacingEditable(), new LeadingTrailingIconContaining());
+        this.mixinConstructor();
         this._label.setInheritVisibility(true);
         this._description.setInheritVisibility(false);
         // this.children.set("lable", this._label);
@@ -797,7 +793,7 @@ let ListTile = class ListTile extends FlexBox {
     }
 };
 ListTile = __decorate([
-    mixin(Item, ColorEditable, SpacingEditable, LeadingTrailingIconContaining, CheckboxContaining)
+    mixin(ColorEditable, SpacingEditable, LeadingTrailingIconContaining, CheckboxContaining)
 ], ListTile);
 const TextInputEvents = {
     ...WidgetEvents,
@@ -1281,7 +1277,7 @@ class ContentBox extends Box {
     }
     build(suppressCallback = false) {
         super.build(true)
-            .addClass("default-content");
+            .addClass("content");
         return this.buildCallback(suppressCallback);
     }
 }

@@ -1,5 +1,3 @@
-import {cssNumber} from "jquery";
-
 class Pair<T, T1> {
     first: T;
     second: T1;
@@ -37,7 +35,12 @@ abstract class Mixin {
  * This class should be implemented by all classes which uses mixins
  */
 abstract class MixinImplementing extends Mixin {
+    public mixinsInitialized: boolean = false;
+
     protected mixinConstructor(...mixins: typeof Mixin[]) {
+        if (this.mixinsInitialized) {
+            return;
+        }
         mixins = (<typeof Mixin>this.constructor).__mixinDependencies;
         let mixinObjs = [];
         for (let type of mixins) {
@@ -46,12 +49,12 @@ abstract class MixinImplementing extends Mixin {
         }
         createMixinFields(this, ...mixinObjs);
         for (let type of mixins) {
-            // @ts-ignore
             if (type.prototype.hasOwnProperty("_constructor")) {
                 // @ts-ignore
                 type.prototype._constructor.call(this);
             }
         }
+        this.mixinsInitialized = true;
     }
 
     // /**
@@ -92,11 +95,11 @@ function hasMixins<T extends Mixin = MixinImplementing, T1 extends Mixin = Mixin
     T6 extends Mixin = MixinImplementing, T7 extends Mixin = MixinImplementing, T8 extends Mixin = MixinImplementing,
     T9 extends Mixin = MixinImplementing, T10 extends Mixin = MixinImplementing, T11 extends Mixin = MixinImplementing>
 (obj: any, ...mixins: typeof Mixin[]): obj is (MixinImplementing & T & T1 & T2 & T3 & T4 & T5 & T6 & T7 & T8 & T9 & T10 & T11) {
-    if (!obj.constructor.__mixinDependencies) {
+    if (obj.__mixinDependencies === undefined && obj.constructor.__mixinDependencies === undefined) {
         return false;
     }
     for (let value of mixins) {
-        if (obj.constructor.__mixinDependencies.indexOf(value) === -1) {
+        if ((obj.__mixinDependencies ?? obj.constructor.__mixinDependencies).indexOf(value) === -1) {
             return false;
         }
     }
@@ -191,8 +194,10 @@ function mixin(...mixins: typeof Mixin[]): Function {
     // applyMixins(constructor, mixins);
     mixins = orderMixins(mixins);
     return function (constructor: Function) {
-        if (!(constructor instanceof Mixin)) {
-            applyMixins(constructor, [...mixins]);
+
+        if (!(extendsClass(constructor, Mixin))) {
+            mixins = orderMixins([...mixins, ...getAllMixins(Object.getPrototypeOf(constructor))]);
+            applyMixins(constructor, mixins);
         }
         Object.defineProperty(
             constructor,
@@ -207,19 +212,37 @@ function mixin(...mixins: typeof Mixin[]): Function {
     };
 }
 
+function getAllMixins(constructor: typeof MixinImplementing): (typeof Mixin)[] {
+    if (!hasMixins<MixinImplementing>(constructor, MixinImplementing)) {
+        return [];
+    }
+    return [...constructor.__mixinDependencies, ...getAllMixins(Object.getPrototypeOf(constructor))];
+}
+
 /**
  * This converts a object of a type (like a Map) into an object.<br>
  * This can be useful e.g. if you want to convert something to json
  * @param input
  * @return {Object}
  */
-function toObject(input: Object): Object {
+function toObject(input: Object): any {
     // assertType<[Pair<string, number>]>(input, Pair);
     if (input instanceof Map) {
         return Object.fromEntries(input);
     } else {
         return input;
     }
+}
+
+function extendsClass(clazz: Function, superClass: Function): boolean {
+    let next = Object.getPrototypeOf(clazz);
+    while (next !== null) {
+        if (next === superClass) {
+            return true;
+        }
+        next = Object.getPrototypeOf(next);
+    }
+    return false;
 }
 
 function assertType<T extends Object, T1 extends Object = Object, T2 extends Object = Object,
@@ -235,8 +258,9 @@ function assertType<T extends Object, T1 extends Object = Object, T2 extends Obj
                 typeNameList.push(typeof i === "string" ? i : i.name);
                 continue;
             }
-        }
-        if (typeof i === "string") {
+        } else if (i === undefined || i === "undefined") {
+            typeNameList.push(typeof i === "string" ? i : typeof i);
+        } else if (typeof i === "string") {
             if (typeof obj !== i) {
                 switch (i) {
                     case "number":
@@ -265,31 +289,29 @@ function assertType<T extends Object, T1 extends Object = Object, T2 extends Obj
             }
         } else if (typeof i === "function") {
             if (!(obj instanceof i)) {
-                {
-                    switch (i) {
-                        case Number:
-                            if (typeof obj === "number") {
-                                break;
-                            }
-                        case String:
-                            if (typeof obj === "string") {
-                                break;
-                            }
-                        case BigInt:
-                            if (typeof obj === "bigint") {
-                                break;
-                            }
-                        case Symbol:
-                            if (typeof obj === "symbol") {
-                                break;
-                            }
-                        case Boolean:
-                            if (typeof obj === "boolean") {
-                                break;
-                            }
-                        default:
-                            typeNameList.push(i.name);
-                    }
+                switch (i) {
+                    case Number:
+                        if (typeof obj === "number") {
+                            break;
+                        }
+                    case String:
+                        if (typeof obj === "string") {
+                            break;
+                        }
+                    case BigInt:
+                        if (typeof obj === "bigint") {
+                            break;
+                        }
+                    case Symbol:
+                        if (typeof obj === "symbol") {
+                            break;
+                        }
+                    case Boolean:
+                        if (typeof obj === "boolean") {
+                            break;
+                        }
+                    default:
+                        typeNameList.push(i.name);
                 }
             }
         } else {
@@ -304,4 +326,4 @@ function assertType<T extends Object, T1 extends Object = Object, T2 extends Obj
     }
 }
 
-export {Pair, Tripel, Mixin, MixinImplementing, mixin, toObject, assertType, hasMixins};
+export {Pair, Tripel, Mixin, MixinImplementing, mixin, toObject, assertType, hasMixins, extendsClass};

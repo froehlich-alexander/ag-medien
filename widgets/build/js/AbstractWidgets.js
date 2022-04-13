@@ -425,13 +425,15 @@ class ItemContaining extends Mixin {
     }
     addItems(...items) {
         for (let i of items) {
-            this.addChild(ItemContaining.itemChildrenPrefix + this.itemCount, i);
-            this.dispatchEvent(ItemContainingEvents.itemAdded, [this.itemCount, i]);
-            if (hasMixins(i, Item)) {
-                console.log(i.constructor);
-                i.setIndex(this.itemCount);
+            for (let j of (i instanceof Array ? i : [i])) {
+                this.addChild(ItemContaining.itemChildrenPrefix + this.itemCount, j);
+                this.dispatchEvent(ItemContainingEvents.itemAdded, [this.itemCount, j]);
+                if (hasMixins(j, Item)) {
+                    console.log(j.constructor);
+                    j.setIndex(this.itemCount);
+                }
+                this.itemCount++;
             }
-            this.itemCount++;
         }
         if (this.built && items.length > 0) {
             this.rebuild();
@@ -467,6 +469,7 @@ class ItemContaining extends Mixin {
             if (indexes.indexOf(i) !== -1) {
                 this.children.delete(ItemContaining.itemChildrenPrefix + i);
                 removed.set(i, item);
+                item.hide();
                 item.domObject.detach();
                 continue;
             }
@@ -494,6 +497,24 @@ class ItemContaining extends Mixin {
             this.rebuild();
         }
         console.assert(this.itemCount === [...this.children.keys()].filter(value => ItemContaining.isItem(value)).length);
+    }
+    orderItems() {
+        for (let i = 0; i < this.itemCount; i++) {
+            let item = this.getItem(i);
+            if (hasMixins(item, Item)) {
+                if (i !== item.index) {
+                    this.setNewIndex(item, i, item.index);
+                }
+            }
+        }
+        return this;
+    }
+    setNewIndex(item, oldIndex, newIndex) {
+        let otherItem = this.getItem(newIndex);
+        if (otherItem !== undefined && hasMixins(otherItem, Item)) {
+            this.setNewIndex(otherItem, newIndex, otherItem.index);
+        }
+        this.children.set(ItemContaining.itemChildrenPrefix + newIndex, item);
     }
     removeItems(...items) {
         let indexes = [];
@@ -524,6 +545,9 @@ class ItemContaining extends Mixin {
     }
     get itemLength() {
         return this.itemCount;
+    }
+    getItem(index) {
+        return this.children.get(ItemContaining.itemChildrenPrefix + index);
     }
 }
 Object.defineProperty(ItemContaining, "itemChildrenPrefix", {
@@ -586,7 +610,7 @@ class CheckboxContaining extends Mixin {
         let changed = this._checked !== value;
         this._checked = value;
         if (changed) {
-            this.dispatchEvent(this._checked ? CheckboxEvents.selected : CheckboxEvents.unselected, [this._checked], CheckboxEvents.checkStateChanged);
+            this.dispatchEvent(this._checked ? CheckboxEvents.selected : CheckboxEvents.unselected, [this._checked], undefined, CheckboxEvents.checkStateChanged);
             if (this.built) {
                 this.rebuildCheckbox();
             }

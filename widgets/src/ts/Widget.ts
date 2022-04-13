@@ -2,6 +2,7 @@ import {Pair} from "./base.js";
 // import {$, jQuery} from "../lib/jquery";
 // import * as $ from "jquery";
 import "./imports.js";
+import Event = JQuery.Event;
 
 const WidgetEvents = {
     build: "build",
@@ -20,12 +21,12 @@ type EventCallback<T extends WidgetEvents, T1 extends HTMLElement, T2 extends Wi
     [type in T]?: EventHandler<T, T1, T2>;
 };
 
-type EventHandler<T extends WidgetEvents, T1 extends HTMLElement, T2 extends Widget<T, T1> = Widget<T, T1>> = (event: { type: T, target: T2 }, ...args: any[]) => void;
+type EventHandler<T extends WidgetEvents, T1 extends HTMLElement, T2 extends Widget<T, T1> = Widget<T, T1>> = (event: { type: T, target: T2, originalEvent: Event | null }, ...args: any[]) => void;
 
 abstract class _EventHandler<HtmlElementType extends HTMLElement> {
     public abstract on(events: EventCallback<string, HtmlElementType> | string, handler?: EventHandler<string, HtmlElementType>): this;
 
-    protected abstract dispatchEvent(type: string, args?: any[], ...acceptedTypes: string[]): this;
+    protected abstract dispatchEvent(type: string, args?: any[], originalEvent?: Event | null, ...acceptedTypes: string[]): this;
 }
 
 interface _Widget {
@@ -47,8 +48,8 @@ interface _Widget {
 abstract class Widget<EventType extends WidgetEvents, HtmlElementType extends HTMLElement = HTMLElement> extends _EventHandler<HtmlElementType> implements _Widget {
     private _built: boolean = false;
     private _domObject?: JQuery<HtmlElementType>;
-    protected readonly children: Map<string, Widget<WidgetEvents>> = new Map();
-    private readonly callbacks: Array<Pair<string, EventHandler<string, HtmlElementType>>> = [];
+    protected readonly children: Map<string, Widget<WidgetEvents, any>> = new Map();
+    private readonly callbacks: Array<Pair<string, EventHandler<string, HtmlElementType, this>>> = [];
     private readonly _disabledEvents: Set<string> = new Set();
     private _visibility: boolean = false;
     private _inheritVisibility: boolean = false;
@@ -92,7 +93,7 @@ abstract class Widget<EventType extends WidgetEvents, HtmlElementType extends HT
         this._domObject = <JQuery<HtmlElementType>>$(`<${this.htmlElementType}></${this.htmlElementType}>`)
             .addClass("widget")
             .toggleClass("hidingIfNotShown", this._hidingIfNotShown)
-            .on("click", () => this.dispatchEvent(WidgetEvents.clicked));
+            .on("click", (event) => this.dispatchEvent(WidgetEvents.clicked, undefined, event));
         // this.sizeSetObserver.observe(this._domObject.get()[0], {
         //     attributeFilter: ["style", "class"],
         // });
@@ -105,7 +106,7 @@ abstract class Widget<EventType extends WidgetEvents, HtmlElementType extends HT
             attributeFilter: ["style", "class"],
         });
         for (let i of this.children.values()) {
-            i?.tryRebuild();
+            i.tryRebuild();
         }
         return this.rebuildCallback(suppressCallback);
     }
@@ -148,7 +149,7 @@ abstract class Widget<EventType extends WidgetEvents, HtmlElementType extends HT
         return this._domObject!;
     }
 
-    public on(events: EventCallback<string, HtmlElementType> | string, handler?: EventHandler<string, HtmlElementType>): this {
+    public on(events: EventCallback<string, HtmlElementType, this> | string, handler?: EventHandler<string, HtmlElementType, this>): this {
         if (this._built) {
             // console.log("on called after element is built");
             // console.log(events);
@@ -158,23 +159,23 @@ abstract class Widget<EventType extends WidgetEvents, HtmlElementType extends HT
         console.assert(events != null);
         if (typeof events === "string") {
             console.assert(handler != null);
-            this.callbacks.push(new Pair<string, EventHandler<string, HtmlElementType>>(events, handler!));
+            this.callbacks.push(new Pair<string, EventHandler<string, HtmlElementType, this>>(events, handler!));
         } else {
             for (let i in events) {
-                this.callbacks.push(new Pair<string, EventHandler<string, HtmlElementType>>(i, events[i]!));
+                this.callbacks.push(new Pair<string, EventHandler<string, HtmlElementType, this>>(i, events[i]!));
                 console.log(new Pair(i, events[i]));
             }
         }
         return this;
     }
 
-    protected dispatchEvent(event: string, args?: any[], ...acceptedTypes: string[]): this {
+    protected dispatchEvent(event: string, args?: any[], originalEvent: Event | null = null, ...acceptedTypes: string[]): this {
         if (!this.eventDisabled(event)) {
             for (let i of this.callbacks.filter(value => value.first == event || value.first == WidgetEvents.all || value.first in acceptedTypes)) {
                 if (args != undefined && args.length > 0) {
-                    i.second({type: event, target: this}, ...args);
+                    i.second({type: event, target: this, originalEvent: originalEvent}, ...args);
                 } else {
-                    i.second({type: event, target: this});
+                    i.second({type: event, target: this, originalEvent: originalEvent});
                 }
             }
         }
@@ -190,8 +191,7 @@ abstract class Widget<EventType extends WidgetEvents, HtmlElementType extends HT
      */
     protected addChild<ChildHtmlElementType extends HTMLElement>(childName: string, child?: Widget<WidgetEvents, ChildHtmlElementType>): this {
         if (child === undefined) {
-            // @ts-ignore
-            child = this[childName];
+            child = this[childName as keyof this] as unknown as Widget<WidgetEvents, ChildHtmlElementType>;
         }
         if (childName.startsWith("_")) {
             childName = childName.replaceAll(new RegExp("^[_#]*", "g"), "");

@@ -58,7 +58,44 @@ Object.defineProperty(Mixin, "__mixinDependencies", {
  * This class should be implemented by all classes which uses mixins
  */
 class MixinImplementing extends Mixin {
+    constructor() {
+        super(...arguments);
+        Object.defineProperty(this, "mixinsInitialized", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: false
+        });
+        // /**
+        //  * Whether the instance implements <b>all</b> given mixins
+        //  * @param {typeof Mixin} mixins
+        //  * @return {boolean}
+        //  */
+        // public hasMixins<T extends Mixin, T1 extends Mixin = MixinImplementing, T2 extends Mixin = MixinImplementing,
+        //     T3 extends Mixin = MixinImplementing, T4 extends Mixin = MixinImplementing, T5 extends Mixin = MixinImplementing,
+        //     T6 extends Mixin = MixinImplementing, T7 extends Mixin = MixinImplementing, T8 extends Mixin = MixinImplementing,
+        //     T9 extends Mixin = MixinImplementing, T10 extends Mixin = MixinImplementing, T11 extends Mixin = MixinImplementing>
+        // (self = this as MixinImplementing, ...mixins: typeof Mixin[]): self is (MixinImplementing & T & T1 & T2 & T3 & T4 & T5 & T6 & T7 & T8 & T9 & T10 & T11) {
+        //     for (let value of mixins) {
+        //         if ((<typeof Mixin>this.constructor).__mixinDependencies.indexOf(value) !== -1) {
+        //             return false;
+        //         }
+        //     }
+        //     return true;
+        // }
+        //
+        // public hasMixins1<T extends Mixin, T1 extends Mixin = MixinImplementing, T2 extends Mixin = MixinImplementing,
+        //     T3 extends Mixin = MixinImplementing, T4 extends Mixin = MixinImplementing, T5 extends Mixin = MixinImplementing,
+        //     T6 extends Mixin = MixinImplementing, T7 extends Mixin = MixinImplementing, T8 extends Mixin = MixinImplementing,
+        //     T9 extends Mixin = MixinImplementing, T10 extends Mixin = MixinImplementing, T11 extends Mixin = MixinImplementing>
+        // (...mixins: typeof Mixin[]): boolean {
+        //     return hasMixins<T>(this, ...mixins);
+        // }
+    }
     mixinConstructor(...mixins) {
+        if (this.mixinsInitialized) {
+            return;
+        }
         mixins = this.constructor.__mixinDependencies;
         let mixinObjs = [];
         for (let type of mixins) {
@@ -67,12 +104,12 @@ class MixinImplementing extends Mixin {
         }
         createMixinFields(this, ...mixinObjs);
         for (let type of mixins) {
-            // @ts-ignore
             if (type.prototype.hasOwnProperty("_constructor")) {
                 // @ts-ignore
                 type.prototype._constructor.call(this);
             }
         }
+        this.mixinsInitialized = true;
     }
 }
 /**
@@ -82,11 +119,11 @@ class MixinImplementing extends Mixin {
  * @return {obj is {@link MixinImplementing} & T & T1 & T2 & T3 & T4 & T5 & T6 & T7 & T8 & T9 & T10 & T11}
  */
 function hasMixins(obj, ...mixins) {
-    if (!obj.constructor.__mixinDependencies) {
+    if (obj.__mixinDependencies === undefined && obj.constructor.__mixinDependencies === undefined) {
         return false;
     }
     for (let value of mixins) {
-        if (obj.constructor.__mixinDependencies.indexOf(value) === -1) {
+        if ((obj.__mixinDependencies ?? obj.constructor.__mixinDependencies).indexOf(value) === -1) {
             return false;
         }
     }
@@ -173,8 +210,9 @@ function mixin(...mixins) {
     // applyMixins(constructor, mixins);
     mixins = orderMixins(mixins);
     return function (constructor) {
-        if (!(constructor instanceof Mixin)) {
-            applyMixins(constructor, [...mixins]);
+        if (!(extendsClass(constructor, Mixin))) {
+            mixins = orderMixins([...mixins, ...getAllMixins(Object.getPrototypeOf(constructor))]);
+            applyMixins(constructor, mixins);
         }
         Object.defineProperty(constructor, "__mixinDependencies", {
             configurable: false,
@@ -183,6 +221,12 @@ function mixin(...mixins) {
             value: mixins
         });
     };
+}
+function getAllMixins(constructor) {
+    if (!hasMixins(constructor, MixinImplementing)) {
+        return [];
+    }
+    return [...constructor.__mixinDependencies, ...getAllMixins(Object.getPrototypeOf(constructor))];
 }
 /**
  * This converts a object of a type (like a Map) into an object.<br>
@@ -199,6 +243,16 @@ function toObject(input) {
         return input;
     }
 }
+function extendsClass(clazz, superClass) {
+    let next = Object.getPrototypeOf(clazz);
+    while (next !== null) {
+        if (next === superClass) {
+            return true;
+        }
+        next = Object.getPrototypeOf(next);
+    }
+    return false;
+}
 function assertType(obj, ...types) {
     let typeNameList = [];
     let objList = [];
@@ -209,7 +263,10 @@ function assertType(obj, ...types) {
                 continue;
             }
         }
-        if (typeof i === "string") {
+        else if (i === undefined || i === "undefined") {
+            typeNameList.push(typeof i === "string" ? i : typeof i);
+        }
+        else if (typeof i === "string") {
             if (typeof obj !== i) {
                 switch (i) {
                     case "number":
@@ -239,31 +296,29 @@ function assertType(obj, ...types) {
         }
         else if (typeof i === "function") {
             if (!(obj instanceof i)) {
-                {
-                    switch (i) {
-                        case Number:
-                            if (typeof obj === "number") {
-                                break;
-                            }
-                        case String:
-                            if (typeof obj === "string") {
-                                break;
-                            }
-                        case BigInt:
-                            if (typeof obj === "bigint") {
-                                break;
-                            }
-                        case Symbol:
-                            if (typeof obj === "symbol") {
-                                break;
-                            }
-                        case Boolean:
-                            if (typeof obj === "boolean") {
-                                break;
-                            }
-                        default:
-                            typeNameList.push(i.name);
-                    }
+                switch (i) {
+                    case Number:
+                        if (typeof obj === "number") {
+                            break;
+                        }
+                    case String:
+                        if (typeof obj === "string") {
+                            break;
+                        }
+                    case BigInt:
+                        if (typeof obj === "bigint") {
+                            break;
+                        }
+                    case Symbol:
+                        if (typeof obj === "symbol") {
+                            break;
+                        }
+                    case Boolean:
+                        if (typeof obj === "boolean") {
+                            break;
+                        }
+                    default:
+                        typeNameList.push(i.name);
                 }
             }
         }
@@ -278,5 +333,5 @@ function assertType(obj, ...types) {
         console.error(`Do not pass objects as types!!!\nObjects were of types "${objList.join(", ")}"`);
     }
 }
-export { Pair, Tripel, Mixin, MixinImplementing, mixin, toObject, assertType, hasMixins };
+export { Pair, Tripel, Mixin, MixinImplementing, mixin, toObject, assertType, hasMixins, extendsClass };
 //# sourceMappingURL=base.js.map

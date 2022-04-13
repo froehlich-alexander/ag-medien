@@ -64,10 +64,7 @@ class Icon extends Widget<IconEvents, HTMLDivElement> {
 
     public override build(suppressCallback: boolean = false): JQuery<HTMLDivElement> {
         super.build(true)
-            .addClass("icon-widget")
-            .on("click", () => {
-                this.dispatchEvent(WidgetEvents.clicked);
-            });
+            .addClass("icon-widget");
         return this.buildCallback(suppressCallback);
     }
 
@@ -184,7 +181,7 @@ class Button extends Widget<ButtonEvents, HTMLDivElement> {
             //     .text(this.label)
             //     .addClass("text"))
             .append(this._label.build())
-            .on("click", () => this.dispatchEvent(ButtonEvents.clicked));
+            // .on("click", () => this.dispatchEvent(ButtonEvents.clicked));
         this.buildCallback(suppressCallback);
         return this.domObject;
     }
@@ -357,7 +354,7 @@ enum FlexAlign {
  * Padding is used for space at the start / end of the whole container<br>
  * CSS column-gap is used for space between the items
  */
-class FlexBox<EventType extends WidgetEvents, HtmlElementType extends HTMLElement> extends Widget<EventType, HtmlElementType> {
+class FlexBox<EventType extends WidgetEvents, HtmlElementType extends HTMLElement = HTMLDivElement> extends Widget<EventType, HtmlElementType> {
     private readonly items: Tripel<Widget<WidgetEvents>, FlexAlign, FlexAlign>[] = [];
     private _startSpacing: string = "";
     private _endSpacing: string = "";
@@ -666,18 +663,14 @@ class Top<HtmlElementType extends HTMLElement = HTMLDivElement> extends FlexBox<
 interface Top<HtmlElementType extends HTMLElement = HTMLDivElement> extends MixinImplementing, OneIconContaining<WidgetEvents, HtmlElementType> {
 }
 
-interface ListTile<EventType extends WidgetEvents | IconContainingEvents, HtmlElementType extends HTMLElement = HTMLDivElement> extends FlexBox<EventType, HtmlElementType>, MixinImplementing, Item, ColorEditable<EventType, HtmlElementType>, SpacingEditable<EventType, HtmlElementType>, LeadingTrailingIconContaining<EventType, HtmlElementType>, CheckboxContaining<EventType, HtmlElementType> {
-}
-
-@mixin(Item, ColorEditable, SpacingEditable, LeadingTrailingIconContaining, CheckboxContaining)
+@mixin(ColorEditable, SpacingEditable, LeadingTrailingIconContaining, CheckboxContaining)
 class ListTile<EventType extends WidgetEvents | IconContainingEvents, HtmlElementType extends HTMLElement = HTMLDivElement> extends FlexBox<EventType, HtmlElementType> {
     private readonly _label: Text = new Text();
     private readonly _description: Text = new Text();
 
     constructor() {
         super();
-        this.mixinConstructor(SpacingEditable, LeadingTrailingIconContaining, ColorEditable, CheckboxContaining);
-        // createMixinFields(this, new ColorEditable(), new SpacingEditable(), new LeadingTrailingIconContaining());
+        this.mixinConstructor();
 
         this._label.setInheritVisibility(true);
         this._description.setInheritVisibility(false);
@@ -731,6 +724,9 @@ class ListTile<EventType extends WidgetEvents | IconContainingEvents, HtmlElemen
     public get description(): Text {
         return this._description;
     }
+}
+
+interface ListTile<EventType extends WidgetEvents | IconContainingEvents, HtmlElementType extends HTMLElement = HTMLDivElement> extends FlexBox<EventType, HtmlElementType>, MixinImplementing, ColorEditable<EventType, HtmlElementType>, SpacingEditable<EventType, HtmlElementType>, LeadingTrailingIconContaining<EventType, HtmlElementType>, CheckboxContaining<EventType, HtmlElementType> {
 }
 
 const TextInputEvents = {
@@ -1225,7 +1221,7 @@ class ContentBox<HtmlElementType extends HTMLElement = HTMLDivElement, ItemType 
 
     public override build(suppressCallback: boolean = false): JQuery<HtmlElementType> {
         super.build(true)
-            .addClass("default-content");
+            .addClass("content");
         return this.buildCallback(suppressCallback);
     }
 }

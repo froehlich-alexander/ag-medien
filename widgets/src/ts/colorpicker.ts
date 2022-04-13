@@ -1,4 +1,5 @@
-import {Pair, toObject} from "./base.js";
+import {cssNumber, timers} from "jquery";
+import {mixin, MixinImplementing, Pair, toObject} from "./base.js";
 import {Dialog, DialogEvents} from "./Dialog.js";
 import {Overlay} from "./Overlay.js";
 import {Widget, WidgetEvents} from "./Widget.js";
@@ -17,7 +18,7 @@ import {
     Top,
     TopEvents
 } from "./Widgets.js";
-import {CheckboxEvents, EventCallbacks} from "./AbstractWidgets.js";
+import {CheckboxEvents, EventCallbacks, Item} from "./AbstractWidgets.js";
 import nameInput = Utils.nameInput;
 
 type ColorSchemeMap = Map<string, ColorScheme>;
@@ -25,14 +26,33 @@ type ColorSchemeMap = Map<string, ColorScheme>;
 class ColorMap extends Map<string, string> {
 }
 
-class ColorScheme {
-    private _name: string;
-    private _author: string;
-    private readonly _id: string;
-    private readonly _colors: ColorMap = new ColorMap();
+/**
+ * Class for the colorSchemes saved to the local storage
+ */
+class ColorSchemeData {
+    public name: string | undefined;
+    public author: string | undefined;
+    public id: string | undefined;
+    public current: boolean | undefined;
+    public preDefined: boolean | undefined;
+    public colors: { [index: string]: string } | undefined;
+}
 
-    private _current: boolean = false;
-    private _preDefined: boolean = false;
+class ColorSchemeInterface {
+    protected _name: string | undefined;
+    protected _author: string | undefined;
+    protected _id: string | undefined;
+    protected readonly _colors: ColorMap = new ColorMap();
+
+    protected _current: boolean = false;
+    protected _preDefined: boolean = false;
+}
+
+class ColorScheme extends ColorSchemeInterface {
+    override readonly _id: string = "";
+
+    constructor(service: ColorPickerService, id?: string, name?: string, author?: string, colors?: ColorMap);
+    constructor(rawDataObject: ColorSchemeInterface);
 
     /**
      * DON'T USE THIS CONSTRUCTOR!!! USE {@link get} instead<br>
@@ -43,7 +63,8 @@ class ColorScheme {
      * @param name {string | null}
      * @param colors {{string: string}}
      */
-    public constructor(service: ColorPickerService | Object, id?: string, name?: string, author?: string, colors: ColorMap = new Map()) {
+    public constructor(service: ColorPickerService | ColorSchemeInterface, id?: string, name?: string, author?: string, colors: ColorMap = new Map()) {
+        super();
         console.assert(service != null, "service is null");
         if (service instanceof ColorPickerService) {
             this._id = id != null ? id : service.generateId();
@@ -59,21 +80,21 @@ class ColorScheme {
                 // console.log(key);
                 // console.log(Object.getOwnPropertyDescriptor(service, key));
                 // Object.defineProperty(this, key, Object.getOwnPropertyDescriptor(service, key));
-                // @ts-ignore
-                this[key] = service[key];
+                this[key as keyof ColorSchemeInterface] = service[key as keyof ColorSchemeInterface];
             }
         }
     }
 
     /**
-     * @return {ColorScheme}
+     * Used for the {@link JSON.stringify} call
+     * @return {ColorSchemeData}
      */
-    public toJSON(): ColorScheme {
-        let copy = {};
+    public toJSON(): ColorSchemeData {
+        let copy: ColorSchemeData = new ColorSchemeData;
         for (let key of Object.keys(this)) {
-            let newKey = key.replace("#", "");
+            let newKey: keyof ColorSchemeData = key.replace("#", "") as keyof ColorSchemeData;
             if (newKey.startsWith("_")) {
-                newKey = newKey.substring(1, newKey.length);
+                newKey = newKey.substring(1, newKey.length) as keyof ColorSchemeData;
             }
             // Object.defineProperty(copy, newKey, {
             //     value: Object.getOwnPropertyDescriptor(this, key).value,
@@ -81,8 +102,7 @@ class ColorScheme {
             //     writable: true,
             //     configurable: true
             // });
-            // @ts-ignore
-            copy[newKey] = toObject(this[key]);
+            copy[newKey] = toObject(this[key as keyof this]);
         }
         // @ts-ignore
         // copy["current"] = this._current;
@@ -97,8 +117,8 @@ class ColorScheme {
      * @param {Object} jsonColorScheme
      * @return {Object}
      */
-    public static fromJSON(jsonColorScheme: Object): ColorScheme {
-        let colorScheme = {};
+    public static fromJSON(jsonColorScheme: ColorSchemeData): ColorScheme {
+        let colorScheme: ColorSchemeInterface = new ColorSchemeInterface();
         for (let [key, value] of Object.entries(jsonColorScheme)) {
             let newKey = "";
             let newValue;
@@ -131,7 +151,7 @@ class ColorScheme {
 
     public copy(colorScheme?: ColorScheme): ColorScheme {
         if (colorScheme === undefined) {
-            colorScheme = new ColorScheme({});
+            colorScheme = new ColorScheme(new ColorSchemeInterface());
         }
         return colorScheme.setName(this.name)
             .setAuthor(this.author)
@@ -139,7 +159,7 @@ class ColorScheme {
     }
 
     public get name(): string {
-        return this._name;
+        return this._name!;
     }
 
     public setName(name: string): this {
@@ -148,7 +168,7 @@ class ColorScheme {
     }
 
     public get author(): string {
-        return this._author;
+        return this._author!;
     }
 
     public setAuthor(author: string): this {
@@ -196,34 +216,37 @@ class ColorPickerService {
     // #preDefined: boolean = false;
 
     private _all: ColorSchemeMap = new Map<string, ColorScheme>();
-    private _colorTypes: string[] = [];
+    private readonly _colorTypes: string[] = [];
     private fruits: string[] = ["fgf", "fd", "gfdsg"];
 
     constructor() {
         let default1 = this.getDefault(true);
+        //init colorTypes
         for (let i of default1.colors.keys()) {
             if (this._colorTypes.indexOf(i) == -1) {
                 this._colorTypes.push(i);
             }
         }
-        this.save(default1);
-        let all = window.localStorage.getItem("colors") != null ? JSON.parse(window.localStorage.getItem("colors")) : {};
+        let all: { [index: number]: ColorSchemeData } = JSON.parse(window.localStorage.getItem("colors") ?? "{}");
+        // let all = window.localStorage.getItem("colors") != null ? JSON.parse(window.localStorage.getItem("colors")) : {};
         for (let colorJson of Object.values(all)) {
             let color = ColorScheme.fromJSON(colorJson);
             this._all.set(color.id, color);
+            this.activate(this._all.get(window.localStorage.getItem("current_color") ?? this.getDefault().id) ?? this.getDefault());
 
-            if (this._all.has(window.localStorage.getItem("current_color"))) {
-                this.activate(this._all.get(window.localStorage.getItem("current_color")));
-            } else {
-                this.activate(this.getDefault());
-            }
+            // if (this._all.has(window.localStorage.getItem("current_color"))) {
+            //     this.activate(this._all.get(window.localStorage.getItem("current_color")));
+            // } else {
+            //     this.activate(this.getDefault());
+            // }
         }
+        this.save(default1);
     }
 
     /**
      * Writes all colors into body to override the default colors
      */
-    activate(colorScheme: ColorScheme) {
+    public activate(colorScheme: ColorScheme) {
         for (let [type, color] of colorScheme.colors.entries()) {
             document.body.style.setProperty(type, color);
         }
@@ -231,17 +254,25 @@ class ColorPickerService {
     }
 
     /**
-     * Return the instance by id or create a new one
-     * @param id {string | null}
+     * Return a new {@link ColorScheme} instance and add it to {@link ColorPickerService.all}
+     * @return {ColorScheme}
      */
-    getColorScheme(id?: string): ColorScheme {
+    public getColorScheme(): ColorScheme;
+    /**
+     * Get the instance by the id given or create a new one and add ite to {@link ColorPickerService.all}
+     * @param {string} id
+     * @return {ColorScheme | undefined}
+     */
+    public getColorScheme(id: string): ColorScheme;
+
+    public getColorScheme(id?: string): ColorScheme {
         //todo check necessary if
-        if (id != null && this._all.has(id)) {
-            return this._all.get(id);
+        if (id !== undefined && this._all.has(id)) {
+            return this._all.get(id)!;
         }
-        let n = new ColorScheme(this, id);
-        this._all.set(n.id, n);
-        return n;
+        let newColorScheme = new ColorScheme(this, id);
+        this._all.set(newColorScheme.id, newColorScheme);
+        return newColorScheme;
     }
 
     /**
@@ -255,7 +286,7 @@ class ColorPickerService {
         const cssVars: Map<string, string> = new Map<string, string>();
 
         for (let i = 0; i < styleSheets.length; i++) {
-            if (href != null && !new RegExp(href).test(styleSheets[i].href)) {
+            if (href != null && !new RegExp(href).test(styleSheets[i].href ?? "")) {
                 continue;
             }
             try {
@@ -343,11 +374,12 @@ class ColorPickerService {
             this._all.set(i.id, i);
         }
         // let colors = window.localStorage.getItem("colors") != null ? JSON.parse(window.localStorage.getItem("colors")) : {};
-        let colors = JSON.parse(window.localStorage.getItem("colors") ?? "{}");
-        for (let [id, color] of this._all.entries()) {
-            colors[id] = color;
-        }
-        window.localStorage.setItem("colors", JSON.stringify(colors));
+        // let colors = JSON.parse(window.localStorage.getItem("colors") ?? "{}");
+        // for (let [id, color] of this._all.entries()) {
+        //     colors[id] = color;
+        // }
+
+        window.localStorage.setItem("colors", JSON.stringify(toObject(this._all)));
         return this;
     }
 
@@ -356,10 +388,10 @@ class ColorPickerService {
      * @param colorType {string}
      * @param newColor {string}
      */
-    onChange(colorType: string, newColor: string) {
+    public onChange(colorType: string, newColor: string) {
         let colorScheme = this.getCurrent();
-        if (colorScheme == null || colorScheme.preDefined) {
-            colorScheme = new ColorScheme(this, null, null, null, this.getColorScheme(colorType).colors);
+        if (colorScheme.preDefined) {
+            colorScheme = new ColorScheme(this, undefined, undefined, undefined, this.getCurrent().colors);
             console.log("hmm");
             console.log(colorScheme);
         }
@@ -373,20 +405,39 @@ class ColorPickerService {
         return this._all;
     }
 
-    public delete(...colorScheme: (ColorScheme | string)[]): this {
+    public delete(...colorScheme: (ColorScheme | string)[] | (ColorScheme | string)[][]): this {
+        console.log(colorScheme);
         for (let i of colorScheme) {
-            if (i instanceof ColorScheme) {
-                i = i.id;
+            for (let j of (i instanceof Array ? i : [i])) {
+                if (j instanceof ColorScheme) {
+                    j = j.id;
+                }
+
+                let colorScheme1 = this._all.get(j);
+                if (colorScheme1 !== undefined) {
+                    if (colorScheme1.preDefined) {
+                        //TODO 12.04.2022 alert user ??? bc predefined?
+                        continue;
+                    }
+                    if (colorScheme1.current) {
+                        this.activate(this.getDefault());
+                    }
+                    console.log(j);
+                    console.log(this._all.delete(j));
+                } else {
+                    console.warn("Cannot find ColorScheme (-id)'", j, "' in ColorPickerService.all");
+                }
             }
-            this._all.delete(i);
         }
+        console.log(this._all);
+        this.save();
         return this;
     }
 
     /**
      *
-     * @param forceReload {boolean}
-     * @return {ColorPickerService}
+     * @param {boolean} forceReload
+     * @return {ColorScheme}
      */
     public getCurrent(forceReload: boolean = false): ColorScheme {
         if (!forceReload) {
@@ -396,7 +447,9 @@ class ColorPickerService {
                 }
             }
         }
-        return window.localStorage.getItem("current_color") != null ? (this._all.has(window.localStorage.getItem("current_color")) ? this._all.get(window.localStorage.getItem("current_color")) : this.getDefault()) : this.getDefault();
+        return this._all.get(window.localStorage.getItem("current_color") ?? this.getDefault().id) ?? this.getDefault();
+        // return window.localStorage.getItem("current_color") != null ? (this._all.has(window.localStorage.getItem("current_color")) ?
+        //     this._all.get(window.localStorage.getItem("current_color")) : this.getDefault()) : this.getDefault();
     }
 
     public get colorTypes(): string[] {
@@ -422,9 +475,12 @@ const ColorPickerItemEvents = {
 };
 type ColorPickerItemEvents = (typeof ColorPickerItemEvents)[keyof typeof ColorPickerItemEvents];
 
-class ColorPickerItem extends ListTile<ColorPickerItemEvents> {
-    constructor() {
+class ColorPickerItem extends ListTile<ColorPickerItemEvents, HTMLDivElement> {
+    private _colorType: string;
+
+    constructor(colorType: string) {
         super();
+        this._colorType = colorType;
         this.setInheritVisibility(true);
         this.setTrailingIcon(Icon.Edit());
         this.enableTrailingIcon(true);
@@ -438,11 +494,19 @@ class ColorPickerItem extends ListTile<ColorPickerItemEvents> {
         this.buildCallback(suppressCallback);
         return this.domObject;
     }
+
+    public setColorType(colorType: string): this {
+        this._colorType = colorType;
+        return this;
+    }
+
+    public get colorType(): string {
+        return this._colorType;
+    }
 }
 
-class ColorPicker extends Dialog<WidgetEvents, ColorScheme> {
+class ColorPicker extends Dialog<WidgetEvents, ColorScheme, HTMLDivElement, HTMLDivElement, ColorPickerItem | FlexBox<WidgetEvents>> {
     private readonly colorPickerService: ColorPickerService;
-    private readonly top: Top;
     private readonly colorSchemeDialog: Overlay<ColorSchemeDialog>;
     // private readonly colorSchemeNewDialog: Overlay<ColorSchemeNewDialog>;
     private readonly colorSchemeButton: Button;
@@ -482,23 +546,28 @@ class ColorPicker extends Dialog<WidgetEvents, ColorScheme> {
             .addItem(this.colorSchemeButton, FlexAlign.start)
             .setSpacing("3rem", "1rem", "2rem");
 
-        this.top = new Top().setLabel("Color-Picker")
-            .setInheritVisibility(true)
-            .setIcon(Icon.Close().setClickable(true));
-        this.addChild("top", this.top);
+        this.enableTop(true);
+        this.aTop.setLabel("Color-Picker")
+            .on(TopEvents.iconClicked, () => this.reject())
+            .setDefaultTop(true);
+        this.enableContent(true);
+        // this.top = new Top().setLabel("Color-Picker")
+        //     .setInheritVisibility(true)
+        //     .setIcon(Icon.Close().setClickable(true));
+        // this.addChild("top", this.top);
         this.addChild("colorSchemeDialog", this.colorSchemeDialog);
         // this.children.set("colorSchemeNewDialog", this.colorSchemeNewDialog);
         // this.children.set("colorSchemeButton", this.colorSchemeButton);
         // this.children.set("colorSchemeLabel", this.colorSchemeLabel);
         this.addChild("colorSchemeBox", this.colorSchemeBox);
 
-        this.on("sizeSet", () => this.domObject.children(".content").css("max-height", "calc(100% - "
-            // + this.domObject.find(".bottom").outerHeight(true) + "px - "
-            + this.domObject.children(".top").outerHeight(true) + "px)"));
+        // this.on("sizeSet", () => this.domObject.children(".content").css("max-height", "calc(100% - "
+        //     // + this.domObject.find(".bottom").outerHeight(true) + "px - "
+        //     + this.domObject.children(".title-widget").outerHeight(true) + "px)"));
         this.enableButtons(false);
     }
 
-    public override build(suppressCallback: boolean = false): JQuery<HTMLElement> {
+    public override build(suppressCallback: boolean = false): JQuery<HTMLDivElement> {
         //color schemes
         // for (let scheme of this.colorPickerService.all.values()) {
         //     let item = new SelectMenuItem<string>()
@@ -515,13 +584,14 @@ class ColorPicker extends Dialog<WidgetEvents, ColorScheme> {
             .addClass("color-picker")
             .append(this.colorSchemeDialog.build())
             // .append(this.colorSchemeNewDialog.build())
-            .append(this.top.build()
-                .addClass("top"));
+            // .append(this.top.build()
+            //     .addClass("top"));
+            .append(this.buildTop());
         // this.colorSchemeDialog.widget.domObject
         //     .addClass("color-scheme-dialog");
-        let content = $("<div></div>")
-            .addClass("content")
-            .appendTo(this.domObject);
+        // let content = $("<div></div>")
+        //     .addClass("content")
+        //     .appendTo(this.domObject);
 
         //color scheme select menu
         // content.append($("<div></div>")
@@ -534,46 +604,71 @@ class ColorPicker extends Dialog<WidgetEvents, ColorScheme> {
         //         .addClass("label"))
         //     .append(this.colorSchemeButton.build()
         //         .addClass("button")));
-        content.append(this.colorSchemeBox.build()
-            .addClass("color-scheme"));
+        this.aContent.addItems(this.colorSchemeBox);
+        this.aContent.addItems(...this.colorPickerService.colorTypes
+            // not needed because colorType won't change
+            // filter old items
+            // .filter(v => this.aContent.items.findIndex(value => value.colorType === v) === -1)
+            .map(v => {
+                let item = new ColorPickerItem(v);
+                item.backgroundColor.set(`var(${v})`);
+                item.label.set(this.colorPickerService.getDisplayColorName(v));
+                return item.setInheritVisibility(true).on(ColorPickerItemEvents.colorChanged, (event, colorValue) => this.colorPickerService.onChange((<ColorPickerItem>event.target).colorType, colorValue));
+            }));
+
+        this.domObject.append(this.buildContent());
+        this.colorSchemeBox.domObject
+            .addClass("color-scheme");
 
         //color items
-        let i = 0;
-        for (let colorType of this.colorPickerService.colorTypes) {
-            let item = new ColorPickerItem();
-            this.addChild("colorPickerItem" + i, item);
-
-            item.setVisibility(this.visibility);
-            item.backgroundColor.set("var(" + colorType + ")");
-            item.label.set(this.colorPickerService.getDisplayColorName(colorType));
-            item.on(ColorPickerItemEvents.colorChanged, (event, colorValue) => this.colorPickerService.onChange((<ColorPickerItem>event.target).label.get(), colorValue));
-
-            content.append(item.build());
-            i++;
-        }
+        // let i = 0;
+        // for (let colorType of this.colorPickerService.colorTypes) {
+        //     let item = new ColorPickerItem(colorType);
+        //     this.addChild("colorPickerItem" + i, item);
+        //
+        //     item.setVisibility(this.visibility);
+        //     item.backgroundColor.set("var(" + colorType + ")");
+        //     item.label.set(this.colorPickerService.getDisplayColorName(colorType));
+        //     item.on(ColorPickerItemEvents.colorChanged, (event, colorValue) => this.colorPickerService.onChange((<ColorPickerItem>event.target).label.get(), colorValue));
+        //
+        //     this.aContent.domObject.append(item.build());
+        //     i++;
+        // }
 
         this.buildCallback(suppressCallback);
         return this.domObject;
     }
 
+    public override rebuild(suppressCallback: boolean = false): JQuery<HTMLDivElement> {
+        super.rebuild(true);
+
+        return this.rebuildCallback(suppressCallback);
+    }
+
     protected setValue(): ColorScheme {
-        this.value = this.colorPickerService.getCurrent();
-        return this.value;
+        this._value = this.colorPickerService.getCurrent();
+        return this.value!;
     }
 }
 
 enum ColorSchemeItemEvents {
-    infoCLicked = "infoCLicked",
+    infoClicked = "infoClicked",
 }
 
+interface ColorSchemeItem extends MixinImplementing, Item {
+}
+
+@mixin(Item)
 class ColorSchemeItem extends ListTile<WidgetEvents | CheckboxEvents | ColorSchemeItemEvents> {
     private readonly _colorScheme: ColorScheme;
 
     constructor(colorScheme: ColorScheme) {
         super();
+        this.mixinConstructor();
         this._colorScheme = colorScheme;
         this.setLeadingIcon(Icon.Info());
-        this.leadingIcon.on(WidgetEvents.clicked, () => console.log("icon clicked")).on(WidgetEvents.clicked, () => this.dispatchEvent(ColorSchemeItemEvents.infoCLicked));
+        this.leadingIcon.on(WidgetEvents.clicked, () => console.log("icon clicked"))
+            .on(WidgetEvents.clicked, () => this.dispatchEvent(ColorSchemeItemEvents.infoClicked));
         this.addItem(Icon.Back(), FlexAlign.start);
         this.setLabel(colorScheme.name);
         this.enableCheckbox(true);
@@ -597,7 +692,7 @@ class ColorSchemeItem extends ListTile<WidgetEvents | CheckboxEvents | ColorSche
     }
 }
 
-class ColorSchemeDialog extends Dialog<any, null> {
+class ColorSchemeDialog extends Dialog<DialogEvents, null, HTMLDivElement, HTMLDivElement, ColorSchemeItem> {
     private readonly colorSchemeNewDialog: Overlay<ColorSchemeNewDialog>;
     private readonly colorSchemeInfoDialog: Overlay<ColorSchemeInfoDialog>;
     private readonly colorPickerService: ColorPickerService;
@@ -624,7 +719,11 @@ class ColorSchemeDialog extends Dialog<any, null> {
             .addButton(Button.Delete()
                 .on(ButtonEvents.clicked, (event) => {
                     console.log("delete");
-                    this.colorPickerService.delete(...<ColorScheme[]><unknown>this.aContent.items);
+                    this.colorPickerService.delete(this.aContent.items
+                        .filter(v => v.checked && !v.colorScheme.preDefined)
+                        //TODO 12.04.2022 alert if one is trying to delete pre defined colorSchemes
+                        .map(v => v.colorScheme));
+                    this.rebuild();
                 }), FlexAlign.end)
             .addButton(new Button().setLabel("New").setIcon(Icon.of("add", IconType.material))
                 .on(ButtonEvents.clicked, (event) => {
@@ -637,21 +736,42 @@ class ColorSchemeDialog extends Dialog<any, null> {
         this.addChild("colorSchemeInfoDialog");
     }
 
-    public override rebuild(suppressCallback: boolean = false): JQuery<HTMLElement> {
+    public override rebuild(suppressCallback: boolean = false): JQuery<HTMLDivElement> {
         super.rebuild(true);
         //color schemes
-        this.aContent.addItems(...[...this.colorPickerService.all.values()]
+        this.aContent.addItems([...this.colorPickerService.all.values()]
             .filter(value => this.aContent.items
-                .filter(v => (<ColorSchemeItem>v instanceof ColorSchemeItem))
-                .map(value1 => (<ColorSchemeItem>value1).colorScheme.id).indexOf(value.id) == -1)
+                // .filter(v => v instanceof ColorSchemeItem)//todo redundant? performance?
+                .map(value1 => value1.colorScheme.id).indexOf(value.id) === -1)
             .map(value => {
                 let item = new ColorSchemeItem(value)
                     .setInheritVisibility(true)
-                    .show();
+                    .show()
+                    .on(ColorSchemeItemEvents.infoClicked, (event) => {
+                        console.log("info clicked");
+                        console.log(event.target);
+                        this.colorSchemeInfoDialog.widget
+                            .open((event.target).colorScheme);
+                    });
                 item.build();
-                console.log(value);
                 return item;
             }));
+
+        let indexesToDelete: number[] = [];
+        this.aContent.items.map(value => value.colorScheme.id)
+            .forEach((value, index) => {
+                if (this.colorPickerService.all.get(value) === undefined) {
+                    // this.aContent.removeItem(index);
+                    indexesToDelete.push(index);
+                }
+            });
+        this.aContent.removeItem(...indexesToDelete);
+        let i = 0;
+        for (let c of this.colorPickerService.all.values()) {
+            this.aContent.items.find(value => value.colorScheme.id === c.id)!.setIndex(i);
+            i++;
+        }
+        this.aContent.orderItems().rebuild();
         // .filter()
         // .map(value => new SelectMenuItem<string>()
         //     .setInheritVisibility(true)
@@ -667,22 +787,22 @@ class ColorSchemeDialog extends Dialog<any, null> {
         return this.domObject;
     }
 
-    public override build(suppressCallback: boolean = false): JQuery<HTMLElement> {
+    public override build(suppressCallback: boolean = false): JQuery<HTMLDivElement> {
         super.build(true)
             .addClass("color-scheme-dialog")
             .append(this.colorSchemeNewDialog.build())
             .append(this.colorSchemeInfoDialog.build());
 
         //color schemes
-        this.aContent.addItems(...[...this.colorPickerService.all.values()].map(value => new ColorSchemeItem(value)
-            .setInheritVisibility(true)
-            .on(ColorSchemeItemEvents.infoCLicked, (event) => {
-                console.log("info clicked");
-                console.log(event.target);
-                this.colorSchemeInfoDialog.widget
-                    // .setColorScheme((<ColorSchemeItem>event.target).colorScheme)
-                    .open((<ColorSchemeItem>event.target).colorScheme);
-            })));
+        // this.aContent.addItems(...[...this.colorPickerService.all.values()].map((value, index) => new ColorSchemeItem(value)
+        //     .setInheritVisibility(true)
+        //     .on(ColorSchemeItemEvents.infoCLicked, (event) => {
+        //         console.log("info clicked");
+        //         console.log(event.target);
+        //         this.colorSchemeInfoDialog.widget
+        //             // .setColorScheme((<ColorSchemeItem>event.target).colorScheme)
+        //             .open((<ColorSchemeItem>event.target).colorScheme);
+        //     })));
 
         this.buildTop();
         this.buildContent();
@@ -725,7 +845,7 @@ namespace Utils {
     }
 }
 
-class ColorSchemeNewDialog extends Dialog<any, ColorScheme> {
+class ColorSchemeNewDialog extends Dialog<any, ColorScheme, HTMLDivElement, HTMLDivElement, Widget<WidgetEvents, HTMLDivElement>> {
     private baseScheme: ColorScheme;
     private readonly service: ColorPickerService;
     private readonly nameInput: TextInput;
@@ -777,12 +897,12 @@ class ColorSchemeNewDialog extends Dialog<any, ColorScheme> {
         // });
 
         this.colorSchemeSelectBox = Utils.colorSchemeSelectBox(this.service, ColorSchemeNewDialog.name)
-            .on(SelectBoxEvents.input, (event, value) => this.baseScheme = this.service.getColorScheme(value));
+            .on(SelectBoxEvents.input, (event, value) => this.baseScheme = this.service.getColorScheme(value)!);
 
         this.aContent.addItems(this.colorSchemeSelectBox, this.nameInput, this.authorInput);
     }
 
-    public override build(suppressCallback: boolean = false): JQuery<HTMLElement> {
+    public override build(suppressCallback: boolean = false): JQuery<HTMLDivElement> {
         super.build(true)
             .addClass("color-scheme-new-dialog");
 
@@ -816,7 +936,7 @@ class ColorSchemeNewDialog extends Dialog<any, ColorScheme> {
         return this.domObject;
     }
 
-    public override rebuild(suppressCallback: boolean = false): JQuery<HTMLElement> {
+    public override rebuild(suppressCallback: boolean = false): JQuery<HTMLDivElement> {
         super.rebuild(true);
 
         this.rebuildCallback(suppressCallback);
@@ -898,7 +1018,7 @@ class ColorSchemeInfoDialog extends Dialog<DialogEvents, ColorScheme> {
         this.enableButtons(true);
         this.aTop.setLabel(colorScheme.name)
             .setDefaultTop(true)
-            .on(TopEvents.iconClicked, () => this.reject());
+            .on(TopEvents.iconClicked, () => this.acceptOrReject());
         this.addButton(Button.Reset()
             .on(WidgetEvents.clicked, () => {
                 this.colorSchemeBackup.copy(this._colorScheme);
@@ -914,7 +1034,7 @@ class ColorSchemeInfoDialog extends Dialog<DialogEvents, ColorScheme> {
         }), FlexAlign.end);
     }
 
-    public override build(suppressCallback: boolean = false): JQuery<HTMLElement> {
+    public override build(suppressCallback: boolean = false): JQuery<HTMLDivElement> {
         super.build(true);
         this.domObject.addClass("color-scheme-info-dialog");
 
@@ -926,7 +1046,7 @@ class ColorSchemeInfoDialog extends Dialog<DialogEvents, ColorScheme> {
         return this.domObject;
     }
 
-    public override rebuild(suppressCallback: boolean = false): JQuery<HTMLElement> {
+    public override rebuild(suppressCallback: boolean = false): JQuery<HTMLDivElement> {
         super.rebuild(true);
 
         this.nameInput.setPlaceHolder(this._colorScheme.name);
@@ -946,11 +1066,20 @@ class ColorSchemeInfoDialog extends Dialog<DialogEvents, ColorScheme> {
 
     public override open(value?: ColorScheme): this {
         super.open(value);
-        this.setColorScheme(value!);
+        if (value !== undefined) {
+            this.setColorScheme(value);
+        }
         this.aTop.setLabel(this._colorScheme.name);
         this.nameInput.setValue(this._colorScheme.name);
         this.authorInput.setValue(this._colorScheme.author);
+        this.tryRebuild();
         return this;
+    }
+
+    private override acceptOrReject(): this {
+        console.log(this._colorScheme.toJSON());
+        console.log(this.colorSchemeBackup.toJSON());
+        return this._colorScheme.toJSON() !== this.colorSchemeBackup.toJSON() ? this.accept() : this.reject();
     }
 
     protected setValue(): ColorScheme {
@@ -964,7 +1093,6 @@ class ColorSchemeInfoDialog extends Dialog<DialogEvents, ColorScheme> {
     public setColorScheme(colorScheme: ColorScheme): this {
         this._colorScheme = colorScheme;
         colorScheme.copy(this.colorSchemeBackup);
-        this.tryRebuild();
         return this;
     }
 }

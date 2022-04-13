@@ -115,7 +115,7 @@ class Widget extends _EventHandler {
         this._domObject = $(`<${this.htmlElementType}></${this.htmlElementType}>`)
             .addClass("widget")
             .toggleClass("hidingIfNotShown", this._hidingIfNotShown)
-            .on("click", () => this.dispatchEvent(WidgetEvents.clicked));
+            .on("click", (event) => this.dispatchEvent(WidgetEvents.clicked, undefined, event));
         // this.sizeSetObserver.observe(this._domObject.get()[0], {
         //     attributeFilter: ["style", "class"],
         // });
@@ -127,7 +127,7 @@ class Widget extends _EventHandler {
             attributeFilter: ["style", "class"],
         });
         for (let i of this.children.values()) {
-            i?.tryRebuild();
+            i.tryRebuild();
         }
         return this.rebuildCallback(suppressCallback);
     }
@@ -185,14 +185,14 @@ class Widget extends _EventHandler {
         }
         return this;
     }
-    dispatchEvent(event, args, ...acceptedTypes) {
+    dispatchEvent(event, args, originalEvent = null, ...acceptedTypes) {
         if (!this.eventDisabled(event)) {
             for (let i of this.callbacks.filter(value => value.first == event || value.first == WidgetEvents.all || value.first in acceptedTypes)) {
                 if (args != undefined && args.length > 0) {
-                    i.second({ type: event, target: this }, ...args);
+                    i.second({ type: event, target: this, originalEvent: originalEvent }, ...args);
                 }
                 else {
-                    i.second({ type: event, target: this });
+                    i.second({ type: event, target: this, originalEvent: originalEvent });
                 }
             }
         }
@@ -207,7 +207,6 @@ class Widget extends _EventHandler {
      */
     addChild(childName, child) {
         if (child === undefined) {
-            // @ts-ignore
             child = this[childName];
         }
         if (childName.startsWith("_")) {

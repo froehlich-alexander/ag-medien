@@ -25,7 +25,7 @@ interface _Dialog extends _Widget {
     open(): this;
 }
 
-abstract class Dialog<EventType extends DialogEvents, ValueType, ContentBoxHtmlElementType extends HTMLElement = HTMLDivElement, ContentBoxItemType extends Widget<WidgetEvents> = Widget<WidgetEvents>> extends Widget<EventType> implements _Dialog {
+abstract class Dialog<EventType extends DialogEvents, ValueType, ContentBoxHtmlElementType extends HTMLElement = HTMLDivElement, ContentBoxItemHtlElementType extends HTMLElement = HTMLDivElement, ContentBoxItemType extends Widget<WidgetEvents, ContentBoxItemHtlElementType> = Widget<WidgetEvents, ContentBoxItemHtlElementType>> extends Widget<EventType, HTMLDivElement> implements _Dialog {
     private _state: DialogState = DialogState.notOpen;
     private _value: ValueType | undefined;
     private readonly _buttonBox: ButtonBox = new ButtonBox();
@@ -56,7 +56,7 @@ abstract class Dialog<EventType extends DialogEvents, ValueType, ContentBoxHtmlE
             .appendTo(this.domObject);
     }
 
-    public override build(suppressCallback: boolean = false): JQuery<HTMLElement> {
+    public override build(suppressCallback: boolean = false): JQuery<HTMLDivElement> {
         super.build(true)
             .addClass("dialog-widget");
 
@@ -101,13 +101,21 @@ abstract class Dialog<EventType extends DialogEvents, ValueType, ContentBoxHtmlE
     public accept(): this {
         this._state = DialogState.accepted;
         this.close();
-        return (this.dispatchEvent(DialogEvents.accepted, [this.setValue()], DialogEvents.finished));
+        return (this.dispatchEvent(DialogEvents.accepted, [this.setValue()], undefined, DialogEvents.finished));
     }
 
     public reject(): this {
         this._state = DialogState.rejected;
         this.close();
-        return (this.dispatchEvent(DialogEvents.rejected, [], DialogEvents.finished));
+        return (this.dispatchEvent(DialogEvents.rejected, [], undefined, DialogEvents.finished));
+    }
+
+    /**
+     * Accepts or rejects the dialog based on some computation which should be implemented in the subclass
+     * @returns {this}
+     */
+    public acceptOrReject(): this {
+        return this.reject();
     }
 
     protected close(): this {
@@ -119,10 +127,10 @@ abstract class Dialog<EventType extends DialogEvents, ValueType, ContentBoxHtmlE
     }
 
     public override destroy(): this {
-        super.destroy();
         if (this._state === DialogState.open) {
             this.reject();
         }
+        super.destroy();
         return this;
     }
 

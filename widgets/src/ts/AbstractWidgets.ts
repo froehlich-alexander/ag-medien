@@ -97,13 +97,13 @@ class EventCallbacks {
 
     static setWidthToRemaining = <[WidgetEvents, EventHandler<WidgetEvents, HTMLElement>]>[
         WidgetEvents.sizeSet, function (event) {
-        Util.setWidthToRemaining(event.target.domObject.parent(), event.target.domObject);
-    }];
+            Util.setWidthToRemaining(event.target.domObject.parent(), event.target.domObject);
+        }];
 
     static setHeightToRemaining = <[WidgetEvents, EventHandler<WidgetEvents, HTMLElement>]>[
         WidgetEvents.sizeSet, function (event) {
-        Util.setHeightToRemaining(event.target.domObject.parent(), event.target.domObject);
-    }];
+            Util.setHeightToRemaining(event.target.domObject.parent(), event.target.domObject);
+        }];
 }
 
 class ColorEditable<EventType extends WidgetEvents, HtmlElementType extends HTMLElement> extends Mixin {
@@ -230,7 +230,7 @@ abstract class IconContaining<EventType extends WidgetEvents | IconContainingEve
     protected _setIcon(fieldName: keyof this, icon: Icon): this {
         let icon1 = this[fieldName];
         assertType<Icon>(icon1, Icon);
-        if (icon.value !== undefined){
+        if (icon.value !== undefined) {
             icon1.setValue(icon.value);
         }
         icon1.setType(icon.type);
@@ -294,7 +294,7 @@ class LeadingTrailingIconContaining<EventType extends WidgetEvents | IconContain
     private readonly _leadingIcon: Icon = new Icon();
     private readonly _trailingIcon: Icon = new Icon();
 
-    _constructor() {
+    _constructor(): void {
         this.addChild("leadingIcon", this._leadingIcon);
         this._leadingIcon.on(IconEvents.clicked, () => this.dispatchEvent(IconContainingEvents.iconClicked, [this._leadingIcon, 0]));
         this.addChild("trailingIcon", this._trailingIcon);
@@ -392,15 +392,17 @@ class ItemContaining<EventType extends WidgetEvents, HtmlElementType extends HTM
         return this;
     }
 
-    public addItems(...items: Widget<WidgetEvents>[]): this {
+    public addItems<T extends HTMLElement, T1 extends HTMLElement, T2 extends HTMLElement>(...items: ItemType[] | ItemType[][]): this {
         for (let i of items) {
-            this.addChild(ItemContaining.itemChildrenPrefix + this.itemCount, i);
-            this.dispatchEvent(ItemContainingEvents.itemAdded, [this.itemCount, i]);
-            if (hasMixins<Item>(i, Item)) {
-                console.log(i.constructor);
-                i.setIndex(this.itemCount);
+            for (let j of (i instanceof Array ? i : [i])) {
+                this.addChild(ItemContaining.itemChildrenPrefix + this.itemCount, j);
+                this.dispatchEvent(ItemContainingEvents.itemAdded, [this.itemCount, j]);
+                if (hasMixins<Item>(j, Item)) {
+                    console.log(j.constructor);
+                    j.setIndex(this.itemCount);
+                }
+                this.itemCount++;
             }
-            this.itemCount++;
         }
         if (this.built && items.length > 0) {
             this.rebuild();
@@ -440,6 +442,7 @@ class ItemContaining<EventType extends WidgetEvents, HtmlElementType extends HTM
             if (indexes.indexOf(i) !== -1) {
                 this.children.delete(ItemContaining.itemChildrenPrefix + i);
                 removed.set(i, item);
+                item.hide();
                 item.domObject.detach();
                 continue;
             }
@@ -472,6 +475,26 @@ class ItemContaining<EventType extends WidgetEvents, HtmlElementType extends HTM
         console.assert(this.itemCount === [...this.children.keys()].filter(value => ItemContaining.isItem(value)).length);
     }
 
+    public orderItems() : this {
+        for (let i = 0; i < this.itemCount; i++) {
+            let item = this.getItem(i);
+            if (hasMixins<Item>(item, Item)) {
+                if (i !== item.index) {
+                    this.setNewIndex(item, i, item.index);
+                }
+            }
+        }
+        return this;
+    }
+
+    private setNewIndex(item: ItemType, oldIndex: number, newIndex: number): void {
+        let otherItem = this.getItem(newIndex);
+        if (otherItem !== undefined && hasMixins<Item>(otherItem, Item)) {
+            this.setNewIndex(otherItem, newIndex, otherItem.index);
+        }
+        this.children.set(ItemContaining.itemChildrenPrefix + newIndex, item);
+    }
+
     public removeItems(...items: ItemType[]): this {
         let indexes = [];
         for (let [k, v] of this.children) {
@@ -496,7 +519,7 @@ class ItemContaining<EventType extends WidgetEvents, HtmlElementType extends HTM
     }
 
     public get items(): ItemType[] {
-        return ([...this.children.entries()] as [string, ItemType][])
+        return [...(this.children.entries() as IterableIterator<[string, ItemType]>)]
             .filter(value => ItemContaining.isItem(value[0]))
             .sort()
             .map(value => value[1]);
@@ -504,6 +527,10 @@ class ItemContaining<EventType extends WidgetEvents, HtmlElementType extends HTM
 
     public get itemLength(): number {
         return this.itemCount;
+    }
+
+    public getItem(index: number): ItemType | undefined {
+        return this.children.get(ItemContaining.itemChildrenPrefix + index) as ItemType;
     }
 }
 
@@ -556,7 +583,7 @@ class CheckboxContaining<EventType extends WidgetEvents | CheckboxEvents, HtmlEl
         let changed = this._checked !== value;
         this._checked = value;
         if (changed) {
-            this.dispatchEvent(this._checked ? CheckboxEvents.selected : CheckboxEvents.unselected, [this._checked], CheckboxEvents.checkStateChanged);
+            this.dispatchEvent(this._checked ? CheckboxEvents.selected : CheckboxEvents.unselected, [this._checked], undefined, CheckboxEvents.checkStateChanged);
             if (this.built) {
                 this.rebuildCheckbox();
             }
@@ -605,7 +632,7 @@ enum InputEvents {
 @mixin(IdContaining)
 class Input<ValueType extends string | number, EventType extends WidgetEvents | InputEvents, HtmlElementType extends HTMLElement = HTMLInputElement> extends Mixin {
     private _disabled: boolean = false;
-    private _name: string  = "";
+    private _name: string = "";
     private _readonly: boolean = false;
     private _required: boolean = false;
     private _type: string = "";

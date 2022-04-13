@@ -96,12 +96,19 @@ class Dialog extends Widget {
     accept() {
         this._state = DialogState.accepted;
         this.close();
-        return (this.dispatchEvent(DialogEvents.accepted, [this.setValue()], DialogEvents.finished));
+        return (this.dispatchEvent(DialogEvents.accepted, [this.setValue()], undefined, DialogEvents.finished));
     }
     reject() {
         this._state = DialogState.rejected;
         this.close();
-        return (this.dispatchEvent(DialogEvents.rejected, [], DialogEvents.finished));
+        return (this.dispatchEvent(DialogEvents.rejected, [], undefined, DialogEvents.finished));
+    }
+    /**
+     * Accepts or rejects the dialog based on some computation which should be implemented in the subclass
+     * @returns {this}
+     */
+    acceptOrReject() {
+        return this.reject();
     }
     close() {
         if (this._state !== DialogState.accepted && this._state !== DialogState.rejected) {
@@ -111,10 +118,10 @@ class Dialog extends Widget {
         return this;
     }
     destroy() {
-        super.destroy();
         if (this._state === DialogState.open) {
             this.reject();
         }
+        super.destroy();
         return this;
     }
     get topEnabled() {
