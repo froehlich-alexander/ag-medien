@@ -3,33 +3,29 @@ import {ColorPicker} from "./colorpicker.js";
 import "./imports.js";
 import {Overlay} from "./Overlay.js";
 import {Widget} from "./Widget.js";
+import {SelectBox, SelectBoxItem} from "./Widgets.js";
 
-
-// $("body")
-//     .addClass("dark");
-// let l = new ListTile();
-let a = new Pair(2, 2);
-assertType(a, Widget);
 let colorPicker = new ColorPicker().show();
 let overlay = new Overlay(colorPicker);
 overlay.build()
     .appendTo("body");
 
-// let b = new SelectBox()
-//     .addItems(
-//         new SelectBoxItem().setId("hello1").setLabel("hasssssssssssssssssssssssddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddsssssssssssssssssssllo"),
-//         new SelectBoxItem().setId("hello2").setLabel("hsdfgsallo"),
-//         new SelectBoxItem().setId("he4llo").setLabel("halsdfgdlo"),
-//         new SelectBoxItem().setId("hel5lo").setLabel("hallgdsfgo"),
-//         new SelectBoxItem().setId("he6llo").setLabel("haldsfglo"),
-//         new SelectBoxItem().setId("hel8lo").setLabel("haldsfglo"),
-//         new SelectBoxItem().setId("he7llo").setLabel("23"))
-//     .show();
-// b.setChecked(0, true);
-// b.build()
-//     .appendTo("body");
-// console.log(b.items.at(-1));
-// b.removeItems(b.items.at(-1)).rebuild();
+let b = new SelectBox()
+    .addItems(
+        new SelectBoxItem().setId("hello1").setLabel("hasssssssssssssssssssssssddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddsssssssssssssssssssllo"),
+        new SelectBoxItem().setId("hello2").setLabel("hsdfgsallo"),
+        new SelectBoxItem().setId("he4llo").setLabel("halsdfgdlo"),
+        new SelectBoxItem().setId("hel5lo").setLabel("hallgdsfgo"),
+        new SelectBoxItem().setId("he6llo").setLabel("haldsfglo"),
+        new SelectBoxItem().setId("hel8lo").setLabel("haldsfglo"),
+        new SelectBoxItem().setId("he7llo").setLabel("23"))
+    .show();
+b.items.forEach((value) => value.value.setValue(value.label));
+b.setChecked(0, true);
+b.build()
+    .appendTo("body");
+console.log(b.items.at(-1));
+b.removeItems(b.items.at(-1)).rebuild();
 
 
 // new SelectMenu()

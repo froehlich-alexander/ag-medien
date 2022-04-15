@@ -1015,6 +1015,7 @@ let SelectBoxItemValue = class SelectBoxItemValue extends Widget {
         });
         this.setType("radio");
         this.setName("42"); //we need any name so that only 1 item can be selected at once
+        this.on(InputEvents.input, (event, value) => this._checked = value);
     }
     build(suppressCallback = false) {
         super.build(true)
@@ -1023,8 +1024,8 @@ let SelectBoxItemValue = class SelectBoxItemValue extends Widget {
             .append($("<p></p>")
             .text(this._label)
             .addClass("input-text"));
-        this.buildCallback(suppressCallback);
         this.show();
+        this.buildCallback(suppressCallback);
         return this.domObject;
     }
     rebuild(suppressCallback = false) {
@@ -1140,12 +1141,12 @@ let SelectBox = class SelectBox extends Widget {
             .show()
             .on(InputEvents.change, (_, value) => this.domObject.find(".current")
             .toggleClass("options-view-button-checked", value));
-        $(document).on("click", (event) => {
-            if ($(event.target).closest(this.optionsViewButton.domObject).length < 1) {
+        this.on(SelectBoxEvents.change, (event, ...args) => console.log(args));
+        this.on(WidgetEvents.clicked, (event) => {
+            if ($(event.originalEvent.target).closest(this.optionsViewButton.domObject).length < 1) {
                 this.optionsViewButton.setChecked(false).tryRebuild();
             }
         });
-        this.on(SelectBoxEvents.change, (event, ...args) => console.log(args));
         this.addChild("optionsViewButton");
     }
     build(suppressCallback = false) {
@@ -1174,9 +1175,9 @@ let SelectBox = class SelectBox extends Widget {
             }
         }
         this.domObject.children(".current")
-            .prepend(this._items.map(value => value.value.built ? value.value.domObject : value.value.build()));
+            .prepend(this._items.map(value => value.value.built ? value.value.domObject : value.value.build().on("click", () => console.log("click curr", value.value))));
         this.domObject.children("ul")
-            .append(this._items.map(value => value.listItem.built ? value.listItem.domObject : value.listItem.build()));
+            .append(this._items.map(value => value.listItem.built ? value.listItem.domObject : value.listItem.build().on("click", () => console.log("click li", value.listItem))));
         for (let i of this._items) {
             i.value.rebuild();
             i.listItem.rebuild();
@@ -1205,9 +1206,17 @@ let SelectBox = class SelectBox extends Widget {
         }
         return this;
     }
-    setChecked(index, value = true) {
-        this._items[index].value.setChecked(value)
-            .tryRebuild();
+    setChecked(index, checked = true) {
+        if (typeof index === "number") {
+            this._items[index].value.setChecked(checked);
+            this.tryRebuild();
+        }
+        else {
+            console.log(index);
+            console.log(this._items.map(v => v.value.id).join(" "));
+            this._items.find(v => v.value.value === index).value.setChecked(checked);
+            this.tryRebuild();
+        }
         return this;
     }
     get items() {

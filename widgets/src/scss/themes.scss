@@ -8,7 +8,7 @@ body {
 
   color: var(--color);
 
-  @mixin defaultBackgroundColor($number, $dark: true) {
+  @mixin defaultBackgroundColor($number, $dark: false) {
     $color: null;
     @if ($dark) {
       $color: ($dark-default-bg + ($number * 10));
@@ -25,22 +25,31 @@ body {
     #{$background-color-name}-#{$number}: rgb($color, $color, $color);
   }
 
-  &.dark {
+  @mixin design($dark: false) {
     @for $i from 0 through 10 {
-      @include defaultBackgroundColor($i, true);
+      @include defaultBackgroundColor($i, $dark);
     }
-
-    //background-0 - 160
-    --color: #a0a0a0;
+    @if $dark {
+      --color: #a0a0a0;
+    } @else {
+      --color: rgb(95, 95, 95);
+    }
   }
 
+  &.dark-design {
+    @include design(true);
+  }
 
-  &.light {
-    @for $i from 0 through 10 {
-      @include defaultBackgroundColor($i, false);
+  &.light-design {
+    @include design(false);
+  }
+
+  &.system-design {
+    @media (prefers-color-scheme: dark) {
+      @include design(true);
     }
-
-    //background-0 - 160
-    --color: rgb(95, 95, 95);
+    @media (prefers-color-scheme: light or no-preference) {
+      @include design(false);
+    }
   }
 }

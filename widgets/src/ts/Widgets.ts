@@ -15,6 +15,7 @@ import {Mixin, mixin, MixinImplementing, Tripel} from "./base.js";
 import {EventCallbacks} from "./Util.js";
 import {Widget, WidgetEvents} from "./Widget.js";
 import {Font, FontFamily, FontSize, FontWeight} from "./WidgetBase.js";
+import ClickEvent = JQuery.ClickEvent;
 
 class Item extends Mixin {
     private _index: number = -1;
@@ -190,8 +191,8 @@ class Button extends Widget<ButtonEvents, HTMLDivElement> {
             // .append($("<div></div>")
             //     .text(this.label)
             //     .addClass("text"))
-            .append(this._label.build())
-            // .on("click", () => this.dispatchEvent(ButtonEvents.clicked));
+            .append(this._label.build());
+        // .on("click", () => this.dispatchEvent(ButtonEvents.clicked));
         this.buildCallback(suppressCallback);
         return this.domObject;
     }
@@ -967,6 +968,7 @@ class SelectBoxItemValue extends Widget<WidgetEvents | InputEvents> {
         super();
         this.setType("radio");
         this.setName("42"); //we need any name so that only 1 item can be selected at once
+        this.on(InputEvents.input, (event, value) => this._checked = value);
     }
 
     public override build(suppressCallback: boolean = false): JQuery<HTMLElement> {
@@ -976,8 +978,8 @@ class SelectBoxItemValue extends Widget<WidgetEvents | InputEvents> {
             .append($("<p></p>")
                 .text(this._label)
                 .addClass("input-text"));
-        this.buildCallback(suppressCallback);
         this.show();
+        this.buildCallback(suppressCallback);
         return this.domObject;
     }
 
@@ -1099,12 +1101,12 @@ class SelectBox<HtmlElementType extends HTMLElement = HTMLDivElement> extends Wi
             .show()
             .on(InputEvents.change, (_, value) => this.domObject.find(".current")
                 .toggleClass("options-view-button-checked", value));
-        $(document).on("click", (event) => {
-            if ($(event.target).closest(this.optionsViewButton.domObject).length < 1) {
+        this.on(SelectBoxEvents.change, (event, ...args) => console.log(args));
+        this.on(WidgetEvents.clicked, (event) => {
+            if ($((event.originalEvent! as ClickEvent).target).closest(this.optionsViewButton.domObject).length < 1) {
                 this.optionsViewButton.setChecked(false).tryRebuild();
             }
         });
-        this.on(SelectBoxEvents.change, (event, ...args) => console.log(args));
         this.addChild("optionsViewButton");
     }
 
@@ -1138,9 +1140,9 @@ class SelectBox<HtmlElementType extends HTMLElement = HTMLDivElement> extends Wi
             }
         }
         this.domObject.children(".current")
-            .prepend(this._items.map(value => value.value.built ? value.value.domObject : value.value.build()));
+            .prepend(this._items.map(value => value.value.built ? value.value.domObject : value.value.build().on("click", ()=>console.log("click curr", value.value))));
         this.domObject.children("ul")
-            .append(this._items.map(value => value.listItem.built ? value.listItem.domObject : value.listItem.build()));
+            .append(this._items.map(value => value.listItem.built ? value.listItem.domObject : value.listItem.build().on("click", ()=>console.log("click li", value.listItem))));
         for (let i of this._items) {
             i.value.rebuild();
             i.listItem.rebuild();
@@ -1173,9 +1175,18 @@ class SelectBox<HtmlElementType extends HTMLElement = HTMLDivElement> extends Wi
         return this;
     }
 
-    public setChecked(index: number, value: boolean = true): this {
-        this._items[index].value.setChecked(value)
-            .tryRebuild();
+    public setChecked(index: number, checked?: boolean): this;
+    public setChecked(value: string, checked?: boolean): this;
+    public setChecked(index: number | string, checked: boolean = true): this {
+        if (typeof index === "number") {
+            this._items[index].value.setChecked(checked);
+            this.tryRebuild();
+        } else {
+            console.log(index);
+            console.log(this._items.map(v => v.value.id).join(" "));
+            this._items.find(v => v.value.value === index)!.value.setChecked(checked);
+            this.tryRebuild();
+        }
         return this;
     }
 

@@ -10,10 +10,16 @@ import { WidgetEvents } from "./Widget.js";
 import { FontSize, FontWeight } from "./WidgetBase.js";
 import { Overlay } from "./Overlay.js";
 import { Dialog, DialogEvents } from "./Dialog.js";
-import { FavoriteEvents, Item } from "./AbstractWidgets.js";
+import { FavoriteEvents, InputEvents, Item } from "./AbstractWidgets.js";
 import { Button, ButtonEvents, FlexAlign, FlexBox, Icon, IconType, ListTile, SelectBox, SelectBoxEvents, SelectBoxItem, Text, TextInput, TextInputEvents, TopEvents } from "./Widgets.js";
 class ColorMap extends Map {
 }
+var Designs;
+(function (Designs) {
+    Designs["light"] = "light";
+    Designs["dark"] = "darke";
+    Designs["system"] = "system";
+})(Designs || (Designs = {}));
 /**
  * Class for the colorSchemes saved to the local storage
  */
@@ -55,6 +61,12 @@ class ColorSchemeData {
             writable: true,
             value: void 0
         });
+        Object.defineProperty(this, "design", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
     }
 }
 class ColorSchemeInterface {
@@ -82,6 +94,12 @@ class ColorSchemeInterface {
             configurable: true,
             writable: true,
             value: new ColorMap()
+        });
+        Object.defineProperty(this, "_design", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: Designs.system
         });
         Object.defineProperty(this, "_current", {
             enumerable: true,
@@ -204,6 +222,7 @@ class ColorScheme extends ColorSchemeInterface {
         }
         return colorScheme.setName(this.name)
             .setAuthor(this.author)
+            .setDesign(this.design)
             .setColors(this.colors);
     }
     get name() {
@@ -244,6 +263,13 @@ class ColorScheme extends ColorSchemeInterface {
     }
     setPreDefined(preDefined) {
         this._preDefined = preDefined;
+        return this;
+    }
+    get design() {
+        return this._design;
+    }
+    setDesign(design) {
+        this._design = design;
         return this;
     }
 }
@@ -298,9 +324,14 @@ class ColorPickerService {
         if (colorScheme !== this._all.get(colorScheme.id)) {
             throw "AUAUAUAUAUUA";
         }
+        //write to body
         for (let [type, color] of colorScheme.colors.entries()) {
             document.body.style.setProperty(type, color);
         }
+        $(document.body)
+            .toggleClass("light-design", colorScheme.design === Designs.light)
+            .toggleClass("dark-design", colorScheme.design === Designs.dark)
+            .toggleClass("system-design", colorScheme.design === Designs.system);
         colorScheme.setCurrent(true);
         for (let i of this.all.values()) {
             if (i.id !== colorScheme.id) {
@@ -361,7 +392,7 @@ class ColorPickerService {
     getDefault(forceReload = false) {
         let result = this._all.get("default");
         if (forceReload || result == null) {
-            let colors = this.getCSSVariables(document.styleSheets, undefined);
+            let colors = this.getCSSVariables(document.styleSheets, "farben.css");
             result = new ColorScheme(this, "default", "default", "default", colors)
                 .setPreDefined(true);
         }
@@ -899,6 +930,19 @@ var Utils;
         }));
     }
     Utils.colorSchemeSelectBox = colorSchemeSelectBox;
+    function designSelectBox(current, identifier) {
+        return new SelectBox()
+            .addItems(...Object.entries(Designs)
+            .map(v => {
+            let item = new SelectBoxItem()
+                .setId(identifier + v[0])
+                .setLabel(v[1]);
+            item.value.setValue(v[1])
+                .setChecked(current === v[0]);
+            return item;
+        }));
+    }
+    Utils.designSelectBox = designSelectBox;
 })(Utils || (Utils = {}));
 class ColorSchemeNewDialog extends Dialog {
     constructor(service, baseScheme) {
@@ -1071,6 +1115,12 @@ class ColorSchemeInfoDialog extends Dialog {
             writable: true,
             value: void 0
         });
+        Object.defineProperty(this, "designInput", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
         Object.defineProperty(this, "service", {
             enumerable: true,
             configurable: true,
@@ -1084,7 +1134,7 @@ class ColorSchemeInfoDialog extends Dialog {
         this.nameInput = Utils.nameInput(ColorSchemeInfoDialog.name)
             .on(TextInputEvents.input, (event, value) => {
             this._colorScheme.setName(value);
-            this.nameInput.rebuild();
+            // this.nameInput.rebuild();
             this.service.save(this._colorScheme);
         });
         this.authorInput = Utils.authorInput(ColorSchemeInfoDialog.name)
@@ -1093,7 +1143,12 @@ class ColorSchemeInfoDialog extends Dialog {
             this.nameInput.rebuild();
             this.service.save(this._colorScheme);
         });
-        this.aContent.addItems(this.nameInput, this.authorInput);
+        this.designInput = Utils.designSelectBox(this._colorScheme.design, ColorSchemeInfoDialog.name)
+            .on(InputEvents.input, (event, value) => {
+            this._colorScheme.setDesign(value.value);
+            this.service.activate(this._colorScheme);
+        });
+        this.aContent.addItems(this.nameInput, this.authorInput, this.designInput);
         this.enableTop(true);
         this.enableContent(true);
         this.enableButtons(true);
@@ -1129,11 +1184,17 @@ class ColorSchemeInfoDialog extends Dialog {
         // this.nameInput.setLabel(this._colorScheme.name);
         this.authorInput.setPlaceHolder(this._colorScheme.author);
         // this.authorInput.setLabel(this._colorScheme.author);
+        console.log("setChecked");
+        console.log(this._colorScheme.design);
+        console.log(this.designInput);
+        console.log(this.designInput.items);
+        this.designInput.setChecked(this._colorScheme.design);
         this.aTop.rebuild();
         this.aContent.rebuild();
         this.buttonBox.rebuild();
         this.nameInput.rebuild();
         this.authorInput.rebuild();
+        this.designInput.rebuild();
         this.rebuildCallback(suppressCallback);
         return this.domObject;
     }

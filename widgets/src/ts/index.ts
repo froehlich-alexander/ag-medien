@@ -3,7 +3,7 @@ import {ColorPicker} from "./colorpicker.js";
 import {ListTile} from "./Widgets.js";
 
 $("body")
-    .addClass("dark");
+    .addClass("dark-design");
 /*
 let items = [];
 for (let i = 0; i < 100; i++) {

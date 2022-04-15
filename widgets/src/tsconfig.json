@@ -25,7 +25,9 @@
     "noUnusedLocals": false,
     "strict": true,
     "useDefineForClassFields": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": true
   },
   "include": [
     "./ts/**/*"

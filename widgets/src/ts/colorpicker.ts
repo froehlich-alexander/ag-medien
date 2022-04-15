@@ -4,7 +4,7 @@ import {Widget, WidgetEvents} from "./Widget.js";
 import {FontSize, FontWeight} from "./WidgetBase.js";
 import {Overlay} from "./Overlay.js";
 import {Dialog, DialogEvents} from "./Dialog.js";
-import {CheckboxEvents, FavoriteContaining, FavoriteEvents, Item} from "./AbstractWidgets.js";
+import {CheckboxEvents, FavoriteContaining, FavoriteEvents, Input, InputEvents, Item} from "./AbstractWidgets.js";
 import {
     Button,
     ButtonEvents,
@@ -27,6 +27,12 @@ type ColorSchemeMap = Map<string, ColorScheme>;
 class ColorMap extends Map<string, string> {
 }
 
+enum Designs {
+    light = "light",
+    dark = "darke",
+    system = "system",
+}
+
 /**
  * Class for the colorSchemes saved to the local storage
  */
@@ -37,6 +43,7 @@ class ColorSchemeData {
     public current: boolean | undefined;
     public preDefined: boolean | undefined;
     public colors: { [index: string]: string } | undefined;
+    public design: string & Designs | undefined;
 }
 
 class ColorSchemeInterface {
@@ -44,6 +51,7 @@ class ColorSchemeInterface {
     protected _author: string | undefined;
     protected _id: string | undefined;
     protected readonly _colors: ColorMap = new ColorMap();
+    protected _design: Designs = Designs.system;
 
     protected _current: boolean = false;
     protected _preDefined: boolean = false;
@@ -156,6 +164,7 @@ class ColorScheme extends ColorSchemeInterface {
         }
         return colorScheme.setName(this.name)
             .setAuthor(this.author)
+            .setDesign(this.design)
             .setColors(this.colors);
     }
 
@@ -209,6 +218,15 @@ class ColorScheme extends ColorSchemeInterface {
         this._preDefined = preDefined;
         return this;
     }
+
+    public get design(): Designs {
+        return this._design;
+    }
+
+    public setDesign(design: Designs): this {
+        this._design = design;
+        return this;
+    }
 }
 
 
@@ -251,9 +269,15 @@ class ColorPickerService {
         if (colorScheme !== this._all.get(colorScheme.id)) {
             throw "AUAUAUAUAUUA";
         }
+        //write to body
         for (let [type, color] of colorScheme.colors.entries()) {
             document.body.style.setProperty(type, color);
         }
+        $(document.body)
+            .toggleClass("light-design", colorScheme.design === Designs.light)
+            .toggleClass("dark-design", colorScheme.design === Designs.dark)
+            .toggleClass("system-design", colorScheme.design === Designs.system);
+
         colorScheme.setCurrent(true);
         for (let i of this.all.values()) {
             if (i.id !== colorScheme.id) {
@@ -329,7 +353,7 @@ class ColorPickerService {
     public getDefault(forceReload: boolean = false): ColorScheme {
         let result = this._all.get("default");
         if (forceReload || result == null) {
-            let colors: ColorMap = this.getCSSVariables(document.styleSheets, undefined);
+            let colors: ColorMap = this.getCSSVariables(document.styleSheets, "farben.css");
             result = new ColorScheme(this, "default", "default", "default", colors)
                 .setPreDefined(true);
         }
@@ -869,6 +893,19 @@ namespace Utils {
                 return item;
             }));
     }
+
+    export function designSelectBox(current: Designs, identifier: string): SelectBox {
+        return new SelectBox()
+            .addItems(...Object.entries(Designs)
+                .map(v => {
+                    let item = new SelectBoxItem()
+                        .setId(identifier + v[0])
+                        .setLabel(v[1]);
+                    item.value.setValue(v[1])
+                        .setChecked(current === v[0]);
+                    return item;
+                }));
+    }
 }
 
 class ColorSchemeNewDialog extends Dialog<any, ColorScheme, HTMLDivElement, HTMLDivElement, Widget<WidgetEvents, HTMLDivElement>> {
@@ -1009,11 +1046,12 @@ class ColorSchemeNewDialog extends Dialog<any, ColorScheme, HTMLDivElement, HTML
     }
 }
 
-class ColorSchemeInfoDialog extends Dialog<DialogEvents, ColorScheme> {
+class ColorSchemeInfoDialog extends Dialog<DialogEvents, ColorScheme, HTMLDivElement, HTMLDivElement, TextInput<HTMLDivElement> | SelectBox<HTMLDivElement>> {
     private _colorScheme: ColorScheme;
     private readonly colorSchemeBackup: ColorScheme;
     private readonly nameInput: TextInput;
     private readonly authorInput: TextInput;
+    private readonly designInput: SelectBox;
     private readonly service: ColorPickerService;
 
     constructor(service: ColorPickerService, colorScheme: ColorScheme) {
@@ -1026,7 +1064,7 @@ class ColorSchemeInfoDialog extends Dialog<DialogEvents, ColorScheme> {
         this.nameInput = Utils.nameInput(ColorSchemeInfoDialog.name)
             .on(TextInputEvents.input, (event, value) => {
                 this._colorScheme.setName(value);
-                this.nameInput.rebuild();
+                // this.nameInput.rebuild();
                 this.service.save(this._colorScheme);
             });
 
@@ -1037,7 +1075,13 @@ class ColorSchemeInfoDialog extends Dialog<DialogEvents, ColorScheme> {
                 this.service.save(this._colorScheme);
             });
 
-        this.aContent.addItems(this.nameInput, this.authorInput);
+        this.designInput = Utils.designSelectBox(this._colorScheme.design, ColorSchemeInfoDialog.name)
+            .on(InputEvents.input, (event, value) => {
+                this._colorScheme.setDesign(value.value);
+                this.service.activate(this._colorScheme);
+            });
+
+        this.aContent.addItems(this.nameInput, this.authorInput, this.designInput);
 
         this.enableTop(true);
         this.enableContent(true);
@@ -1079,12 +1123,18 @@ class ColorSchemeInfoDialog extends Dialog<DialogEvents, ColorScheme> {
         // this.nameInput.setLabel(this._colorScheme.name);
         this.authorInput.setPlaceHolder(this._colorScheme.author);
         // this.authorInput.setLabel(this._colorScheme.author);
+        console.log("setChecked");
+        console.log(this._colorScheme.design);
+        console.log(this.designInput);
+        console.log(this.designInput.items);
+        this.designInput.setChecked(this._colorScheme.design);
 
         this.aTop.rebuild();
         this.aContent.rebuild();
         this.buttonBox.rebuild();
         this.nameInput.rebuild();
         this.authorInput.rebuild();
+        this.designInput.rebuild();
 
         this.rebuildCallback(suppressCallback);
         return this.domObject;

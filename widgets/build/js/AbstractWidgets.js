@@ -695,21 +695,22 @@ let Input = class Input extends Mixin {
         return inputElement;
     }
     buildInput(element = $("<input>")) {
-        if (this._type === ("checkbox" || "radio")) {
+        element.val(this._value);
+        if (this._type === "checkbox" || this._type === "radio") {
             return element
                 .on("change", (event) => {
-                this.dispatchEvent(TextInputEvents.change, [event.target.checked]);
+                this.dispatchEvent(TextInputEvents.change, [event.target.checked], event);
             })
                 .on("input", (event) => {
-                this.dispatchEvent(TextInputEvents.input, [event.target.checked]);
+                this.dispatchEvent(TextInputEvents.input, [event.target.checked], event);
             });
         }
         return element
             .on("change", (event) => {
-            this.dispatchEvent(TextInputEvents.change, [event.target.value]);
+            this.dispatchEvent(TextInputEvents.change, [event.target.value], event);
         })
             .on("input", (event) => {
-            this.dispatchEvent(TextInputEvents.input, [event.target.value]);
+            this.dispatchEvent(TextInputEvents.input, [event.target.value], event);
         });
     }
     get value() {

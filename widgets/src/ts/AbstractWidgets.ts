@@ -290,7 +290,7 @@ class ItemContaining<EventType extends WidgetEvents, HtmlElementType extends HTM
         return this;
     }
 
-    public addItems<T extends HTMLElement, T1 extends HTMLElement, T2 extends HTMLElement>(...items: ItemType[] | ItemType[][]): this {
+    public addItems(...items: ItemType[] | ItemType[][]): this {
         for (let i of items) {
             for (let j of (i instanceof Array ? i : [i])) {
                 this.addChild(ItemContaining.itemChildrenPrefix + this.itemCount, j);
@@ -653,21 +653,22 @@ class Input<ValueType extends string | number, EventType extends WidgetEvents | 
     }
 
     protected buildInput(element: JQuery<HTMLInputElement> = $("<input>")): JQuery<HTMLInputElement> {
-        if (this._type === ("checkbox" || "radio")) {
+        element.val(this._value);
+        if (this._type === "checkbox" || this._type === "radio") {
             return element
                 .on("change", (event) => {
-                    this.dispatchEvent(TextInputEvents.change, [event.target.checked]);
+                    this.dispatchEvent(TextInputEvents.change, [event.target.checked], event);
                 })
                 .on("input", (event) => {
-                    this.dispatchEvent(TextInputEvents.input, [event.target.checked]);
+                    this.dispatchEvent(TextInputEvents.input, [event.target.checked], event);
                 });
         }
         return element
             .on("change", (event) => {
-                this.dispatchEvent(TextInputEvents.change, [event.target.value]);
+                this.dispatchEvent(TextInputEvents.change, [event.target.value], event);
             })
             .on("input", (event) => {
-                this.dispatchEvent(TextInputEvents.input, [event.target.value]);
+                this.dispatchEvent(TextInputEvents.input, [event.target.value], event);
             });
     }
 
