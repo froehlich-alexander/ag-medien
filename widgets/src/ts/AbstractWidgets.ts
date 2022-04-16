@@ -1,5 +1,5 @@
 import {assertType, hasMixins, mixin, Mixin} from "./base.js";
-import {Widget, WidgetEvents} from "./Widget.js";
+import {Widget, WidgetBase, WidgetEvents} from "./Widget.js";
 import {CSSColorValue} from "./WidgetBase.js";
 import {Icon, IconEvents, IconType, Text, TextInputEvents} from "./Widgets.js";
 import Event = JQuery.Event;
@@ -250,7 +250,7 @@ class Item extends Mixin {
     }
 }
 
-class ItemContaining<EventType extends WidgetEvents, HtmlElementType extends HTMLElement, ItemType extends Widget<WidgetEvents>> extends Mixin {
+class ItemContaining<EventType extends WidgetEvents, HtmlElementType extends HTMLElement, ItemType extends WidgetBase> extends Mixin {
     private static itemChildrenPrefix: string = "item";
     private itemCount = 0;
 
@@ -432,7 +432,7 @@ class ItemContaining<EventType extends WidgetEvents, HtmlElementType extends HTM
     }
 }
 
-interface ItemContaining<EventType extends WidgetEvents, HtmlElementType extends HTMLElement, ItemType extends Widget<WidgetEvents>> extends Mixin, Widget<EventType, HtmlElementType> {
+interface ItemContaining<EventType extends WidgetEvents, HtmlElementType extends HTMLElement, ItemType extends WidgetBase> extends Mixin, Widget<EventType, HtmlElementType> {
 }
 
 enum CheckboxEvents {

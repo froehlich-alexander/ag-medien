@@ -23,8 +23,9 @@ class Item extends Mixin {
     get index() {
         return this._index;
     }
-    set index(value) {
+    setIndex(value) {
         this._index = value;
+        return this;
     }
 }
 const IconEvents = Object.assign({}, WidgetEvents);
@@ -1030,8 +1031,13 @@ let SelectBoxItemValue = class SelectBoxItemValue extends Widget {
     }
     rebuild(suppressCallback = false) {
         super.rebuild(true);
-        this.rebuildInput()
-            .prop("checked", this._checked);
+        let a = this.rebuildInput();
+        // console.log("rebuild input ", this._checked)
+        a.prop("checked", this._checked);
+        console.assert(a.prop("checked") === this._checked);
+        // console.log(this._checked);
+        // console.log(a.prop("checked"));
+        // console.log(a);
         this.rebuildCallback(suppressCallback);
         return this.domObject;
     }
@@ -1047,13 +1053,13 @@ let SelectBoxItemValue = class SelectBoxItemValue extends Widget {
         return this;
     }
     get checked() {
-        this._checked = this.domObject.find("input")
-            .prop("checked");
+        // this._checked = this.domObject.find("input")
+        //     .prop("checked");
         return this._checked;
     }
 };
 SelectBoxItemValue = __decorate([
-    mixin(Input)
+    mixin(Input, Item)
 ], SelectBoxItemValue);
 let SelectBoxListItem = class SelectBoxListItem extends Widget {
     constructor() {
@@ -1075,7 +1081,7 @@ let SelectBoxListItem = class SelectBoxListItem extends Widget {
     }
 };
 SelectBoxListItem = __decorate([
-    mixin(InputLabel)
+    mixin(InputLabel, Item)
 ], SelectBoxListItem);
 class SelectBoxItem {
     constructor() {
@@ -1116,6 +1122,14 @@ class SelectBoxItem {
     get label() {
         return this._value.label;
     }
+    get index() {
+        return this._value.index;
+    }
+    setIndex(value) {
+        this._value.setIndex(value);
+        this._listItem.setIndex(value);
+        return this;
+    }
 }
 const SelectBoxEvents = Object.assign(Object.assign({}, WidgetEvents), InputEvents);
 let SelectBox = class SelectBox extends Widget {
@@ -1126,6 +1140,18 @@ let SelectBox = class SelectBox extends Widget {
             configurable: true,
             writable: true,
             value: []
+        });
+        Object.defineProperty(this, "liItems", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: new Box("ul").show()
+        });
+        Object.defineProperty(this, "inputItems", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: new Box().show()
         });
         Object.defineProperty(this, "optionsViewButton", {
             enumerable: true,
@@ -1152,36 +1178,42 @@ let SelectBox = class SelectBox extends Widget {
     build(suppressCallback = false) {
         super.build(true)
             .addClass("select-box-widget")
-            .append($("<div></div>")
+            // .append($("<div></div>")
+            .append(this.inputItems.build()
             .addClass("current")
             .append(this.optionsViewButton.build()
             .addClass("options-view-button"))
             .append(this.icon.build()
             .addClass("icon")))
-            .append("<ul></ul>");
+            .append(this.liItems.build());
+        // .append("<ul></ul>");
         this.buildCallback(suppressCallback);
         return this.domObject;
     }
     rebuild(suppressCallback = false) {
         super.rebuild(true);
-        this.domObject.find(".current").children(".value").detach();
-        this.domObject.find("ul").children("li").detach();
-        for (let i of this._items) {
-            if (i.value.built) {
-                i.value.domObject.detach();
-            }
-            if (i.listItem.built) {
-                i.listItem.domObject.detach();
-            }
-        }
-        this.domObject.children(".current")
-            .prepend(this._items.map(value => value.value.built ? value.value.domObject : value.value.build().on("click", () => console.log("click curr", value.value))));
-        this.domObject.children("ul")
-            .append(this._items.map(value => value.listItem.built ? value.listItem.domObject : value.listItem.build().on("click", () => console.log("click li", value.listItem))));
-        for (let i of this._items) {
-            i.value.rebuild();
-            i.listItem.rebuild();
-        }
+        this.liItems.orderItems().rebuild();
+        this.inputItems.orderItems().rebuild();
+        //
+        // this.domObject.find(".current").children(".value").detach();
+        // this.domObject.find("ul").children("li").detach();
+        //
+        // for (let i of this._items) {
+        //     if (i.value.built) {
+        //         i.value.domObject.detach();
+        //     }
+        //     if (i.listItem.built) {
+        //         i.listItem.domObject.detach();
+        //     }
+        // }
+        // this.domObject.children(".current")
+        //     .prepend(this._items.map(value => value.value.built ? value.value.domObject : value.value.build().on("click", () => console.log("click curr", value.value))));
+        // this.domObject.children("ul")
+        //     .append(this._items.map(value => value.listItem.built ? value.listItem.domObject : value.listItem.build().on("click", () => console.log("click li", value.listItem))));
+        // for (let i of this._items) {
+        //     i.value.rebuild();
+        //     i.listItem.rebuild();
+        // }
         this.optionsViewButton.rebuild();
         this.rebuildCallback(suppressCallback);
         return this.domObject;
@@ -1190,20 +1222,27 @@ let SelectBox = class SelectBox extends Widget {
         for (let item of items) {
             item.value.on(InputEvents.input, () => this.dispatchEvent(SelectBoxEvents.input, [item.value]));
             item.value.on(InputEvents.change, () => this.dispatchEvent(SelectBoxEvents.change, [item.value]));
-            item.listItem.setInheritVisibility(true);
-            let index = this._items.push(item);
-            this.addChild("item" + index + "li", item.listItem);
-            this.addChild("item" + index + "value", item.value);
+            let index = this.items.push(item) - 1;
+            this.liItems.addItems(item.listItem.setInheritVisibility(true).show());
+            this.inputItems.addItems(item.value);
+            // item.listItem.setInheritVisibility(true);
+            // let index = this._items.push(item);
+            // this.addChild("item" + index + "li", item.listItem);
+            // this.addChild("item" + index + "value", item.value);
         }
         return this;
     }
     removeItems(...items) {
+        console.info("not tested yet");
+        let itemsToRemove = [];
         for (let item of items) {
             for (let i of this._items.splice(this._items.indexOf(item), 1)) {
                 //TODO 09.04.2022 clean up event handlers
-                i; //suppress ts waring xD
+                itemsToRemove.push(i);
             }
         }
+        this.inputItems.removeItems(...itemsToRemove.map(v => v.value));
+        this.liItems.removeItems(...itemsToRemove.map(v => v.listItem));
         return this;
     }
     setChecked(index, checked = true) {
@@ -1212,10 +1251,16 @@ let SelectBox = class SelectBox extends Widget {
             this.tryRebuild();
         }
         else {
-            console.log(index);
-            console.log(this._items.map(v => v.value.id).join(" "));
-            this._items.find(v => v.value.value === index).value.setChecked(checked);
-            this.tryRebuild();
+            for (let i of this._items) {
+                if (i.value.value === index) {
+                    i.value.setChecked(checked);
+                }
+                else {
+                    if (checked) {
+                        i.value.setChecked(false);
+                    }
+                }
+            }
         }
         return this;
     }

@@ -1,5 +1,5 @@
 import {Util} from "./Util.js";
-import {_Widget, Widget, WidgetEvents} from "./Widget.js";
+import {WidgetBase, Widget, WidgetEvents} from "./Widget.js";
 import {Button, ButtonBox, ContentBox, FlexAlign, Top} from "./Widgets.js";
 
 const DialogEvents = {
@@ -19,7 +19,7 @@ enum DialogState {
 
 type DialogEvents = (typeof DialogEvents)[keyof typeof DialogEvents];
 
-interface _Dialog extends _Widget {
+interface _Dialog extends WidgetBase {
     accept(): this;
 
     reject(): this;

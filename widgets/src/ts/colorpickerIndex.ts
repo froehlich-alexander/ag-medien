@@ -10,6 +10,7 @@ let overlay = new Overlay(colorPicker);
 overlay.build()
     .appendTo("body");
 
+/*
 let b = new SelectBox()
     .addItems(
         new SelectBoxItem().setId("hello1").setLabel("hasssssssssssssssssssssssddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddsssssssssssssssssssllo"),
@@ -26,7 +27,7 @@ b.build()
     .appendTo("body");
 console.log(b.items.at(-1));
 b.removeItems(b.items.at(-1)).rebuild();
-
+*/
 
 // new SelectMenu()
 //     .setTitle("HMMMM")

@@ -24,8 +24,9 @@ class Item extends Mixin {
         return this._index;
     }
 
-    public set index(value: number) {
+    public setIndex(value: number): this {
         this._index = value;
+        return this;
     }
 }
 
@@ -959,7 +960,7 @@ class CheckBoxInput extends Widget<WidgetEvents | InputEvents, HTMLInputElement>
 interface CheckBoxInput extends MixinImplementing, Input<string, WidgetEvents | InputEvents, HTMLInputElement> {
 }
 
-@mixin(Input)
+@mixin(Input, Item)
 class SelectBoxItemValue extends Widget<WidgetEvents | InputEvents> {
     private _label: string = "";
     private _checked: boolean = false;
@@ -985,8 +986,13 @@ class SelectBoxItemValue extends Widget<WidgetEvents | InputEvents> {
 
     public override rebuild(suppressCallback: boolean = false): JQuery<HTMLElement> {
         super.rebuild(true);
-        this.rebuildInput()
-            .prop("checked", this._checked);
+        let a = this.rebuildInput();
+        // console.log("rebuild input ", this._checked)
+        a.prop("checked", this._checked);
+        console.assert(a.prop("checked") === this._checked)
+        // console.log(this._checked);
+        // console.log(a.prop("checked"));
+        // console.log(a);
         this.rebuildCallback(suppressCallback);
         return this.domObject;
     }
@@ -1006,16 +1012,16 @@ class SelectBoxItemValue extends Widget<WidgetEvents | InputEvents> {
     }
 
     public get checked(): boolean {
-        this._checked = this.domObject.find("input")
-            .prop("checked");
+        // this._checked = this.domObject.find("input")
+        //     .prop("checked");
         return this._checked;
     }
 }
 
-interface SelectBoxItemValue extends MixinImplementing, Input<string, WidgetEvents | InputEvents, HTMLElement> {
+interface SelectBoxItemValue extends MixinImplementing, Input<string, WidgetEvents | InputEvents, HTMLElement>, Item {
 }
 
-@mixin(InputLabel)
+@mixin(InputLabel, Item)
 class SelectBoxListItem extends Widget<WidgetEvents, HTMLLIElement> {
 
     constructor() {
@@ -1039,8 +1045,9 @@ class SelectBoxListItem extends Widget<WidgetEvents, HTMLLIElement> {
     }
 }
 
-interface SelectBoxListItem extends MixinImplementing, InputLabel<WidgetEvents, HTMLLIElement> {
+interface SelectBoxListItem extends MixinImplementing, InputLabel<WidgetEvents, HTMLLIElement>, Item {
 }
+
 
 class SelectBoxItem {
     private readonly _value: SelectBoxItemValue;
@@ -1078,6 +1085,16 @@ class SelectBoxItem {
     public get label() {
         return this._value.label;
     }
+
+    public get index(): number {
+        return this._value.index;
+    }
+
+    public setIndex(value: number): this {
+        this._value.setIndex(value);
+        this._listItem.setIndex(value);
+        return this;
+    }
 }
 
 const SelectBoxEvents = {
@@ -1089,6 +1106,8 @@ type SelectBoxEvents = (typeof SelectBoxEvents[keyof typeof SelectBoxEvents]);
 @mixin(OneIconContaining)
 class SelectBox<HtmlElementType extends HTMLElement = HTMLDivElement> extends Widget<SelectBoxEvents, HtmlElementType> {
     private _items: SelectBoxItem[] = [];
+    private liItems: Box<WidgetEvents, HTMLDivElement, SelectBoxListItem> = new Box<WidgetEvents, HTMLDivElement, SelectBoxListItem>("ul").show();
+    private inputItems: Box<WidgetEvents, HTMLDivElement, SelectBoxItemValue> = new Box<WidgetEvents, HTMLDivElement, SelectBoxItemValue>().show();
     private optionsViewButton: CheckBoxInput;
 
     constructor() {
@@ -1113,13 +1132,15 @@ class SelectBox<HtmlElementType extends HTMLElement = HTMLDivElement> extends Wi
     public override build(suppressCallback: boolean = false): JQuery<HtmlElementType> {
         super.build(true)
             .addClass("select-box-widget")
-            .append($("<div></div>")
+            // .append($("<div></div>")
+            .append(this.inputItems.build()
                 .addClass("current")
                 .append(this.optionsViewButton.build()
                     .addClass("options-view-button"))
                 .append(this.icon.build()
                     .addClass("icon")))
-            .append("<ul></ul>");
+            .append(this.liItems.build())
+        // .append("<ul></ul>");
 
         this.buildCallback(suppressCallback);
         return this.domObject;
@@ -1127,26 +1148,28 @@ class SelectBox<HtmlElementType extends HTMLElement = HTMLDivElement> extends Wi
 
     public override rebuild(suppressCallback: boolean = false): JQuery<HtmlElementType> {
         super.rebuild(true);
-
-        this.domObject.find(".current").children(".value").detach();
-        this.domObject.find("ul").children("li").detach();
-
-        for (let i of this._items) {
-            if (i.value.built) {
-                i.value.domObject.detach();
-            }
-            if (i.listItem.built) {
-                i.listItem.domObject.detach();
-            }
-        }
-        this.domObject.children(".current")
-            .prepend(this._items.map(value => value.value.built ? value.value.domObject : value.value.build().on("click", ()=>console.log("click curr", value.value))));
-        this.domObject.children("ul")
-            .append(this._items.map(value => value.listItem.built ? value.listItem.domObject : value.listItem.build().on("click", ()=>console.log("click li", value.listItem))));
-        for (let i of this._items) {
-            i.value.rebuild();
-            i.listItem.rebuild();
-        }
+        this.liItems.orderItems().rebuild();
+        this.inputItems.orderItems().rebuild();
+        //
+        // this.domObject.find(".current").children(".value").detach();
+        // this.domObject.find("ul").children("li").detach();
+        //
+        // for (let i of this._items) {
+        //     if (i.value.built) {
+        //         i.value.domObject.detach();
+        //     }
+        //     if (i.listItem.built) {
+        //         i.listItem.domObject.detach();
+        //     }
+        // }
+        // this.domObject.children(".current")
+        //     .prepend(this._items.map(value => value.value.built ? value.value.domObject : value.value.build().on("click", () => console.log("click curr", value.value))));
+        // this.domObject.children("ul")
+        //     .append(this._items.map(value => value.listItem.built ? value.listItem.domObject : value.listItem.build().on("click", () => console.log("click li", value.listItem))));
+        // for (let i of this._items) {
+        //     i.value.rebuild();
+        //     i.listItem.rebuild();
+        // }
         this.optionsViewButton.rebuild();
 
         this.rebuildCallback(suppressCallback);
@@ -1157,21 +1180,28 @@ class SelectBox<HtmlElementType extends HTMLElement = HTMLDivElement> extends Wi
         for (let item of items) {
             item.value.on(InputEvents.input, () => this.dispatchEvent(SelectBoxEvents.input, [item.value]));
             item.value.on(InputEvents.change, () => this.dispatchEvent(SelectBoxEvents.change, [item.value]));
-            item.listItem.setInheritVisibility(true);
-            let index = this._items.push(item);
-            this.addChild("item" + index + "li", item.listItem);
-            this.addChild("item" + index + "value", item.value);
+            let index = this.items.push(item) - 1;
+            this.liItems.addItems(item.listItem.setInheritVisibility(true).show());
+            this.inputItems.addItems(item.value);
+            // item.listItem.setInheritVisibility(true);
+            // let index = this._items.push(item);
+            // this.addChild("item" + index + "li", item.listItem);
+            // this.addChild("item" + index + "value", item.value);
         }
         return this;
     }
 
     public removeItems(...items: SelectBoxItem[]): this {
+        console.info("not tested yet")
+        let itemsToRemove: SelectBoxItem[] = [];
         for (let item of items) {
             for (let i of this._items.splice(this._items.indexOf(item), 1)) {
                 //TODO 09.04.2022 clean up event handlers
-                i; //suppress ts waring xD
+                itemsToRemove.push(i);
             }
         }
+        this.inputItems.removeItems(...itemsToRemove.map(v => v.value));
+        this.liItems.removeItems(...itemsToRemove.map(v => v.listItem));
         return this;
     }
 
@@ -1182,10 +1212,15 @@ class SelectBox<HtmlElementType extends HTMLElement = HTMLDivElement> extends Wi
             this._items[index].value.setChecked(checked);
             this.tryRebuild();
         } else {
-            console.log(index);
-            console.log(this._items.map(v => v.value.id).join(" "));
-            this._items.find(v => v.value.value === index)!.value.setChecked(checked);
-            this.tryRebuild();
+            for (let i of this._items) {
+                if (i.value.value === index) {
+                    i.value.setChecked(checked);
+                } else {
+                    if (checked) {
+                        i.value.setChecked(false);
+                    }
+                }
+            }
         }
         return this;
     }
@@ -1199,7 +1234,7 @@ interface SelectBox<HtmlElementType extends HTMLElement = HTMLDivElement> extend
 }
 
 @mixin(ItemContaining, SpacingEditable)
-class Box<EventType extends WidgetEvents | ItemContainingEvents, HtmlElementType extends HTMLElement = HTMLDivElement, ItemType extends Widget<WidgetEvents> = Widget<WidgetEvents>> extends Widget<EventType, HtmlElementType> {
+class Box<EventType extends WidgetEvents | ItemContainingEvents, HtmlElementType extends HTMLElement = HTMLDivElement, ItemType extends Widget<WidgetEvents, any> = Widget<WidgetEvents>> extends Widget<EventType, HtmlElementType> {
     constructor(htmlElementType?: string) {
         super(htmlElementType);
         this.mixinConstructor(ItemContaining, SpacingEditable);
@@ -1222,7 +1257,7 @@ class Box<EventType extends WidgetEvents | ItemContainingEvents, HtmlElementType
     }
 }
 
-interface Box<EventType extends WidgetEvents | ItemContainingEvents, HtmlElementType extends HTMLElement = HTMLDivElement, ItemType extends Widget<WidgetEvents> = Widget<WidgetEvents>> extends MixinImplementing, ItemContaining<EventType, HtmlElementType, ItemType>, SpacingEditable<EventType, HtmlElementType> {
+interface Box<EventType extends WidgetEvents | ItemContainingEvents, HtmlElementType extends HTMLElement = HTMLDivElement, ItemType extends Widget<WidgetEvents, any> = Widget<WidgetEvents>> extends MixinImplementing, ItemContaining<EventType, HtmlElementType, ItemType>, SpacingEditable<EventType, HtmlElementType> {
 }
 
 class ContentBox<HtmlElementType extends HTMLElement = HTMLDivElement, ItemType extends Widget<WidgetEvents> = Widget<WidgetEvents>> extends Box<WidgetEvents, HtmlElementType, ItemType> {

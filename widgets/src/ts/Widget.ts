@@ -1,3 +1,4 @@
+import "./imports.js";
 import {Pair} from "./base.js";
 // import {$, jQuery} from "../lib/jquery";
 // import * as $ from "jquery";
@@ -29,7 +30,7 @@ abstract class _EventHandler<HtmlElementType extends HTMLElement> {
     protected abstract dispatchEvent(type: string, args?: any[], originalEvent?: Event | null, ...acceptedTypes: string[]): this;
 }
 
-interface _Widget {
+interface WidgetBase {
     // appendTo(element: JQuery.Selector | JQuery<HTMLElement> | JQuery.htmlString | JQuery.TypeOrArray<Element | DocumentFragment>): this;
 
     build(suppressCallback: boolean): JQuery<HTMLElement>;
@@ -45,7 +46,7 @@ interface _Widget {
     setVisibility(visible: boolean): this;
 }
 
-abstract class Widget<EventType extends WidgetEvents, HtmlElementType extends HTMLElement = HTMLElement> extends _EventHandler<HtmlElementType> implements _Widget {
+abstract class Widget<EventType extends WidgetEvents, HtmlElementType extends HTMLElement = HTMLElement> extends _EventHandler<HtmlElementType> implements WidgetBase {
     private _built: boolean = false;
     private _domObject?: JQuery<HtmlElementType>;
     protected readonly children: Map<string, Widget<WidgetEvents, any>> = new Map();
@@ -324,4 +325,4 @@ abstract class Widget<EventType extends WidgetEvents, HtmlElementType extends HT
     }
 }
 
-export {_Widget, Widget, WidgetEvents, EventCallback, EventHandler};
+export {WidgetBase, Widget, WidgetEvents, EventCallback, EventHandler};

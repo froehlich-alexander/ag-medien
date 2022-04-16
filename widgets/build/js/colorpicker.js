@@ -753,7 +753,7 @@ let ColorSchemeItem = class ColorSchemeItem extends ListTile {
     rebuild(suppressCallback = false) {
         super.rebuild(true);
         this.rebuildCallback(suppressCallback);
-        console.log("item rebuild");
+        // console.log("item rebuild");
         this.setLabel(this._colorScheme.name);
         this.setFavored(this._colorScheme.current);
         this._label.rebuild();
@@ -1184,11 +1184,13 @@ class ColorSchemeInfoDialog extends Dialog {
         // this.nameInput.setLabel(this._colorScheme.name);
         this.authorInput.setPlaceHolder(this._colorScheme.author);
         // this.authorInput.setLabel(this._colorScheme.author);
-        console.log("setChecked");
-        console.log(this._colorScheme.design);
-        console.log(this.designInput);
-        console.log(this.designInput.items);
+        console.log("setChecked", this._colorScheme.design);
+        // console.log(this._colorScheme.design);
+        // console.log(this.designInput);
+        // console.log(this.designInput.items);
         this.designInput.setChecked(this._colorScheme.design);
+        console.log([...this.designInput.items.values()].map(v => v.value)
+            .map(v => v.value + v.domObject.find("input").prop("checked") + " vs " + v.checked).join());
         this.aTop.rebuild();
         this.aContent.rebuild();
         this.buttonBox.rebuild();

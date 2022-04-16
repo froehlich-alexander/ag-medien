@@ -1,3 +1,4 @@
+import "./imports.js";
 import { Pair } from "./base.js";
 // import {$, jQuery} from "../lib/jquery";
 // import * as $ from "jquery";

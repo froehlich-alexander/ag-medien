@@ -91,12 +91,12 @@ class EventCallbacks {
     //     Util.setHeightToRemaining(event.target.domObject, child.domObject);
     // });
 
-    static setWidthToRemaining = <[WidgetEvents, EventHandler<WidgetEvents, HTMLElement>]>[
+    static setWidthToRemaining = <[WidgetEvents, EventHandler<WidgetEvents, any>]>[
         WidgetEvents.sizeSet, function (event) {
             Util.setWidthToRemaining(event.target.domObject.parent(), event.target.domObject);
         }];
 
-    static setHeightToRemaining = <[WidgetEvents, EventHandler<WidgetEvents, HTMLElement>]>[
+    static setHeightToRemaining = <[WidgetEvents, EventHandler<WidgetEvents, any, any>]>[
         WidgetEvents.sizeSet, function (event) {
             Util.setHeightToRemaining(event.target.domObject.parent(), event.target.domObject);
         }];
