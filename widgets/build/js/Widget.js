@@ -15,6 +15,8 @@ const WidgetEvents = {
 };
 class _EventHandler {
 }
+class WidgetBase {
+}
 class Widget extends _EventHandler {
     constructor(htmlElementType) {
         super();
@@ -322,5 +324,5 @@ class Widget extends _EventHandler {
         this.setHidingIfNotShown(value);
     }
 }
-export { Widget, WidgetEvents };
+export { WidgetBase, Widget, WidgetEvents };
 //# sourceMappingURL=Widget.js.map

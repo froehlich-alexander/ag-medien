@@ -1180,7 +1180,7 @@ class SelectBox<HtmlElementType extends HTMLElement = HTMLDivElement> extends Wi
         for (let item of items) {
             item.value.on(InputEvents.input, () => this.dispatchEvent(SelectBoxEvents.input, [item.value]));
             item.value.on(InputEvents.change, () => this.dispatchEvent(SelectBoxEvents.change, [item.value]));
-            let index = this.items.push(item) - 1;
+            let index = this._items.push(item) - 1;
             this.liItems.addItems(item.listItem.setInheritVisibility(true).show());
             this.inputItems.addItems(item.value);
             // item.listItem.setInheritVisibility(true);
@@ -1227,6 +1227,20 @@ class SelectBox<HtmlElementType extends HTMLElement = HTMLDivElement> extends Wi
 
     public get items(): SelectBoxItem[] {
         return this._items;
+    }
+
+    public has(item: SelectBoxItem): boolean;
+    public has(itemId: string): boolean;
+    public has(item: SelectBoxItem | string): boolean {
+        if (item instanceof SelectBoxItem) {
+            item = item.id;
+        }
+        for (let i of this.items) {
+            if (item === i.id) {
+                return true;
+            }
+        }
+        return false;
     }
 }
 

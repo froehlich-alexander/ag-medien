@@ -919,15 +919,31 @@ var Utils;
     }
     Utils.authorInput = authorInput;
     function colorSchemeSelectBox(service, identifier) {
-        return new SelectBox()
-            .addItems(...[...service.all.values()].map(v => {
+        let box = new SelectBox();
+        return box
+            // .addItems(...[...service.all.values()]
+            //     .filter(v => !box.has(v.id))
+            //     .map(v => {
+            //         let item = new SelectBoxItem()
+            //             .setLabel(v.name)
+            //             .setId(identifier + v.id);
+            //         item.value.setValue(v.id)
+            //             .setChecked(v.current);
+            //         return item;
+            //     }))
+            .on(WidgetEvents.rebuild, (event) => event.target
+            .addItems(...[...service.all.values()]
+            .filter(v => !event.target.has(identifier + v.id))
+            .map(v => {
             let item = new SelectBoxItem()
                 .setLabel(v.name)
                 .setId(identifier + v.id);
             item.value.setValue(v.id)
                 .setChecked(v.current);
             return item;
-        }));
+        }))
+            .removeItems(...event.target.items
+            .filter(v => !service.all.has(v.id.substring(identifier.length)))));
     }
     Utils.colorSchemeSelectBox = colorSchemeSelectBox;
     function designSelectBox(current, identifier) {
@@ -966,6 +982,12 @@ class ColorSchemeNewDialog extends Dialog {
             value: void 0
         });
         Object.defineProperty(this, "authorInput", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "designInput", {
             enumerable: true,
             configurable: true,
             writable: true,
@@ -1013,9 +1035,14 @@ class ColorSchemeNewDialog extends Dialog {
         //     this.nameInput.rebuild();
         //     this.service.save(this._colorScheme);
         // });
+        this.designInput = Utils.designSelectBox(this.baseScheme.design, ColorSchemeNewDialog.name);
+        // .on(InputEvents.input, (event, value) => {
+        //     this.baseScheme.setDesign(value.value);
+        //     this.service.activate(this._colorScheme);
+        // });
         this.colorSchemeSelectBox = Utils.colorSchemeSelectBox(this.service, ColorSchemeNewDialog.name)
-            .on(SelectBoxEvents.input, (event, value) => this.baseScheme = this.service.getColorScheme(value));
-        this.aContent.addItems(this.colorSchemeSelectBox, this.nameInput, this.authorInput);
+            .on(SelectBoxEvents.input, (event, value) => this.setBaseScheme(this.service.getColorScheme(value)).rebuild());
+        this.aContent.addItems(this.colorSchemeSelectBox, this.nameInput, this.authorInput, this.designInput);
     }
     build(suppressCallback = false) {
         super.build(true)
@@ -1047,6 +1074,9 @@ class ColorSchemeNewDialog extends Dialog {
     }
     rebuild(suppressCallback = false) {
         super.rebuild(true);
+        this.nameInput.setPlaceHolder(this.baseScheme.name);
+        this.authorInput.setPlaceHolder(this.baseScheme.author);
+        this.designInput.setChecked(this.baseScheme.design);
         this.rebuildCallback(suppressCallback);
         return this.domObject;
     }
@@ -1071,16 +1101,23 @@ class ColorSchemeNewDialog extends Dialog {
             .setCurrent(false)
             .setPreDefined(false)
             .setName((_a = this.nameInput.value) !== null && _a !== void 0 ? _a : this.baseScheme.name)
-            .setAuthor((_b = this.authorInput.value) !== null && _b !== void 0 ? _b : this.baseScheme.author);
+            .setAuthor((_b = this.authorInput.value) !== null && _b !== void 0 ? _b : this.baseScheme.author)
+            .setDesign(this.designInput.items.find(v => v.value.checked).value.value);
         this.service.save(scheme);
         return scheme;
     }
     open(value) {
+        var _a;
+        this.baseScheme = (_a = (value !== null && value !== void 0 ? value : this.baseScheme)) !== null && _a !== void 0 ? _a : this.service.getCurrent();
+        this.colorSchemeSelectBox.rebuild();
+        this.colorSchemeSelectBox.setChecked(ColorSchemeNewDialog.name + this.baseScheme.id)
+            .rebuild();
         super.open(value);
         this.nameInput.setValue("")
             .setPlaceHolder(this.baseScheme.name);
         this.authorInput.setValue("")
             .setPlaceHolder(this.baseScheme.author);
+        this.designInput.setChecked(this.baseScheme.design);
         return this;
     }
     setBaseScheme(scheme) {

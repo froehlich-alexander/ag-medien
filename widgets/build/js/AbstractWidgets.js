@@ -310,12 +310,15 @@ class ItemContaining extends Mixin {
     }
     addItems(...items) {
         for (let i of items) {
-            for (let j of (i instanceof Array ? i : [i])) {
-                this.addChild(ItemContaining.itemChildrenPrefix + this.itemCount, j);
-                this.dispatchEvent(ItemContainingEvents.itemAdded, [this.itemCount, j]);
-                if (hasMixins(j, Item)) {
-                    console.log(j.constructor);
-                    j.setIndex(this.itemCount);
+            for (let item of (i instanceof Array ? i : [i])) {
+                this.addChild(ItemContaining.itemChildrenPrefix + this.itemCount, item);
+                if (this.built && !item.built) {
+                    item.build();
+                }
+                this.dispatchEvent(ItemContainingEvents.itemAdded, [this.itemCount, item]);
+                if (hasMixins(item, Item)) {
+                    console.log(item.constructor);
+                    item.setIndex(this.itemCount);
                 }
                 this.itemCount++;
             }

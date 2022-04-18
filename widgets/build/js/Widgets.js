@@ -1222,7 +1222,7 @@ let SelectBox = class SelectBox extends Widget {
         for (let item of items) {
             item.value.on(InputEvents.input, () => this.dispatchEvent(SelectBoxEvents.input, [item.value]));
             item.value.on(InputEvents.change, () => this.dispatchEvent(SelectBoxEvents.change, [item.value]));
-            let index = this.items.push(item) - 1;
+            let index = this._items.push(item) - 1;
             this.liItems.addItems(item.listItem.setInheritVisibility(true).show());
             this.inputItems.addItems(item.value);
             // item.listItem.setInheritVisibility(true);
@@ -1266,6 +1266,17 @@ let SelectBox = class SelectBox extends Widget {
     }
     get items() {
         return this._items;
+    }
+    has(item) {
+        if (item instanceof SelectBoxItem) {
+            item = item.id;
+        }
+        for (let i of this.items) {
+            if (item === i.id) {
+                return true;
+            }
+        }
+        return false;
     }
 };
 SelectBox = __decorate([

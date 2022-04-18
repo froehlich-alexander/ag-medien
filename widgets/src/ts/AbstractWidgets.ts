@@ -292,12 +292,15 @@ class ItemContaining<EventType extends WidgetEvents, HtmlElementType extends HTM
 
     public addItems(...items: ItemType[] | ItemType[][]): this {
         for (let i of items) {
-            for (let j of (i instanceof Array ? i : [i])) {
-                this.addChild(ItemContaining.itemChildrenPrefix + this.itemCount, j);
-                this.dispatchEvent(ItemContainingEvents.itemAdded, [this.itemCount, j]);
-                if (hasMixins<Item>(j, Item)) {
-                    console.log(j.constructor);
-                    j.setIndex(this.itemCount);
+            for (let item of (i instanceof Array ? i : [i])) {
+                this.addChild(ItemContaining.itemChildrenPrefix + this.itemCount, item);
+                if (this.built && !item.built) {
+                    item.build();
+                }
+                this.dispatchEvent(ItemContainingEvents.itemAdded, [this.itemCount, item]);
+                if (hasMixins<Item>(item, Item)) {
+                    console.log(item.constructor);
+                    item.setIndex(this.itemCount);
                 }
                 this.itemCount++;
             }

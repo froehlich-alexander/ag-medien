@@ -30,12 +30,15 @@ abstract class _EventHandler<HtmlElementType extends HTMLElement> {
     protected abstract dispatchEvent(type: string, args?: any[], originalEvent?: Event | null, ...acceptedTypes: string[]): this;
 }
 
-interface WidgetBase {
+interface _WidgetBase {
     // appendTo(element: JQuery.Selector | JQuery<HTMLElement> | JQuery.htmlString | JQuery.TypeOrArray<Element | DocumentFragment>): this;
 
+    // constructor(htmlElementType?: string): void;
     build(suppressCallback: boolean): JQuery<HTMLElement>;
 
     rebuild(suppressCallback: boolean): JQuery<HTMLElement>;
+
+    tryRebuild(suppressCallback: boolean): JQuery<HTMLElement>;
 
     destroy(): this;
 
@@ -43,7 +46,57 @@ interface WidgetBase {
 
     hide(): this;
 
+    copy(other: this): this
+
     setVisibility(visible: boolean): this;
+
+    setInheritVisibility(value: boolean): this;
+
+    get built(): boolean;
+
+    get visibility(): boolean;
+
+    get inheritVisibility(): boolean;
+
+    get hidingIfNotShown(): boolean;
+
+    get domObject(): JQuery<HTMLElement>;
+}
+
+abstract class WidgetBase implements _WidgetBase {
+    public abstract build(suppressCallback: boolean): JQuery<HTMLElement>;
+
+    public abstract rebuild(suppressCallback: boolean): JQuery<HTMLElement>;
+
+    public abstract tryRebuild(suppressCallback: boolean): JQuery<HTMLElement>;
+
+    public abstract destroy(): this;
+
+    public abstract show(): this;
+
+    public abstract hide(): this;
+
+    public abstract copy(other: this): this
+
+    public abstract setVisibility(visible: boolean): this;
+
+    public abstract setInheritVisibility(value: boolean): this;
+
+    public abstract get built(): boolean;
+
+    public abstract get visibility(): boolean;
+
+    public abstract get inheritVisibility(): boolean;
+
+    public abstract get hidingIfNotShown(): boolean;
+
+    public abstract get domObject(): JQuery<HTMLElement>;
+
+    protected abstract buildCallback(suppress?: boolean): JQuery<HTMLElement>;
+    protected abstract rebuildCallback(suppress?: boolean): JQuery<HTMLElement>;
+
+    protected abstract addChild(childName: string | keyof this): this;
+    protected abstract addChild(childName: string | keyof this, child?: WidgetBase): this;
 }
 
 abstract class Widget<EventType extends WidgetEvents, HtmlElementType extends HTMLElement = HTMLElement> extends _EventHandler<HtmlElementType> implements WidgetBase {

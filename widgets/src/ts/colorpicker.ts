@@ -223,7 +223,7 @@ class ColorScheme extends ColorSchemeInterface {
         return this._design;
     }
 
-    public setDesign(design: Designs): this {
+    public setDesign(design: Designs | string): this {
         this._design = design;
         return this;
     }
@@ -883,15 +883,31 @@ namespace Utils {
     }
 
     export function colorSchemeSelectBox(service: ColorPickerService, identifier: string): SelectBox {
-        return new SelectBox()
-            .addItems(...[...service.all.values()].map(v => {
-                let item = new SelectBoxItem()
-                    .setLabel(v.name)
-                    .setId(identifier + v.id);
-                item.value.setValue(v.id)
-                    .setChecked(v.current);
-                return item;
-            }));
+        let box = new SelectBox();
+        return box
+            // .addItems(...[...service.all.values()]
+            //     .filter(v => !box.has(v.id))
+            //     .map(v => {
+            //         let item = new SelectBoxItem()
+            //             .setLabel(v.name)
+            //             .setId(identifier + v.id);
+            //         item.value.setValue(v.id)
+            //             .setChecked(v.current);
+            //         return item;
+            //     }))
+            .on(WidgetEvents.rebuild, (event) => event.target
+                .addItems(...[...service.all.values()]
+                    .filter(v => !event.target.has(identifier + v.id))
+                    .map(v => {
+                        let item = new SelectBoxItem()
+                            .setLabel(v.name)
+                            .setId(identifier + v.id);
+                        item.value.setValue(v.id)
+                            .setChecked(v.current);
+                        return item;
+                    }))
+                .removeItems(...event.target.items
+                    .filter(v=> !service.all.has(v.id.substring(identifier.length)))));
     }
 
     export function designSelectBox(current: Designs, identifier: string): SelectBox {
@@ -913,6 +929,7 @@ class ColorSchemeNewDialog extends Dialog<any, ColorScheme, HTMLDivElement, HTML
     private readonly service: ColorPickerService;
     private readonly nameInput: TextInput;
     private readonly authorInput: TextInput;
+    private readonly designInput: SelectBox;
     private readonly colorSchemeSelectBox: SelectBox;
 
     constructor(service: ColorPickerService, baseScheme: ColorScheme) {
@@ -959,10 +976,16 @@ class ColorSchemeNewDialog extends Dialog<any, ColorScheme, HTMLDivElement, HTML
         //     this.service.save(this._colorScheme);
         // });
 
-        this.colorSchemeSelectBox = Utils.colorSchemeSelectBox(this.service, ColorSchemeNewDialog.name)
-            .on(SelectBoxEvents.input, (event, value) => this.baseScheme = this.service.getColorScheme(value)!);
+        this.designInput = Utils.designSelectBox(this.baseScheme.design, ColorSchemeNewDialog.name)
+        // .on(InputEvents.input, (event, value) => {
+        //     this.baseScheme.setDesign(value.value);
+        //     this.service.activate(this._colorScheme);
+        // });
 
-        this.aContent.addItems(this.colorSchemeSelectBox, this.nameInput, this.authorInput);
+        this.colorSchemeSelectBox = Utils.colorSchemeSelectBox(this.service, ColorSchemeNewDialog.name)
+            .on(SelectBoxEvents.input, (event, value) => this.setBaseScheme(this.service.getColorScheme(value)!).rebuild());
+
+        this.aContent.addItems(this.colorSchemeSelectBox, this.nameInput, this.authorInput, this.designInput);
     }
 
     public override build(suppressCallback: boolean = false): JQuery<HTMLDivElement> {
@@ -1002,6 +1025,10 @@ class ColorSchemeNewDialog extends Dialog<any, ColorScheme, HTMLDivElement, HTML
     public override rebuild(suppressCallback: boolean = false): JQuery<HTMLDivElement> {
         super.rebuild(true);
 
+        this.nameInput.setPlaceHolder(this.baseScheme.name);
+        this.authorInput.setPlaceHolder(this.baseScheme.author);
+        this.designInput.setChecked(this.baseScheme.design);
+
         this.rebuildCallback(suppressCallback);
         return this.domObject;
     }
@@ -1026,17 +1053,23 @@ class ColorSchemeNewDialog extends Dialog<any, ColorScheme, HTMLDivElement, HTML
             .setCurrent(false)
             .setPreDefined(false)
             .setName(this.nameInput.value ?? this.baseScheme.name)
-            .setAuthor(this.authorInput.value ?? this.baseScheme.author);
+            .setAuthor(this.authorInput.value ?? this.baseScheme.author)
+            .setDesign(this.designInput.items.find(v => v.value.checked)!.value.value);
         this.service.save(scheme);
         return scheme;
     }
 
     public override open(value?: ColorScheme): this {
+        this.baseScheme = (value ?? this.baseScheme) ?? this.service.getCurrent();
+        this.colorSchemeSelectBox.rebuild();
+        this.colorSchemeSelectBox.setChecked(ColorSchemeNewDialog.name + this.baseScheme.id)
+            .rebuild();
         super.open(value);
         this.nameInput.setValue("")
             .setPlaceHolder(this.baseScheme.name);
         this.authorInput.setValue("")
             .setPlaceHolder(this.baseScheme.author);
+        this.designInput.setChecked(this.baseScheme.design);
         return this;
     }
 
