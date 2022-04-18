@@ -5,30 +5,41 @@ import {Pair} from "./base.js";
 import "./imports.js";
 import Event = JQuery.Event;
 
-const WidgetEvents = {
-    build: "build",
-    all: "all",
-    visibilityChanged: "visibilityChanged",
-    sizeSet: "sizeSet",
-    initialize: "initialize",
-    rebuild: "rebuild",
-    needVisibilityUpdate: "needVisibilityUpdate",
-    clicked: "clicked"
-};
+// const WidgetEvents = {
+//     build: "build",
+//     all: "all",
+//     visibilityChanged: "visibilityChanged",
+//     sizeSet: "sizeSet",
+//     initialize: "initialize",
+//     rebuild: "rebuild",
+//     needVisibilityUpdate: "needVisibilityUpdate",
+//     clicked: "clicked"
+// };
+//
+// type WidgetEvents = (typeof WidgetEvents)[keyof typeof WidgetEvents];
 
-type WidgetEvents = (typeof WidgetEvents)[keyof typeof WidgetEvents];
+enum WidgetEvents {
+    build = "build",
+    all = "all",
+    visibilityChanged = "visibilityChanged",
+    sizeSet = "sizeSet",
+    initialize = "initialize",
+    rebuild = "rebuild",
+    needVisibilityUpdate = "needVisibilityUpdate",
+    clicked = "clicked"
+}
 
-type EventCallback<T extends WidgetEvents, T1 extends HTMLElement, T2 extends Widget<T, T1> = Widget<T, T1>> = {
+type EventCallback<T extends string, T1 extends HTMLElement, T2 extends WidgetBase<T, T1> = WidgetBase<T, T1>> = {
     [type in T]?: EventHandler<T, T1, T2>;
 };
 
-type EventHandler<T extends WidgetEvents, T1 extends HTMLElement, T2 extends Widget<T, T1> = Widget<T, T1>> = (event: { type: T, target: T2, originalEvent: Event | null }, ...args: any[]) => void;
+type EventHandler<T extends string, T1 extends HTMLElement, T2 extends WidgetBase<T, T1> = WidgetBase<T, T1>> = (event: { type: T, target: T2, originalEvent: Event | null }, ...args: any[]) => any;
 
-abstract class _EventHandler<HtmlElementType extends HTMLElement> {
-    public abstract on(events: EventCallback<string, HtmlElementType> | string, handler?: EventHandler<string, HtmlElementType>): this;
-
-    protected abstract dispatchEvent(type: string, args?: any[], originalEvent?: Event | null, ...acceptedTypes: string[]): this;
-}
+// abstract class _EventHandler<HtmlElementType extends HTMLElement> {
+//     public abstract on(events: EventCallback<WidgetEvents, HtmlElementType> | string, handler?: EventHandler<WidgetEvents, HtmlElementType>): this;
+//
+//     protected abstract dispatchEvent(type: string, args?: any[], originalEvent?: Event | null, ...acceptedTypes: string[]): this;
+// }
 
 interface _WidgetBase {
     // appendTo(element: JQuery.Selector | JQuery<HTMLElement> | JQuery.htmlString | JQuery.TypeOrArray<Element | DocumentFragment>): this;
@@ -38,7 +49,7 @@ interface _WidgetBase {
 
     rebuild(suppressCallback: boolean): JQuery<HTMLElement>;
 
-    tryRebuild(suppressCallback: boolean): JQuery<HTMLElement>;
+    tryRebuild(suppressCallback: boolean): JQuery<HTMLElement> | undefined;
 
     destroy(): this;
 
@@ -63,12 +74,12 @@ interface _WidgetBase {
     get domObject(): JQuery<HTMLElement>;
 }
 
-abstract class WidgetBase implements _WidgetBase {
-    public abstract build(suppressCallback: boolean): JQuery<HTMLElement>;
+abstract class WidgetBase<EventType extends  WidgetEvents[keyof WidgetEvents], HtmlElementType extends HTMLElement> implements _WidgetBase {
+    public abstract build(suppressCallback?: boolean): JQuery<HtmlElementType>;
 
-    public abstract rebuild(suppressCallback: boolean): JQuery<HTMLElement>;
+    public abstract rebuild(suppressCallback?: boolean): JQuery<HtmlElementType>;
 
-    public abstract tryRebuild(suppressCallback: boolean): JQuery<HTMLElement>;
+    public abstract tryRebuild(suppressCallback?: boolean): JQuery<HtmlElementType> | undefined;
 
     public abstract destroy(): this;
 
@@ -90,19 +101,29 @@ abstract class WidgetBase implements _WidgetBase {
 
     public abstract get hidingIfNotShown(): boolean;
 
-    public abstract get domObject(): JQuery<HTMLElement>;
+    public abstract get domObject(): JQuery<HtmlElementType>;
 
-    protected abstract buildCallback(suppress?: boolean): JQuery<HTMLElement>;
-    protected abstract rebuildCallback(suppress?: boolean): JQuery<HTMLElement>;
+    protected abstract buildCallback(suppress?: boolean): JQuery<HtmlElementType>;
 
-    protected abstract addChild(childName: string | keyof this): this;
-    protected abstract addChild(childName: string | keyof this, child?: WidgetBase): this;
+    protected abstract rebuildCallback(suppress?: boolean): JQuery<HtmlElementType>;
+
+    // protected abstract addChild(childName: string | keyof this): this;
+    protected abstract addChild<T extends WidgetBase<WidgetEvents, HTMLElement>>(childName: string | keyof this, child?: T): this;
+
+
+    public abstract on(events: EventCallback<string, HtmlElementType> | string, handler?: EventHandler<string, HtmlElementType>): this;
+
+    protected abstract dispatchEvent(type: string, args?: any[], originalEvent?: Event | null, ...acceptedTypes: string[]): this;
+
+    protected abstract disableEvent(event: string, disable?: boolean): this;
+
+    protected abstract eventDisabled(event: string): boolean;
 }
 
-abstract class Widget<EventType extends WidgetEvents, HtmlElementType extends HTMLElement = HTMLElement> extends _EventHandler<HtmlElementType> implements WidgetBase {
+abstract class Widget<EventType extends WidgetEvents[keyof WidgetEvents], HtmlElementType extends HTMLElement = HTMLElement> extends WidgetBase<EventType, HtmlElementType> {
     private _built: boolean = false;
     private _domObject?: JQuery<HtmlElementType>;
-    protected readonly children: Map<string, Widget<WidgetEvents, any>> = new Map();
+    protected readonly children: Map<string, WidgetBase<WidgetEvents, any>> = new Map();
     private readonly callbacks: Array<Pair<string, EventHandler<string, HtmlElementType, this>>> = [];
     private readonly _disabledEvents: Set<string> = new Set();
     private _visibility: boolean = false;
@@ -237,7 +258,7 @@ abstract class Widget<EventType extends WidgetEvents, HtmlElementType extends HT
     }
 
     protected addChild(childName: string | keyof this): this;
-    protected addChild<ChildHtmlElementType extends HTMLElement, ChildType extends Widget<WidgetEvents, ChildHtmlElementType>>(childName: string, child: ChildType): this;
+    protected addChild<ChildHtmlElementType extends HTMLElement, ChildType extends WidgetBase<WidgetEvents, ChildHtmlElementType>>(childName: string, child: ChildType): this;
     /**
      * Using this function single parameterized works only if the child is a field (with the same name as {@link childName}) of this object
      * @param {string} childName
@@ -245,7 +266,7 @@ abstract class Widget<EventType extends WidgetEvents, HtmlElementType extends HT
      * @return {this}
      * @protected
      */
-    protected addChild<ChildHtmlElementType extends HTMLElement, ChildType extends Widget<WidgetEvents, ChildHtmlElementType>>(childName: string, child?: ChildType): this {
+    protected addChild<ChildHtmlElementType extends HTMLElement, ChildType extends WidgetBase<WidgetEvents, ChildHtmlElementType>>(childName: string, child?: ChildType): this {
         if (child === undefined) {
             child = this[childName as keyof this] as unknown as ChildType;
         }
@@ -303,7 +324,7 @@ abstract class Widget<EventType extends WidgetEvents, HtmlElementType extends HT
         this._visibility = visible;
         this.buildVisibility();
         for (let i of this.children.values()) {
-            if (i != null && i._inheritVisibility) {
+            if (i != null && i.inheritVisibility) {
                 i.setVisibility(visible);
             }
         }

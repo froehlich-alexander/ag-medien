@@ -13,7 +13,7 @@ import {
 } from "./AbstractWidgets.js";
 import {Mixin, mixin, MixinImplementing, Tripel} from "./base.js";
 import {EventCallbacks} from "./Util.js";
-import {Widget, WidgetEvents} from "./Widget.js";
+import {Widget, WidgetBase, WidgetEvents} from "./Widget.js";
 import {Font, FontFamily, FontSize, FontWeight} from "./WidgetBase.js";
 import ClickEvent = JQuery.ClickEvent;
 
@@ -364,7 +364,7 @@ enum FlexAlign {
  * CSS column-gap is used for space between the items
  */
 class FlexBox<EventType extends WidgetEvents, HtmlElementType extends HTMLElement = HTMLDivElement> extends Widget<EventType, HtmlElementType> {
-    private readonly items: Tripel<Widget<WidgetEvents>, FlexAlign, FlexAlign>[] = [];
+    private readonly items: Tripel<WidgetBase<WidgetEvents, HTMLElement>, FlexAlign, FlexAlign>[] = [];
     private _startSpacing: string = "";
     private _endSpacing: string = "";
     private _itemSpacing: string = "";
@@ -461,7 +461,7 @@ class FlexBox<EventType extends WidgetEvents, HtmlElementType extends HTMLElemen
         return this.domObject;
     }
 
-    public addItem<ItemHtmlElementType extends HTMLElement, ItemType extends Widget<WidgetEvents, ItemHtmlElementType>>(item: ItemType, mainAlign: FlexAlign = FlexAlign.center, crossAlign: FlexAlign = FlexAlign.center): this {
+    public addItem<ItemHtmlElementType extends HTMLElement, ItemType extends WidgetBase<WidgetEvents, ItemHtmlElementType>>(item: ItemType, mainAlign: FlexAlign = FlexAlign.center, crossAlign: FlexAlign = FlexAlign.center): this {
         console.assert(!this.built);
         item.setInheritVisibility(true);
         this.addChild("flexbox" + this.items.push(new Tripel(item, mainAlign, crossAlign)).toString(10), item);
@@ -614,7 +614,7 @@ const TopEvents = {
 type TopEvents = (typeof TopEvents[keyof typeof TopEvents]);
 
 @mixin(OneIconContaining)
-class Top<HtmlElementType extends HTMLElement = HTMLDivElement> extends FlexBox<TopEvents, HtmlElementType> {
+class Top<HtmlElementType extends HTMLElement = HTMLDivElement> extends FlexBox<WidgetEvents&IconContainingEvents, HtmlElementType> {
     private readonly label: Text;
     private _defaultTop = true;
 
@@ -673,7 +673,7 @@ interface Top<HtmlElementType extends HTMLElement = HTMLDivElement> extends Mixi
 }
 
 @mixin(ColorEditable, SpacingEditable, LeadingTrailingIconContaining, CheckboxContaining, FavoriteContaining, LabelContaining)
-class ListTile<EventType extends WidgetEvents | IconContainingEvents, HtmlElementType extends HTMLElement = HTMLDivElement> extends FlexBox<EventType, HtmlElementType> {
+class ListTile<EventType extends WidgetEvents & IconContainingEvents, HtmlElementType extends HTMLElement = HTMLDivElement> extends FlexBox<EventType, HtmlElementType> {
     // private readonly _label: Text = new Text();
     private readonly _description: Text = new Text();
 
@@ -730,7 +730,7 @@ class ListTile<EventType extends WidgetEvents | IconContainingEvents, HtmlElemen
     }
 }
 
-interface ListTile<EventType extends WidgetEvents | IconContainingEvents, HtmlElementType extends HTMLElement = HTMLDivElement> extends FlexBox<EventType, HtmlElementType>, MixinImplementing, ColorEditable<EventType, HtmlElementType>, SpacingEditable<EventType, HtmlElementType>, LeadingTrailingIconContaining<EventType, HtmlElementType>, CheckboxContaining<EventType, HtmlElementType>, FavoriteContaining<EventType, HtmlElementType>, LabelContaining<EventType, HtmlElementType> {
+interface ListTile<EventType extends WidgetEvents & IconContainingEvents, HtmlElementType extends HTMLElement = HTMLDivElement> extends FlexBox<EventType, HtmlElementType>, MixinImplementing, ColorEditable<EventType, HtmlElementType>, SpacingEditable<EventType, HtmlElementType>, LeadingTrailingIconContaining<EventType, HtmlElementType>, CheckboxContaining<EventType, HtmlElementType>, FavoriteContaining<EventType, HtmlElementType>, LabelContaining<EventType, HtmlElementType> {
 }
 
 const TextInputEvents = {
@@ -1106,8 +1106,8 @@ type SelectBoxEvents = (typeof SelectBoxEvents[keyof typeof SelectBoxEvents]);
 @mixin(OneIconContaining)
 class SelectBox<HtmlElementType extends HTMLElement = HTMLDivElement> extends Widget<SelectBoxEvents, HtmlElementType> {
     private _items: SelectBoxItem[] = [];
-    private liItems: Box<WidgetEvents, HTMLDivElement, SelectBoxListItem> = new Box<WidgetEvents, HTMLDivElement, SelectBoxListItem>("ul").show();
-    private inputItems: Box<WidgetEvents, HTMLDivElement, SelectBoxItemValue> = new Box<WidgetEvents, HTMLDivElement, SelectBoxItemValue>().show();
+    private liItems: Box<WidgetEvents&ItemContainingEvents, HTMLDivElement, SelectBoxListItem> = new Box<WidgetEvents&ItemContainingEvents, HTMLDivElement, SelectBoxListItem>("ul").show();
+    private inputItems: Box<WidgetEvents&ItemContainingEvents, HTMLDivElement, SelectBoxItemValue> = new Box<WidgetEvents&ItemContainingEvents, HTMLDivElement, SelectBoxItemValue>().show();
     private optionsViewButton: CheckBoxInput;
 
     constructor() {
@@ -1244,11 +1244,11 @@ class SelectBox<HtmlElementType extends HTMLElement = HTMLDivElement> extends Wi
     }
 }
 
-interface SelectBox<HtmlElementType extends HTMLElement = HTMLDivElement> extends MixinImplementing, OneIconContaining<SelectBoxEvents, HtmlElementType> {
+interface SelectBox<HtmlElementType extends HTMLElement = HTMLDivElement> extends MixinImplementing, OneIconContaining<WidgetEvents&SelectBoxEvents, HtmlElementType> {
 }
 
 @mixin(ItemContaining, SpacingEditable)
-class Box<EventType extends WidgetEvents | ItemContainingEvents, HtmlElementType extends HTMLElement = HTMLDivElement, ItemType extends Widget<WidgetEvents, any> = Widget<WidgetEvents>> extends Widget<EventType, HtmlElementType> {
+class Box<EventType extends WidgetEvents & ItemContainingEvents, HtmlElementType extends HTMLElement = HTMLDivElement, ItemType extends WidgetBase<WidgetEvents, HTMLElement> = WidgetBase<WidgetEvents, HTMLElement>> extends Widget<EventType, HtmlElementType> {
     constructor(htmlElementType?: string) {
         super(htmlElementType);
         this.mixinConstructor(ItemContaining, SpacingEditable);
@@ -1271,10 +1271,10 @@ class Box<EventType extends WidgetEvents | ItemContainingEvents, HtmlElementType
     }
 }
 
-interface Box<EventType extends WidgetEvents | ItemContainingEvents, HtmlElementType extends HTMLElement = HTMLDivElement, ItemType extends Widget<WidgetEvents, any> = Widget<WidgetEvents>> extends MixinImplementing, ItemContaining<EventType, HtmlElementType, ItemType>, SpacingEditable<EventType, HtmlElementType> {
+interface Box<EventType extends WidgetEvents & ItemContainingEvents, HtmlElementType extends HTMLElement = HTMLDivElement, ItemType extends WidgetBase<WidgetEvents, HTMLElement> = WidgetBase<WidgetEvents, HTMLElement>> extends MixinImplementing, ItemContaining<EventType, HtmlElementType, ItemType>, SpacingEditable<EventType, HtmlElementType> {
 }
 
-class ContentBox<HtmlElementType extends HTMLElement = HTMLDivElement, ItemType extends Widget<WidgetEvents> = Widget<WidgetEvents>> extends Box<WidgetEvents, HtmlElementType, ItemType> {
+class ContentBox<HtmlElementType extends HTMLElement = HTMLDivElement, ItemType extends WidgetBase<WidgetEvents, HTMLElement> = WidgetBase<WidgetEvents, HTMLElement>> extends Box<WidgetEvents&ItemContainingEvents, HtmlElementType, ItemType> {
 
     constructor(htmlElementType?: string) {
         super(htmlElementType);

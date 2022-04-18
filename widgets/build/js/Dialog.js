@@ -1,6 +1,5 @@
-import { Widget, WidgetEvents } from "./Widget.js";
+import { Widget } from "./Widget.js";
 import { ButtonBox, ContentBox, FlexAlign, Top } from "./Widgets.js";
-const DialogEvents = Object.assign(Object.assign({}, WidgetEvents), { accepted: "accepted", finished: "finished", rejected: "rejected" });
 var DialogState;
 (function (DialogState) {
     DialogState["accepted"] = "accepted";
@@ -9,6 +8,28 @@ var DialogState;
     DialogState["open"] = "open";
     DialogState["notOpen"] = "notOpen";
 })(DialogState || (DialogState = {}));
+// const DialogEvents = {
+//     ...WidgetEvents,
+//     accepted: "accepted",
+//     finished: "finished",
+//     rejected: "rejected",
+// };
+//
+// type DialogEvents = (typeof DialogEvents)[keyof typeof DialogEvents];
+var DialogEvents;
+(function (DialogEvents) {
+    DialogEvents["accepted"] = "accepted";
+    DialogEvents["finished"] = "finished";
+    DialogEvents["rejected"] = "rejected";
+})(DialogEvents || (DialogEvents = {}));
+//
+// interface _Dialog extends _WidgetBase {
+//     accept(): this;
+//
+//     reject(): this;
+//
+//     open(): this;
+// }
 class Dialog extends Widget {
     constructor(htmlElementType, contentHtmlType) {
         super(htmlElementType);

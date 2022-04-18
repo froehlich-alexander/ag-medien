@@ -2,13 +2,6 @@ import {Util} from "./Util.js";
 import {WidgetBase, Widget, WidgetEvents} from "./Widget.js";
 import {Button, ButtonBox, ContentBox, FlexAlign, Top} from "./Widgets.js";
 
-const DialogEvents = {
-    ...WidgetEvents,
-    accepted: "accepted",
-    finished: "finished",
-    rejected: "rejected",
-};
-
 enum DialogState {
     accepted = "accepted",
     rejected = "rejected",
@@ -17,17 +10,31 @@ enum DialogState {
     notOpen = "notOpen",
 }
 
-type DialogEvents = (typeof DialogEvents)[keyof typeof DialogEvents];
+// const DialogEvents = {
+//     ...WidgetEvents,
+//     accepted: "accepted",
+//     finished: "finished",
+//     rejected: "rejected",
+// };
+//
+// type DialogEvents = (typeof DialogEvents)[keyof typeof DialogEvents];
 
-interface _Dialog extends WidgetBase {
-    accept(): this;
-
-    reject(): this;
-
-    open(): this;
+enum DialogEvents {
+    accepted = "accepted",
+    finished = "finished",
+    rejected = "rejected",
 }
 
-abstract class Dialog<EventType extends DialogEvents, ValueType, ContentBoxHtmlElementType extends HTMLElement = HTMLDivElement, ContentBoxItemHtlElementType extends HTMLElement = HTMLDivElement, ContentBoxItemType extends Widget<WidgetEvents, ContentBoxItemHtlElementType> = Widget<WidgetEvents, ContentBoxItemHtlElementType>> extends Widget<EventType, HTMLDivElement> implements _Dialog {
+//
+// interface _Dialog extends _WidgetBase {
+//     accept(): this;
+//
+//     reject(): this;
+//
+//     open(): this;
+// }
+
+abstract class Dialog<EventType extends WidgetEvents & DialogEvents, ValueType, ContentBoxHtmlElementType extends HTMLElement = HTMLDivElement, ContentBoxItemHtlElementType extends HTMLElement = HTMLDivElement, ContentBoxItemType extends WidgetBase<WidgetEvents, ContentBoxItemHtlElementType> = WidgetBase<WidgetEvents, ContentBoxItemHtlElementType>> extends Widget<EventType, HTMLDivElement> {
     private _state: DialogState = DialogState.notOpen;
     private _value: ValueType | undefined;
     private readonly _buttonBox: ButtonBox = new ButtonBox();

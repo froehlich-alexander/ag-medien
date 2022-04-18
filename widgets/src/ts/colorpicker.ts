@@ -1,6 +1,6 @@
 import {mixin, MixinImplementing, toObject} from "./base.js";
 import {EventCallbacks} from "./Util.js";
-import {Widget, WidgetEvents} from "./Widget.js";
+import {Widget, WidgetBase, WidgetEvents} from "./Widget.js";
 import {FontSize, FontWeight} from "./WidgetBase.js";
 import {Overlay} from "./Overlay.js";
 import {Dialog, DialogEvents} from "./Dialog.js";
@@ -924,7 +924,7 @@ namespace Utils {
     }
 }
 
-class ColorSchemeNewDialog extends Dialog<any, ColorScheme, HTMLDivElement, HTMLDivElement, Widget<WidgetEvents, HTMLDivElement>> {
+class ColorSchemeNewDialog extends Dialog<WidgetEvents&DialogEvents, ColorScheme, HTMLDivElement, HTMLDivElement, WidgetBase<WidgetEvents, HTMLDivElement>> {
     private baseScheme: ColorScheme;
     private readonly service: ColorPickerService;
     private readonly nameInput: TextInput;
@@ -1079,7 +1079,7 @@ class ColorSchemeNewDialog extends Dialog<any, ColorScheme, HTMLDivElement, HTML
     }
 }
 
-class ColorSchemeInfoDialog extends Dialog<DialogEvents, ColorScheme, HTMLDivElement, HTMLDivElement, TextInput<HTMLDivElement> | SelectBox<HTMLDivElement>> {
+class ColorSchemeInfoDialog extends Dialog<WidgetEvents&DialogEvents, ColorScheme, HTMLDivElement, HTMLDivElement, TextInput<HTMLDivElement> | SelectBox<HTMLDivElement>> {
     private _colorScheme: ColorScheme;
     private readonly colorSchemeBackup: ColorScheme;
     private readonly nameInput: TextInput;

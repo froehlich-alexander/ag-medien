@@ -250,11 +250,11 @@ class Item extends Mixin {
     }
 }
 
-class ItemContaining<EventType extends WidgetEvents, HtmlElementType extends HTMLElement, ItemType extends WidgetBase> extends Mixin {
+class ItemContaining<EventType extends WidgetEvents, HtmlElementType extends HTMLElement, ItemType extends WidgetBase<WidgetEvents, HTMLElement>> extends Mixin {
     private static itemChildrenPrefix: string = "item";
     private itemCount = 0;
 
-    protected buildItem(item: Widget<WidgetEvents>, inheritVisibility: boolean = true): void {
+    protected buildItem(item: ItemType, inheritVisibility: boolean = true): void {
         item.setInheritVisibility(inheritVisibility);
     }
 
@@ -263,7 +263,7 @@ class ItemContaining<EventType extends WidgetEvents, HtmlElementType extends HTM
             .filter(value => ItemContaining.isItem(value[0]))
             .sort()
             .map(value => value[1])) {
-            this.buildItem(i);
+            this.buildItem(i as ItemType);
             this.domObject.append(i.build());
         }
         return this;
@@ -435,7 +435,7 @@ class ItemContaining<EventType extends WidgetEvents, HtmlElementType extends HTM
     }
 }
 
-interface ItemContaining<EventType extends WidgetEvents, HtmlElementType extends HTMLElement, ItemType extends WidgetBase> extends Mixin, Widget<EventType, HtmlElementType> {
+interface ItemContaining<EventType extends WidgetEvents, HtmlElementType extends HTMLElement, ItemType extends WidgetBase<WidgetEvents, HTMLElement>> extends Mixin, Widget<EventType, HtmlElementType> {
 }
 
 enum CheckboxEvents {

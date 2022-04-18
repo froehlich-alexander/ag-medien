@@ -3,21 +3,32 @@ import { Pair } from "./base.js";
 // import {$, jQuery} from "../lib/jquery";
 // import * as $ from "jquery";
 import "./imports.js";
-const WidgetEvents = {
-    build: "build",
-    all: "all",
-    visibilityChanged: "visibilityChanged",
-    sizeSet: "sizeSet",
-    initialize: "initialize",
-    rebuild: "rebuild",
-    needVisibilityUpdate: "needVisibilityUpdate",
-    clicked: "clicked"
-};
-class _EventHandler {
-}
+// const WidgetEvents = {
+//     build: "build",
+//     all: "all",
+//     visibilityChanged: "visibilityChanged",
+//     sizeSet: "sizeSet",
+//     initialize: "initialize",
+//     rebuild: "rebuild",
+//     needVisibilityUpdate: "needVisibilityUpdate",
+//     clicked: "clicked"
+// };
+//
+// type WidgetEvents = (typeof WidgetEvents)[keyof typeof WidgetEvents];
+var WidgetEvents;
+(function (WidgetEvents) {
+    WidgetEvents["build"] = "build";
+    WidgetEvents["all"] = "all";
+    WidgetEvents["visibilityChanged"] = "visibilityChanged";
+    WidgetEvents["sizeSet"] = "sizeSet";
+    WidgetEvents["initialize"] = "initialize";
+    WidgetEvents["rebuild"] = "rebuild";
+    WidgetEvents["needVisibilityUpdate"] = "needVisibilityUpdate";
+    WidgetEvents["clicked"] = "clicked";
+})(WidgetEvents || (WidgetEvents = {}));
 class WidgetBase {
 }
-class Widget extends _EventHandler {
+class Widget extends WidgetBase {
     constructor(htmlElementType) {
         super();
         Object.defineProperty(this, "_built", {
@@ -263,7 +274,7 @@ class Widget extends _EventHandler {
         this._visibility = visible;
         this.buildVisibility();
         for (let i of this.children.values()) {
-            if (i != null && i._inheritVisibility) {
+            if (i != null && i.inheritVisibility) {
                 i.setVisibility(visible);
             }
         }

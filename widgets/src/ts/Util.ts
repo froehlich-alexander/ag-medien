@@ -60,7 +60,8 @@ class EventCallbacks {
      * Calculates and sets the height of an element
      * @type Pair
      */
-    static setHeight = <[WidgetEvents, EventHandler<WidgetEvents, HTMLElement>]>[
+    static setHeight = <[string, EventHandler<string, HTMLElement>]>
+        [
         WidgetEvents.sizeSet, function (event) {
             Util.setHeight(event.target.domObject);
         }];
@@ -78,7 +79,7 @@ class EventCallbacks {
      * Calculates and sets the width of an element
      * @type Pair
      */
-    static setWidth = <[WidgetEvents, EventHandler<WidgetEvents, HTMLElement>]>[
+    static setWidth = <[string, EventHandler<string, HTMLElement>]>[
         WidgetEvents.sizeSet, function (event) {
             Util.setWidth(event.target.domObject);
         }];
@@ -91,12 +92,12 @@ class EventCallbacks {
     //     Util.setHeightToRemaining(event.target.domObject, child.domObject);
     // });
 
-    static setWidthToRemaining = <[WidgetEvents, EventHandler<WidgetEvents, any>]>[
+    static setWidthToRemaining = <[string, EventHandler<string, any>]>[
         WidgetEvents.sizeSet, function (event) {
             Util.setWidthToRemaining(event.target.domObject.parent(), event.target.domObject);
         }];
 
-    static setHeightToRemaining = <[WidgetEvents, EventHandler<WidgetEvents, any, any>]>[
+    static setHeightToRemaining = <[string, EventHandler<string, any, any>]>[
         WidgetEvents.sizeSet, function (event) {
             Util.setHeightToRemaining(event.target.domObject.parent(), event.target.domObject);
         }];
