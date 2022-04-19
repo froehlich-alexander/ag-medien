@@ -37,9 +37,9 @@ abstract class Mixin {
 abstract class MixinImplementing extends Mixin {
     public mixinsInitialized: boolean = false;
 
-    protected mixinConstructor(...mixins: typeof Mixin[]) {
+    protected mixinConstructor(...mixins: typeof Mixin[]): this {
         if (this.mixinsInitialized) {
-            return;
+            return this;
         }
         mixins = (<typeof Mixin>this.constructor).__mixinDependencies;
         let mixinObjs = [];
@@ -55,6 +55,7 @@ abstract class MixinImplementing extends Mixin {
             }
         }
         this.mixinsInitialized = true;
+        return this;
     }
 
     // /**

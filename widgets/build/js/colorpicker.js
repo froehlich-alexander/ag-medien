@@ -6,12 +6,12 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 };
 import { mixin, toObject } from "./base.js";
 import { EventCallbacks } from "./Util.js";
-import { WidgetEvents } from "./Widget.js";
+import { Widget, WidgetEvents } from "./Widget.js";
 import { FontSize, FontWeight } from "./WidgetBase.js";
 import { Overlay } from "./Overlay.js";
 import { Dialog, DialogEvents } from "./Dialog.js";
-import { FavoriteEvents, InputEvents, Item } from "./AbstractWidgets.js";
-import { Button, ButtonEvents, FlexAlign, FlexBox, Icon, IconType, ListTile, SelectBox, SelectBoxEvents, SelectBoxItem, Text, TextInput, TextInputEvents, TopEvents } from "./Widgets.js";
+import { FavoriteEvents, IconContainingEvents, Input, InputEvents, Item } from "./AbstractWidgets.js";
+import { Button, ButtonEvents, FlexAlign, FlexBox, Icon, IconType, ListTile, SelectBox, SelectBoxEvents, SelectBoxItem, Text, TextInput, TextInputEvents } from "./Widgets.js";
 class ColorMap extends Map {
 }
 var Designs;
@@ -530,7 +530,15 @@ class ColorPickerService {
         //todo parse string
     }
 }
-const ColorPickerItemEvents = Object.assign(Object.assign({}, WidgetEvents), { colorChanged: "colorChanged" });
+// const ColorPickerItemEvents = {
+//     // ...WidgetEvents,
+//     colorChanged: "colorChanged",
+// };
+// type ColorPickerItemEvents = (typeof ColorPickerItemEvents)[keyof typeof ColorPickerItemEvents];
+var ColorPickerItemEvents;
+(function (ColorPickerItemEvents) {
+    ColorPickerItemEvents["colorChanged"] = "colorChanged";
+})(ColorPickerItemEvents || (ColorPickerItemEvents = {}));
 class ColorPickerItem extends ListTile {
     constructor(colorType) {
         super();
@@ -626,7 +634,7 @@ class ColorPicker extends Dialog {
             .setSpacing("3rem", "1rem", "2rem");
         this.enableTop(true);
         this.aTop.setLabel("Color-Picker")
-            .on(TopEvents.iconClicked, () => this.reject())
+            .on(IconContainingEvents.iconClicked, () => this.reject())
             .setDefaultTop(true);
         this.enableContent(true);
         // this.top = new Top().setLabel("Color-Picker")
@@ -798,7 +806,7 @@ class ColorSchemeDialog extends Dialog {
             .on(DialogEvents.accepted, () => this.rebuild()));
         this.enableTop(true);
         this.aTop.setLabel("Color Schemes");
-        this.aTop.on(TopEvents.iconClicked, () => this.reject());
+        this.aTop.on(IconContainingEvents.iconClicked, () => this.reject());
         this.enableContent(true);
         this.enableButtons(true);
         this.buttonBox
@@ -1008,7 +1016,7 @@ class ColorSchemeNewDialog extends Dialog {
         this.enableTop(true);
         this.aTop.setLabel("New Color-Scheme")
             .setDefaultTop(true)
-            .on(TopEvents.iconClicked, () => this.reject());
+            .on(IconContainingEvents.iconClicked, () => this.reject());
         // this.aTop.setIcon(Icon.Close().on(undefined, new Pair(IconEvents.clicked, () => {this.reject();
         //     console.log("close");})));
         this.baseScheme = baseScheme !== null && baseScheme !== void 0 ? baseScheme : service.getDefault();
@@ -1191,7 +1199,7 @@ class ColorSchemeInfoDialog extends Dialog {
         this.enableButtons(true);
         this.aTop.setLabel(colorScheme.name)
             .setDefaultTop(true)
-            .on(TopEvents.iconClicked, () => this.acceptOrReject());
+            .on(IconContainingEvents.iconClicked, () => this.acceptOrReject());
         this.addButton(Button.Reset()
             .on(WidgetEvents.clicked, () => {
             this.colorSchemeBackup.copy(this._colorScheme);
@@ -1261,6 +1269,33 @@ class ColorSchemeInfoDialog extends Dialog {
         this._colorScheme = colorScheme;
         colorScheme.copy(this.colorSchemeBackup);
         return this;
+    }
+}
+let ColorPickerNormalInput = class ColorPickerNormalInput extends Widget {
+    constructor() {
+        super();
+        this.mixinConstructor()
+            .setType("color")
+            .setName("normal-color-input");
+    }
+    build(suppressCallback = false) {
+        super.build(true)
+            .addClass("color-picker-normal-input")
+            .append(this.buildInput());
+        return this.buildCallback(suppressCallback);
+    }
+    rebuild(suppressCallback = false) {
+        super.rebuild(true);
+        this.setValue(`var(${this.id})`);
+        return this.rebuildCallback(suppressCallback);
+    }
+};
+ColorPickerNormalInput = __decorate([
+    mixin(Input)
+], ColorPickerNormalInput);
+class ColorPickerGradientInputDialog extends Dialog {
+    setValue() {
+        return null;
     }
 }
 export { ColorScheme, ColorPickerService, ColorPicker };

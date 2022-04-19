@@ -120,7 +120,7 @@ abstract class WidgetBase<EventType extends  WidgetEvents[keyof WidgetEvents], H
     protected abstract eventDisabled(event: string): boolean;
 }
 
-abstract class Widget<EventType extends WidgetEvents[keyof WidgetEvents], HtmlElementType extends HTMLElement = HTMLElement> extends WidgetBase<EventType, HtmlElementType> {
+abstract class Widget<EventType extends WidgetEvents, HtmlElementType extends HTMLElement = HTMLElement> extends WidgetBase<EventType, HtmlElementType> {
     private _built: boolean = false;
     private _domObject?: JQuery<HtmlElementType>;
     protected readonly children: Map<string, WidgetBase<WidgetEvents, any>> = new Map();

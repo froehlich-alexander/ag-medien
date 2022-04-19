@@ -4,7 +4,15 @@ import {Widget, WidgetBase, WidgetEvents} from "./Widget.js";
 import {FontSize, FontWeight} from "./WidgetBase.js";
 import {Overlay} from "./Overlay.js";
 import {Dialog, DialogEvents} from "./Dialog.js";
-import {CheckboxEvents, FavoriteContaining, FavoriteEvents, Input, InputEvents, Item} from "./AbstractWidgets.js";
+import {
+    CheckboxEvents,
+    FavoriteContaining,
+    FavoriteEvents, IconContainingEvents,
+    Input,
+    InputEvents,
+    Item,
+    ItemContainingEvents
+} from "./AbstractWidgets.js";
 import {
     Button,
     ButtonEvents,
@@ -18,8 +26,7 @@ import {
     SelectBoxItem,
     Text,
     TextInput,
-    TextInputEvents,
-    TopEvents
+    TextInputEvents
 } from "./Widgets.js";
 
 type ColorSchemeMap = Map<string, ColorScheme>;
@@ -503,13 +510,17 @@ class ColorPickerService {
     }
 }
 
-const ColorPickerItemEvents = {
-    ...WidgetEvents,
-    colorChanged: "colorChanged",
-};
-type ColorPickerItemEvents = (typeof ColorPickerItemEvents)[keyof typeof ColorPickerItemEvents];
+// const ColorPickerItemEvents = {
+//     // ...WidgetEvents,
+//     colorChanged: "colorChanged",
+// };
+// type ColorPickerItemEvents = (typeof ColorPickerItemEvents)[keyof typeof ColorPickerItemEvents];
 
-class ColorPickerItem extends ListTile<ColorPickerItemEvents, HTMLDivElement> {
+enum ColorPickerItemEvents {
+    colorChanged = "colorChanged"
+}
+
+class ColorPickerItem extends ListTile<WidgetEvents & IconContainingEvents & CheckboxEvents & FavoriteEvents & ColorPickerItemEvents, HTMLDivElement> {
     private _colorType: string;
 
     constructor(colorType: string) {
@@ -539,7 +550,7 @@ class ColorPickerItem extends ListTile<ColorPickerItemEvents, HTMLDivElement> {
     }
 }
 
-class ColorPicker extends Dialog<WidgetEvents, ColorScheme, HTMLDivElement, HTMLDivElement, ColorPickerItem | FlexBox<WidgetEvents>> {
+class ColorPicker extends Dialog<WidgetEvents & DialogEvents, ColorScheme, HTMLDivElement, HTMLDivElement, ColorPickerItem | FlexBox<WidgetEvents>> {
     private readonly colorPickerService: ColorPickerService;
     private readonly colorSchemeDialog: Overlay<ColorSchemeDialog>;
     // private readonly colorSchemeNewDialog: Overlay<ColorSchemeNewDialog>;
@@ -582,7 +593,7 @@ class ColorPicker extends Dialog<WidgetEvents, ColorScheme, HTMLDivElement, HTML
 
         this.enableTop(true);
         this.aTop.setLabel("Color-Picker")
-            .on(TopEvents.iconClicked, () => this.reject())
+            .on(IconContainingEvents.iconClicked, () => this.reject())
             .setDefaultTop(true);
         this.enableContent(true);
         // this.top = new Top().setLabel("Color-Picker")
@@ -693,7 +704,7 @@ interface ColorSchemeItem extends MixinImplementing, Item {
 }
 
 @mixin(Item)
-class ColorSchemeItem extends ListTile<WidgetEvents | CheckboxEvents | FavoriteEvents | ColorSchemeItemEvents> {
+class ColorSchemeItem extends ListTile<WidgetEvents & IconContainingEvents & CheckboxEvents & FavoriteEvents & ColorSchemeItemEvents> {
     private readonly _colorScheme: ColorScheme;
 
     constructor(colorScheme: ColorScheme) {
@@ -734,7 +745,7 @@ class ColorSchemeItem extends ListTile<WidgetEvents | CheckboxEvents | FavoriteE
     }
 }
 
-class ColorSchemeDialog extends Dialog<DialogEvents, null, HTMLDivElement, HTMLDivElement, ColorSchemeItem> {
+class ColorSchemeDialog extends Dialog<WidgetEvents & DialogEvents, null, HTMLDivElement, HTMLDivElement, ColorSchemeItem> {
     private readonly colorSchemeNewDialog: Overlay<ColorSchemeNewDialog>;
     private readonly colorSchemeInfoDialog: Overlay<ColorSchemeInfoDialog>;
     private readonly colorPickerService: ColorPickerService;
@@ -753,7 +764,7 @@ class ColorSchemeDialog extends Dialog<DialogEvents, null, HTMLDivElement, HTMLD
 
         this.enableTop(true);
         this.aTop.setLabel("Color Schemes");
-        this.aTop.on(TopEvents.iconClicked, () => this.reject());
+        this.aTop.on(IconContainingEvents.iconClicked, () => this.reject());
 
         this.enableContent(true);
 
@@ -907,7 +918,7 @@ namespace Utils {
                         return item;
                     }))
                 .removeItems(...event.target.items
-                    .filter(v=> !service.all.has(v.id.substring(identifier.length)))));
+                    .filter(v => !service.all.has(v.id.substring(identifier.length)))));
     }
 
     export function designSelectBox(current: Designs, identifier: string): SelectBox {
@@ -924,7 +935,7 @@ namespace Utils {
     }
 }
 
-class ColorSchemeNewDialog extends Dialog<WidgetEvents&DialogEvents, ColorScheme, HTMLDivElement, HTMLDivElement, WidgetBase<WidgetEvents, HTMLDivElement>> {
+class ColorSchemeNewDialog extends Dialog<WidgetEvents & DialogEvents, ColorScheme, HTMLDivElement, HTMLDivElement, WidgetBase<WidgetEvents, HTMLDivElement>> {
     private baseScheme: ColorScheme;
     private readonly service: ColorPickerService;
     private readonly nameInput: TextInput;
@@ -943,7 +954,7 @@ class ColorSchemeNewDialog extends Dialog<WidgetEvents&DialogEvents, ColorScheme
         this.enableTop(true);
         this.aTop.setLabel("New Color-Scheme")
             .setDefaultTop(true)
-            .on(TopEvents.iconClicked, () => this.reject());
+            .on(IconContainingEvents.iconClicked, () => this.reject());
         // this.aTop.setIcon(Icon.Close().on(undefined, new Pair(IconEvents.clicked, () => {this.reject();
         //     console.log("close");})));
 
@@ -1054,7 +1065,7 @@ class ColorSchemeNewDialog extends Dialog<WidgetEvents&DialogEvents, ColorScheme
             .setPreDefined(false)
             .setName(this.nameInput.value ?? this.baseScheme.name)
             .setAuthor(this.authorInput.value ?? this.baseScheme.author)
-            .setDesign(this.designInput.items.find(v => v.value.checked)!.value.value);
+            .setDesign(this.designInput.items.find(v => v.value.checked)!.value.value!);
         this.service.save(scheme);
         return scheme;
     }
@@ -1079,7 +1090,7 @@ class ColorSchemeNewDialog extends Dialog<WidgetEvents&DialogEvents, ColorScheme
     }
 }
 
-class ColorSchemeInfoDialog extends Dialog<WidgetEvents&DialogEvents, ColorScheme, HTMLDivElement, HTMLDivElement, TextInput<HTMLDivElement> | SelectBox<HTMLDivElement>> {
+class ColorSchemeInfoDialog extends Dialog<WidgetEvents & DialogEvents, ColorScheme, HTMLDivElement, HTMLDivElement, TextInput<HTMLDivElement> | SelectBox<HTMLDivElement>> {
     private _colorScheme: ColorScheme;
     private readonly colorSchemeBackup: ColorScheme;
     private readonly nameInput: TextInput;
@@ -1121,7 +1132,7 @@ class ColorSchemeInfoDialog extends Dialog<WidgetEvents&DialogEvents, ColorSchem
         this.enableButtons(true);
         this.aTop.setLabel(colorScheme.name)
             .setDefaultTop(true)
-            .on(TopEvents.iconClicked, () => this.acceptOrReject());
+            .on(IconContainingEvents.iconClicked, () => this.acceptOrReject());
         this.addButton(Button.Reset()
             .on(WidgetEvents.clicked, () => {
                 this.colorSchemeBackup.copy(this._colorScheme);
@@ -1203,6 +1214,38 @@ class ColorSchemeInfoDialog extends Dialog<WidgetEvents&DialogEvents, ColorSchem
         this._colorScheme = colorScheme;
         colorScheme.copy(this.colorSchemeBackup);
         return this;
+    }
+}
+
+interface ColorPickerNormalInput extends MixinImplementing, Input<string, WidgetEvents&InputEvents, HTMLDivElement> {
+}
+
+@mixin(Input)
+class ColorPickerNormalInput extends Widget<WidgetEvents&InputEvents, HTMLDivElement>{
+    constructor() {
+        super();
+        this.mixinConstructor()
+            .setType("color")
+            .setName("normal-color-input");
+    }
+
+    public override build(suppressCallback: boolean = false): JQuery<HTMLDivElement> {
+        super.build(true)
+            .addClass("color-picker-normal-input")
+            .append(this.buildInput())
+        return this.buildCallback(suppressCallback);
+    }
+
+    public override rebuild(suppressCallback: boolean = false): JQuery<HTMLDivElement> {
+        super.rebuild(true);
+        this.setValue(`var(${this.id})`);
+        return this.rebuildCallback(suppressCallback);
+    }
+}
+
+class ColorPickerGradientInputDialog extends Dialog<WidgetEvents&DialogEvents, null>{
+    protected setValue(): null {
+        return null;
     }
 }
 

@@ -5,7 +5,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
 var Icon_1, Button_1;
-import { CheckboxContaining, ColorEditable, FavoriteContaining, IconContainingEvents, Input, InputEvents, InputLabel, ItemContaining, LabelContaining, LeadingTrailingIconContaining, OneIconContaining, SpacingEditable } from "./AbstractWidgets.js";
+import { CheckboxContaining, ColorEditable, FavoriteContaining, Input, InputEvents, InputLabel, ItemContaining, LabelContaining, LeadingTrailingIconContaining, OneIconContaining, SpacingEditable } from "./AbstractWidgets.js";
 import { Mixin, mixin, Tripel } from "./base.js";
 import { EventCallbacks } from "./Util.js";
 import { Widget, WidgetEvents } from "./Widget.js";
@@ -658,7 +658,11 @@ let Text = class Text extends Widget {
 Text = __decorate([
     mixin(ColorEditable, SpacingEditable)
 ], Text);
-const TopEvents = Object.assign(Object.assign({}, WidgetEvents), IconContainingEvents);
+// const TopEvents = {
+//     ...WidgetEvents,
+//     ...IconContainingEvents
+// };
+// type TopEvents = (typeof TopEvents[keyof typeof TopEvents]);
 let Top = class Top extends FlexBox {
     constructor() {
         super();
@@ -1316,5 +1320,7 @@ class ContentBox extends Box {
         return this.buildCallback(suppressCallback);
     }
 }
-export { Icon, IconEvents, IconType, Button, ButtonEvents, ButtonBox, FlexAlign, Top, TopEvents, Text, ListTile, FlexBox, TextInput, TextInputEvents, Box, ContentBox, SelectBoxItem, SelectBox, SelectBoxEvents };
+export { Icon, IconEvents, IconType, Button, ButtonEvents, ButtonBox, FlexAlign, Top, 
+// TopEvents,
+Text, ListTile, FlexBox, TextInput, TextInputEvents, Box, ContentBox, SelectBoxItem, SelectBox, SelectBoxEvents };
 //# sourceMappingURL=Widgets.js.map

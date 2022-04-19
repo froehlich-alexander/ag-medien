@@ -1,10 +1,10 @@
 import {Dialog} from "./Dialog.js";
-import {Widget, WidgetEvents} from "./Widget.js";
+import {Widget, WidgetBase, WidgetEvents} from "./Widget.js";
 
 enum OverlayEvents {
 }
 
-class Overlay<T extends Widget<WidgetEvents, T2>, T2 extends HTMLElement = HTMLDivElement> extends Widget<WidgetEvents, HTMLDivElement> {
+class Overlay<T extends WidgetBase<WidgetEvents, T2>, T2 extends HTMLElement = HTMLDivElement> extends Widget<WidgetEvents, HTMLDivElement> {
     private readonly _widget: T;
 
     constructor(widget: T) {

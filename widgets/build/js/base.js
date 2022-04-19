@@ -94,7 +94,7 @@ class MixinImplementing extends Mixin {
     }
     mixinConstructor(...mixins) {
         if (this.mixinsInitialized) {
-            return;
+            return this;
         }
         mixins = this.constructor.__mixinDependencies;
         let mixinObjs = [];
@@ -110,6 +110,7 @@ class MixinImplementing extends Mixin {
             }
         }
         this.mixinsInitialized = true;
+        return this;
     }
 }
 /**
