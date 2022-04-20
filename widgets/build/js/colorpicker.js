@@ -675,6 +675,8 @@ class ColorPicker extends Dialog {
         //     .setIcon(Icon.Close().setClickable(true));
         // this.addChild("top", this.top);
         this.addChild("colorSchemeDialog", this.colorSchemeDialog);
+        this.addChild("colorPickerNormalInput", this.colorPickerNormalInput);
+        this.addChild("colorPickerGradientInput", this.colorPickerGradientInput);
         // this.children.set("colorSchemeNewDialog", this.colorSchemeNewDialog);
         // this.children.set("colorSchemeButton", this.colorSchemeButton);
         // this.children.set("colorSchemeLabel", this.colorSchemeLabel);
@@ -736,7 +738,7 @@ class ColorPicker extends Dialog {
                     console.log("edit clicked");
                     this.colorPickerNormalInput.widget
                         .setColorId(event.target.colorType);
-                    this.colorPickerNormalInput.show();
+                    this.colorPickerNormalInput.widget.open();
                 }
             });
         }));
@@ -836,8 +838,7 @@ class ColorSchemeDialog extends Dialog {
         });
         this.colorPickerService = colorPickerService;
         this.colorSchemeNewDialog = new Overlay(new ColorSchemeNewDialog(this.colorPickerService, this.colorPickerService.getCurrent())
-            .on(DialogEvents.accepted, (event, value) => {
-            console.log(value);
+            .on(DialogEvents.accepted, () => {
             this.rebuild();
             // this.aContent.addItems(value);
         }));
@@ -1066,16 +1067,10 @@ class ColorSchemeNewDialog extends Dialog {
             //should be redundant
             .setPreDefined(false)
             .setCurrent(false);
-        this.on(DialogEvents.accepted, (event, value) => {
+        this.on(DialogEvents.accepted, (event) => {
             console.log("accepted");
             console.log(event);
-            console.log(value);
             this.service.save(this._colorScheme.copy(this.service.getColorScheme()));
-        });
-        this.on(DialogEvents.rejected, (event, value) => {
-            console.log("rejected");
-            console.log(event);
-            console.log(value);
         });
         //ColorScheme field inputs
         this.nameInput = Utils.nameInput(ColorSchemeNewDialog.name)
@@ -1333,11 +1328,16 @@ let ColorPickerNormalInput = class ColorPickerNormalInput extends Dialog {
             value: void 0
         });
         this.mixinConstructor()
+            .enableTop(false)
+            .enableContent(false)
+            .enableButtons(false)
             .setType("color")
             .setName("normal-color-input")
             .setId("normal-color-input")
-            .on(InputEvents.input, () => {
-            this.hide();
+            .on(InputEvents.change, () => console.log("change"))
+            .on(InputEvents.input, () => console.log("input"))
+            .on(InputEvents.change, () => {
+            this.accept();
             this.dispatchEvent(ColorPickerInputEvents.colorChanged);
         });
     }
@@ -1349,7 +1349,9 @@ let ColorPickerNormalInput = class ColorPickerNormalInput extends Dialog {
     }
     rebuild(suppressCallback = false) {
         super.rebuild(true);
-        this.setValue(`var(${this._colorId})`);
+        console.assert(this._colorId, this._colorId);
+        console.log(this._colorId);
+        this._colorId !== undefined ? this.setValue(this.domObject.css(this._colorId)) : null;
         this.rebuildInput();
         return this.rebuildCallback(suppressCallback);
     }

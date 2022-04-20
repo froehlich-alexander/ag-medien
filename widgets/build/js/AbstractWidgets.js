@@ -689,7 +689,7 @@ let Input = class Input extends Mixin {
         });
     }
     rebuildInput(inputElement = this.domObject.find("input")) {
-        inputElement.attr("id", this._id)
+        inputElement.attr("id", this.id)
             .prop("disabled", this._disabled)
             .attr("name", this._name)
             .prop("readonly", this._readonly)
@@ -725,11 +725,6 @@ let Input = class Input extends Mixin {
         (_a = this.domObject) === null || _a === void 0 ? void 0 : _a.find("input").val(value);
         return this;
     }
-    setId(id) {
-        this._id = id;
-        console.log("input id");
-        return this;
-    }
     setDisabled(disabled) {
         this._disabled = disabled;
         return this;
@@ -749,9 +744,6 @@ let Input = class Input extends Mixin {
     setType(type) {
         this._type = type;
         return this;
-    }
-    get id() {
-        return this._id;
     }
     get disabled() {
         return this._disabled;
@@ -789,7 +781,7 @@ let InputLabel = class InputLabel extends Mixin {
         assertType(this._label, "string");
         return labelElement
             .text(this._label)
-            .attr("for", this._id);
+            .attr("for", this.id);
     }
     setLabel(label) {
         this._label = label;

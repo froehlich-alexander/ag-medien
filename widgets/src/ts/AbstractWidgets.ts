@@ -124,7 +124,7 @@ enum IconContainingEvents {
     iconClicked = "iconClicked"
 }
 
-abstract class IconContaining<EventType extends WidgetEvents | IconContainingEvents, HtmlElementType extends HTMLElement> extends Mixin {
+abstract class IconContaining<EventType extends WidgetEvents & IconContainingEvents, HtmlElementType extends HTMLElement> extends Mixin {
     protected _setIcon(fieldName: keyof this, icon: Icon): this {
         let icon1 = this[fieldName];
         assertType<Icon>(icon1, Icon);
@@ -135,10 +135,10 @@ abstract class IconContaining<EventType extends WidgetEvents | IconContainingEve
         return this;
     }
 
-    protected _getIcon(fieldName: keyof this): Icon {
+    protected _getIcon(fieldName: keyof this & string): Icon {
         let icon = this[fieldName];
         assertType<Icon>(icon, Icon);
-        return icon;
+        return icon as unknown as Icon;
     }
 
     protected _enableIcon(fieldName: keyof this, value: boolean): this {
@@ -160,10 +160,10 @@ abstract class IconContaining<EventType extends WidgetEvents | IconContainingEve
     }
 }
 
-interface IconContaining<EventType extends WidgetEvents | IconContainingEvents, HtmlElementType extends HTMLElement> extends Mixin, Widget<EventType, HtmlElementType> {
+interface IconContaining<EventType extends WidgetEvents & IconContainingEvents, HtmlElementType extends HTMLElement> extends Mixin, Widget<EventType, HtmlElementType> {
 }
 
-class OneIconContaining<EventType extends WidgetEvents, HtmlElementType extends HTMLElement> extends IconContaining<EventType, HtmlElementType> {
+class OneIconContaining<EventType extends WidgetEvents&IconContainingEvents, HtmlElementType extends HTMLElement> extends IconContaining<EventType, HtmlElementType> {
     private readonly _icon: Icon = new Icon();
 
     _constructor() {
@@ -188,7 +188,7 @@ class OneIconContaining<EventType extends WidgetEvents, HtmlElementType extends 
     }
 }
 
-class LeadingTrailingIconContaining<EventType extends WidgetEvents | IconContainingEvents, HtmlElementType extends HTMLElement> extends IconContaining<EventType, HtmlElementType> {
+class LeadingTrailingIconContaining<EventType extends WidgetEvents & IconContainingEvents, HtmlElementType extends HTMLElement> extends IconContaining<EventType, HtmlElementType> {
     private readonly _leadingIcon: Icon = new Icon();
     private readonly _trailingIcon: Icon = new Icon();
 
@@ -444,10 +444,10 @@ enum CheckboxEvents {
     checkStateChanged = "checkStateChanged"
 }
 
-interface CheckboxContaining<EventType extends WidgetEvents | CheckboxEvents, HtmlElementType extends HTMLElement> extends Widget<EventType, HtmlElementType> {
+interface CheckboxContaining<EventType extends WidgetEvents & CheckboxEvents, HtmlElementType extends HTMLElement> extends Widget<EventType, HtmlElementType> {
 }
 
-class CheckboxContaining<EventType extends WidgetEvents | CheckboxEvents, HtmlElementType extends HTMLElement> extends Mixin {
+class CheckboxContaining<EventType extends WidgetEvents & CheckboxEvents, HtmlElementType extends HTMLElement> extends Mixin {
     private readonly checkBoxIcon: Icon = Icon.of("check_box_outline_blank", IconType.material);
     private _checked: boolean = false;
 
@@ -518,10 +518,10 @@ enum FavoriteEvents {
     unFavored = "unFavored"
 }
 
-interface FavoriteContaining<EventType extends WidgetEvents | FavoriteEvents, HtmlElementType extends HTMLElement> extends Widget<EventType, HtmlElementType> {
+interface FavoriteContaining<EventType extends WidgetEvents & FavoriteEvents, HtmlElementType extends HTMLElement> extends Widget<EventType, HtmlElementType> {
 }
 
-class FavoriteContaining<EventType extends WidgetEvents | FavoriteEvents, HtmlElementType extends HTMLElement> extends Mixin {
+class FavoriteContaining<EventType extends WidgetEvents & FavoriteEvents, HtmlElementType extends HTMLElement> extends Mixin {
     private _favored: boolean = false;
     private favoriteIcon: Icon = Icon.of("favorite_border", IconType.material);
 
@@ -586,10 +586,10 @@ class FavoriteContaining<EventType extends WidgetEvents | FavoriteEvents, HtmlEl
     }
 }
 
-interface LabelContaining<EventType extends WidgetEvents | FavoriteEvents, HtmlElementType extends HTMLElement> extends Widget<EventType, HtmlElementType> {
+interface LabelContaining<EventType extends WidgetEvents & FavoriteEvents, HtmlElementType extends HTMLElement> extends Widget<EventType, HtmlElementType> {
 }
 
-class LabelContaining<EventType extends WidgetEvents | FavoriteEvents, HtmlElementType extends HTMLElement> extends Mixin {
+class LabelContaining<EventType extends WidgetEvents & FavoriteEvents, HtmlElementType extends HTMLElement> extends Mixin {
     protected readonly _label: Text = new Text();
 
     _constructor() {
@@ -619,7 +619,7 @@ class LabelContaining<EventType extends WidgetEvents | FavoriteEvents, HtmlEleme
 }
 
 class IdContaining extends Mixin {
-    protected _id: string;
+    protected _id?: string;
 
     public setId(id: string): this {
         this._id = id;
@@ -627,7 +627,7 @@ class IdContaining extends Mixin {
     }
 
     public get id(): string {
-        return this._id;
+        return this._id!;
     }
 }
 
@@ -637,16 +637,16 @@ enum InputEvents {
 }
 
 @mixin(IdContaining)
-class Input<ValueType extends string | number, EventType extends WidgetEvents | InputEvents, HtmlElementType extends HTMLElement = HTMLInputElement> extends Mixin {
+class Input<ValueType extends string | number, EventType extends WidgetEvents & InputEvents, HtmlElementType extends HTMLElement = HTMLInputElement> extends Mixin {
     private _disabled: boolean = false;
     private _name: string = "";
     private _readonly: boolean = false;
     private _required: boolean = false;
     private _type: string = "";
-    private _value: ValueType;
+    private _value?: ValueType;
 
     protected rebuildInput(inputElement: JQuery<HTMLInputElement> = this.domObject.find("input")): JQuery<HTMLInputElement> {
-        inputElement.attr("id", this._id)
+        inputElement.attr("id", this.id)
             .prop("disabled", this._disabled)
             .attr("name", this._name)
             .prop("readonly", this._readonly)
@@ -656,7 +656,7 @@ class Input<ValueType extends string | number, EventType extends WidgetEvents | 
     }
 
     protected buildInput(element: JQuery<HTMLInputElement> = $("<input>")): JQuery<HTMLInputElement> {
-        element.val(this._value);
+        element.val(this._value!);
         if (this._type === "checkbox" || this._type === "radio") {
             return element
                 .on("change", (event) => {
@@ -685,12 +685,6 @@ class Input<ValueType extends string | number, EventType extends WidgetEvents | 
         return this;
     }
 
-    public setId(id: string): this {
-        this._id = id;
-        console.log("input id");
-        return this;
-    }
-
     public setDisabled(disabled: boolean): this {
         this._disabled = disabled;
         return this;
@@ -716,10 +710,6 @@ class Input<ValueType extends string | number, EventType extends WidgetEvents | 
         return this;
     }
 
-    public get id(): string {
-        return this._id;
-    }
-
     public get disabled(): boolean {
         return this._disabled;
     }
@@ -741,7 +731,7 @@ class Input<ValueType extends string | number, EventType extends WidgetEvents | 
     }
 }
 
-interface Input<ValueType extends string | number, EventType extends WidgetEvents | InputEvents, HtmlElementType extends HTMLElement = HTMLInputElement> extends IdContaining, Widget<EventType, HtmlElementType> {
+interface Input<ValueType extends string | number, EventType extends WidgetEvents & InputEvents, HtmlElementType extends HTMLElement = HTMLInputElement> extends IdContaining, Widget<EventType, HtmlElementType> {
 }
 
 @mixin(IdContaining)
@@ -756,7 +746,7 @@ class InputLabel<EventType extends WidgetEvents, HtmlElementType extends HTMLEle
         assertType<string>(this._label, "string");
         return labelElement
             .text(this._label)
-            .attr("for", this._id);
+            .attr("for", this.id);
     }
 
     public setLabel(label: string): this {
