@@ -7,7 +7,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 import { mixin, toObject } from "./base.js";
 import { EventCallbacks } from "./Util.js";
 import { WidgetEvents } from "./Widget.js";
-import { FontSize, FontWeight } from "./WidgetBase.js";
+import { Color, FontSize, FontWeight } from "./WidgetBase.js";
 import { Overlay } from "./Overlay.js";
 import { Dialog, DialogEvents } from "./Dialog.js";
 import { FavoriteEvents, IconContainingEvents, Input, InputEvents, Item } from "./AbstractWidgets.js";
@@ -126,7 +126,6 @@ class ColorScheme extends ColorSchemeInterface {
      * @param colors {{string: string}}
      */
     constructor(service, id, name, author, colors = new Map()) {
-        var _a;
         super();
         Object.defineProperty(this, "_id", {
             enumerable: true,
@@ -141,7 +140,7 @@ class ColorScheme extends ColorSchemeInterface {
             this._author = author != null ? author : "unknown";
             this._preDefined = false;
             for (let key of colors.keys()) {
-                this._colors.set(key, (_a = colors.get(key)) !== null && _a !== void 0 ? _a : "inherit");
+                this._colors.set(key, colors.get(key) != null ? Color.toHex(colors.get(key)) : "inherit");
             }
             service.all.set(this._id, this);
         }
@@ -1349,9 +1348,9 @@ let ColorPickerNormalInput = class ColorPickerNormalInput extends Dialog {
     }
     rebuild(suppressCallback = false) {
         super.rebuild(true);
-        console.assert(this._colorId, this._colorId);
-        console.log(this._colorId);
-        this._colorId !== undefined ? this.setValue(this.domObject.css(this._colorId)) : null;
+        if (this._colorId !== undefined) {
+            this.setValue(this.domObject.css(this._colorId));
+        }
         this.rebuildInput();
         return this.rebuildCallback(suppressCallback);
     }

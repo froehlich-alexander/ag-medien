@@ -78,7 +78,28 @@ class Color {
         }); //a = 255
         this.set(rgba);
     }
+    static toHex(value, g, b, a) {
+        var _a, _b;
+        if (typeof value === "string") {
+            if (value.startsWith("#")) {
+                return value;
+            }
+            else if (value.startsWith("rgb")) {
+                value = value.replaceAll(/[();\s]/g, "")
+                    .replace(/rgba?/g, "");
+                console.log("replaced color string", value);
+                let rgba = value.split(",").map(v => Number.parseFloat(v));
+                return this.toHex(rgba[0], rgba[1], rgba[2], (_a = rgba[3] * 255) !== null && _a !== void 0 ? _a : undefined);
+            }
+            return value;
+        }
+        if (g === undefined) {
+            return "#" + value.toString(16);
+        }
+        return (_b = "#" + value.toString(16).padStart(2, "0") + g.toString(16) + b.toString(16) + (a === null || a === void 0 ? void 0 : a.toString(16))) !== null && _b !== void 0 ? _b : "";
+    }
     set(rgba) {
+        var _a;
         if (rgba == null) {
             this.value = 0;
         }
@@ -94,7 +115,7 @@ class Color {
             this.value = Number.parseInt(rgba, 16);
         }
         else {
-            this.value = (rgba[0] << 24) | (rgba[1] << 16) | (rgba[2] << 8) | rgba[3];
+            this.value = (rgba[0] << 24) | (rgba[1] << 16) | (rgba[2] << 8) | ((_a = rgba[3]) !== null && _a !== void 0 ? _a : 0);
         }
     }
     hexString() {

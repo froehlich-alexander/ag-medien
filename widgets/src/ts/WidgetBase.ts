@@ -1,4 +1,3 @@
-
 enum FontWeight {
     normal = "normal",
     bold = "bold",
@@ -68,22 +67,42 @@ class Color {
         this.set(rgba);
     }
 
-    set(rgba?: number | [number, number, number, number?] | string) {
+    public static toHex(r: number, g: number, b: number, a?: number): string;
+    public static toHex(rgba: number | string): string;
+    public static toHex(value: number | string, g?: number, b?: number, a?: number): string {
+        if (typeof value === "string") {
+            if (value.startsWith("#")) {
+                return value;
+            }
+            else if (value.startsWith("rgb")) {
+                value = value.replaceAll(/[();\s]/g, "")
+                    .replace(/rgba?/g, "");
+                console.log("replaced color string", value);
+                let rgba = value.split(",").map(v=>Number.parseFloat(v));
+                return this.toHex(rgba[0], rgba[1], rgba[2], rgba[3]*255 ?? undefined);
+            }
+            return value;
+        }
+        if (g === undefined) {
+            return "#" + value.toString(16);
+        }
+        return "#" + value.toString(16).padStart(2, "0") + g.toString(16) + b!.toString(16) + a?.toString(16) ?? "";
+    }
+
+    public set(rgba?: number | [number, number, number, number?] | string) {
         if (rgba == null) {
             this.value = 0;
-        }
-        else if (typeof rgba == "number") {
+        } else if (typeof rgba == "number") {
             console.log("int color");
             this.value = rgba;
-        }
-        else if (typeof rgba == "string") {
+        } else if (typeof rgba == "string") {
             rgba = rgba.replace("#", "");
             if (new RegExp("[^0-9]").test(rgba)) {
                 throw TypeError("A color string value should not contain any chars different from 0-9 or '#')");
             }
             this.value = Number.parseInt(rgba, 16);
         } else {
-            this.value = (rgba[0] << 24) | (rgba[1] << 16) | (rgba[2] << 8) | rgba[3];
+            this.value = (rgba[0] << 24) | (rgba[1] << 16) | (rgba[2] << 8) | (rgba[3] ?? 0);
         }
     }
 
@@ -92,7 +111,7 @@ class Color {
             + this.b.toString(16).padStart(2, "0") + this.a.toString(16).padStart(2, "0");
     }
 
-    get(): number {
+    public get(): number {
         return this.value;
     }
 
@@ -132,24 +151,23 @@ class Color {
 class CSSColorValue {
     private readonly color: Color = new Color();
     private _type: "color" | "string" | "null" = "null";
-    private colorString: string;
+    private colorString?: string;
 
-    get(): string {
+    public get(): string | null {
         switch (this._type) {
             case "null":
                 return null;
             case "color":
                 return this.color.hexString();
             case "string":
-                return this.colorString;
+                return this.colorString!;
         }
     }
 
-    set(value: string) {
-        if (value == null){
+    public set(value: string) {
+        if (value == null) {
             this._type = "null";
-        }
-        else {
+        } else {
             try {
                 this.color.set(value);
                 this._type = "color";
@@ -161,11 +179,11 @@ class CSSColorValue {
         return this;
     }
 
-    getColor(): Color {
+    public getColor(): Color | null {
         return this._type === "color" ? this.color : null;
     }
 
-    public get type(): "color" | "string" |"null" {
+    public get type(): "color" | "string" | "null" {
         return this._type;
     }
 }
