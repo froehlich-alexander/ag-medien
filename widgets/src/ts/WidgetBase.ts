@@ -27,9 +27,9 @@ enum FontFamily {
 }
 
 class Font {
-    private _size: string;
-    private _weight: string;
-    private _family: string;
+    private _size?: string;
+    private _weight?: string;
+    private _family?: string;
 
     public setSize(size: string): this {
         this._size = size;
@@ -47,15 +47,15 @@ class Font {
     }
 
 
-    public get size(): string {
+    public get size(): string | undefined {
         return this._size;
     }
 
-    public get weight(): string {
+    public get weight(): string | undefined {
         return this._weight;
     }
 
-    public get family(): string {
+    public get family(): string | undefined {
         return this._family;
     }
 }
@@ -73,20 +73,22 @@ class Color {
         if (typeof value === "string") {
             if (value.startsWith("#")) {
                 return value;
-            }
-            else if (value.startsWith("rgb")) {
+            } else if (value.startsWith("rgb")) {
                 value = value.replaceAll(/[();\s]/g, "")
                     .replace(/rgba?/g, "");
                 console.log("replaced color string", value);
-                let rgba = value.split(",").map(v=>Number.parseFloat(v));
-                return this.toHex(rgba[0], rgba[1], rgba[2], rgba[3]*255 ?? undefined);
+                let rgba = value.split(",").map(v => Number.parseFloat(v) / (v.endsWith("%") ? 100 : 1));
+                return this.toHex(rgba[0], rgba[1], rgba[2], Math.floor(rgba[3] * 255));
             }
             return value;
         }
         if (g === undefined) {
             return "#" + value.toString(16);
         }
-        return "#" + value.toString(16).padStart(2, "0") + g.toString(16) + b!.toString(16) + a?.toString(16) ?? "";
+        console.log("a", a);
+        let s = "#" + value.toString(16).padStart(2, "0") + g.toString(16).padStart(2, "0") + b!.toString(16).padStart(2, "0") + ((Number.isNaN(a) ? undefined : a)?.toString(16).padStart(2, "0") ?? "");
+        console.debug(s);
+        return s;
     }
 
     public set(rgba?: number | [number, number, number, number?] | string) {
@@ -106,9 +108,9 @@ class Color {
         }
     }
 
-    public hexString(): string {
+    public hexString(includeA: boolean = true): string {
         return "#" + this.r.toString(16).padStart(2, "0") + this.g.toString(16).padStart(2, "0")
-            + this.b.toString(16).padStart(2, "0") + this.a.toString(16).padStart(2, "0");
+        + this.b.toString(16).padStart(2, "0") + includeA ? this.a.toString(16).padStart(2, "0") : "";
     }
 
     public get(): number {
