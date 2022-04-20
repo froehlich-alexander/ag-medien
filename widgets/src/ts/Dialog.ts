@@ -34,9 +34,9 @@ enum DialogEvents {
 //     open(): this;
 // }
 
-abstract class Dialog<EventType extends WidgetEvents & DialogEvents, ValueType, ContentBoxHtmlElementType extends HTMLElement = HTMLDivElement, ContentBoxItemHtlElementType extends HTMLElement = HTMLDivElement, ContentBoxItemType extends WidgetBase<WidgetEvents, ContentBoxItemHtlElementType> = WidgetBase<WidgetEvents, ContentBoxItemHtlElementType>> extends Widget<EventType, HTMLDivElement> {
+abstract class Dialog<EventType extends WidgetEvents & DialogEvents, ContentBoxHtmlElementType extends HTMLElement = HTMLDivElement, ContentBoxItemHtlElementType extends HTMLElement = HTMLDivElement, ContentBoxItemType extends WidgetBase<WidgetEvents, ContentBoxItemHtlElementType> = WidgetBase<WidgetEvents, ContentBoxItemHtlElementType>> extends Widget<EventType, HTMLDivElement> {
     private _state: DialogState = DialogState.notOpen;
-    private _value: ValueType | undefined;
+    // private _value: ValueType | undefined;
     private readonly _buttonBox: ButtonBox = new ButtonBox();
     private readonly _aTop: Top = new Top();
     private readonly _aContent: ContentBox<ContentBoxHtmlElementType, ContentBoxItemType>;
@@ -91,9 +91,9 @@ abstract class Dialog<EventType extends WidgetEvents & DialogEvents, ValueType, 
         return this;
     }
 
-    public open(value?: ValueType): this {
+    public open(): this {
         this._state = DialogState.open;
-        this._value = value;
+        // this._value = value;
         this.setVisibility(true);
         this.rebuild();
         return this;
@@ -104,12 +104,12 @@ abstract class Dialog<EventType extends WidgetEvents & DialogEvents, ValueType, 
      * @return {ValueType}
      * @protected
      */
-    protected abstract setValue(): ValueType;
+    // protected abstract setValue(): ValueType;
 
-    public accept(): this {
+    public accept(...args: any[]): this {
         this._state = DialogState.accepted;
         this.close();
-        return (this.dispatchEvent(DialogEvents.accepted, [this.setValue()], undefined, DialogEvents.finished));
+        return (this.dispatchEvent(DialogEvents.accepted, ...args, undefined, DialogEvents.finished));
     }
 
     public reject(): this {
@@ -158,9 +158,9 @@ abstract class Dialog<EventType extends WidgetEvents & DialogEvents, ValueType, 
         return this._state;
     }
 
-    public get value(): ValueType | undefined {
-        return this._value;
-    }
+    // public get value(): ValueType | undefined {
+    //     return this._value;
+    // }
 
     public get buttonBox(): ButtonBox {
         return this._buttonBox;

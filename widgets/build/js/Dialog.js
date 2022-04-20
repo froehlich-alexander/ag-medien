@@ -39,12 +39,7 @@ class Dialog extends Widget {
             writable: true,
             value: DialogState.notOpen
         });
-        Object.defineProperty(this, "_value", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
+        // private _value: ValueType | undefined;
         Object.defineProperty(this, "_buttonBox", {
             enumerable: true,
             configurable: true,
@@ -101,17 +96,23 @@ class Dialog extends Widget {
         this._buttonBox.addButton(button, mainAlign, crossAlign);
         return this;
     }
-    open(value) {
+    open() {
         this._state = DialogState.open;
-        this._value = value;
+        // this._value = value;
         this.setVisibility(true);
         this.rebuild();
         return this;
     }
-    accept() {
+    /**
+     * You should save your result into {@link _value} in this method and return {@link _value}
+     * @return {ValueType}
+     * @protected
+     */
+    // protected abstract setValue(): ValueType;
+    accept(...args) {
         this._state = DialogState.accepted;
         this.close();
-        return (this.dispatchEvent(DialogEvents.accepted, [this.setValue()], undefined, DialogEvents.finished));
+        return (this.dispatchEvent(DialogEvents.accepted, ...args, undefined, DialogEvents.finished));
     }
     reject() {
         this._state = DialogState.rejected;
@@ -151,9 +152,9 @@ class Dialog extends Widget {
     get state() {
         return this._state;
     }
-    get value() {
-        return this._value;
-    }
+    // public get value(): ValueType | undefined {
+    //     return this._value;
+    // }
     get buttonBox() {
         return this._buttonBox;
     }
