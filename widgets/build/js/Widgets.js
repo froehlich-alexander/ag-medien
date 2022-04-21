@@ -1256,13 +1256,12 @@ let SelectBox = class SelectBox extends Widget {
         }
         else {
             for (let i of this._items) {
-                if (i.value.value === index) {
+                console.log("setChecked", i.value.value, index, i.value.value == index, i.value.value === index);
+                if (i.value.value == index) {
                     i.value.setChecked(checked);
                 }
-                else {
-                    if (checked) {
-                        i.value.setChecked(false);
-                    }
+                else if (checked) {
+                    i.value.setChecked(false);
                 }
             }
         }

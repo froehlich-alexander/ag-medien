@@ -285,7 +285,7 @@ class ColorScheme extends ColorSchemeInterface {
 }
 class ColorPickerService {
     constructor() {
-        var _a, _b, _c, _d;
+        var _a, _b;
         // private current: string;
         // #preDefined: boolean = false;
         Object.defineProperty(this, "_all", {
@@ -324,8 +324,10 @@ class ColorPickerService {
             //     this.activate(this.getDefault());
             // }
         }
-        this.activate((_d = this._all.get((_c = (_b = [...this._all.values()].find((v) => v.current)) === null || _b === void 0 ? void 0 : _b.id) !== null && _c !== void 0 ? _c : this.getDefault().id)) !== null && _d !== void 0 ? _d : this.getDefault());
-        this.save(default1);
+        this._all.set(default1.id, default1);
+        this.activate((_b = [...this._all.values()].find(v => v.current)) !== null && _b !== void 0 ? _b : this.getDefault());
+        // this.activate(this._all.get([...this._all.values()].find((v) => v.current)?.id ?? this.getDefault().id) ?? this.getDefault());
+        // this.save(default1);
     }
     /**
      * Writes all colors into body to override the default colors
@@ -791,9 +793,11 @@ let ColorSchemeItem = class ColorSchemeItem extends ListTile {
             (_a = event.originalEvent) === null || _a === void 0 ? void 0 : _a.stopPropagation();
         });
         // this.addItem(Icon.of("favorite", IconType.material), FlexAlign.start);
-        this.enableFavorite(true);
-        this.setLabel(colorScheme.name);
-        this.enableCheckbox(true);
+        this.enableFavorite(true)
+            .setLabel(colorScheme.name)
+            .enableCheckbox(true)
+            .on(FavoriteEvents.unFavored, (event, favored) => { var _a, _b; return console.log(favored, (_a = this.domObject) === null || _a === void 0 ? void 0 : _a.closest((_b = event.originalEvent) === null || _b === void 0 ? void 0 : _b.target).length); })
+            .on(FavoriteEvents.unFavored, (event) => { var _a; return ((event.originalEvent instanceof MouseEvent) && ((_a = this.domObject) === null || _a === void 0 ? void 0 : _a.closest(event.originalEvent.tar).length) > 0) ? this.setFavored(true) : null; });
     }
     build(suppressCallback = false) {
         super.build(true)
@@ -1160,7 +1164,7 @@ class ColorSchemeNewDialog extends Dialog {
         var _a;
         this._baseScheme = (_a = (baseScheme !== null && baseScheme !== void 0 ? baseScheme : this._baseScheme)) !== null && _a !== void 0 ? _a : this.service.getCurrent();
         this.colorSchemeSelectBox.rebuild();
-        this.colorSchemeSelectBox.setChecked(ColorSchemeNewDialog.name + this._baseScheme.id)
+        this.colorSchemeSelectBox.setChecked(this._baseScheme.id)
             .rebuild();
         // super.open(baseScheme);
         super.open();

@@ -566,7 +566,7 @@ class FavoriteContaining extends Mixin {
         }
         return this;
     }
-    setFavored(value, originalEvent) {
+    setFavored(value, originalEvent = null) {
         let changed = this._favored !== value;
         this._favored = value;
         if (changed) {

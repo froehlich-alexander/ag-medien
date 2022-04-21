@@ -254,9 +254,9 @@ class ColorPickerService {
     // private current: string;
     // #preDefined: boolean = false;
 
-    private _all: ColorSchemeMap = new Map<string, ColorScheme>();
+    private readonly _all: ColorSchemeMap = new Map<string, ColorScheme>();
     private readonly _colorTypes: string[] = [];
-    private fruits: string[] = ["fgf", "fd", "gfdsg"];
+    private readonly fruits: string[] = ["fgf", "fd", "gfdsg"];
 
     constructor() {
         let default1 = this.getDefault(true);
@@ -278,8 +278,10 @@ class ColorPickerService {
             // }
 
         }
-        this.activate(this._all.get([...this._all.values()].find((v) => v.current)?.id ?? this.getDefault().id) ?? this.getDefault());
-        this.save(default1);
+        this._all.set(default1.id, default1);
+        this.activate([...this._all.values()].find(v => v.current) ?? this.getDefault());
+        // this.activate(this._all.get([...this._all.values()].find((v) => v.current)?.id ?? this.getDefault().id) ?? this.getDefault());
+        // this.save(default1);
     }
 
     /**
@@ -753,9 +755,11 @@ class ColorSchemeItem extends ListTile<WidgetEvents & IconContainingEvents & Che
                 event.originalEvent?.stopPropagation();
             });
         // this.addItem(Icon.of("favorite", IconType.material), FlexAlign.start);
-        this.enableFavorite(true);
-        this.setLabel(colorScheme.name);
-        this.enableCheckbox(true);
+        this.enableFavorite(true)
+            .setLabel(colorScheme.name)
+            .enableCheckbox(true)
+            .on(FavoriteEvents.unFavored, (event, favored) => console.log(favored, this.domObject?.closest(event.originalEvent?.target).length))
+            .on(FavoriteEvents.unFavored, (event) => ((event.originalEvent instanceof MouseEvent) && this.domObject?.closest(event.originalEvent.tar!).length > 0) ? this.setFavored(true) : null);
     }
 
     public override build(suppressCallback: boolean = false): JQuery<HTMLDivElement> {
@@ -1100,7 +1104,7 @@ class ColorSchemeNewDialog extends Dialog<WidgetEvents & DialogEvents, HTMLDivEl
     public override open(baseScheme?: ColorScheme): this {
         this._baseScheme = (baseScheme ?? this._baseScheme) ?? this.service.getCurrent();
         this.colorSchemeSelectBox.rebuild();
-        this.colorSchemeSelectBox.setChecked(ColorSchemeNewDialog.name + this._baseScheme.id)
+        this.colorSchemeSelectBox.setChecked(this._baseScheme.id)
             .rebuild();
         // super.open(baseScheme);
         super.open();

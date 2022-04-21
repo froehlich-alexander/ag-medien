@@ -1206,6 +1206,12 @@ class SelectBox<HtmlElementType extends HTMLElement = HTMLDivElement> extends Wi
     }
 
     public setChecked(index: number, checked?: boolean): this;
+    /**
+     * {@link value} is the item value ({@link SelectBoxItem.value.value}) <b>not</b> the item's id ({@link SelectBoxItem.value.id})
+     * @param {string} value
+     * @param {boolean} checked
+     * @returns {this}
+     */
     public setChecked(value: string, checked?: boolean): this;
     public setChecked(index: number | string, checked: boolean = true): this {
         if (typeof index === "number") {
@@ -1213,12 +1219,11 @@ class SelectBox<HtmlElementType extends HTMLElement = HTMLDivElement> extends Wi
             this.tryRebuild();
         } else {
             for (let i of this._items) {
-                if (i.value.value === index) {
+                console.log("setChecked", i.value.value, index, i.value.value == index, i.value.value === index);
+                if (i.value.value == index) {
                     i.value.setChecked(checked);
-                } else {
-                    if (checked) {
-                        i.value.setChecked(false);
-                    }
+                } else if (checked) {
+                    i.value.setChecked(false);
                 }
             }
         }

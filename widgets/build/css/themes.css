@@ -2,62 +2,62 @@ body {
   color: var(--color);
 }
 body.dark-design {
-  --background-color-0: #141414;
-  --background-color-1: #1e1e1e;
-  --background-color-2: #282828;
-  --background-color-3: #323232;
-  --background-color-4: #3c3c3c;
-  --background-color-5: #464646;
-  --background-color-6: #505050;
-  --background-color-7: #5a5a5a;
-  --background-color-8: #646464;
-  --background-color-9: #6e6e6e;
-  --background-color-10: #787878;
+  --background-color-0: rgb(20, 20, 20);
+  --background-color-1: rgb(30, 30, 30);
+  --background-color-2: rgb(40, 40, 40);
+  --background-color-3: rgb(50, 50, 50);
+  --background-color-4: rgb(60, 60, 60);
+  --background-color-5: rgb(70, 70, 70);
+  --background-color-6: rgb(80, 80, 80);
+  --background-color-7: rgb(90, 90, 90);
+  --background-color-8: rgb(100, 100, 100);
+  --background-color-9: rgb(110, 110, 110);
+  --background-color-10: rgb(120, 120, 120);
   --color: #a0a0a0;
 }
 body.light-design {
-  --background-color-0: white;
-  --background-color-1: whitesmoke;
-  --background-color-2: #ebebeb;
-  --background-color-3: #e1e1e1;
-  --background-color-4: #d7d7d7;
-  --background-color-5: #cdcdcd;
-  --background-color-6: #c3c3c3;
-  --background-color-7: #b9b9b9;
-  --background-color-8: #afafaf;
-  --background-color-9: #a5a5a5;
-  --background-color-10: #9b9b9b;
+  --background-color-0: rgb(255, 255, 255);
+  --background-color-1: rgb(245, 245, 245);
+  --background-color-2: rgb(235, 235, 235);
+  --background-color-3: rgb(225, 225, 225);
+  --background-color-4: rgb(215, 215, 215);
+  --background-color-5: rgb(205, 205, 205);
+  --background-color-6: rgb(195, 195, 195);
+  --background-color-7: rgb(185, 185, 185);
+  --background-color-8: rgb(175, 175, 175);
+  --background-color-9: rgb(165, 165, 165);
+  --background-color-10: rgb(155, 155, 155);
   --color: rgb(95, 95, 95);
 }
 @media (prefers-color-scheme: dark) {
   body.system-design {
-    --background-color-0: #141414;
-    --background-color-1: #1e1e1e;
-    --background-color-2: #282828;
-    --background-color-3: #323232;
-    --background-color-4: #3c3c3c;
-    --background-color-5: #464646;
-    --background-color-6: #505050;
-    --background-color-7: #5a5a5a;
-    --background-color-8: #646464;
-    --background-color-9: #6e6e6e;
-    --background-color-10: #787878;
+    --background-color-0: rgb(20, 20, 20);
+    --background-color-1: rgb(30, 30, 30);
+    --background-color-2: rgb(40, 40, 40);
+    --background-color-3: rgb(50, 50, 50);
+    --background-color-4: rgb(60, 60, 60);
+    --background-color-5: rgb(70, 70, 70);
+    --background-color-6: rgb(80, 80, 80);
+    --background-color-7: rgb(90, 90, 90);
+    --background-color-8: rgb(100, 100, 100);
+    --background-color-9: rgb(110, 110, 110);
+    --background-color-10: rgb(120, 120, 120);
     --color: #a0a0a0;
   }
 }
 @media (prefers-color-scheme: light) {
   body.system-design {
-    --background-color-0: white;
-    --background-color-1: whitesmoke;
-    --background-color-2: #ebebeb;
-    --background-color-3: #e1e1e1;
-    --background-color-4: #d7d7d7;
-    --background-color-5: #cdcdcd;
-    --background-color-6: #c3c3c3;
-    --background-color-7: #b9b9b9;
-    --background-color-8: #afafaf;
-    --background-color-9: #a5a5a5;
-    --background-color-10: #9b9b9b;
+    --background-color-0: rgb(255, 255, 255);
+    --background-color-1: rgb(245, 245, 245);
+    --background-color-2: rgb(235, 235, 235);
+    --background-color-3: rgb(225, 225, 225);
+    --background-color-4: rgb(215, 215, 215);
+    --background-color-5: rgb(205, 205, 205);
+    --background-color-6: rgb(195, 195, 195);
+    --background-color-7: rgb(185, 185, 185);
+    --background-color-8: rgb(175, 175, 175);
+    --background-color-9: rgb(165, 165, 165);
+    --background-color-10: rgb(155, 155, 155);
     --color: rgb(95, 95, 95);
   }
 }

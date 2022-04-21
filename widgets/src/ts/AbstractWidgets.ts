@@ -553,7 +553,7 @@ class FavoriteContaining<EventType extends WidgetEvents & FavoriteEvents, HtmlEl
         return this;
     }
 
-    public setFavored(value: boolean, originalEvent?: Event | null): this {
+    public setFavored(value: boolean, originalEvent: Event | null = null): this {
         let changed = this._favored !== value;
         this._favored = value;
         if (changed) {
