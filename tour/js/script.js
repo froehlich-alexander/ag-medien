@@ -4,14 +4,102 @@ let imgFolder = "./img1";
 let baustellenFotoUrl = imgFolder + "/baustelle.png";
 let animationDuration = 500;
 let lastest = "";
+/**
+ * @type {Page[]}
+ */
+let pages = [];
+$ = jQuery;
 
 class Page {
     id;
     img;
-    is_panorama = false;
-    is_360 = false;
-    initialDirection = 50;
-    clickables = [];
+    #is_panorama = false;
+    #is_360 = false;
+    #initial_direction = 50;
+    #clickables = [];
+    #secondClickables = []; //only relevant in 360deg img because there exist each clickable 2 times
+    #html = $("<div></div>");
+    #imgHtml = $("<img>");
+    #secondImgHtml = $("<img>"); //360deg
+
+    constructor(id, img, is_panorama = undefined, is_360 = undefined, initial_direction = undefined) {
+        this.id = id;
+        this.img = img;
+        if (is_panorama !== undefined) {
+            this.is_panorama = is_panorama;
+        }
+        if (is_360 !== undefined) {
+            this.is_360 = is_360;
+        }
+        this.initial_direction = initial_direction;
+    }
+
+    get is_panorama() {
+        return this.#is_panorama;
+    }
+
+    set is_panorama(value) {
+        this.#is_panorama = value === true;
+    }
+
+    get is_360() {
+        return this.#is_360;
+    }
+
+    set is_360(value) {
+        this.#is_360 = value === true;
+        this.#is_panorama = this.#is_360;
+
+    }
+
+    get initial_direction() {
+        return this.#initial_direction;
+    }
+
+    set initial_direction(value) {
+        if (typeof value === "number" || typeof value === "bigint")
+            this.#initial_direction = value;
+    }
+
+    /**
+     * @returns {Clickable[]}
+     */
+    get clickables() {
+        return this.#clickables;
+    }
+
+    /**
+     *
+     * @returns {Clickable[]}
+     */
+    get secondClickables() {
+        return this.#secondClickables;
+    }
+
+    /**
+     * Returns <b>all</b> clickables (that means in 360deg img there will always be 2 clickables with the same id, etc.)
+     * @returns {Clickable[]}
+     */
+    get allClickables() {
+        console.log("all cloick", this.clickables, this.secondClickables, this.#clickables.concat(this.#secondClickables))
+        return this.#clickables.concat(this.#secondClickables);
+    }
+
+    get html() {
+        return this.#html;
+    }
+
+    get imgHtml() {
+        return this.#imgHtml;
+    }
+
+    set secondImgHtml(value) {
+        this.#secondImgHtml = value;
+    }
+
+    get secondImgHtml() {
+        return this.#secondImgHtml;
+    }
 }
 
 class Clickable {
@@ -19,8 +107,51 @@ class Clickable {
     x;
     y;
     goto;
-    icon = "arrow_l";
-    backward = false;
+    #icon = "arrow_l";
+    #backward = false;
+    #html = $("<div></div>");
+
+    constructor(title, x, y, goto, icon = undefined, backward = undefined) {
+        this.title = title;
+        this.x = x;
+        this.y = y;
+        this.goto = goto;
+        this.icon = icon;
+        if (backward !== undefined) {
+            this.backward = backward;
+        }
+    }
+
+    /**
+     * Clone this clickable and create all html objs new (with all event)
+     * @returns {Clickable}
+     */
+    clone() {
+        let n = new this.constructor(this.title, this.x, this.y, this.goto, this.icon, this.backward);
+        n.#html = this.#html.clone(true);
+        return n;
+    }
+
+    get html() {
+        return this.#html;
+    }
+
+    get icon() {
+        return this.#icon;
+    }
+
+    set icon(value) {
+        if (value != null)
+            this.#icon = value;
+    }
+
+    get backward() {
+        return this.#backward;
+    }
+
+    set backward(value) {
+        this.#backward = value === true;
+    }
 }
 
 window.onresize = function () {
@@ -52,15 +183,15 @@ function goTo(pg, backward) {
     if (finished_last) {
         finished_last = false;
 
-        let next = $("#" + pg);
-        let prev = $(".page.show");
-        next.addClass("show");
+        let next = pages.find(v => v.id === pg.substring(idPrefix.length));
+        let prev = pages.find(v => v.id === $(".page.show").attr("id").substring(idPrefix.length));
+        next.html.addClass("show");
         adjust_clickables();
-        lastest = prev.attr("id").substring(idPrefix.length, prev.attr("id").length);
+        lastest = prev.id;
         console.log(lastest)
         if (!backward) {
-            prev.addClass("walk_in_out");
-            next.addClass("walk_in_in");
+            prev.html.addClass("walk_in_out");
+            next.html.addClass("walk_in_in");
             setTimeout(function () {
                 $(".page.walk_in_in").removeClass("walk_in_in");
                 $(".page.walk_in_out").removeClass("show")
@@ -68,8 +199,8 @@ function goTo(pg, backward) {
                 finished_last = true;
             }, animationDuration);
         } else {
-            prev.addClass("walk_out_out");
-            next.addClass("walk_out_in");
+            prev.html.addClass("walk_out_out");
+            next.html.addClass("walk_out_in");
             setTimeout(function () {
                 $(".page.walk_out_in").removeClass("walk_out_in");
                 $(".page.walk_out_out").removeClass("show")
@@ -77,8 +208,8 @@ function goTo(pg, backward) {
                 finished_last = true;
             }, animationDuration);
         }
-        window.location.hash = pg.substring(idPrefix.length, pg.length);
-        createLastestClickable(pg);
+        window.location.hash = next.id;
+        createLastestClickable(next.allClickables.filter(v => v.goto === prev.id));
     }
 }
 
@@ -96,33 +227,49 @@ function adjust_clickables() {
     // }
 }
 
-function createLastestClickable(pageId) {
+/**
+ * @param clickables {Clickable[]}
+ */
+function createLastestClickable(clickables) {
     $(".clickable").removeClass("lastest-clickable");
-    $("#" + pageId).find(".clickable")
-        .each(function () {
-            let self = $(this);
-            console.log("lastest")
-            if (self.attr("goto") === lastest) {
-                self.addClass("lastest-clickable");
-            }
-        });
+    for (let i of clickables) {
+        console.log("lastest lclickable", i.goto, i.goto === lastest, i);
+        i?.html.addClass("lastest-clickable");
+    }
 }
 
 function createHtml(json) {
     let scrollSensitivity = 20;
 
     console.log(json);
-    for (let page of json) {
-        let clickables = [];
-        page.is_360 = page.is_360 != null ? page.is_360 : false;
-        page.is_panorama = (page.is_panorama != null ? page.is_panorama : false) || page.is_panorama;
+    for (let jsonPage of json) {
+        let page = new Page(jsonPage.id, jsonPage.img);
+        pages.push(page);
 
-        for (let clickable of page.clickables) {
-            let gotoExist = json.filter(value => value.id == clickable.goto).length > 0;
+        page.initial_direction = jsonPage.initial_direction;
+        page.is_panorama = jsonPage.is_panorama;
+        page.is_360 = jsonPage.is_360;
+        // page.is_360 = page.is_360 != null ? page.is_360 : false;
+        // page.is_panorama = (page.is_panorama != null ? page.is_panorama : false) || page.is_360;
+
+        //is mobile device
+        //via user agent
+        // if (/(iPhone|iPod|iPad|blackberry|android|Kindle|htc|lg|midp|mmp|mobile|nokia|opera mini|palm|pocket|psp|sgh|smartphone|symbian|treo mini|Playstation Portable|SonyEricsson|Samsung|MobileExplorer|PalmSource|Benq|Windows Phone|Windows Mobile|IEMobile|Windows CE|Nintendo Wii)/.test(navigator.userAgent))
+        //or via screen size
+        if (window.innerWidth <= 768) {
+            page.is_panorama = true;
+        }
+
+        for (let clickable of jsonPage.clickables.map(jsonClickable => new Clickable(jsonClickable.title,
+            jsonClickable.x, jsonClickable.y, jsonClickable.goto, jsonClickable.icon, jsonClickable.backward))) {
+            page.clickables.push(clickable);
+            console.log("title", clickable.title)
+
+            let gotoExist = json.filter(value => value.id === clickable.goto).length > 0;
             if (!gotoExist) {
                 console.log("Id '" + clickable.goto + "' does not exist");
             }
-            clickables.push($("<div></div>")
+            clickable.html
                 .addClass("clickable")
                 .attr("goto", clickable.goto)
                 .append($("<div></div>")
@@ -137,15 +284,15 @@ function createHtml(json) {
                         console.log("Cannot go to next page because '" + clickable.goto + "' does not exist");
                     }))
                 .css("left", clickable.x + "%")
-                .css("top", clickable.y + "%")
-                .attr("data-backward", clickable.backward != null ? clickable.backward : null));
+                .css("top", clickable.y + "%");
+            // .attr("data-backward", clickable.backward != null ? clickable.backward : null);
         }
 
         let imgUrl = imgFolder + "/" + page.img;
-        let img = $("<img>")
+        page.imgHtml
             .addClass("bg")
             .attr("src", imgUrl)
-            .attr("initial_direction", page.initial_direction != null ? page.initial_direction : 50)
+            // .attr("initial_direction", page.initial_direction)
             .on("load", function () {
                 let self = $(this);
 
@@ -158,6 +305,11 @@ function createHtml(json) {
                 else
                     self.addClass("fill-height");
 
+                //remove panorama if screen is big enough
+                if (page.is_panorama && this.naturalWidth <= window.innerWidth) {
+                    page.is_panorama = false;
+                    page.html.removeClass("pg_panorama");
+                }
 
                 let onVisible = (a, b) => {
                     console.log("st")
@@ -170,19 +322,17 @@ function createHtml(json) {
                         console.log(self.is(":hidden"))
                         return;
                     }
-                    // if (self.closest(".deg360").length > 0) {
-                    //     self.scrollLeft(self.width());
-                    //     console.log(self.width())
-                    // }
-                    if (self.attr("initial_direction")) {
-                        let initialDirection = (self.attr("initial_direction") / 100) * self.width();
+                    //initial direction
+                    if (page.is_panorama) {
+                        let initialDirection = (page.initial_direction / 100) * self.width();
                         wrapper.scrollLeft(initialDirection);
                     }
                     adjust_clickables();
+                    //disconnect observer
                     if (b) {
                         b.disconnect();
                     }
-                }
+                };
                 if (self.is(":visible")) {
                     console.log("vis")
                     onVisible([this], null);
@@ -207,7 +357,7 @@ function createHtml(json) {
         //     img.attr("initial_direction", page.initial_direction);
         // }
 
-        let pageElement = $("<div></div>")
+        page.html
             .addClass("page")
             .attr("id", idPrefix + page.id)
             .toggleClass("pg_panorama", page.is_panorama)
@@ -216,18 +366,27 @@ function createHtml(json) {
                 $("<div></div>")
                     .addClass("pg_wrapper"));
 
+        //first img
+        page.html.children(".pg_wrapper")
+            .append($("<div></div>")
+            .addClass("bg_container")
+            .append(page.imgHtml)
+            .append(page.clickables.map(v => v.html)));
+
         if (page.is_360) {
             console.log("is_360")
-            let bgContainer = $("<div></div>")
+            page.secondClickables.push(...page.clickables.map(v => v.clone()));
+            page.secondImgHtml = page.imgHtml.clone(true);
+            //second img
+            let bgContainer1 = $("<div></div>")
                 .addClass("bg_container")
-                .append(img)
-                .append(clickables);
+                .append(page.secondImgHtml)
+                .append(page.secondClickables.map(v => v.html));
 
-            pageElement.children(".pg_wrapper")
-                .append(bgContainer)
-                .append(bgContainer.clone(true));
+            page.html.children(".pg_wrapper")
+                .append(bgContainer1);
 
-            pageElement.find(".pg_wrapper").on("scroll", function () {
+            page.html.find(".pg_wrapper").on("scroll", function () {
                 let self = $(this);
                 console.log("scroll " + self.scrollLeft() + " " + this.scrollLeft);
                 if (this.scrollLeft !== self.scrollLeft()) {
@@ -235,24 +394,24 @@ function createHtml(json) {
                 }
                 if (this.scrollWidth - this.clientWidth - this.scrollLeft < scrollSensitivity) {
                     // if new scroll would trigger this event again
-                    if (this.scrollLeft - self.find("img").width() < scrollSensitivity) {
+                    if (this.scrollLeft - page.imgHtml.width() < scrollSensitivity) {
                         return;
                     }
-                    self.scrollLeft(this.scrollLeft - self.find("img").width());
+                    self.scrollLeft(this.scrollLeft - page.imgHtml.width());
                 } else if (self.scrollLeft() < scrollSensitivity) {
                     // if new scroll would trigger this event again
-                    if (this.scrollWidth - this.clientWidth - (this.scrollLeft + self.find("img").width()) < scrollSensitivity) {
+                    if (this.scrollWidth - this.clientWidth - (this.scrollLeft + page.imgHtml.width()) < scrollSensitivity) {
                         return;
                     }
-                    self.scrollLeft(this.scrollLeft + self.find("img").width());
+                    self.scrollLeft(this.scrollLeft + page.imgHtml.width());
                 }
             });
         } else {
-            pageElement.children(".pg_wrapper")
-                .append(img)
-                .append(clickables);
+            // page.html.children(".pg_wrapper")
+            //     .append(page.imgHtml)
+            //     .append(page.clickables.map(v => v.html));
         }
-        pageElement.appendTo("body");
+        page.html.appendTo("body");
     }
     adjust_clickables();
 }
@@ -263,7 +422,7 @@ function createHtml(json) {
  * @param pagesJsonPath
  */
 function init(pagesJsonPath) {
-    let json = pages;
+    let json = pagesJson;
     $.ajax(pagesJsonPath)
         .done(function (data) {
             //testing...
@@ -293,3 +452,4 @@ function init(pagesJsonPath) {
 }
 
 init("pages.js");
+console.warn(pages);

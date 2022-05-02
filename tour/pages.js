@@ -1,4 +1,4 @@
-var pages = [
+var pagesJson = [
     {
         "id": "01_hof",
         "img": "01_hof.jpg",
@@ -122,7 +122,7 @@ var pages = [
         "id": "20_foyer",
         "img": "20_foyer.jpg",
         "is_360": true,
-        "initial_direction": 0,
+        "initial_direction": 90,
         "clickables": [
             {
                 "title": "in das 1.OG",
