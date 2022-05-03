@@ -11,6 +11,7 @@ let pages = [];
 $ = jQuery;
 //jce editor joomla
 //filezilla
+//test
 
 class Image {
     _src;

@@ -5,7 +5,7 @@ var pagesJson = [
             "src": "01_hof.jpg",
             "type": "img"
         },
-        "is_panorama": false, //TODO 06.04.2022 fix img src and enable panorama
+        "is_panorama": true, //TODO 06.04.2022 fix img src and enable panorama
         "clickables": [
             {
                 "title": "Zum Eingang",
@@ -70,7 +70,7 @@ var pagesJson = [
             "src": "15_flur_eg.jpg",
             "type": "img"
         },
-        "is_panorama": false, //TODO 06.04.2022 fix img src and enable panorama
+        "is_panorama": true, //TODO 06.04.2022 fix img src and enable panorama
         "clickables": [
             {
                 "title": "Zum Sekretariat",
