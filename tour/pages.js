@@ -246,7 +246,7 @@ var pagesJson = [
     {
         "id": "30_aula_foyer",
         "img": {
-            "src": "vor_der_aula.jpg",
+            "src": "vor der Aula.jpg",
             "type": "img"
         },
         "is_360": true,
