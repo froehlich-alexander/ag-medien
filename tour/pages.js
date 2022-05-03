@@ -1,7 +1,10 @@
 var pagesJson = [
     {
         "id": "01_hof",
-        "img": "01_hof.jpg",
+        "img": {
+            "src": "01_hof.jpg",
+            "type": "img"
+        },
         "is_panorama": false, //TODO 06.04.2022 fix img src and enable panorama
         "clickables": [
             {
@@ -22,7 +25,10 @@ var pagesJson = [
     },
     {
         "id": "05_sporthalle",
-        "img": "05_sporthalle.jpg",
+        "img": {
+            "src": "05_sporthalle.jpg",
+            "type": "img"
+        },
         "is_panorama": false,
         "clickables": [
             {
@@ -36,7 +42,10 @@ var pagesJson = [
     },
     {
         "id": "15_eingang",
-        "img": "15_eingang.jpg",
+        "img": {
+            "src": "15_eingang.jpg",
+            "type": "img"
+        },
         "is_panorama": false,
         "clickables": [
             {
@@ -57,7 +66,10 @@ var pagesJson = [
     },
     {
         "id": "15_flur_eg",
-        "img": "15_flur_eg.JPG",
+        "img": {
+            "src": "15_flur_eg.jpg",
+            "type": "img"
+        },
         "is_panorama": false, //TODO 06.04.2022 fix img src and enable panorama
         "clickables": [
             {
@@ -92,7 +104,10 @@ var pagesJson = [
     },
     {
         "id": "15_glaskasten",
-        "img": "15_glaskasten.jpg",
+        "img": {
+            "src": "15_glaskasten.jpg",
+            "type": "img"
+        },
         "is_panorama": false,
         "clickables": [
             {
@@ -106,7 +121,10 @@ var pagesJson = [
     },
     {
         "id": "16_sekretariat",
-        "img": "16_sekretariat.jpg",
+        "img": {
+            "src": "16_sekretariat.jpg",
+            "type": "img"
+        },
         "is_panorama": false,
         "clickables": [
             {
@@ -120,7 +138,10 @@ var pagesJson = [
     },
     {
         "id": "20_foyer",
-        "img": "20_foyer.jpg",
+        "img": {
+            "src": "20_foyer.jpg",
+            "type": "img"
+        },
         "is_360": true,
         "initial_direction": 90,
         "clickables": [
@@ -149,7 +170,10 @@ var pagesJson = [
     },
     {
         "id": "20_treppe_eg",
-        "img": "20_treppe_eg.jpg",
+        "img": {
+            "src": "20_treppe_eg.jpg",
+            "type": "img"
+        },
         "is_panorama": false,
         "clickables": [
             {
@@ -163,7 +187,10 @@ var pagesJson = [
     },
     {
         "id": "25_lehrerzimmer",
-        "img": "25_lehrerzimmer.JPG",
+        "img": {
+            "src": "25_lehrerzimmer.jpg",
+            "type": "img"
+        },
         "is_panorama": false,
         "clickables": [
             {
@@ -177,36 +204,52 @@ var pagesJson = [
     },
     {
         "id": "20_1stock_foyer",
-        "img": "20_1stock_foyer.jpg",
+        "img": {
+            "src": "20_1stock_foyer.jpg",
+            "type": "img"
+        },
         "is_360": true,
         "clickables": [
             {
-                "title": "zum foyer",
+                "title": "Zum foyer",
                 "x": "50",
                 "y": "50",
                 "goto": "30_flur",
                 "icon": "arrow_u"
+            },
+            {
+                "title": "Nach unten",
+                "x": "68",
+                "y": "50",
+                "goto": "20_foyer",
+                "icon": "arrow_d"
             }
         ]
     },
     {
         "id": "30_flur",
-        "img": "30_aula_foyer_flur.JPG",
+        "img": {
+            "src": "30_aula_foyer_flur.jpg",
+            "type": "img"
+        },
         "is_panorama": false,
         "clickables": [
             {
                 "title": "Aula Vorraum",
                 "x": "50",
                 "y": "50",
-                "goto": "",
+                "goto": "30_aula_foyer",
                 "icon": "arrow_u"
             }
         ]
     },
     {
         "id": "30_aula_foyer",
-        "img": "vor der Aula.jpg",
-        "is_panorama": true,
+        "img": {
+            "src": "vor der Aula.jpg",
+            "type": "img"
+        },
+        "is_360": true,
         "clickables": [
             {
                 "title": "1.stock Foyer",
