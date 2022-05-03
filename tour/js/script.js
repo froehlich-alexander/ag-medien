@@ -9,18 +9,76 @@ let lastest = "";
  */
 let pages = [];
 $ = jQuery;
+//jce editor joomla
+//filezilla
+
+class Image {
+    _src;
+    /**
+     * @type {"img"|"video"}
+     */
+    _type = "img"
+    /**
+     * @type {jQuery}
+     */
+    #html;
+
+    constructor(src, type = undefined) {
+        this.type = type;
+        if (this.type === "img") {
+            this.#html = $("<img>");
+        } else if (this.type === "video") {
+            this.#html = $("<video></video>");
+        }
+        this._src = src;
+        this._type = type;
+    }
+
+    clone() {
+        let n = new Image(this.src, this.type);
+        n.#html = this.#html.clone(true);
+        return n;
+    }
+
+    get html() {
+        return this.#html;
+    }
+
+    get src() {
+        return this._src;
+    }
+
+    set src(value) {
+        this._src = value;
+    }
+
+    get type() {
+        return this._type;
+    }
+
+    set type(value) {
+        if (typeof value === "string") {
+            this._type = value;
+        }
+    }
+}
 
 class Page {
     id;
+    /**
+     * @type {Image}
+     */
     img;
+    /**
+     * @type {Image}
+     */
+    secondaryImg;
     #is_panorama = false;
     #is_360 = false;
     #initial_direction = 50;
     #clickables = [];
     #secondClickables = []; //only relevant in 360deg img because there exist each clickable 2 times
     #html = $("<div></div>");
-    #imgHtml = $("<img>");
-    #secondImgHtml = $("<img>"); //360deg
 
     constructor(id, img, is_panorama = undefined, is_360 = undefined, initial_direction = undefined) {
         this.id = id;
@@ -87,18 +145,6 @@ class Page {
 
     get html() {
         return this.#html;
-    }
-
-    get imgHtml() {
-        return this.#imgHtml;
-    }
-
-    set secondImgHtml(value) {
-        this.#secondImgHtml = value;
-    }
-
-    get secondImgHtml() {
-        return this.#secondImgHtml;
     }
 }
 
@@ -243,7 +289,9 @@ function createHtml(json) {
 
     console.log(json);
     for (let jsonPage of json) {
-        let page = new Page(jsonPage.id, jsonPage.img);
+        let page = new Page(jsonPage.id, new Image(jsonPage.img.src, jsonPage.img.type));
+        //let page = new Page(jsonPage.id, new Image(jsonPage.img));
+
         pages.push(page);
 
         page.initial_direction = jsonPage.initial_direction;
@@ -288,8 +336,8 @@ function createHtml(json) {
             // .attr("data-backward", clickable.backward != null ? clickable.backward : null);
         }
 
-        let imgUrl = imgFolder + "/" + page.img;
-        page.imgHtml
+        let imgUrl = imgFolder + "/" + page.img.src;
+        page.img.html
             .addClass("bg")
             .attr("src", imgUrl)
             // .attr("initial_direction", page.initial_direction)
@@ -369,18 +417,18 @@ function createHtml(json) {
         //first img
         page.html.children(".pg_wrapper")
             .append($("<div></div>")
-            .addClass("bg_container")
-            .append(page.imgHtml)
-            .append(page.clickables.map(v => v.html)));
+                .addClass("bg_container")
+                .append(page.img.html)
+                .append(page.clickables.map(v => v.html)));
 
         if (page.is_360) {
             console.log("is_360")
             page.secondClickables.push(...page.clickables.map(v => v.clone()));
-            page.secondImgHtml = page.imgHtml.clone(true);
+            page.secondaryImg = page.img.clone();
             //second img
             let bgContainer1 = $("<div></div>")
                 .addClass("bg_container")
-                .append(page.secondImgHtml)
+                .append(page.secondaryImg.html)
                 .append(page.secondClickables.map(v => v.html));
 
             page.html.children(".pg_wrapper")
@@ -394,16 +442,16 @@ function createHtml(json) {
                 }
                 if (this.scrollWidth - this.clientWidth - this.scrollLeft < scrollSensitivity) {
                     // if new scroll would trigger this event again
-                    if (this.scrollLeft - page.imgHtml.width() < scrollSensitivity) {
+                    if (this.scrollLeft - page.img.html.width() < scrollSensitivity) {
                         return;
                     }
-                    self.scrollLeft(this.scrollLeft - page.imgHtml.width());
+                    self.scrollLeft(this.scrollLeft - page.img.html.width());
                 } else if (self.scrollLeft() < scrollSensitivity) {
                     // if new scroll would trigger this event again
-                    if (this.scrollWidth - this.clientWidth - (this.scrollLeft + page.imgHtml.width()) < scrollSensitivity) {
+                    if (this.scrollWidth - this.clientWidth - (this.scrollLeft + page.img.html.width()) < scrollSensitivity) {
                         return;
                     }
-                    self.scrollLeft(this.scrollLeft + page.imgHtml.width());
+                    self.scrollLeft(this.scrollLeft + page.img.html.width());
                 }
             });
         } else {
