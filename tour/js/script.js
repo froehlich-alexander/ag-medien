@@ -107,8 +107,6 @@ class Page {
 
     set is_360(value) {
         this.#is_360 = value === true;
-        this.#is_panorama = this.#is_360;
-
     }
 
     get initial_direction() {
@@ -360,35 +358,32 @@ function createHtml(json) {
                     page.html.removeClass("pg_panorama");
                 }
 
-                let onVisible = (a, b) => {
-                    console.log("st")
-                    let self = $(a[0]);
-                    let wrapper = self.closest(".pg_wrapper");
-                    console.log(self);
-                    console.log(wrapper)
+                let onVisible = (pageElements, observer) => {
+                    // console.log("st")
+                    // console.info("onVisible params", pageElements, "B:", observer);
+                    let self = $(this);
 
-                    if (self.is(":hidden")) {
-                        console.log(self.is(":hidden"))
+                    if ($(pageElements[0]).is(":hidden")) {
                         return;
                     }
                     //initial direction
                     if (page.is_panorama) {
                         let initialDirection = (page.initial_direction / 100) * self.width();
-                        wrapper.scrollLeft(initialDirection);
+                        self.closest(".pg_wrapper").scrollLeft(initialDirection);
                     }
                     adjust_clickables();
                     //disconnect observer
-                    if (b) {
-                        b.disconnect();
+                    if (observer) {
+                        observer.disconnect();
+                        // console.info("disconnected observer");
                     }
                 };
                 if (self.is(":visible")) {
-                    console.log("vis")
                     onVisible([this], null);
                 } else {
-                    console.log("obsever")
+                    // console.log("obsever")
                     let observer = new MutationObserver(onVisible.bind(this));
-                    observer.observe(this, {
+                    observer.observe(page.html.get(0), {
                         attributeFilter: ["style", "class"]
                     });
                 }
@@ -398,7 +393,7 @@ function createHtml(json) {
             })
             .each(function () {
                 if (this.complete) {
-                    self.trigger('load');
+                    $(this).trigger('load');
                 }
             });
 
@@ -437,10 +432,6 @@ function createHtml(json) {
 
             page.html.find(".pg_wrapper").on("scroll", function () {
                 let self = $(this);
-                console.log("scroll " + self.scrollLeft() + " " + this.scrollLeft);
-                if (this.scrollLeft !== self.scrollLeft()) {
-                    console.log("hmm")
-                }
                 if (this.scrollWidth - this.clientWidth - this.scrollLeft < scrollSensitivity) {
                     // if new scroll would trigger this event again
                     if (this.scrollLeft - page.img.html.width() < scrollSensitivity) {

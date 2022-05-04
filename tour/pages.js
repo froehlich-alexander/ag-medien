@@ -6,20 +6,21 @@ var pagesJson = [
             "type": "img"
         },
         "is_panorama": true, //TODO 06.04.2022 fix img src and enable panorama
+        "initial_direction": 34,
         "clickables": [
             {
                 "title": "Zum Eingang",
-                "x": "45",
-                "y": "75",
+                "x": "39.8",
+                "y": "80",
                 "goto": "15_eingang",
                 "icon": "arrow_l"
             },
             {
                 "title": "Zur Sporthalle",
-                "x": "90",
-                "y": "80",
+                "x": "69",
+                "y": "82",
                 "goto": "05_sporthalle",
-                "icon": "arrow_r"
+                "icon": "arrow_l"
             }
         ]
     },
@@ -29,7 +30,6 @@ var pagesJson = [
             "src": "05_sporthalle.jpg",
             "type": "img"
         },
-        "is_panorama": false,
         "clickables": [
             {
                 "title": "Zum Hof",
@@ -46,7 +46,6 @@ var pagesJson = [
             "src": "15_eingang.jpg",
             "type": "img"
         },
-        "is_panorama": false,
         "clickables": [
             {
                 "title": "Zum Hof",
@@ -108,7 +107,6 @@ var pagesJson = [
             "src": "15_glaskasten.jpg",
             "type": "img"
         },
-        "is_panorama": false,
         "clickables": [
             {
                 "title": "Zurück",
@@ -125,7 +123,6 @@ var pagesJson = [
             "src": "16_sekretariat.jpg",
             "type": "img"
         },
-        "is_panorama": false,
         "clickables": [
             {
                 "title": "Zurück",
@@ -174,7 +171,6 @@ var pagesJson = [
             "src": "20_treppe_eg.jpg",
             "type": "img"
         },
-        "is_panorama": false,
         "clickables": [
             {
                 "title": "in das 1.OG",
@@ -191,7 +187,6 @@ var pagesJson = [
             "src": "25_lehrerzimmer.jpg",
             "type": "img"
         },
-        "is_panorama": false,
         "clickables": [
             {
                 "title": "zum foyer",
@@ -223,6 +218,20 @@ var pagesJson = [
                 "y": "50",
                 "goto": "20_foyer",
                 "icon": "arrow_d"
+            },
+            {
+                "title": "Zum Beispiel Klassenzimmer",
+                "x": "80",
+                "y": "50",
+                "goto": "klassenraum_s",
+                "icon": "arrow_u"
+            },
+            {
+                "title": "Nach ganz oben",
+                "x": "61",
+                "y": "50",
+                "goto": "30_Dachboden",
+                "icon": "arrow_u"
             }
         ]
     },
@@ -232,7 +241,6 @@ var pagesJson = [
             "src": "30_aula_foyer_flur.jpg",
             "type": "img"
         },
-        "is_panorama": false,
         "clickables": [
             {
                 "title": "Aula Vorraum",
@@ -246,10 +254,10 @@ var pagesJson = [
     {
         "id": "30_aula_foyer",
         "img": {
-            "src": "vor der Aula.jpg",
+            "src": "vor_der_aula.jpg",
             "type": "img"
         },
-        "is_360": true,
+        "is_panorama": true,
         "clickables": [
             {
                 "title": "1.stock Foyer",
@@ -259,5 +267,114 @@ var pagesJson = [
                 "icon": "arrow_l"
             }
         ]
+    },
+    {
+        "id": "klassenraum_s",
+        "img": {
+            "src": "klassenraum_s.jpg",
+            "type": "img"
+        },
+        "clickables": [
+            {
+                "title": "zurück zum 1. Stock",
+                "x": "50",
+                "y": "50",
+                "goto": "20_1stock_foyer",
+                "icon": "arrow_r"
+            }
+        ]
+    },
+    {
+        "id": "30_Dachboden",
+        "img": {
+            "src": "Dachboden.jpg",
+            "type": "img"
+        },
+        "clickables": [
+            {
+                "title": "nach unten",
+                "x": "50",
+                "y": "50",
+                "goto": "20_1stock_foyer",
+                "icon": "arrow_d"
+            },
+            {
+                "title": "weiter nachoben",
+                "x": "50",
+                "y": "40",
+                "goto": "40_Turm",
+                "icon": "arrow_u"
+            }
+        ]
+    },
+    {
+        "id": "40_Turm",
+        "img": {
+            "src": "Turm4.jpg",
+            "type": "img"
+        },
+        "clickables": [
+            {
+                "title": "unser team",
+                "x": "6",
+                "y": "50",
+                "goto": "60_turm",
+                "icon": "arrow_l"
+            },
+            {
+                "title": "zurück zum Dachboden",
+                "x": "80",
+                "y": "50",
+                "goto": "30_Dachboden",
+                "icon": "arrow_d"
+            }
+        ]
+    },
+    {
+        "id": "60_turm",
+        "img": {
+            "src": "60_turm.jpg",
+            "type": "img"
+        },
+        "clickables": [
+            {
+                "title": "zurück",
+                "x": "80",
+                "y": "50",
+                "goto": "40_Turm",
+                "icon": "arrow_r"
+            },
+            {
+                "title": "weiter am Turm",
+                "x": "10",
+                "y": "50",
+                "goto": "Hof_von_oben",
+                "type": "arrow_l"
+            }
+        ]
+    },
+    {
+        "id": "Hof_von_oben",
+        "img": {
+            "src": "schulhof_vom_turm.jpg",
+            "type": "img"
+        },
+        "clickables": [
+            {
+                "title": "zum Ausgangspunkt",
+                "x": "6",
+                "y": "50",
+                "goto": "40_Turm",
+                "type": "arrow_l"
+            },
+            {
+                "title": "zum Team",
+                "x": "73",
+                "y": "50",
+                "goto": "60_turm",
+                "type": "arrow_r"
+            }
+        ]
     }
+
 ]
