@@ -310,7 +310,7 @@ var pagesJson = [
     {
         "id": "40_Turm",
         "img": {
-            "src": "Turm4.jpg",
+            "src": "turm4.jpg",
             "type": "img"
         },
         "clickables": [
