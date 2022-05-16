@@ -1,44 +1,50 @@
+// import * as $ from 'jquery'
+
 var finished_last = true;
 let idPrefix = "tour_pg_";
 let imgFolder = "./img1";
 let baustellenFotoUrl = imgFolder + "/baustelle.png";
 let animationDuration = 500;
 let lastest = "";
-/**
- * @type {Page[]}
- */
-let pages = [];
-$ = jQuery;
+let pages: Page[] = [];
 //jce editor joomla
 //filezilla
 //test
 
-class Image {
-    _src;
-    /**
-     * @type {"img"|"video"}
-     */
-    _type = "img"
-    /**
-     * @type {jQuery}
-     */
-    #html;
+type ImageType = "img" | "video";
+type IconType = "arrow_l" | "arrow_r" | "arrow_u" | "arrow_d";
 
-    constructor(src, type = undefined) {
+class Media {
+    _src: string;
+    _type: ImageType = "img"
+    #html: JQuery<HTMLImageElement | HTMLVideoElement>;
+
+    constructor(src: string, type?: ImageType | "auto") {
         this.type = type;
         if (this.type === "img") {
-            this.#html = $("<img>");
+            this.#html = $("<img>")
+                .prop("alt", "Could not load Image :(") as JQuery<HTMLImageElement>;
         } else if (this.type === "video") {
-            this.#html = $("<video></video>");
+            this.#html = $("<video></video>")
+                .text("HTML Video is not supported / Could not load video") as JQuery<HTMLVideoElement>;
+        } else {
+            throw "Type not specified"
         }
         this._src = src;
-        this._type = type;
     }
 
-    clone() {
-        let n = new Image(this.src, this.type);
+    public clone() {
+        let n = new Media(this.src, this.type);
         n.#html = this.#html.clone(true);
         return n;
+    }
+
+    public isImage(self = this.html): self is JQuery<HTMLImageElement> {
+        return this._type === "img";
+    }
+
+    public isVideo(self = this.html): self is JQuery<HTMLVideoElement> {
+        return this._type === "video";
     }
 
     get html() {
@@ -57,31 +63,82 @@ class Image {
         return this._type;
     }
 
-    set type(value) {
-        if (typeof value === "string") {
-            this._type = value;
+    set type(value: ImageType | undefined | "auto") {
+        if (value === "auto") {
+            //todo auto detect file type
+            this._type = "img";
+        } else {
+            this._type = value ?? this._type;
         }
     }
 }
 
+/**
+ * Type for the Page-Objects in pages.json (or pages.js)
+ */
+type JsonPage = {
+    id: string,
+    img: {
+        src: string,
+        type?: ImageType | "auto"
+    };
+    is_360?: boolean;
+    is_panorama?: boolean;
+    initial_direction?: number;
+    clickables: {
+        title: string;
+        x: number;
+        y: number;
+        goto?: string;
+        icon?: IconType;
+        backward?: boolean;
+    }[]
+}
+
+function makeDefaultJsonPage(jsonPage: JsonPage) {
+    jsonPage.is_360 = jsonPage.is_360 ?? false;
+    jsonPage.is_panorama = jsonPage.is_panorama ?? false;
+    jsonPage.initial_direction = jsonPage.initial_direction ?? 0;
+    jsonPage.img.type = jsonPage.img.type ?? "auto";
+    for (let i of jsonPage.clickables) {
+        i.icon = i.icon ?? "arrow_l";
+    }
+}
+
+function checkJsonPageForMistakes(jsonPage: JsonPage) {
+    if (typeof jsonPage.id !== "string" || jsonPage.id.length <= 0)
+        console.error(`Id wrong formatted in page object: `, jsonPage);
+    if (jsonPage.img == null)
+        console.error(`Image wrong formatted in page object: `, jsonPage);
+    if (typeof jsonPage.img.src !== "string" || jsonPage.img.src.length <= 0)
+        console.error(`Image src wrong formatted in page object: `, jsonPage);
+    if (typeof jsonPage.id !== "string" || jsonPage.id.length <= 0)
+        console.error(`Id wrong formatted in page object: `, jsonPage);
+    if (jsonPage.clickables == null)
+        console.error(`Clickables not specified in page object: `, jsonPage);
+
+    for (let i of jsonPage.clickables) {
+        if (typeof i.title !== "string" || i.title.length <= 0)
+            console.error(`Clickable id wrong formatted in page object: `, jsonPage, "clickable: ", i);
+        if (typeof i.x !== "number")
+            console.error(`Clickable x wrong formatted in page object: `, jsonPage, "clickable: ", i);
+        if (typeof i.y !== "number")
+            console.error(`Clickable y wrong formatted in page object: `, jsonPage, "clickable: ", i);
+    }
+}
+
 class Page {
-    id;
-    /**
-     * @type {Image}
-     */
-    img;
-    /**
-     * @type {Image}
-     */
-    secondaryImg;
+    id: string;
+    img: Media;
+    secondaryImg?: Media;
     #is_panorama = false;
     #is_360 = false;
-    #initial_direction = 50;
-    #clickables = [];
-    #secondClickables = []; //only relevant in 360deg img because there exist each clickable 2 times
-    #html = $("<div></div>");
+    #initial_direction: number = 0;
+    #clickables: Clickable[] = [];
+    #secondClickables: Clickable[] = []; //only relevant in 360deg img because there exist each clickable 2 times
+    #html: JQuery<HTMLDivElement> = $("<div></div>");
 
-    constructor(id, img, is_panorama = undefined, is_360 = undefined, initial_direction = undefined) {
+    constructor(id: string, img: Media, is_panorama = undefined, is_360 = undefined, initial_direction = undefined) {
         this.id = id;
         this.img = img;
         if (is_panorama !== undefined) {
@@ -97,7 +154,7 @@ class Page {
         return this.#is_panorama;
     }
 
-    set is_panorama(value) {
+    set is_panorama(value: boolean | undefined | number) {
         this.#is_panorama = value === true;
     }
 
@@ -105,16 +162,16 @@ class Page {
         return this.#is_360;
     }
 
-    set is_360(value) {
+    set is_360(value: boolean | undefined | null) {
         this.#is_360 = value === true;
     }
 
-    get initial_direction() {
+    get initial_direction(): number {
         return this.#initial_direction;
     }
 
-    set initial_direction(value) {
-        if (typeof value === "number" || typeof value === "bigint")
+    set initial_direction(value: number | undefined) {
+        if (typeof value === "number")
             this.#initial_direction = value;
     }
 
@@ -148,15 +205,15 @@ class Page {
 }
 
 class Clickable {
-    title;
-    x;
-    y;
-    goto;
-    #icon = "arrow_l";
+    title: string;
+    x: number;
+    y: number;
+    goto?: string;
+    #icon: IconType = "arrow_l";
     #backward = false;
-    #html = $("<div></div>");
+    #html: JQuery = $("<div></div>");
 
-    constructor(title, x, y, goto, icon = undefined, backward = undefined) {
+    constructor(title: string, x: number, y: number, goto?: string, icon?: IconType, backward?: boolean) {
         this.title = title;
         this.x = x;
         this.y = y;
@@ -171,8 +228,8 @@ class Clickable {
      * Clone this clickable and create all html objs new (with all event)
      * @returns {Clickable}
      */
-    clone() {
-        let n = new this.constructor(this.title, this.x, this.y, this.goto, this.icon, this.backward);
+    public clone() {
+        let n = new Clickable(this.title, this.x, this.y, this.goto, this.icon, this.backward);
         n.#html = this.#html.clone(true);
         return n;
     }
@@ -181,16 +238,16 @@ class Clickable {
         return this.#html;
     }
 
-    get icon() {
+    get icon(): IconType {
         return this.#icon;
     }
 
-    set icon(value) {
+    set icon(value: IconType | null | undefined) {
         if (value != null)
             this.#icon = value;
     }
 
-    get backward() {
+    get backward(): boolean {
         return this.#backward;
     }
 
@@ -200,7 +257,7 @@ class Clickable {
 }
 
 window.onresize = function () {
-    let bgImgs = $(".bg");
+    let bgImgs: JQuery<HTMLImageElement> = $(".bg");
     bgImgs.removeClass("fill-width");
     bgImgs.removeClass("fill-height");
     bgImgs.each(function () {
@@ -223,13 +280,18 @@ window.onpopstate = function () {
         pgs.eq(0).addClass("show");
 }
 
-function goTo(pg, backward) {
+function goTo(pg: string | undefined, backward: true): void;
+function goTo(pg: string, backward: boolean): void;
+function goTo(pg: string | undefined, backward: boolean) {
     console.log(pg)
     if (finished_last) {
         finished_last = false;
+        if (backward) {
+            pg = idPrefix + lastest;
+        }
 
-        let next = pages.find(v => v.id === pg.substring(idPrefix.length));
-        let prev = pages.find(v => v.id === $(".page.show").attr("id").substring(idPrefix.length));
+        let next = pages.find(v => v.id === pg!.substring(idPrefix.length))!;
+        let prev = pages.find(v => v.id === $(".page.show").attr("id")!.substring(idPrefix.length))!;
         next.html.addClass("show");
         adjust_clickables();
         lastest = prev.id;
@@ -263,7 +325,7 @@ function adjust_clickables() {
     clickables.removeClass("right");
     for (let i = 0; i < clickables.length; i++) {
         // let clickables = $(".clickable");
-        if (clickables.eq(i).offset().left + clickables.eq(i).outerWidth(true) > clickables.eq(i).parent().offset().left + clickables.eq(i).parent().outerWidth(true))
+        if (clickables.eq(i).offset()!.left + clickables.eq(i).outerWidth(true)! > clickables.eq(i).parent().offset()!.left + clickables.eq(i).parent().outerWidth(true)!)
             clickables.eq(i).addClass("right");
     }
     // for (var a = 0; a < clickables.length; ++a) {
@@ -275,7 +337,7 @@ function adjust_clickables() {
 /**
  * @param clickables {Clickable[]}
  */
-function createLastestClickable(clickables) {
+function createLastestClickable(clickables: Clickable[]) {
     $(".clickable").removeClass("lastest-clickable");
     for (let i of clickables) {
         console.log("lastest lclickable", i.goto, i.goto === lastest, i);
@@ -283,12 +345,11 @@ function createLastestClickable(clickables) {
     }
 }
 
-function createHtml(json) {
+function createHtml(json: JsonPage[]) {
     let scrollSensitivity = 20;
 
-    console.log(json);
     for (let jsonPage of json) {
-        let page = new Page(jsonPage.id, new Image(jsonPage.img.src, jsonPage.img.type));
+        let page = new Page(jsonPage.id, new Media(jsonPage.img.src, jsonPage.img.type));
         //let page = new Page(jsonPage.id, new Image(jsonPage.img));
 
         pages.push(page);
@@ -318,7 +379,7 @@ function createHtml(json) {
             }
             clickable.html
                 .addClass("clickable")
-                .attr("goto", clickable.goto)
+                .attr("goto", clickable.goto!)//todo redundant
                 .append($("<div></div>")
                     .addClass("title")
                     .text(clickable.title))
@@ -336,66 +397,98 @@ function createHtml(json) {
         }
 
         let imgUrl = imgFolder + "/" + page.img.src;
+        let event;
+        if (page.img.isImage())
+            event = "load";
+        else if (page.img.isVideo()) {
+            event = "loadedmetadata";
+        } else {
+            throw "idk"
+        }
         page.img.html
             .addClass("bg")
-            .attr("src", imgUrl)
             // .attr("initial_direction", page.initial_direction)
-            .on("load", function () {
-                let self = $(this);
+            .on(event, function () {
+                console.log(`Media Loaded: ${page.img.src}`)
+                // let self = $(this);
+                let self = page.img.html;
 
                 self.removeClass("fill-width");
                 self.removeClass("fill-height");
-                let imgRatio = this.naturalWidth / this.naturalHeight;
+                let imgRatio: number;
+                if (page.img.isImage(self)) {
+                    imgRatio = self.get(0)!.naturalWidth / self.get(0)!.naturalHeight;
+                    //remove panorama if screen is big enough
+                    if (page.is_panorama && self.get(0)!.naturalWidth <= window.innerWidth) {
+                        page.is_panorama = false;
+                        page.html.removeClass("pg_panorama");
+                    }
+
+                    let onVisible = (pageElements?: MutationRecord[], observer?: MutationObserver) => {
+                        // console.log("st")
+                        // console.info("onVisible params", pageElements, "B:", observer);
+
+                        if (self.is(":hidden")) {
+                            return;
+                        }
+                        //initial direction
+                        if (page.is_panorama) {
+                            let initialDirection = (page.initial_direction / 100) * self.width()!;
+                            self.closest(".pg_wrapper").scrollLeft(initialDirection);
+                        }
+                        adjust_clickables();
+                        //disconnect observer
+                        if (observer) {
+                            observer.disconnect();
+                            // console.info("disconnected observer");
+                        }
+                    };
+                    if (self.is(":visible")) {
+                        onVisible();
+                    } else {
+                        // console.log("obsever")
+                        let observer = new MutationObserver(onVisible);
+                        observer.observe(page.html.get(0)!, {
+                            attributeFilter: ["style", "class"]
+                        });
+                    }
+
+                } else if (page.img.isVideo(self)) {
+                    imgRatio = self.get(0)!.videoWidth / self.get(0)!.videoHeight;
+                } else {
+                    throw "Need to add handling for MediaType: " + page.img.type;
+                }
                 let screenRatio = window.innerWidth / window.innerHeight;
                 if (imgRatio > screenRatio)
                     self.addClass("fill-width");
                 else
                     self.addClass("fill-height");
-
-                //remove panorama if screen is big enough
-                if (page.is_panorama && this.naturalWidth <= window.innerWidth) {
-                    page.is_panorama = false;
-                    page.html.removeClass("pg_panorama");
-                }
-
-                let onVisible = (pageElements, observer) => {
-                    // console.log("st")
-                    // console.info("onVisible params", pageElements, "B:", observer);
-                    let self = $(this);
-
-                    if ($(pageElements[0]).is(":hidden")) {
-                        return;
-                    }
-                    //initial direction
-                    if (page.is_panorama) {
-                        let initialDirection = (page.initial_direction / 100) * self.width();
-                        self.closest(".pg_wrapper").scrollLeft(initialDirection);
-                    }
-                    adjust_clickables();
-                    //disconnect observer
-                    if (observer) {
-                        observer.disconnect();
-                        // console.info("disconnected observer");
-                    }
-                };
-                if (self.is(":visible")) {
-                    onVisible([this], null);
-                } else {
-                    // console.log("obsever")
-                    let observer = new MutationObserver(onVisible.bind(this));
-                    observer.observe(page.html.get(0), {
-                        attributeFilter: ["style", "class"]
-                    });
-                }
             })
             .on("error", function () {
-                $(this).attr("src", baustellenFotoUrl);
-            })
-            .each(function () {
-                if (this.complete) {
-                    $(this).trigger('load');
-                }
+                console.warn("Error loading Media")
+                if (page.img.isImage())
+                    page.img.html.attr("src", baustellenFotoUrl);
+                else if (page.img.isVideo())
+                    null;
             });
+        if (page.img.isImage()) {
+            page.img.html.attr("src", imgUrl);
+        } else {
+            page.img.html.append($("<source>")
+                .attr("src", imgUrl)
+                .attr("type", "video/mp4"))
+                // .attr("preload", "metadata")
+                .attr("controls", "");
+            console.log("Video", (page.img.html.get(0) as HTMLVideoElement).readyState)
+            if ((page.img.html.get(0) as HTMLVideoElement).readyState > 0) {
+                page.img.html.trigger("load");
+            }
+        }
+        // .each(function () {
+        //     if (page.img.isImage() && page.img.html[0].complete || page.img.isVideo() && page.img.html.wid) {
+        //         page.img.html.trigger('load');
+        //     }
+        // });
 
         // if (page.is_panorama || page.is_360) {
         //     img.attr("initial_direction", page.initial_direction);
@@ -434,16 +527,16 @@ function createHtml(json) {
                 let self = $(this);
                 if (this.scrollWidth - this.clientWidth - this.scrollLeft < scrollSensitivity) {
                     // if new scroll would trigger this event again
-                    if (this.scrollLeft - page.img.html.width() < scrollSensitivity) {
+                    if (this.scrollLeft - page.img.html.width()! < scrollSensitivity) {
                         return;
                     }
-                    self.scrollLeft(this.scrollLeft - page.img.html.width());
-                } else if (self.scrollLeft() < scrollSensitivity) {
+                    self.scrollLeft(this.scrollLeft - page.img.html.width()!);
+                } else if (self.scrollLeft()! < scrollSensitivity) {
                     // if new scroll would trigger this event again
-                    if (this.scrollWidth - this.clientWidth - (this.scrollLeft + page.img.html.width()) < scrollSensitivity) {
+                    if (this.scrollWidth - this.clientWidth - (this.scrollLeft + page.img.html.width()!) < scrollSensitivity) {
                         return;
                     }
-                    self.scrollLeft(this.scrollLeft + page.img.html.width());
+                    self.scrollLeft(this.scrollLeft + page.img.html.width()!);
                 }
             });
         } else {
@@ -453,6 +546,7 @@ function createHtml(json) {
         }
         page.html.appendTo("body");
     }
+    console.log(json);
     adjust_clickables();
 }
 
@@ -461,7 +555,7 @@ function createHtml(json) {
  * That's only relevant for testing
  * @param pagesJsonPath
  */
-function init(pagesJsonPath) {
+function init(pagesJsonPath: string) {
     let json = pagesJson;
     $.ajax(pagesJsonPath)
         .done(function (data) {

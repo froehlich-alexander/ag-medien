@@ -1,0 +1,16 @@
+{
+  "compileOnSave": true,
+  "compilerOptions": {
+    "sourceMap": true,
+    "baseUrl": "./",
+    "target": "ES6",
+    "module": "ES2020",
+    "moduleResolution": "Node",
+    "lib": [
+      "ESNext",
+      "DOM"
+    ],
+    "strict": true,
+    "useDefineForClassFields": false
+  }
+}
