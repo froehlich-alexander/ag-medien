@@ -19,7 +19,11 @@ class Media {
     _type: ImageType = "img"
     #html: JQuery<HTMLImageElement | HTMLVideoElement>;
 
+    public static readonly imgFileEndings = ["png", "jpeg", "jpg"];
+    public static readonly videoFileEndings = ["mp4", "webm"];
+
     constructor(src: string, type?: ImageType | "auto") {
+        this._src = src;
         this.type = type;
         if (this.type === "img") {
             this.#html = $("<img>")
@@ -30,7 +34,6 @@ class Media {
         } else {
             throw "Type not specified"
         }
-        this._src = src;
     }
 
     public clone() {
@@ -65,8 +68,17 @@ class Media {
 
     set type(value: ImageType | undefined | "auto") {
         if (value === "auto") {
-            //todo auto detect file type
-            this._type = "img";
+            let fileEnding = this._src.split(".")[this._src.split(".").length - 1];
+            if (Media.imgFileEndings.indexOf(fileEnding)>-1) {
+                this._type = "img";
+            }
+            else if (Media.videoFileEndings.indexOf(fileEnding) > -1) {
+                this._type = "video";
+            }
+            else {
+                console.warn("Please add the file ending to the list\n'img' is used as default");
+                this._type = "img";
+            }
         } else {
             this._type = value ?? this._type;
         }
@@ -79,8 +91,13 @@ class Media {
 type JsonPage = {
     id: string,
     img: {
-        src: string,
-        type?: ImageType | "auto"
+        //see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/video for video
+        //and  for img
+        src?: string,
+        srcMin?: string,
+        srcMax?: string,
+        type?: ImageType | "auto",
+        poster?: string
     };
     is_360?: boolean;
     is_panorama?: boolean;
@@ -120,11 +137,46 @@ function checkJsonPageForMistakes(jsonPage: JsonPage) {
     for (let i of jsonPage.clickables) {
         if (typeof i.title !== "string" || i.title.length <= 0)
             console.error(`Clickable id wrong formatted in page object: `, jsonPage, "clickable: ", i);
-        if (typeof i.x !== "number")
+        if (typeof i.x !== "number") {
+            let error = true;
+            if (typeof i.x === "string") {
+                try {
+                    i.x = Number.parseFloat(i.x);
+                    error = false;
+                } catch (e) {
+                }
+            }
+            if (error)
             console.error(`Clickable x wrong formatted in page object: `, jsonPage, "clickable: ", i);
-        if (typeof i.y !== "number")
-            console.error(`Clickable y wrong formatted in page object: `, jsonPage, "clickable: ", i);
+        }
+
+        if (typeof i.y !== "number") {
+            let error = true;
+            if (typeof i.y === "string") {
+                try {
+                    i.y = Number.parseFloat(i.y);
+                    error = false;
+                } catch (e) {
+                }
+            }
+            if (error)
+                console.error(`Clickable y wrong formatted in page object: `, jsonPage, "clickable: ", i);
+        }
     }
+}
+
+function improveMedia(jsonPage: JsonPage): JsonPage {
+    makeDefaultJsonPage(jsonPage);
+    checkJsonPageForMistakes(jsonPage);
+
+    if (window.innerWidth > 768) {
+        //desktop
+        jsonPage.img.src = jsonPage.img.srcMax ?? (jsonPage.img.src ?? jsonPage.img.srcMin);
+    } else {
+        //mobile
+        jsonPage.img.src = jsonPage.img.srcMin ?? (jsonPage.img.src ?? jsonPage.img.srcMax);
+    }
+    return jsonPage;
 }
 
 class Page {
@@ -349,7 +401,10 @@ function createHtml(json: JsonPage[]) {
     let scrollSensitivity = 20;
 
     for (let jsonPage of json) {
-        let page = new Page(jsonPage.id, new Media(jsonPage.img.src, jsonPage.img.type));
+        console.log("pre", jsonPage.is_panorama)
+        improveMedia(jsonPage);
+        console.log("after", jsonPage)
+        let page = new Page(jsonPage.id, new Media(jsonPage.img.src!, jsonPage.img.type));
         //let page = new Page(jsonPage.id, new Image(jsonPage.img));
 
         pages.push(page);
@@ -364,7 +419,7 @@ function createHtml(json: JsonPage[]) {
         //via user agent
         // if (/(iPhone|iPod|iPad|blackberry|android|Kindle|htc|lg|midp|mmp|mobile|nokia|opera mini|palm|pocket|psp|sgh|smartphone|symbian|treo mini|Playstation Portable|SonyEricsson|Samsung|MobileExplorer|PalmSource|Benq|Windows Phone|Windows Mobile|IEMobile|Windows CE|Nintendo Wii)/.test(navigator.userAgent))
         //or via screen size
-        if (window.innerWidth <= 768) {
+        if (window.innerWidth <= 768 && page.img.isImage()) {
             page.is_panorama = true;
         }
 
@@ -477,7 +532,7 @@ function createHtml(json: JsonPage[]) {
             page.img.html.append($("<source>")
                 .attr("src", imgUrl)
                 .attr("type", "video/mp4"))
-                // .attr("preload", "metadata")
+                .attr("preload", "metadata")
                 .attr("controls", "");
             console.log("Video", (page.img.html.get(0) as HTMLVideoElement).readyState)
             if ((page.img.html.get(0) as HTMLVideoElement).readyState > 0) {

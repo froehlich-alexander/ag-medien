@@ -3,12 +3,11 @@ var pagesJson = [
         "id": "01_hof",
         "img": {
             // "src": "01_hof.jpg",
-            // "type": "img"
-            "type": "video",
-            "src": "test.mp4"
+            "src": "test.mp4",
+            "srcMin": "01_hof.jpg"
         },
-        "is_panorama": true, //TODO 06.04.2022 fix img src and enable panorama
-        "initial_direction": 34,
+        //"is_panorama": true, //TODO 06.04.2022 fix img src and enable panorama
+        // "initial_direction": 34,
         "clickables": [
             {
                 "title": "Zum Eingang",
@@ -29,8 +28,7 @@ var pagesJson = [
     {
         "id": "05_sporthalle",
         "img": {
-            "src": "05_sporthalle.jpg",
-            "type": "img"
+            "src": "05_sporthalle.jpg"
         },
         "clickables": [
             {
