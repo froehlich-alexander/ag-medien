@@ -11,33 +11,70 @@ let pages: Page[] = [];
 //filezilla
 //test
 
-type ImageType = "img" | "video";
+type MediaType = "img" | "video" |"iframe";
 type IconType = "arrow_l" | "arrow_r" | "arrow_u" | "arrow_d";
 
+/**
+ * This class holds the media element for the page. This could be an image, a video, etc. (see {@link MediaType} for more options)<br>
+ */
 class Media {
-    _src: string;
-    _type: ImageType = "img"
+    public src: string;
+    private _type!: MediaType;
     #html: JQuery<HTMLImageElement | HTMLVideoElement>;
 
-    public static readonly imgFileEndings = ["png", "jpeg", "jpg"];
-    public static readonly videoFileEndings = ["mp4", "webm"];
+    //video attributes
+    public readonly poster: string;
+    public readonly autoplay: boolean;
+    public readonly loop: boolean;
+    public readonly muted: boolean
 
-    constructor(src: string, type?: ImageType | "auto") {
-        this._src = src;
+    public static readonly imgFileEndings = ["png", "jpeg", "jpg", "gif", "svg", "webp", "apng", "avif"];
+    public static readonly videoFileEndings = ["mp4", "webm", "ogg", "ogm", "ogv", "avi", ""];
+
+    constructor(src: string, type: MediaType | "auto", poster: string, autoplay: boolean, loop: boolean, muted: boolean) {
+        this.src = src;
+        this.autoplay = autoplay;
+        this.loop = loop;
+        this.muted = muted;
+        this.poster = poster;
         this.type = type;
         if (this.type === "img") {
             this.#html = $("<img>")
                 .prop("alt", "Could not load Image :(") as JQuery<HTMLImageElement>;
         } else if (this.type === "video") {
             this.#html = $("<video></video>")
-                .text("HTML Video is not supported / Could not load video") as JQuery<HTMLVideoElement>;
+                .text("HTML Video is not supported / Could not load video")
+                .attr("poster", this.poster)
+                .prop("autoplay", this.autoplay)
+                .prop("loop", this.loop)
+                .prop("muted", this.muted) as JQuery<HTMLVideoElement>;
         } else {
             throw "Type not specified"
         }
     }
 
+    public static fromJson(jsonMedia: JsonMedia): Media {
+        //check for mistakes
+        if (jsonMedia == null)
+            throw `Media is ${jsonMedia}`;
+        if (!jsonMedia.src && !jsonMedia.srcMin && !jsonMedia.srcMax)
+            console.error(`Media source is not given in media object: `, jsonMedia);
+
+        //higher / lower resolution
+        let src;
+        if (window.innerWidth > 768) {
+            //desktop
+            src = jsonMedia.srcMax ?? (jsonMedia.src ?? jsonMedia.srcMin);
+        } else {
+            //mobile
+            src = jsonMedia.srcMin ?? (jsonMedia.src ?? jsonMedia.srcMax);
+        }
+        //default parameters on absence
+        return new Media(src!, jsonMedia.type ?? "auto", jsonMedia.poster ?? "", jsonMedia.autoplay ?? false, jsonMedia.loop ?? false, jsonMedia.muted ?? false);
+    }
+
     public clone() {
-        let n = new Media(this.src, this.type);
+        let n = new Media(this.src, this.type, this.poster, this.autoplay, this.loop, this.muted);
         n.#html = this.#html.clone(true);
         return n;
     }
@@ -54,33 +91,23 @@ class Media {
         return this.#html;
     }
 
-    get src() {
-        return this._src;
-    }
-
-    set src(value) {
-        this._src = value;
-    }
-
-    get type() {
+    get type(): MediaType {
         return this._type;
     }
 
-    set type(value: ImageType | undefined | "auto") {
+    set type(value: MediaType | "auto") {
         if (value === "auto") {
-            let fileEnding = this._src.split(".")[this._src.split(".").length - 1];
-            if (Media.imgFileEndings.indexOf(fileEnding)>-1) {
+            let fileEnding = this.src.split(".")[this.src.split(".").length - 1];
+            if (Media.imgFileEndings.indexOf(fileEnding) > -1) {
                 this._type = "img";
-            }
-            else if (Media.videoFileEndings.indexOf(fileEnding) > -1) {
+            } else if (Media.videoFileEndings.indexOf(fileEnding) > -1) {
                 this._type = "video";
-            }
-            else {
+            } else {
                 console.warn("Please add the file ending to the list\n'img' is used as default");
                 this._type = "img";
             }
         } else {
-            this._type = value ?? this._type;
+            this._type = value;
         }
     }
 }
@@ -90,156 +117,64 @@ class Media {
  */
 type JsonPage = {
     id: string,
-    img: {
-        //see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/video for video
-        //and  for img
-        src?: string,
-        srcMin?: string,
-        srcMax?: string,
-        type?: ImageType | "auto",
-        poster?: string
-    };
+    img: JsonMedia;
     is_360?: boolean;
     is_panorama?: boolean;
     initial_direction?: number;
-    clickables: {
-        title: string;
-        x: number;
-        y: number;
-        goto?: string;
-        icon?: IconType;
-        backward?: boolean;
-    }[]
+    clickables: JsonClickable[]
 }
 
-function makeDefaultJsonPage(jsonPage: JsonPage) {
-    jsonPage.is_360 = jsonPage.is_360 ?? false;
-    jsonPage.is_panorama = jsonPage.is_panorama ?? false;
-    jsonPage.initial_direction = jsonPage.initial_direction ?? 0;
-    jsonPage.img.type = jsonPage.img.type ?? "auto";
-    for (let i of jsonPage.clickables) {
-        i.icon = i.icon ?? "arrow_l";
-    }
-}
+type JsonMedia = {
+    //see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/video for video
+    //and https://developer.mozilla.org/en-US/docs/Web/HTML/Element/img for img
+    src?: string;
+    srcMin?: string;
+    srcMax?: string;
+    type?: MediaType | "auto";
+    //video attributes
+    poster?: string;
+    autoplay?: boolean;
+    loop?: boolean;
+    muted?: boolean
+};
 
-function checkJsonPageForMistakes(jsonPage: JsonPage) {
-    if (typeof jsonPage.id !== "string" || jsonPage.id.length <= 0)
-        console.error(`Id wrong formatted in page object: `, jsonPage);
-    if (jsonPage.img == null)
-        console.error(`Image wrong formatted in page object: `, jsonPage);
-    if (typeof jsonPage.img.src !== "string" || jsonPage.img.src.length <= 0)
-        console.error(`Image src wrong formatted in page object: `, jsonPage);
-    if (typeof jsonPage.id !== "string" || jsonPage.id.length <= 0)
-        console.error(`Id wrong formatted in page object: `, jsonPage);
-    if (jsonPage.clickables == null)
-        console.error(`Clickables not specified in page object: `, jsonPage);
-
-    for (let i of jsonPage.clickables) {
-        if (typeof i.title !== "string" || i.title.length <= 0)
-            console.error(`Clickable id wrong formatted in page object: `, jsonPage, "clickable: ", i);
-        if (typeof i.x !== "number") {
-            let error = true;
-            if (typeof i.x === "string") {
-                try {
-                    i.x = Number.parseFloat(i.x);
-                    error = false;
-                } catch (e) {
-                }
-            }
-            if (error)
-            console.error(`Clickable x wrong formatted in page object: `, jsonPage, "clickable: ", i);
-        }
-
-        if (typeof i.y !== "number") {
-            let error = true;
-            if (typeof i.y === "string") {
-                try {
-                    i.y = Number.parseFloat(i.y);
-                    error = false;
-                } catch (e) {
-                }
-            }
-            if (error)
-                console.error(`Clickable y wrong formatted in page object: `, jsonPage, "clickable: ", i);
-        }
-    }
-}
-
-function improveMedia(jsonPage: JsonPage): JsonPage {
-    makeDefaultJsonPage(jsonPage);
-    checkJsonPageForMistakes(jsonPage);
-
-    if (window.innerWidth > 768) {
-        //desktop
-        jsonPage.img.src = jsonPage.img.srcMax ?? (jsonPage.img.src ?? jsonPage.img.srcMin);
-    } else {
-        //mobile
-        jsonPage.img.src = jsonPage.img.srcMin ?? (jsonPage.img.src ?? jsonPage.img.srcMax);
-    }
-    return jsonPage;
+type JsonClickable = {
+    title: string;
+    x: number;
+    y: number;
+    goto?: string;
+    icon?: IconType;
+    backward?: boolean;
 }
 
 class Page {
-    id: string;
-    img: Media;
-    secondaryImg?: Media;
-    #is_panorama = false;
-    #is_360 = false;
-    #initial_direction: number = 0;
-    #clickables: Clickable[] = [];
-    #secondClickables: Clickable[] = []; //only relevant in 360deg img because there exist each clickable 2 times
-    #html: JQuery<HTMLDivElement> = $("<div></div>");
+    public readonly id: string;
+    public readonly img: Media;
+    public secondaryImg?: Media;
+    public is_panorama = false;
+    public is_360 = false;
+    public initial_direction: number;
+    public readonly clickables: Clickable[];
+    public readonly secondClickables: Clickable[] = []; //only relevant in 360deg img because there exist each clickable 2 times
+    readonly #html: JQuery<HTMLDivElement> = $("<div></div>");
 
-    constructor(id: string, img: Media, is_panorama = undefined, is_360 = undefined, initial_direction = undefined) {
+    constructor(id: string, img: Media, is_panorama: boolean, is_360: boolean, initial_direction: number, clickables: Clickable[]) {
         this.id = id;
         this.img = img;
-        if (is_panorama !== undefined) {
-            this.is_panorama = is_panorama;
-        }
-        if (is_360 !== undefined) {
-            this.is_360 = is_360;
-        }
+        this.is_360 = is_360;
+        this.is_panorama = is_panorama;
         this.initial_direction = initial_direction;
+        this.clickables = clickables;
     }
 
-    get is_panorama() {
-        return this.#is_panorama;
-    }
+    public static fromJson(jsonPage: JsonPage): Page {
+        //check if everything is well formatted / check for mistakes
+        if (typeof jsonPage.id !== "string" || jsonPage.id.length <= 0)
+            console.error(`Id wrong formatted in page object: `, jsonPage);
 
-    set is_panorama(value: boolean | undefined | number) {
-        this.#is_panorama = value === true;
-    }
-
-    get is_360() {
-        return this.#is_360;
-    }
-
-    set is_360(value: boolean | undefined | null) {
-        this.#is_360 = value === true;
-    }
-
-    get initial_direction(): number {
-        return this.#initial_direction;
-    }
-
-    set initial_direction(value: number | undefined) {
-        if (typeof value === "number")
-            this.#initial_direction = value;
-    }
-
-    /**
-     * @returns {Clickable[]}
-     */
-    get clickables() {
-        return this.#clickables;
-    }
-
-    /**
-     *
-     * @returns {Clickable[]}
-     */
-    get secondClickables() {
-        return this.#secondClickables;
+        //default arguments
+        return new Page(jsonPage.id, Media.fromJson(jsonPage.img), jsonPage.is_panorama ?? false,
+            jsonPage.is_360 ?? false, jsonPage.initial_direction ?? 0, jsonPage.clickables.map(v => Clickable.fromJson(v)));
     }
 
     /**
@@ -247,8 +182,8 @@ class Page {
      * @returns {Clickable[]}
      */
     get allClickables() {
-        console.log("all cloick", this.clickables, this.secondClickables, this.#clickables.concat(this.#secondClickables))
-        return this.#clickables.concat(this.#secondClickables);
+        console.log("all cloick", this.clickables, this.secondClickables, this.clickables.concat(this.secondClickables))
+        return this.clickables.concat(this.secondClickables);
     }
 
     get html() {
@@ -257,23 +192,63 @@ class Page {
 }
 
 class Clickable {
-    title: string;
-    x: number;
-    y: number;
-    goto?: string;
-    #icon: IconType = "arrow_l";
-    #backward = false;
+    public readonly title: string;
+    public readonly x: number;
+    public readonly y: number;
+    public goto: string;
+    public icon: IconType = "arrow_l";
+    public backward = false;
     #html: JQuery = $("<div></div>");
 
-    constructor(title: string, x: number, y: number, goto?: string, icon?: IconType, backward?: boolean) {
+    constructor(title: string, x: number, y: number, goto: string, icon: IconType, backward: boolean) {
         this.title = title;
         this.x = x;
         this.y = y;
         this.goto = goto;
         this.icon = icon;
-        if (backward !== undefined) {
-            this.backward = backward;
+        this.backward = backward;
+    }
+
+    /**
+     * Creates a {@link Clickable} object from an {@link JsonClickable} object
+     * @param jsonClickable
+     */
+    public static fromJson(jsonClickable: JsonClickable): Clickable {
+        //check for mistakes
+        {
+            if (jsonClickable == null)
+                throw `Clickable is ${jsonClickable}`;
+
+            if (typeof jsonClickable.title !== "string" || jsonClickable.title.length <= 0)
+                console.error("Clickable id wrong formatted in json clickable: ", jsonClickable);
+            if (typeof jsonClickable.x !== "number") {
+                let error = true;
+                if (typeof jsonClickable.x === "string") {
+                    try {
+                        jsonClickable.x = Number.parseFloat(jsonClickable.x);
+                        error = false;
+                    } catch (e) {
+                    }
+                }
+                if (error)
+                    console.error("Clickable x wrong formatted in json clickable: ", jsonClickable);
+            }
+            if (typeof jsonClickable.y !== "number") {
+                let error = true;
+                if (typeof jsonClickable.y === "string") {
+                    try {
+                        jsonClickable.y = Number.parseFloat(jsonClickable.y);
+                        error = false;
+                    } catch (e) {
+                    }
+                }
+                if (error)
+                    console.error("Clickable y wrong formatted in json clickable: ", jsonClickable);
+            }
         }
+
+        //default arguments
+        return new Clickable(jsonClickable.title, jsonClickable.x, jsonClickable.y, jsonClickable.goto ?? "", jsonClickable.icon ?? "arrow_l", jsonClickable.backward ?? false);
     }
 
     /**
@@ -288,23 +263,6 @@ class Clickable {
 
     get html() {
         return this.#html;
-    }
-
-    get icon(): IconType {
-        return this.#icon;
-    }
-
-    set icon(value: IconType | null | undefined) {
-        if (value != null)
-            this.#icon = value;
-    }
-
-    get backward(): boolean {
-        return this.#backward;
-    }
-
-    set backward(value) {
-        this.#backward = value === true;
     }
 }
 
@@ -401,17 +359,14 @@ function createHtml(json: JsonPage[]) {
     let scrollSensitivity = 20;
 
     for (let jsonPage of json) {
-        console.log("pre", jsonPage.is_panorama)
-        improveMedia(jsonPage);
+        console.log("pre", jsonPage.is_panorama);
         console.log("after", jsonPage)
-        let page = new Page(jsonPage.id, new Media(jsonPage.img.src!, jsonPage.img.type));
+        let page = Page.fromJson(jsonPage);
+        // let page = new Page(jsonPage.id, Media.fromJson(jsonPage.img));
         //let page = new Page(jsonPage.id, new Image(jsonPage.img));
 
         pages.push(page);
 
-        page.initial_direction = jsonPage.initial_direction;
-        page.is_panorama = jsonPage.is_panorama;
-        page.is_360 = jsonPage.is_360;
         // page.is_360 = page.is_360 != null ? page.is_360 : false;
         // page.is_panorama = (page.is_panorama != null ? page.is_panorama : false) || page.is_360;
 
@@ -423,13 +378,14 @@ function createHtml(json: JsonPage[]) {
             page.is_panorama = true;
         }
 
-        for (let clickable of jsonPage.clickables.map(jsonClickable => new Clickable(jsonClickable.title,
-            jsonClickable.x, jsonClickable.y, jsonClickable.goto, jsonClickable.icon, jsonClickable.backward))) {
-            page.clickables.push(clickable);
+        // for (let clickable of jsonPage.clickables.map(jsonClickable => new Clickable(jsonClickable.title,
+        //     jsonClickable.x, jsonClickable.y, jsonClickable.goto, jsonClickable.icon, jsonClickable.backward))) {
+        //     page.clickables.push(clickable);
+        for (let clickable of page.clickables){
             console.log("title", clickable.title)
 
-            let gotoExist = json.filter(value => value.id === clickable.goto).length > 0;
-            if (!gotoExist) {
+            let gotoExists = json.filter(value => value.id === clickable.goto).length > 0;
+            if (!gotoExists) {
                 console.log("Id '" + clickable.goto + "' does not exist");
             }
             clickable.html
@@ -441,7 +397,7 @@ function createHtml(json: JsonPage[]) {
                 .append($("<button></button>")
                     .addClass("icon")
                     .addClass(clickable.icon)
-                    .on("click", gotoExist ? () => {
+                    .on("click", gotoExists ? () => {
                         goTo(idPrefix + clickable.goto, clickable.backward);
                     } : () => {
                         console.log("Cannot go to next page because '" + clickable.goto + "' does not exist");
@@ -520,7 +476,7 @@ function createHtml(json: JsonPage[]) {
                     self.addClass("fill-height");
             })
             .on("error", function () {
-                console.warn("Error loading Media")
+                console.warn("Error loading Media", page.img)
                 if (page.img.isImage())
                     page.img.html.attr("src", baustellenFotoUrl);
                 else if (page.img.isVideo())
