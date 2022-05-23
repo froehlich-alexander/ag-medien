@@ -11,7 +11,7 @@ let pages: Page[] = [];
 //filezilla
 //test
 
-type MediaType = "img" | "video" |"iframe";
+type MediaType = "img" | "video" | "iframe";
 type IconType = "arrow_l" | "arrow_r" | "arrow_u" | "arrow_d";
 
 /**
@@ -381,7 +381,7 @@ function createHtml(json: JsonPage[]) {
         // for (let clickable of jsonPage.clickables.map(jsonClickable => new Clickable(jsonClickable.title,
         //     jsonClickable.x, jsonClickable.y, jsonClickable.goto, jsonClickable.icon, jsonClickable.backward))) {
         //     page.clickables.push(clickable);
-        for (let clickable of page.clickables){
+        for (let clickable of page.clickables) {
             console.log("title", clickable.title)
 
             let gotoExists = json.filter(value => value.id === clickable.goto).length > 0;
@@ -476,23 +476,39 @@ function createHtml(json: JsonPage[]) {
                     self.addClass("fill-height");
             })
             .on("error", function () {
+                console.error("error")
                 console.warn("Error loading Media", page.img)
                 if (page.img.isImage())
                     page.img.html.attr("src", baustellenFotoUrl);
-                else if (page.img.isVideo())
-                    null;
+                else if (page.img.isVideo()) {
+                    page.img.html
+                        .attr("poster", baustellenFotoUrl)
+                        .prop("controls", false)
+                    // .removeAttr("src")
+                    // .removeAttr("preload")
+                    // .removeAttr("type");
+                }
             });
+        //add src last so that error and load events aren't triggered before we add the event handler
         if (page.img.isImage()) {
             page.img.html.attr("src", imgUrl);
-        } else {
-            page.img.html.append($("<source>")
-                .attr("src", imgUrl)
-                .attr("type", "video/mp4"))
+        } else if (page.img.isVideo()) {
+            page.img.html
                 .attr("preload", "metadata")
-                .attr("controls", "");
-            console.log("Video", (page.img.html.get(0) as HTMLVideoElement).readyState)
+                .prop("controls", true)
+                .append($("<source>"));
+
+            //firefox dispatches error events on last <source> tag, so we need to handle them there
+            page.img.html.find("source").last()
+                .on("error", e => page.img.html.trigger("error", e));
+
+            //add src last so that we won't trigger error event too early
+            page.img.html.find("source").last().attr("type", "video/mp4")
+                .attr("src", imgUrl);
+
+            //should be redundant
             if ((page.img.html.get(0) as HTMLVideoElement).readyState > 0) {
-                page.img.html.trigger("load");
+                page.img.html.trigger(event);
             }
         }
         // .each(function () {
