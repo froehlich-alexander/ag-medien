@@ -1,17 +1,17 @@
 "use strict";
 // import * as $ from 'jquery'
+var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (receiver, state, kind, f) {
+    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a getter");
+    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot read private member from an object whose class did not declare it");
+    return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
+};
 var __classPrivateFieldSet = (this && this.__classPrivateFieldSet) || function (receiver, state, value, kind, f) {
     if (kind === "m") throw new TypeError("Private method is not writable");
     if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a setter");
     if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot write private member to an object whose class did not declare it");
     return (kind === "a" ? f.call(receiver, value) : f ? f.value = value : state.set(receiver, value)), value;
 };
-var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (receiver, state, kind, f) {
-    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a getter");
-    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot read private member from an object whose class did not declare it");
-    return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
-};
-var _Media_html, _Page_html, _Clickable_html;
+var _Page_html, _Clickable_html;
 var finished_last = true;
 let idPrefix = "tour_pg_";
 let imgFolder = "./img1";
@@ -23,29 +23,30 @@ let pages = [];
  * This class holds the media element for the page. This could be an image, a video, etc. (see {@link MediaType} for more options)<br>
  */
 class Media {
-    constructor(src, type, poster, autoplay, loop, muted) {
-        _Media_html.set(this, void 0);
+    // constructor(src: string, type: MediaType | "auto", poster: string, autoplay: boolean, loop: boolean, muted: boolean) {
+    //     this.src = src;
+    //     this.autoplay = autoplay;
+    //     this.loop = loop;
+    //     this.muted = muted;
+    //     this.poster = poster;
+    //     this.type = type;
+    //     if (this.type === "img") {
+    //         this._html = $("<img>")
+    //             .prop("alt", "Could not load Image :(") as JQuery<HTMLImageElement>;
+    //     } else if (this.type === "video") {
+    //         this._html = $("<video></video>")
+    //             .text("HTML Video is not supported / Could not load video")
+    //             .attr("poster", this.poster)
+    //             .prop("autoplay", this.autoplay)
+    //             .prop("loop", this.loop)
+    //             .prop("muted", this.muted) as JQuery<HTMLVideoElement>;
+    //     } else {
+    //         throw "Type not specified"
+    //     }
+    // }
+    constructor(src, type) {
         this.src = src;
-        this.autoplay = autoplay;
-        this.loop = loop;
-        this.muted = muted;
-        this.poster = poster;
-        this.type = type;
-        if (this.type === "img") {
-            __classPrivateFieldSet(this, _Media_html, $("<img>")
-                .prop("alt", "Could not load Image :("), "f");
-        }
-        else if (this.type === "video") {
-            __classPrivateFieldSet(this, _Media_html, $("<video></video>")
-                .text("HTML Video is not supported / Could not load video")
-                .attr("poster", this.poster)
-                .prop("autoplay", this.autoplay)
-                .prop("loop", this.loop)
-                .prop("muted", this.muted), "f");
-        }
-        else {
-            throw "Type not specified";
-        }
+        this._type = type;
     }
     static fromJson(jsonMedia) {
         var _a, _b, _c, _d, _e, _f, _g, _h, _j;
@@ -64,12 +65,25 @@ class Media {
             //mobile
             src = (_c = jsonMedia.srcMin) !== null && _c !== void 0 ? _c : ((_d = jsonMedia.src) !== null && _d !== void 0 ? _d : jsonMedia.srcMax);
         }
+        //check src
+        if (src == null) {
+            console.error("src == ", src, "Json Media:", jsonMedia);
+        }
+        switch (this.determineType((_e = jsonMedia.type) !== null && _e !== void 0 ? _e : "auto", src)) {
+            case "img":
+                return new ImageMedia(src);
+            case "video":
+                return new VideoMedia(src, (_f = jsonMedia.poster) !== null && _f !== void 0 ? _f : "", (_g = jsonMedia.autoplay) !== null && _g !== void 0 ? _g : false, (_h = jsonMedia.loop) !== null && _h !== void 0 ? _h : false, (_j = jsonMedia.muted) !== null && _j !== void 0 ? _j : false);
+            case "iframe":
+                return new IframeMedia(src);
+        }
         //default parameters on absence
-        return new Media(src, (_e = jsonMedia.type) !== null && _e !== void 0 ? _e : "auto", (_f = jsonMedia.poster) !== null && _f !== void 0 ? _f : "", (_g = jsonMedia.autoplay) !== null && _g !== void 0 ? _g : false, (_h = jsonMedia.loop) !== null && _h !== void 0 ? _h : false, (_j = jsonMedia.muted) !== null && _j !== void 0 ? _j : false);
+        // return new Media(src!, jsonMedia.type ?? "auto", jsonMedia.poster ?? "", jsonMedia.autoplay ?? false, jsonMedia.loop ?? false, jsonMedia.muted ?? false);
     }
     clone() {
-        let n = new Media(this.src, this.type, this.poster, this.autoplay, this.loop, this.muted);
-        __classPrivateFieldSet(n, _Media_html, __classPrivateFieldGet(this, _Media_html, "f").clone(true), "f");
+        // let n = new Media(this.src, this.type, this.poster, this.autoplay, this.loop, this.muted);
+        let n = new Media(this.src, this.type);
+        n._html = this._html.clone(true);
         return n;
     }
     isImage(self = this.html) {
@@ -78,34 +92,78 @@ class Media {
     isVideo(self = this.html) {
         return this._type === "video";
     }
+    isIframe(self = this.html) {
+        return this._type === "iframe";
+    }
     get html() {
-        return __classPrivateFieldGet(this, _Media_html, "f");
+        return this._html;
     }
     get type() {
         return this._type;
     }
     set type(value) {
+        this._type = Media.determineType(value, this.src);
+    }
+    static determineType(value, src) {
+        let res;
         if (value === "auto") {
-            let fileEnding = this.src.split(".")[this.src.split(".").length - 1];
+            let fileEnding = src.split(".")[src.split(".").length - 1];
             if (Media.imgFileEndings.indexOf(fileEnding) > -1) {
-                this._type = "img";
+                res = "img";
             }
             else if (Media.videoFileEndings.indexOf(fileEnding) > -1) {
-                this._type = "video";
+                res = "video";
             }
             else {
                 console.warn("Please add the file ending to the list\n'img' is used as default");
-                this._type = "img";
+                res = "img";
             }
         }
         else {
-            this._type = value;
+            res = value;
         }
+        return res;
+    }
+    pause() {
     }
 }
-_Media_html = new WeakMap();
 Media.imgFileEndings = ["png", "jpeg", "jpg", "gif", "svg", "webp", "apng", "avif"];
-Media.videoFileEndings = ["mp4", "webm", "ogg", "ogm", "ogv", "avi", ""];
+Media.videoFileEndings = ["mp4", "webm", "ogg", "ogm", "ogv", "avi"];
+class VideoMedia extends Media {
+    constructor(src, poster, autoplay, loop, muted) {
+        super(src, "video");
+        this.poster = poster;
+        this.autoplay = autoplay;
+        this.loop = loop;
+        this.muted = muted;
+        this._html = $("<video></video>")
+            .text("HTML Video is not supported / Could not load video")
+            .attr("poster", this.poster)
+            .prop("autoplay", this.autoplay)
+            .prop("loop", this.loop)
+            .prop("muted", this.muted);
+    }
+    clone() {
+        let n = new VideoMedia(this.src, this.poster, this.autoplay, this.loop, this.muted);
+        n._html = this.html.clone(true);
+        return n;
+    }
+    pause() {
+        this._html[0].pause();
+    }
+}
+class ImageMedia extends Media {
+    constructor(src) {
+        super(src, "img");
+        this._html = $("<img>")
+            .prop("alt", "Could not load Image :(");
+    }
+}
+class IframeMedia extends Media {
+    constructor(src) {
+        super(src, "iframe");
+    }
+}
 class Page {
     constructor(id, img, is_panorama, is_360, initial_direction, clickables) {
         this.is_panorama = false;
@@ -239,6 +297,8 @@ function goTo(pg, backward) {
         }
         let next = pages.find(v => v.id === pg.substring(idPrefix.length));
         let prev = pages.find(v => v.id === $(".page.show").attr("id").substring(idPrefix.length));
+        //pause video
+        prev.img.pause();
         next.html.addClass("show");
         adjust_clickables();
         lastest = prev.id;

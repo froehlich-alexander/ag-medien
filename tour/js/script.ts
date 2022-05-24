@@ -17,40 +17,39 @@ type IconType = "arrow_l" | "arrow_r" | "arrow_u" | "arrow_d";
 /**
  * This class holds the media element for the page. This could be an image, a video, etc. (see {@link MediaType} for more options)<br>
  */
-class Media {
+class Media<T extends HTMLImageElement | HTMLVideoElement | HTMLIFrameElement = HTMLImageElement | HTMLVideoElement | HTMLIFrameElement> {
     public src: string;
     private _type!: MediaType;
-    #html: JQuery<HTMLImageElement | HTMLVideoElement>;
-
-    //video attributes
-    public readonly poster: string;
-    public readonly autoplay: boolean;
-    public readonly loop: boolean;
-    public readonly muted: boolean
+    declare protected _html: JQuery<T>;
 
     public static readonly imgFileEndings = ["png", "jpeg", "jpg", "gif", "svg", "webp", "apng", "avif"];
-    public static readonly videoFileEndings = ["mp4", "webm", "ogg", "ogm", "ogv", "avi", ""];
+    public static readonly videoFileEndings = ["mp4", "webm", "ogg", "ogm", "ogv", "avi"];
 
-    constructor(src: string, type: MediaType | "auto", poster: string, autoplay: boolean, loop: boolean, muted: boolean) {
+    // constructor(src: string, type: MediaType | "auto", poster: string, autoplay: boolean, loop: boolean, muted: boolean) {
+    //     this.src = src;
+    //     this.autoplay = autoplay;
+    //     this.loop = loop;
+    //     this.muted = muted;
+    //     this.poster = poster;
+    //     this.type = type;
+    //     if (this.type === "img") {
+    //         this._html = $("<img>")
+    //             .prop("alt", "Could not load Image :(") as JQuery<HTMLImageElement>;
+    //     } else if (this.type === "video") {
+    //         this._html = $("<video></video>")
+    //             .text("HTML Video is not supported / Could not load video")
+    //             .attr("poster", this.poster)
+    //             .prop("autoplay", this.autoplay)
+    //             .prop("loop", this.loop)
+    //             .prop("muted", this.muted) as JQuery<HTMLVideoElement>;
+    //     } else {
+    //         throw "Type not specified"
+    //     }
+    // }
+
+    constructor(src: string, type: MediaType) {
         this.src = src;
-        this.autoplay = autoplay;
-        this.loop = loop;
-        this.muted = muted;
-        this.poster = poster;
-        this.type = type;
-        if (this.type === "img") {
-            this.#html = $("<img>")
-                .prop("alt", "Could not load Image :(") as JQuery<HTMLImageElement>;
-        } else if (this.type === "video") {
-            this.#html = $("<video></video>")
-                .text("HTML Video is not supported / Could not load video")
-                .attr("poster", this.poster)
-                .prop("autoplay", this.autoplay)
-                .prop("loop", this.loop)
-                .prop("muted", this.muted) as JQuery<HTMLVideoElement>;
-        } else {
-            throw "Type not specified"
-        }
+        this._type = type;
     }
 
     public static fromJson(jsonMedia: JsonMedia): Media {
@@ -69,26 +68,46 @@ class Media {
             //mobile
             src = jsonMedia.srcMin ?? (jsonMedia.src ?? jsonMedia.srcMax);
         }
+
+        //check src
+        if (src == null) {
+            console.error("src == ", src, "Json Media:", jsonMedia);
+        }
+
+        switch (this.determineType(jsonMedia.type ?? "auto", src!)) {
+            case "img":
+                return new ImageMedia(src!);
+            case "video":
+                return new VideoMedia(src!, jsonMedia.poster ?? "", jsonMedia.autoplay ?? false, jsonMedia.loop ?? false, jsonMedia.muted ?? false);
+            case "iframe":
+                return new IframeMedia(src!);
+        }
+
         //default parameters on absence
-        return new Media(src!, jsonMedia.type ?? "auto", jsonMedia.poster ?? "", jsonMedia.autoplay ?? false, jsonMedia.loop ?? false, jsonMedia.muted ?? false);
+        // return new Media(src!, jsonMedia.type ?? "auto", jsonMedia.poster ?? "", jsonMedia.autoplay ?? false, jsonMedia.loop ?? false, jsonMedia.muted ?? false);
     }
 
-    public clone() {
-        let n = new Media(this.src, this.type, this.poster, this.autoplay, this.loop, this.muted);
-        n.#html = this.#html.clone(true);
+    public clone(): Media {
+        // let n = new Media(this.src, this.type, this.poster, this.autoplay, this.loop, this.muted);
+        let n = new Media(this.src, this.type);
+        n._html = this._html.clone(true);
         return n;
     }
 
-    public isImage(self = this.html): self is JQuery<HTMLImageElement> {
+    public isImage(self: JQuery<HTMLImageElement | HTMLVideoElement | HTMLIFrameElement> = this.html): self is JQuery<HTMLImageElement> {
         return this._type === "img";
     }
 
-    public isVideo(self = this.html): self is JQuery<HTMLVideoElement> {
+    public isVideo(self: JQuery<HTMLImageElement | HTMLVideoElement | HTMLIFrameElement> = this.html): self is JQuery<HTMLVideoElement> {
         return this._type === "video";
     }
 
+    public isIframe(self: JQuery<HTMLImageElement | HTMLVideoElement | HTMLIFrameElement> = this.html): self is JQuery<HTMLIFrameElement> {
+        return this._type === "iframe";
+    }
+
     get html() {
-        return this.#html;
+        return this._html;
     }
 
     get type(): MediaType {
@@ -96,19 +115,76 @@ class Media {
     }
 
     set type(value: MediaType | "auto") {
+        this._type = Media.determineType(value, this.src);
+    }
+
+    public static determineType(value: MediaType | "auto", src: string): MediaType {
+        let res: MediaType;
         if (value === "auto") {
-            let fileEnding = this.src.split(".")[this.src.split(".").length - 1];
+            let fileEnding = src.split(".")[src.split(".").length - 1];
             if (Media.imgFileEndings.indexOf(fileEnding) > -1) {
-                this._type = "img";
+                res = "img";
             } else if (Media.videoFileEndings.indexOf(fileEnding) > -1) {
-                this._type = "video";
+                res = "video";
             } else {
                 console.warn("Please add the file ending to the list\n'img' is used as default");
-                this._type = "img";
+                res = "img";
             }
         } else {
-            this._type = value;
+            res = value;
         }
+        return res;
+    }
+
+    public pause(): void {
+    }
+}
+
+class VideoMedia extends Media<HTMLVideoElement> {
+    public readonly poster: string;
+    public readonly autoplay: boolean;
+    public readonly loop: boolean;
+    public readonly muted: boolean
+
+    declare protected _html: JQuery<HTMLVideoElement>;
+
+    constructor(src: string, poster: string, autoplay: boolean, loop: boolean, muted: boolean) {
+        super(src, "video");
+        this.poster = poster;
+        this.autoplay = autoplay;
+        this.loop = loop;
+        this.muted = muted;
+        this._html = $("<video></video>")
+            .text("HTML Video is not supported / Could not load video")
+            .attr("poster", this.poster)
+            .prop("autoplay", this.autoplay)
+            .prop("loop", this.loop)
+            .prop("muted", this.muted) as JQuery<HTMLVideoElement>;
+    }
+
+    public clone(): VideoMedia {
+        let n = new VideoMedia(this.src, this.poster, this.autoplay, this.loop, this.muted);
+        n._html = this.html.clone(true);
+        return n;
+    }
+
+    public pause() {
+        this._html[0].pause();
+    }
+}
+
+class ImageMedia extends Media<HTMLImageElement> {
+    constructor(src: string) {
+        super(src, "img");
+        this._html = $("<img>")
+            .prop("alt", "Could not load Image :(") as JQuery<HTMLImageElement>;
+    }
+
+}
+
+class IframeMedia extends Media<HTMLIFrameElement> {
+    constructor(src: string) {
+        super(src, "iframe");
     }
 }
 
@@ -140,8 +216,8 @@ type JsonMedia = {
 
 type JsonClickable = {
     title: string;
-    x: number;
-    y: number;
+    x: number | string;
+    y: number | string;
     goto?: string;
     icon?: IconType;
     backward?: boolean;
@@ -302,6 +378,8 @@ function goTo(pg: string | undefined, backward: boolean) {
 
         let next = pages.find(v => v.id === pg!.substring(idPrefix.length))!;
         let prev = pages.find(v => v.id === $(".page.show").attr("id")!.substring(idPrefix.length))!;
+        //pause video
+        prev.img.pause();
         next.html.addClass("show");
         adjust_clickables();
         lastest = prev.id;
