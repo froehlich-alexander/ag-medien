@@ -19,6 +19,7 @@ let baustellenFotoUrl = imgFolder + "/baustelle.png";
 let animationDuration = 500;
 let lastest = "";
 let pages = [];
+let isDesktop = window.innerWidth > 768;
 /**
  * This class holds the media element for the page. This could be an image, a video, etc. (see {@link MediaType} for more options)<br>
  */
@@ -49,21 +50,29 @@ class Media {
         this._type = type;
     }
     static fromJson(jsonMedia) {
-        var _a, _b, _c, _d, _e, _f, _g, _h, _j;
+        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o;
         //check for mistakes
         if (jsonMedia == null)
             throw `Media is ${jsonMedia}`;
         if (!jsonMedia.src && !jsonMedia.srcMin && !jsonMedia.srcMax)
             console.error(`Media source is not given in media object: `, jsonMedia);
-        //higher / lower resolution
+        //higher / lower resolution and loading type depend on device (=connection bandwidth)
         let src;
-        if (window.innerWidth > 768) {
+        let loading;
+        // if (window.innerWidth > 768) {
+        if (isDesktop) {
             //desktop
             src = (_a = jsonMedia.srcMax) !== null && _a !== void 0 ? _a : ((_b = jsonMedia.src) !== null && _b !== void 0 ? _b : jsonMedia.srcMin);
+            loading = "eager";
         }
         else {
             //mobile
             src = (_c = jsonMedia.srcMin) !== null && _c !== void 0 ? _c : ((_d = jsonMedia.src) !== null && _d !== void 0 ? _d : jsonMedia.srcMax);
+            loading = "lazy";
+        }
+        //default for loading
+        if (jsonMedia.loading !== "auto" && jsonMedia.loading !== undefined) {
+            loading = jsonMedia.loading;
         }
         //check src
         if (src == null) {
@@ -71,11 +80,11 @@ class Media {
         }
         switch (this.determineType((_e = jsonMedia.type) !== null && _e !== void 0 ? _e : "auto", src)) {
             case "img":
-                return new ImageMedia(src);
+                return new ImageMedia(src, loading, (_f = jsonMedia.fetchPriority) !== null && _f !== void 0 ? _f : "auto");
             case "video":
-                return new VideoMedia(src, (_f = jsonMedia.poster) !== null && _f !== void 0 ? _f : "", (_g = jsonMedia.autoplay) !== null && _g !== void 0 ? _g : false, (_h = jsonMedia.loop) !== null && _h !== void 0 ? _h : false, (_j = jsonMedia.muted) !== null && _j !== void 0 ? _j : false);
+                return new VideoMedia(src, (_g = jsonMedia.poster) !== null && _g !== void 0 ? _g : "", (_h = jsonMedia.autoplay) !== null && _h !== void 0 ? _h : false, (_j = jsonMedia.loop) !== null && _j !== void 0 ? _j : false, (_k = jsonMedia.muted) !== null && _k !== void 0 ? _k : false, (_l = jsonMedia.preload) !== null && _l !== void 0 ? _l : "metadata");
             case "iframe":
-                return new IframeMedia(src);
+                return new IframeMedia(src, loading, (_m = jsonMedia.fetchPriority) !== null && _m !== void 0 ? _m : "auto", (_o = jsonMedia.addProtocol) !== null && _o !== void 0 ? _o : true);
         }
         //default parameters on absence
         // return new Media(src!, jsonMedia.type ?? "auto", jsonMedia.poster ?? "", jsonMedia.autoplay ?? false, jsonMedia.loop ?? false, jsonMedia.muted ?? false);
@@ -107,16 +116,20 @@ class Media {
     static determineType(value, src) {
         let res;
         if (value === "auto") {
-            let fileEnding = src.split(".")[src.split(".").length - 1];
+            let fileSplit = src.split(".");
+            let fileEnding = fileSplit[fileSplit.length - 1];
             if (Media.imgFileEndings.indexOf(fileEnding) > -1) {
                 res = "img";
             }
             else if (Media.videoFileEndings.indexOf(fileEnding) > -1) {
                 res = "video";
             }
+            else if (Media.iframeUrlEndings.indexOf(fileEnding) > -1) {
+                res = "iframe";
+            }
             else {
-                console.warn("Please add the file ending to the list\n'img' is used as default");
-                res = "img";
+                console.warn("Please add the file (or url) ending to the list\n'iframe' is used as default because there are endless different url endings\nFile Name which produced the Error:", src);
+                res = "iframe";
             }
         }
         else {
@@ -129,22 +142,25 @@ class Media {
 }
 Media.imgFileEndings = ["png", "jpeg", "jpg", "gif", "svg", "webp", "apng", "avif"];
 Media.videoFileEndings = ["mp4", "webm", "ogg", "ogm", "ogv", "avi"];
+Media.iframeUrlEndings = ["html", "htm", "com", "org", "edu", "net", "gov", "mil", "int", "de", "en", "eu", "us", "fr", "ch", "at", "au"]; //this list is not exhaustive
 class VideoMedia extends Media {
-    constructor(src, poster, autoplay, loop, muted) {
+    constructor(src, poster, autoplay, loop, muted, preload) {
         super(src, "video");
         this.poster = poster;
         this.autoplay = autoplay;
         this.loop = loop;
         this.muted = muted;
+        this.preload = preload;
         this._html = $("<video></video>")
-            .text("HTML Video is not supported / Could not load video")
+            .text("HTML Video is not supported")
             .attr("poster", this.poster)
             .prop("autoplay", this.autoplay)
             .prop("loop", this.loop)
-            .prop("muted", this.muted);
+            .prop("muted", this.muted)
+            .prop("preload", this.preload);
     }
     clone() {
-        let n = new VideoMedia(this.src, this.poster, this.autoplay, this.loop, this.muted);
+        let n = new VideoMedia(this.src, this.poster, this.autoplay, this.loop, this.muted, this.preload);
         n._html = this.html.clone(true);
         return n;
     }
@@ -153,15 +169,39 @@ class VideoMedia extends Media {
     }
 }
 class ImageMedia extends Media {
-    constructor(src) {
+    constructor(src, loading, fetchPriority) {
         super(src, "img");
+        this.loading = loading;
+        this.fetchPriority = fetchPriority;
         this._html = $("<img>")
-            .prop("alt", "Could not load Image :(");
+            .attr("alt", "Could not load Image :(")
+            .attr("loading", this.loading)
+            .attr("fetchPriority", this.fetchPriority);
     }
 }
 class IframeMedia extends Media {
-    constructor(src) {
+    /**
+     * @param src
+     * @param loading
+     * @param fetchPriority
+     * @param addProtocol see {@link JsonMedia.addProtocol}
+     */
+    constructor(src, loading, fetchPriority, addProtocol) {
+        if (addProtocol) {
+            if (!(src.startsWith("https://") || src.startsWith("http://"))) {
+                src = "https://" + src;
+            }
+            else if (src.startsWith("http://")) {
+                console.warn("Security waring: Using unsecure url in iframe:", src);
+            }
+        }
         super(src, "iframe");
+        this.loading = loading;
+        this.fetchPriority = fetchPriority;
+        this._html = $("<iframe></iframe>")
+            .attr("src", this.src)
+            .attr("loading", this.loading)
+            .attr("fetchPriority", this.fetchPriority);
     }
 }
 class Page {
@@ -397,13 +437,14 @@ function createHtml(json) {
         }
         let imgUrl = imgFolder + "/" + page.img.src;
         let event;
-        if (page.img.isImage())
+        if (page.img.isImage() || page.img.isIframe())
             event = "load";
         else if (page.img.isVideo()) {
             event = "loadedmetadata";
         }
         else {
-            throw "idk";
+            console.error("cannot determine event type because Media Type is not known (or not implemented)\nContinuing with 'load' as event type, but FIX THIS");
+            event = "load";
         }
         page.img.html
             .addClass("bg")
@@ -454,6 +495,9 @@ function createHtml(json) {
             else if (page.img.isVideo(self)) {
                 imgRatio = self.get(0).videoWidth / self.get(0).videoHeight;
             }
+            else if (page.img.isIframe()) {
+                return; //all resizing has to be done by the iframe itself
+            }
             else {
                 throw "Need to add handling for MediaType: " + page.img.type;
             }
@@ -476,6 +520,20 @@ function createHtml(json) {
                 // .removeAttr("preload")
                 // .removeAttr("type");
             }
+            else if (page.img.isIframe()) {
+                page.img.html
+                    //the plain html text
+                    .attr("srcdoc", '<!DOCTYPE html>' +
+                    '<html lang="de">' +
+                    '<head>' +
+                    '    <meta charset="UTF-8">' +
+                    '    <title>Baustelle</title>' +
+                    '</head>' +
+                    '<body>' +
+                    '<img src="./img1/baustelle.png" alt="Baustelle :)" style="width: 100%;height: 100%;">' +
+                    '</body>' +
+                    '</html>');
+            }
         });
         //add src last so that error and load events aren't triggered before we add the event handler
         if (page.img.isImage()) {
@@ -483,7 +541,6 @@ function createHtml(json) {
         }
         else if (page.img.isVideo()) {
             page.img.html
-                .attr("preload", "metadata")
                 .prop("controls", true)
                 .append($("<source>"));
             //firefox dispatches error events on last <source> tag, so we need to handle them there
@@ -497,6 +554,7 @@ function createHtml(json) {
                 page.img.html.trigger(event);
             }
         }
+        //iframes src is already added in constructor of IframeMedia obj
         // .each(function () {
         //     if (page.img.isImage() && page.img.html[0].complete || page.img.isVideo() && page.img.html.wid) {
         //         page.img.html.trigger('load');
@@ -563,34 +621,41 @@ function createHtml(json) {
  * @param pagesJsonPath
  */
 function init(pagesJsonPath) {
+    //@ts-ignore
     let json = pagesJson;
-    $.ajax(pagesJsonPath)
-        .done(function (data) {
-        //testing...
-        // let json = data;
-        $(() => {
-            createHtml(json);
-            if (window.location.hash !== "") {
-                $("#" + idPrefix + window.location.hash.slice(1)).addClass("show");
-            }
-            else {
-                $(".page").eq(0).addClass("show");
-            }
-        });
-    })
-        .catch(function () {
-        console.log("Error fetching the json file");
-        //    for testing
-        $(() => {
-            createHtml(json);
-            if (window.location.hash !== "") {
-                $("#" + idPrefix + window.location.hash.slice(1)).addClass("show");
-            }
-            else {
-                $(".page").eq(0).addClass("show");
-            }
-        });
-    });
+    createHtml(json);
+    if (window.location.hash !== "") {
+        $("#" + idPrefix + window.location.hash.slice(1)).addClass("show");
+    }
+    else {
+        $(".page").eq(0).addClass("show");
+    }
+    // $.ajax(pagesJsonPath)
+    //     .done(function (data) {
+    //         //testing...
+    //         // let json = data;
+    //         $(() => {
+    //             createHtml(json);
+    //             if (window.location.hash !== "") {
+    //                 $("#" + idPrefix + window.location.hash.slice(1)).addClass("show");
+    //             } else {
+    //                 $(".page").eq(0).addClass("show");
+    //             }
+    //         });
+    //     })
+    //     .catch(function () {
+    //             console.log("Error fetching the json file");
+    //             //    for testing
+    //             $(() => {
+    //                 createHtml(json);
+    //                 if (window.location.hash !== "") {
+    //                     $("#" + idPrefix + window.location.hash.slice(1)).addClass("show");
+    //                 } else {
+    //                     $(".page").eq(0).addClass("show");
+    //                 }
+    //             });
+    //         }
+    //     );
 }
 init("pages.js");
 console.warn(pages);

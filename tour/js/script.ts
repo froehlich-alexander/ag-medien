@@ -7,12 +7,13 @@ let baustellenFotoUrl = imgFolder + "/baustelle.png";
 let animationDuration = 500;
 let lastest = "";
 let pages: Page[] = [];
-//jce editor joomla
-//filezilla
-//test
+let isDesktop = window.innerWidth > 768;
 
 type MediaType = "img" | "video" | "iframe";
 type IconType = "arrow_l" | "arrow_r" | "arrow_u" | "arrow_d";
+type VideoPreloadType = "metadata" | "auto"; //cannot use "none" because then we won't get the loadmetadata event
+type LoadingType = "eager" | "lazy";
+type FetchPriorityType = "high" | "low" | "auto";
 
 /**
  * This class holds the media element for the page. This could be an image, a video, etc. (see {@link MediaType} for more options)<br>
@@ -24,6 +25,7 @@ class Media<T extends HTMLImageElement | HTMLVideoElement | HTMLIFrameElement = 
 
     public static readonly imgFileEndings = ["png", "jpeg", "jpg", "gif", "svg", "webp", "apng", "avif"];
     public static readonly videoFileEndings = ["mp4", "webm", "ogg", "ogm", "ogv", "avi"];
+    public static readonly iframeUrlEndings = ["html", "htm", "com", "org", "edu", "net", "gov", "mil", "int", "de", "en", "eu", "us", "fr", "ch", "at", "au"]; //this list is not exhaustive
 
     // constructor(src: string, type: MediaType | "auto", poster: string, autoplay: boolean, loop: boolean, muted: boolean) {
     //     this.src = src;
@@ -59,14 +61,23 @@ class Media<T extends HTMLImageElement | HTMLVideoElement | HTMLIFrameElement = 
         if (!jsonMedia.src && !jsonMedia.srcMin && !jsonMedia.srcMax)
             console.error(`Media source is not given in media object: `, jsonMedia);
 
-        //higher / lower resolution
+        //higher / lower resolution and loading type depend on device (=connection bandwidth)
         let src;
-        if (window.innerWidth > 768) {
+        let loading: LoadingType;
+        // if (window.innerWidth > 768) {
+        if (isDesktop) {
             //desktop
             src = jsonMedia.srcMax ?? (jsonMedia.src ?? jsonMedia.srcMin);
+            loading = "eager";
         } else {
             //mobile
             src = jsonMedia.srcMin ?? (jsonMedia.src ?? jsonMedia.srcMax);
+            loading = "lazy";
+        }
+
+        //default for loading
+        if (jsonMedia.loading !== "auto" && jsonMedia.loading !== undefined) {
+            loading = jsonMedia.loading;
         }
 
         //check src
@@ -76,11 +87,12 @@ class Media<T extends HTMLImageElement | HTMLVideoElement | HTMLIFrameElement = 
 
         switch (this.determineType(jsonMedia.type ?? "auto", src!)) {
             case "img":
-                return new ImageMedia(src!);
+                return new ImageMedia(src!, loading, jsonMedia.fetchPriority ?? "auto");
             case "video":
-                return new VideoMedia(src!, jsonMedia.poster ?? "", jsonMedia.autoplay ?? false, jsonMedia.loop ?? false, jsonMedia.muted ?? false);
+                return new VideoMedia(src!, jsonMedia.poster ?? "", jsonMedia.autoplay ?? false,
+                    jsonMedia.loop ?? false, jsonMedia.muted ?? false, jsonMedia.preload ?? "metadata");
             case "iframe":
-                return new IframeMedia(src!);
+                return new IframeMedia(src!, loading, jsonMedia.fetchPriority ?? "auto", jsonMedia.addProtocol ?? true);
         }
 
         //default parameters on absence
@@ -121,14 +133,17 @@ class Media<T extends HTMLImageElement | HTMLVideoElement | HTMLIFrameElement = 
     public static determineType(value: MediaType | "auto", src: string): MediaType {
         let res: MediaType;
         if (value === "auto") {
-            let fileEnding = src.split(".")[src.split(".").length - 1];
+            let fileSplit = src.split(".");
+            let fileEnding = fileSplit[fileSplit.length - 1];
             if (Media.imgFileEndings.indexOf(fileEnding) > -1) {
                 res = "img";
             } else if (Media.videoFileEndings.indexOf(fileEnding) > -1) {
                 res = "video";
+            } else if (Media.iframeUrlEndings.indexOf(fileEnding) > -1) {
+                res = "iframe";
             } else {
-                console.warn("Please add the file ending to the list\n'img' is used as default");
-                res = "img";
+                console.warn("Please add the file (or url) ending to the list\n'iframe' is used as default because there are endless different url endings\nFile Name which produced the Error:", src);
+                res = "iframe";
             }
         } else {
             res = value;
@@ -145,25 +160,28 @@ class VideoMedia extends Media<HTMLVideoElement> {
     public readonly autoplay: boolean;
     public readonly loop: boolean;
     public readonly muted: boolean
+    public readonly preload: VideoPreloadType;
 
     declare protected _html: JQuery<HTMLVideoElement>;
 
-    constructor(src: string, poster: string, autoplay: boolean, loop: boolean, muted: boolean) {
+    constructor(src: string, poster: string, autoplay: boolean, loop: boolean, muted: boolean, preload: VideoPreloadType) {
         super(src, "video");
         this.poster = poster;
         this.autoplay = autoplay;
         this.loop = loop;
         this.muted = muted;
+        this.preload = preload;
         this._html = $("<video></video>")
-            .text("HTML Video is not supported / Could not load video")
+            .text("HTML Video is not supported")
             .attr("poster", this.poster)
             .prop("autoplay", this.autoplay)
             .prop("loop", this.loop)
-            .prop("muted", this.muted) as JQuery<HTMLVideoElement>;
+            .prop("muted", this.muted)
+            .prop("preload", this.preload) as JQuery<HTMLVideoElement>;
     }
 
     public clone(): VideoMedia {
-        let n = new VideoMedia(this.src, this.poster, this.autoplay, this.loop, this.muted);
+        let n = new VideoMedia(this.src, this.poster, this.autoplay, this.loop, this.muted, this.preload);
         n._html = this.html.clone(true);
         return n;
     }
@@ -174,17 +192,46 @@ class VideoMedia extends Media<HTMLVideoElement> {
 }
 
 class ImageMedia extends Media<HTMLImageElement> {
-    constructor(src: string) {
-        super(src, "img");
-        this._html = $("<img>")
-            .prop("alt", "Could not load Image :(") as JQuery<HTMLImageElement>;
-    }
+    public readonly loading: LoadingType;
+    public readonly fetchPriority: FetchPriorityType;
 
+    constructor(src: string, loading: LoadingType, fetchPriority: FetchPriorityType) {
+        super(src, "img");
+        this.loading = loading;
+        this.fetchPriority = fetchPriority;
+        this._html = $("<img>")
+            .attr("alt", "Could not load Image :(")
+            .attr("loading", this.loading)
+            .attr("fetchPriority", this.fetchPriority) as JQuery<HTMLImageElement>;
+    }
 }
 
 class IframeMedia extends Media<HTMLIFrameElement> {
-    constructor(src: string) {
+    public readonly loading: LoadingType;
+    public readonly fetchPriority: FetchPriorityType;
+
+    /**
+     * @param src
+     * @param loading
+     * @param fetchPriority
+     * @param addProtocol see {@link JsonMedia.addProtocol}
+     */
+    constructor(src: string, loading: LoadingType, fetchPriority: FetchPriorityType, addProtocol: boolean) {
+        if (addProtocol) {
+            if (!(src.startsWith("https://") || src.startsWith("http://"))) {
+                src = "https://" + src;
+            }
+            else if (src.startsWith("http://")) {
+                console.warn("Security waring: Using unsecure url in iframe:", src);
+            }
+        }
         super(src, "iframe");
+        this.loading = loading;
+        this.fetchPriority = fetchPriority;
+        this._html = $("<iframe></iframe>")
+            .attr("src", this.src)
+            .attr("loading", this.loading)
+            .attr("fetchPriority", this.fetchPriority) as JQuery<HTMLIFrameElement>;
     }
 }
 
@@ -203,15 +250,22 @@ type JsonPage = {
 type JsonMedia = {
     //see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/video for video
     //and https://developer.mozilla.org/en-US/docs/Web/HTML/Element/img for img
+    //normal src paths are relative to /tour/img1
+    //ATTENTION!!! iframe paths should be absolute otherwise they are relative to the current site (/tour)
     src?: string;
     srcMin?: string;
     srcMax?: string;
     type?: MediaType | "auto";
+    loading?: LoadingType | "auto";     //works for img, iframe
+    fetchPriority?: FetchPriorityType;  //works for img, iframe
     //video attributes
     poster?: string;
     autoplay?: boolean;
     loop?: boolean;
     muted?: boolean
+    preload?: VideoPreloadType;
+    //iframe attributes
+    addProtocol?: boolean; //whether a protocol ('https://') should be added (if not already there) to the url (src) given
 };
 
 type JsonClickable = {
@@ -324,7 +378,7 @@ class Clickable {
         }
 
         //default arguments
-        return new Clickable(jsonClickable.title, jsonClickable.x, jsonClickable.y, jsonClickable.goto ?? "", jsonClickable.icon ?? "arrow_l", jsonClickable.backward ?? false);
+        return new Clickable(jsonClickable.title, jsonClickable.x as number, jsonClickable.y as number, jsonClickable.goto ?? "", jsonClickable.icon ?? "arrow_l", jsonClickable.backward ?? false);
     }
 
     /**
@@ -487,12 +541,13 @@ function createHtml(json: JsonPage[]) {
 
         let imgUrl = imgFolder + "/" + page.img.src;
         let event;
-        if (page.img.isImage())
+        if (page.img.isImage() || page.img.isIframe())
             event = "load";
         else if (page.img.isVideo()) {
             event = "loadedmetadata";
         } else {
-            throw "idk"
+            console.error("cannot determine event type because Media Type is not known (or not implemented)\nContinuing with 'load' as event type, but FIX THIS");
+            event = "load";
         }
         page.img.html
             .addClass("bg")
@@ -544,6 +599,8 @@ function createHtml(json: JsonPage[]) {
 
                 } else if (page.img.isVideo(self)) {
                     imgRatio = self.get(0)!.videoWidth / self.get(0)!.videoHeight;
+                } else if (page.img.isIframe()) {
+                    return; //all resizing has to be done by the iframe itself
                 } else {
                     throw "Need to add handling for MediaType: " + page.img.type;
                 }
@@ -566,13 +623,26 @@ function createHtml(json: JsonPage[]) {
                     // .removeAttr("preload")
                     // .removeAttr("type");
                 }
+                else if (page.img.isIframe()) {
+                    page.img.html
+                        //the plain html text
+                        .attr("srcdoc", '<!DOCTYPE html>' +
+                            '<html lang="de">' +
+                            '<head>' +
+                            '    <meta charset="UTF-8">' +
+                            '    <title>Baustelle</title>' +
+                            '</head>' +
+                            '<body>' +
+                            '<img src="./img1/baustelle.png" alt="Baustelle :)" style="width: 100%;height: 100%;">' +
+                            '</body>' +
+                            '</html>')
+                }
             });
         //add src last so that error and load events aren't triggered before we add the event handler
         if (page.img.isImage()) {
             page.img.html.attr("src", imgUrl);
         } else if (page.img.isVideo()) {
             page.img.html
-                .attr("preload", "metadata")
                 .prop("controls", true)
                 .append($("<source>"));
 
@@ -589,6 +659,8 @@ function createHtml(json: JsonPage[]) {
                 page.img.html.trigger(event);
             }
         }
+        //iframes src is already added in constructor of IframeMedia obj
+
         // .each(function () {
         //     if (page.img.isImage() && page.img.html[0].complete || page.img.isVideo() && page.img.html.wid) {
         //         page.img.html.trigger('load');
@@ -661,33 +733,40 @@ function createHtml(json: JsonPage[]) {
  * @param pagesJsonPath
  */
 function init(pagesJsonPath: string) {
+    //@ts-ignore
     let json = pagesJson;
-    $.ajax(pagesJsonPath)
-        .done(function (data) {
-            //testing...
-            // let json = data;
-            $(() => {
-                createHtml(json);
-                if (window.location.hash !== "") {
-                    $("#" + idPrefix + window.location.hash.slice(1)).addClass("show");
-                } else {
-                    $(".page").eq(0).addClass("show");
-                }
-            });
-        })
-        .catch(function () {
-                console.log("Error fetching the json file");
-                //    for testing
-                $(() => {
-                    createHtml(json);
-                    if (window.location.hash !== "") {
-                        $("#" + idPrefix + window.location.hash.slice(1)).addClass("show");
-                    } else {
-                        $(".page").eq(0).addClass("show");
-                    }
-                });
-            }
-        );
+    createHtml(json);
+    if (window.location.hash !== "") {
+        $("#" + idPrefix + window.location.hash.slice(1)).addClass("show");
+    } else {
+        $(".page").eq(0).addClass("show");
+    }
+    // $.ajax(pagesJsonPath)
+    //     .done(function (data) {
+    //         //testing...
+    //         // let json = data;
+    //         $(() => {
+    //             createHtml(json);
+    //             if (window.location.hash !== "") {
+    //                 $("#" + idPrefix + window.location.hash.slice(1)).addClass("show");
+    //             } else {
+    //                 $(".page").eq(0).addClass("show");
+    //             }
+    //         });
+    //     })
+    //     .catch(function () {
+    //             console.log("Error fetching the json file");
+    //             //    for testing
+    //             $(() => {
+    //                 createHtml(json);
+    //                 if (window.location.hash !== "") {
+    //                     $("#" + idPrefix + window.location.hash.slice(1)).addClass("show");
+    //                 } else {
+    //                     $(".page").eq(0).addClass("show");
+    //                 }
+    //             });
+    //         }
+    //     );
 }
 
 init("pages.js");

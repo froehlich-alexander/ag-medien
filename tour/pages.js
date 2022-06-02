@@ -1,13 +1,16 @@
 /**
  * @type JsonPage[]
  */
-const pagesJson = [
+var pagesJson = [
     {
         "id": "01_hof",
         "img": {
             // "src": "01_hof.jpg",
-            "src": "test.mp4",
-            "srcMin": "01_hof.jpg",
+            // "src": "feuer_roehre.mp4",
+            // "src": "img1/iframe_test.html",
+            "src": "rheingau-gymnasium.de",
+            "preload": "auto",
+            // "srcMin": "01_hof.jpg",
         },
         //"is_panorama": true, //TODO 06.04.2022 fix img src and enable panorama
         // "initial_direction": 34,
