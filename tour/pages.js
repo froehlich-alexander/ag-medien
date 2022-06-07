@@ -8,7 +8,7 @@ var pagesJson = [
             // "src": "01_hof.jpg",
             // "src": "feuer_roehre.mp4",
             // "src": "img1/iframe_test.html",
-            "src": "rheingau-gymnasium.de",
+            "src": "//rheingau-gymnasium.de",
             "preload": "auto",
             // "srcMin": "01_hof.jpg",
         },

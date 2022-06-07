@@ -19,8 +19,13 @@ body {
     display: none;
     user-select: none;
     touch-action: none;
-
 }
+
+/*.page:not(.show) {*/
+/*    left: 1000000px;*/
+/*    top: 1000000px;*/
+/*    display: none;*/
+/*}*/
 
 .page.show {
     display: flex;

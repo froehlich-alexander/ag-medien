@@ -2,7 +2,7 @@
 
 var finished_last = true;
 let idPrefix = "tour_pg_";
-let imgFolder = "./img1";
+let imgFolder = "img1";
 let baustellenFotoUrl = imgFolder + "/baustelle.png";
 let animationDuration = 500;
 let lastest = "";
@@ -50,7 +50,7 @@ class Media<T extends HTMLImageElement | HTMLVideoElement | HTMLIFrameElement = 
     // }
 
     constructor(src: string, type: MediaType) {
-        this.src = src;
+        this.src = Media.formatSrc(src);
         this._type = type;
     }
 
@@ -75,7 +75,7 @@ class Media<T extends HTMLImageElement | HTMLVideoElement | HTMLIFrameElement = 
             loading = "lazy";
         }
 
-        //default for loading
+        //loading
         if (jsonMedia.loading !== "auto" && jsonMedia.loading !== undefined) {
             loading = jsonMedia.loading;
         }
@@ -92,7 +92,7 @@ class Media<T extends HTMLImageElement | HTMLVideoElement | HTMLIFrameElement = 
                 return new VideoMedia(src!, jsonMedia.poster ?? "", jsonMedia.autoplay ?? false,
                     jsonMedia.loop ?? false, jsonMedia.muted ?? false, jsonMedia.preload ?? "metadata");
             case "iframe":
-                return new IframeMedia(src!, loading, jsonMedia.fetchPriority ?? "auto", jsonMedia.addProtocol ?? true);
+                return new IframeMedia(src!, loading, jsonMedia.fetchPriority ?? "auto");
         }
 
         //default parameters on absence
@@ -149,6 +149,20 @@ class Media<T extends HTMLImageElement | HTMLVideoElement | HTMLIFrameElement = 
             res = value;
         }
         return res;
+    }
+
+    public static formatSrc(src: string): string {
+        let regex = new RegExp('^(?:[a-z]+:)?//', 'i');
+        //if src is absolute (e.g. http://abc.xyz)
+        //or src relative to document root (starts with '/') (the browser interprets that correctly)
+        if (regex.test(src) || src.startsWith("/")) {
+            if (src.startsWith("http://")) {
+                console.warn("Security waring: Using unsecure url in iframe:", src);
+            }
+            return src;
+        }
+        //add prefix
+        return imgFolder + "/" + src
     }
 
     public pause(): void {
@@ -214,17 +228,8 @@ class IframeMedia extends Media<HTMLIFrameElement> {
      * @param src
      * @param loading
      * @param fetchPriority
-     * @param addProtocol see {@link JsonMedia.addProtocol}
      */
-    constructor(src: string, loading: LoadingType, fetchPriority: FetchPriorityType, addProtocol: boolean) {
-        if (addProtocol) {
-            if (!(src.startsWith("https://") || src.startsWith("http://"))) {
-                src = "https://" + src;
-            }
-            else if (src.startsWith("http://")) {
-                console.warn("Security waring: Using unsecure url in iframe:", src);
-            }
-        }
+    constructor(src: string, loading: LoadingType, fetchPriority: FetchPriorityType) {
         super(src, "iframe");
         this.loading = loading;
         this.fetchPriority = fetchPriority;
@@ -250,8 +255,11 @@ type JsonPage = {
 type JsonMedia = {
     //see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/video for video
     //and https://developer.mozilla.org/en-US/docs/Web/HTML/Element/img for img
-    //normal src paths are relative to /tour/img1
-    //ATTENTION!!! iframe paths should be absolute otherwise they are relative to the current site (/tour)
+    /*
+    normal src paths can be absolute OR
+    they can be relative to document root (e.g. '/images/img.jpg' -> 'https://rheingau-gymnasium.de/images/img.jpg') OR
+    they can be relative to img1 (e.g. 'test.jpg' -> 'img1/test.jpg' -> 'https://rheingau-gymnasium.de/current-path/img1/test.jpg').
+    */
     src?: string;
     srcMin?: string;
     srcMax?: string;
@@ -265,7 +273,7 @@ type JsonMedia = {
     muted?: boolean
     preload?: VideoPreloadType;
     //iframe attributes
-    addProtocol?: boolean; //whether a protocol ('https://') should be added (if not already there) to the url (src) given
+
 };
 
 type JsonClickable = {
@@ -539,7 +547,6 @@ function createHtml(json: JsonPage[]) {
             // .attr("data-backward", clickable.backward != null ? clickable.backward : null);
         }
 
-        let imgUrl = imgFolder + "/" + page.img.src;
         let event;
         if (page.img.isImage() || page.img.isIframe())
             event = "load";
@@ -640,7 +647,7 @@ function createHtml(json: JsonPage[]) {
             });
         //add src last so that error and load events aren't triggered before we add the event handler
         if (page.img.isImage()) {
-            page.img.html.attr("src", imgUrl);
+            page.img.html.attr("src", page.img.src);
         } else if (page.img.isVideo()) {
             page.img.html
                 .prop("controls", true)
@@ -652,7 +659,7 @@ function createHtml(json: JsonPage[]) {
 
             //add src last so that we won't trigger error event too early
             page.img.html.find("source").last().attr("type", "video/mp4")
-                .attr("src", imgUrl);
+                .attr("src", page.img.src);
 
             //should be redundant
             if ((page.img.html.get(0) as HTMLVideoElement).readyState > 0) {

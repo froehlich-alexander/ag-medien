@@ -14,7 +14,7 @@ var __classPrivateFieldSet = (this && this.__classPrivateFieldSet) || function (
 var _Page_html, _Clickable_html;
 var finished_last = true;
 let idPrefix = "tour_pg_";
-let imgFolder = "./img1";
+let imgFolder = "img1";
 let baustellenFotoUrl = imgFolder + "/baustelle.png";
 let animationDuration = 500;
 let lastest = "";
@@ -46,11 +46,11 @@ class Media {
     //     }
     // }
     constructor(src, type) {
-        this.src = src;
+        this.src = Media.formatSrc(src);
         this._type = type;
     }
     static fromJson(jsonMedia) {
-        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o;
+        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m;
         //check for mistakes
         if (jsonMedia == null)
             throw `Media is ${jsonMedia}`;
@@ -70,7 +70,7 @@ class Media {
             src = (_c = jsonMedia.srcMin) !== null && _c !== void 0 ? _c : ((_d = jsonMedia.src) !== null && _d !== void 0 ? _d : jsonMedia.srcMax);
             loading = "lazy";
         }
-        //default for loading
+        //loading
         if (jsonMedia.loading !== "auto" && jsonMedia.loading !== undefined) {
             loading = jsonMedia.loading;
         }
@@ -84,7 +84,7 @@ class Media {
             case "video":
                 return new VideoMedia(src, (_g = jsonMedia.poster) !== null && _g !== void 0 ? _g : "", (_h = jsonMedia.autoplay) !== null && _h !== void 0 ? _h : false, (_j = jsonMedia.loop) !== null && _j !== void 0 ? _j : false, (_k = jsonMedia.muted) !== null && _k !== void 0 ? _k : false, (_l = jsonMedia.preload) !== null && _l !== void 0 ? _l : "metadata");
             case "iframe":
-                return new IframeMedia(src, loading, (_m = jsonMedia.fetchPriority) !== null && _m !== void 0 ? _m : "auto", (_o = jsonMedia.addProtocol) !== null && _o !== void 0 ? _o : true);
+                return new IframeMedia(src, loading, (_m = jsonMedia.fetchPriority) !== null && _m !== void 0 ? _m : "auto");
         }
         //default parameters on absence
         // return new Media(src!, jsonMedia.type ?? "auto", jsonMedia.poster ?? "", jsonMedia.autoplay ?? false, jsonMedia.loop ?? false, jsonMedia.muted ?? false);
@@ -137,6 +137,19 @@ class Media {
         }
         return res;
     }
+    static formatSrc(src) {
+        let regex = new RegExp('^(?:[a-z]+:)?//', 'i');
+        //if src is absolute (e.g. http://abc.xyz)
+        //or src relative to document root (starts with '/') (the browser interprets that correctly)
+        if (regex.test(src) || src.startsWith("/")) {
+            if (src.startsWith("http://")) {
+                console.warn("Security waring: Using unsecure url in iframe:", src);
+            }
+            return src;
+        }
+        //add prefix
+        return imgFolder + "/" + src;
+    }
     pause() {
     }
 }
@@ -184,17 +197,8 @@ class IframeMedia extends Media {
      * @param src
      * @param loading
      * @param fetchPriority
-     * @param addProtocol see {@link JsonMedia.addProtocol}
      */
-    constructor(src, loading, fetchPriority, addProtocol) {
-        if (addProtocol) {
-            if (!(src.startsWith("https://") || src.startsWith("http://"))) {
-                src = "https://" + src;
-            }
-            else if (src.startsWith("http://")) {
-                console.warn("Security waring: Using unsecure url in iframe:", src);
-            }
-        }
+    constructor(src, loading, fetchPriority) {
         super(src, "iframe");
         this.loading = loading;
         this.fetchPriority = fetchPriority;
@@ -435,7 +439,6 @@ function createHtml(json) {
                 .css("top", clickable.y + "%");
             // .attr("data-backward", clickable.backward != null ? clickable.backward : null);
         }
-        let imgUrl = imgFolder + "/" + page.img.src;
         let event;
         if (page.img.isImage() || page.img.isIframe())
             event = "load";
@@ -537,7 +540,7 @@ function createHtml(json) {
         });
         //add src last so that error and load events aren't triggered before we add the event handler
         if (page.img.isImage()) {
-            page.img.html.attr("src", imgUrl);
+            page.img.html.attr("src", page.img.src);
         }
         else if (page.img.isVideo()) {
             page.img.html
@@ -548,7 +551,7 @@ function createHtml(json) {
                 .on("error", e => page.img.html.trigger("error", e));
             //add src last so that we won't trigger error event too early
             page.img.html.find("source").last().attr("type", "video/mp4")
-                .attr("src", imgUrl);
+                .attr("src", page.img.src);
             //should be redundant
             if (page.img.html.get(0).readyState > 0) {
                 page.img.html.trigger(event);
