@@ -14,6 +14,12 @@ type IconType = "arrow_l" | "arrow_r" | "arrow_u" | "arrow_d";
 type VideoPreloadType = "metadata" | "auto"; //cannot use "none" because then we won't get the loadmetadata event
 type LoadingType = "eager" | "lazy";
 type FetchPriorityType = "high" | "low" | "auto";
+type InlineObjectType = "clickable" | "text" | "custom";
+type InlineObjectPosition = "media" | "page"; //  whether the object is moving together with the media (like clickables) or the page and whether it is positioned relative to the media or to the page (normally full screen)
+type PageAnimations = "forward" | "backward";
+type TextAnimations = undefined;
+type CustomAnimations = undefined;
+type AnimationType = PageAnimations | TextAnimations | CustomAnimations;
 
 /**
  * This class holds the media element for the page. This could be an image, a video, etc. (see {@link MediaType} for more options)<br>
@@ -241,15 +247,22 @@ class IframeMedia extends Media<HTMLIFrameElement> {
 }
 
 /**
+ * A type for all objects which can be addressed in any way
+ */
+type JsonAdressableObject = {
+    id: string; //a UNIQUE id
+}
+
+/**
  * Type for the Page-Objects in pages.json (or pages.js)
  */
-type JsonPage = {
-    id: string,
+type JsonPage = JsonAdressableObject & {
     img: JsonMedia;
     is_360?: boolean;
     is_panorama?: boolean;
     initial_direction?: number;
-    clickables: JsonClickable[]
+    clickables?: JsonClickable[];
+    inlineObjects?: JsonInlineObject[];
 }
 
 type JsonMedia = {
@@ -276,13 +289,41 @@ type JsonMedia = {
 
 };
 
-type JsonClickable = {
-    title: string;
+type JsonInlineObject = {
     x: number | string;
     y: number | string;
+    position: InlineObjectPosition;
+    goto?: string;
+    animationType?: AnimationType;
+    type: InlineObjectType; //which kind of object this is (e.g. a clickable, text, etc.)
+}
+
+/**
+ * A type which represents a clickable object in the pages json file (pages.json or pages.js)
+ */
+type JsonClickable = JsonInlineObject & {
+    title: string;
     goto?: string;
     icon?: IconType;
-    backward?: boolean;
+    backward?: boolean; //depreciated use animationType instead
+    type?: "clickable";
+    animationType?: PageAnimations;
+    // targetType?: ClickableType; //on what kind of object this clickable points
+}
+
+type JsonCustomObject = JsonInlineObject & {
+    htmlId: string; //the id of the js object (the object must be created and appended to the DOM before this js is executed)
+    type?: "custom";
+    animationType?: CustomAnimations;
+}
+
+type JsonTextField = JsonInlineObject & JsonAdressableObject & {
+    content: string;
+    title?: string;
+    footer?: string;
+    cssClasses?: string[] | string; // ["class-a", "class-b"] OR "class-a class-b"
+    type?: "text";
+    animationType?: TextAnimations;
 }
 
 class Page {
@@ -292,17 +333,16 @@ class Page {
     public is_panorama = false;
     public is_360 = false;
     public initial_direction: number;
-    public readonly clickables: Clickable[];
-    public readonly secondClickables: Clickable[] = []; //only relevant in 360deg img because there exist each clickable 2 times
-    readonly #html: JQuery<HTMLDivElement> = $("<div></div>");
+    public readonly inlineObjects: InlineObject[] = [];
+    private readonly _html: JQuery<HTMLDivElement> = $("<div></div>");
 
-    constructor(id: string, img: Media, is_panorama: boolean, is_360: boolean, initial_direction: number, clickables: Clickable[]) {
+    constructor(id: string, img: Media, is_panorama: boolean, is_360: boolean, initial_direction: number, ...inlineObjects: InlineObject[]) {
         this.id = id;
         this.img = img;
         this.is_360 = is_360;
         this.is_panorama = is_panorama;
         this.initial_direction = initial_direction;
-        this.clickables = clickables;
+        this.inlineObjects.push(...inlineObjects);
     }
 
     public static fromJson(jsonPage: JsonPage): Page {
@@ -312,39 +352,166 @@ class Page {
 
         //default arguments
         return new Page(jsonPage.id, Media.fromJson(jsonPage.img), jsonPage.is_panorama ?? false,
-            jsonPage.is_360 ?? false, jsonPage.initial_direction ?? 0, jsonPage.clickables.map(v => Clickable.fromJson(v)));
+            jsonPage.is_360 ?? false, jsonPage.initial_direction ?? 0, ...jsonPage.inlineObjects?.map(v => InlineObject.fromJson(v)) ?? [], ...jsonPage.clickables?.map(v => Clickable.fromJson(v)) ?? []);
     }
 
     /**
-     * Returns <b>all</b> clickables (that means in 360deg img there will always be 2 clickables with the same id, etc.)
-     * @returns {Clickable[]}
+     * In 360deg IMGs there exists always 2 similar clickables and all of them will be returned
      */
-    get allClickables() {
-        console.log("all cloick", this.clickables, this.secondClickables, this.clickables.concat(this.secondClickables))
-        return this.clickables.concat(this.secondClickables);
+    get clickables(): Clickable[] {
+        return this.inlineObjects.filter(v => v instanceof Clickable) as Clickable[];
+    }
+
+    /**
+     * Add {@link InlineObject}<br>
+     * A {@link Clickable} is also an {@link InlineObject}
+     * @param inlineObjects
+     */
+    public addInlineObjects(...inlineObjects: InlineObject[]) {
+        this.inlineObjects.push(...inlineObjects);
     }
 
     get html() {
-        return this.#html;
+        return this._html;
     }
 }
 
-class Clickable {
-    public readonly title: string;
-    public readonly x: number;
-    public readonly y: number;
-    public goto: string;
-    public icon: IconType = "arrow_l";
-    public backward = false;
-    #html: JQuery = $("<div></div>");
+/**
+ * An Interface for all objects which are placed in front of the main media of a page.
+ * All classes which implement this interface (e.g. {@link Clickable}) are also such objects
+ */
+class InlineObject {
+    public readonly x?: number;
+    public readonly y?: number;
+    public readonly position: InlineObjectPosition;
+    public readonly type: InlineObjectType;
+    public readonly animationType: AnimationType;
+    public readonly goto?: string;
+    private _second: boolean;
+    private _html: JQuery;
 
-    constructor(title: string, x: number, y: number, goto: string, icon: IconType, backward: boolean) {
-        this.title = title;
+    protected constructor(position: InlineObjectPosition, html: JQuery, type: InlineObjectType, animationType: AnimationType, x?: number, y?: number) {
+        this.position = position;
+        this._html = html;
+        this._second = false;
+        this.type = type;
         this.x = x;
         this.y = y;
+        this.animationType = animationType;
+        // x and y coordinates
+        if (this.x !== undefined) {
+            this._html.css("left", this.x + "%");
+        }
+        if (this.y !== undefined) {
+            this._html.css("top", this.y + "%");
+        }
+    }
+
+    protected clone(newObjectToClone?: InlineObject): InlineObject {
+        if (newObjectToClone === undefined) {
+            newObjectToClone = new InlineObject(this.position, this.html.clone(true), this.type, this.animationType, this.x, this.y);
+        }
+        newObjectToClone._html = this.html.clone(true);
+        newObjectToClone._second = true;
+        return newObjectToClone;
+    }
+
+    public get html(): JQuery {
+        return this._html;
+    }
+
+    public get second(): boolean {
+        return this._second;
+    }
+
+    public static fromJson(jsonInlineObject: JsonInlineObject): InlineObject {
+        switch (jsonInlineObject.type) {
+            case "clickable":
+                return Clickable.fromJson(jsonInlineObject as JsonClickable);
+            case "text":
+                return TextField.fromJson(jsonInlineObject as JsonTextField);
+            case "custom":
+                return CustomObject.fromJson(jsonInlineObject as JsonCustomObject);
+        }
+    }
+}
+
+/**
+ * This can be any js Object
+ */
+class CustomObject extends InlineObject {
+    declare public readonly x: number;
+    declare public readonly y: number;
+    declare public readonly animationType: CustomAnimations;
+    public readonly id: string;
+
+    constructor(id: string, position: InlineObjectPosition, x: number, y: number, animationType?: CustomAnimations) {
+        super(position, $("#" + id), "custom", animationType, x, y);
+        this.id = id;
+    }
+
+    public override clone(n?: CustomObject): CustomObject {
+        if (n === undefined) {
+            n = new CustomObject(this.id, this.position, this.x, this.y, this.animationType);
+        }
+        return super.clone(n) as CustomObject;
+    }
+}
+
+class TextField extends InlineObject {
+    public readonly content: string;
+    public readonly title?: string;
+    public readonly footer?: string;
+    public readonly cssClasses?: string[];
+    declare public readonly animationType: TextAnimations;
+
+    constructor(content: string, position?: InlineObjectPosition, title?: string, footer?: string, cssClasses?: string[], animationType?: TextAnimations, x?: number, y?: number) {
+        super(position ?? "page", $("<div/>"), "text", animationType ?? undefined, x, y);
+        this.content = content;
+        this.title = title;
+        this.footer = footer;
+        this.cssClasses = cssClasses;
+    }
+
+    public static fromJson(json: JsonTextField): TextField {
+        return new TextField(json.content, "page", json.title, json.footer,
+            typeof json.cssClasses === "string" ? json.cssClasses.split(" ") : json.cssClasses, json.animationType,
+            typeof json.x === "string" ? parseFloat(json.x) : json.x, typeof json.x === "string" ? parseFloat(json.x) : json.x);
+    }
+
+    public override clone(n?: TextField): TextField {
+        if (n === undefined) {
+            n = new TextField(this.content, this.position, this.title, this.footer, this.cssClasses, this.animationType, this.x, this.y);
+        }
+        return super.clone(n) as TextField;
+    }
+}
+
+class Clickable extends InlineObject {
+    public readonly title: string;
+    declare public readonly x: number;
+    declare public readonly y: number;
+    declare public readonly animationType: PageAnimations;
+    // public readonly second: boolean; //360deg img
+    public goto: string;
+    public icon: IconType = "arrow_l";
+
+    constructor(title: string, x: number, y: number, goto: string, icon: IconType, animationType?: PageAnimations, position?: InlineObjectPosition) {
+        super(position ?? "media", $("<div></div>"), "clickable", animationType ?? "forward", x, y);
+        this.title = title;
+        // this.x = x;
+        // this.y = y;
         this.goto = goto;
         this.icon = icon;
-        this.backward = backward;
+
+        this.html.addClass("clickable")
+            .attr("goto", this.goto!)//todo redundant
+            .append($("<div></div>")
+                .addClass("title")
+                .text(this.title))
+            .append($("<button></button>")
+                .addClass("icon")
+                .addClass(this.icon));
     }
 
     /**
@@ -386,21 +553,19 @@ class Clickable {
         }
 
         //default arguments
-        return new Clickable(jsonClickable.title, jsonClickable.x as number, jsonClickable.y as number, jsonClickable.goto ?? "", jsonClickable.icon ?? "arrow_l", jsonClickable.backward ?? false);
+        return new Clickable(jsonClickable.title, jsonClickable.x as number, jsonClickable.y as number,
+            jsonClickable.goto ?? "", jsonClickable.icon ?? "arrow_l", jsonClickable.animationType ?? (jsonClickable.backward ? "backward" : "forward"), jsonClickable.position);
     }
 
     /**
      * Clone this clickable and create all html objs new (with all event)
      * @returns {Clickable}
      */
-    public clone() {
-        let n = new Clickable(this.title, this.x, this.y, this.goto, this.icon, this.backward);
-        n.#html = this.#html.clone(true);
-        return n;
-    }
-
-    get html() {
-        return this.#html;
+    public override clone(n?: Clickable): Clickable {
+        if (n === undefined) {
+            n = new Clickable(this.title, this.x, this.y, this.goto, this.icon, this.animationType, this.position); //cloned clickables are considered as second clickables (relevant for 360deg img)
+        }
+        return super.clone(n) as Clickable;
     }
 }
 
@@ -428,13 +593,13 @@ window.onpopstate = function () {
         pgs.eq(0).addClass("show");
 }
 
-function goTo(pg: string | undefined, backward: true): void;
-function goTo(pg: string, backward: boolean): void;
-function goTo(pg: string | undefined, backward: boolean) {
-    console.log(pg)
+function goTo(pg: string | undefined, animationType: "backward"): void;
+function goTo(pg: string, animationType: PageAnimations): void;
+function goTo(pg: string | undefined, animationType: PageAnimations) {
+    console.log(pg, animationType)
     if (finished_last) {
         finished_last = false;
-        if (backward) {
+        if (animationType == "backward") {
             pg = idPrefix + lastest;
         }
 
@@ -446,7 +611,7 @@ function goTo(pg: string | undefined, backward: boolean) {
         adjust_clickables();
         lastest = prev.id;
         console.log(lastest)
-        if (!backward) {
+        if (animationType == "forward") {
             prev.html.addClass("walk_in_out");
             next.html.addClass("walk_in_in");
             setTimeout(function () {
@@ -455,7 +620,7 @@ function goTo(pg: string | undefined, backward: boolean) {
                     .removeClass("walk_in_out");
                 finished_last = true;
             }, animationDuration);
-        } else {
+        } else if (animationType == "backward") {
             prev.html.addClass("walk_out_out");
             next.html.addClass("walk_out_in");
             setTimeout(function () {
@@ -466,7 +631,7 @@ function goTo(pg: string | undefined, backward: boolean) {
             }, animationDuration);
         }
         window.location.hash = next.id;
-        createLastestClickable(next.allClickables.filter(v => v.goto === prev.id));
+        createLastestClickable(next.clickables.filter(v => v.goto === prev.id));
     }
 }
 
@@ -514,7 +679,7 @@ function createHtml(json: JsonPage[]) {
         //via user agent
         // if (/(iPhone|iPod|iPad|blackberry|android|Kindle|htc|lg|midp|mmp|mobile|nokia|opera mini|palm|pocket|psp|sgh|smartphone|symbian|treo mini|Playstation Portable|SonyEricsson|Samsung|MobileExplorer|PalmSource|Benq|Windows Phone|Windows Mobile|IEMobile|Windows CE|Nintendo Wii)/.test(navigator.userAgent))
         //or via screen size
-        if (window.innerWidth <= 768 && page.img.isImage()) {
+        if ((!isDesktop) && page.img.isImage()) {
             page.is_panorama = true;
         }
 
@@ -522,28 +687,34 @@ function createHtml(json: JsonPage[]) {
         //     jsonClickable.x, jsonClickable.y, jsonClickable.goto, jsonClickable.icon, jsonClickable.backward))) {
         //     page.clickables.push(clickable);
         for (let clickable of page.clickables) {
-            console.log("title", clickable.title)
-
             let gotoExists = json.filter(value => value.id === clickable.goto).length > 0;
             if (!gotoExists) {
                 console.log("Id '" + clickable.goto + "' does not exist");
             }
-            clickable.html
-                .addClass("clickable")
-                .attr("goto", clickable.goto!)//todo redundant
-                .append($("<div></div>")
-                    .addClass("title")
-                    .text(clickable.title))
-                .append($("<button></button>")
-                    .addClass("icon")
-                    .addClass(clickable.icon)
-                    .on("click", gotoExists ? () => {
-                        goTo(idPrefix + clickable.goto, clickable.backward);
-                    } : () => {
-                        console.log("Cannot go to next page because '" + clickable.goto + "' does not exist");
-                    }))
-                .css("left", clickable.x + "%")
-                .css("top", clickable.y + "%");
+
+            clickable.html.find("button")
+                .on("click", gotoExists ? () => {
+                    goTo(idPrefix + clickable.goto, clickable.animationType);
+                } : () => {
+                    console.error("Cannot go to next page because '" + clickable.goto + "' does not exist");
+                });
+
+            // clickable.html
+            //     .addClass("clickable")
+            //     .attr("goto", clickable.goto!)//todo redundant
+            //     .append($("<div></div>")
+            //         .addClass("title")
+            //         .text(clickable.title))
+            //     .append($("<button></button>")
+            //         .addClass("icon")
+            //         .addClass(clickable.icon)
+            //         .on("click", gotoExists ? () => {
+            //             goTo(idPrefix + clickable.goto, clickable.backward);
+            //         } : () => {
+            //             console.error("Cannot go to next page because '" + clickable.goto + "' does not exist");
+            //         }))
+            //     .css("left", clickable.x + "%")
+            //     .css("top", clickable.y + "%");
             // .attr("data-backward", clickable.backward != null ? clickable.backward : null);
         }
 
@@ -629,8 +800,7 @@ function createHtml(json: JsonPage[]) {
                     // .removeAttr("src")
                     // .removeAttr("preload")
                     // .removeAttr("type");
-                }
-                else if (page.img.isIframe()) {
+                } else if (page.img.isIframe()) {
                     page.img.html
                         //the plain html text
                         .attr("srcdoc", '<!DOCTYPE html>' +
@@ -692,17 +862,22 @@ function createHtml(json: JsonPage[]) {
             .append($("<div></div>")
                 .addClass("bg_container")
                 .append(page.img.html)
-                .append(page.clickables.map(v => v.html)));
+                .append(page.inlineObjects
+                    .filter(v => v.position === "media" && (!v.second))
+                    .map(v => v.html)));
 
         if (page.is_360) {
             console.log("is_360")
-            page.secondClickables.push(...page.clickables.map(v => v.clone()));
+            //add second clickables for second img in 360deg IMGs
+            page.addInlineObjects(...page.clickables.filter(v => !v.second).map(v => v.clone()));
             page.secondaryImg = page.img.clone();
             //second img
             let bgContainer1 = $("<div></div>")
                 .addClass("bg_container")
                 .append(page.secondaryImg.html)
-                .append(page.secondClickables.map(v => v.html));
+                .append(page.inlineObjects
+                    .filter(v => v.position === "media" && v.second)
+                    .map(v => v.html));
 
             page.html.children(".pg_wrapper")
                 .append(bgContainer1);
