@@ -5,15 +5,10 @@ var pagesJson = [
     {
         "id": "01_hof",
         "img": {
-            // "src": "01_hof.jpg",
-            // "src": "feuer_roehre.mp4",
-            // "src": "img1/iframe_test.html",
-            "src": "//rheingau-gymnasium.de",
-            "preload": "auto",
-            // "srcMin": "01_hof.jpg",
+            "src": "01_hof.jpg"
         },
-        //"is_panorama": true, //TODO 06.04.2022 fix img src and enable panorama
-        // "initial_direction": 34,
+        "is_panorama": true,
+        "initial_direction": 34,
         "clickables": [
             {
                 "title": "Zum Eingang",
@@ -212,10 +207,10 @@ var pagesJson = [
         "is_360": true,
         "clickables": [
             {
-                "title": "Zum foyer",
+                "title": "Zum Foyer",
                 "x": "50",
                 "y": "50",
-                "goto": "30_flur",
+                "goto": "30_vor_physik_raum",
                 "icon": "arrow_u"
             },
             {
@@ -238,6 +233,47 @@ var pagesJson = [
                 "y": "50",
                 "goto": "30_Dachboden",
                 "icon": "arrow_u"
+            }
+        ]
+    },
+    {
+        "id": "30_vor_physik_raum",
+        "img": {
+            "src": "30_vor_physik_raum.jpg",
+        },
+        "clickables": [
+            {
+                "title": "Richtung Aula",
+                "icon": "arrow_u",
+                "x": 45,
+                "y": 43,
+                "goto": "30_flur",
+            },
+            {
+                "title": "Physik Raum",
+                "icon": "arrow_r",
+                "x": 75,
+                "y": 65,
+                "goto": "30_physik_raum",
+            }
+        ]
+    },
+    {
+        "id": "30_physik_raum",
+        "img": {
+            "srcMax": "fb_physik.webm",
+            "srcMin": "fb_physik_s.webm",
+            type: "video"
+        },
+        "clickables": [
+            {
+                title: "Zurück sdkjffffffffffffffffffffffffffffffffffffffffffff",
+                goto: "30_vor_physik_raum",
+                animationType: "backward",
+                icon: "arrow_l",
+                position:"page",
+                x: 3,
+                y: 3
             }
         ]
     },

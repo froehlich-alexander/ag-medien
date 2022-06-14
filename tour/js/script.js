@@ -317,6 +317,7 @@ class TextField extends InlineObject {
 class Clickable extends InlineObject {
     constructor(title, x, y, goto, icon, animationType, position) {
         super(position !== null && position !== void 0 ? position : "media", $("<div></div>"), "clickable", animationType !== null && animationType !== void 0 ? animationType : "forward", x, y);
+        // public readonly second: boolean; //360deg img
         this.icon = "arrow_l";
         this.title = title;
         // this.x = x;
@@ -337,7 +338,7 @@ class Clickable extends InlineObject {
      * @param jsonClickable
      */
     static fromJson(jsonClickable) {
-        var _a, _b, _c;
+        var _a, _b;
         //check for mistakes
         {
             if (jsonClickable == null)
@@ -372,7 +373,7 @@ class Clickable extends InlineObject {
             }
         }
         //default arguments
-        return new Clickable(jsonClickable.title, jsonClickable.x, jsonClickable.y, (_a = jsonClickable.goto) !== null && _a !== void 0 ? _a : "", (_b = jsonClickable.icon) !== null && _b !== void 0 ? _b : "arrow_l", (_c = jsonClickable.animationType) !== null && _c !== void 0 ? _c : (jsonClickable.backward ? "backward" : "forward"), jsonClickable.position);
+        return new Clickable(jsonClickable.title, jsonClickable.x, jsonClickable.y, jsonClickable.goto, (_a = jsonClickable.icon) !== null && _a !== void 0 ? _a : "arrow_l", (_b = jsonClickable.animationType) !== null && _b !== void 0 ? _b : (jsonClickable.backward ? "backward" : "forward"), jsonClickable.position);
     }
     /**
      * Clone this clickable and create all html objs new (with all event)
@@ -408,12 +409,8 @@ window.onpopstate = function () {
         pgs.eq(0).addClass("show");
 };
 function goTo(pg, animationType) {
-    console.log(pg, animationType);
     if (finished_last) {
         finished_last = false;
-        if (animationType == "backward") {
-            pg = idPrefix + lastest;
-        }
         let next = pages.find(v => v.id === pg.substring(idPrefix.length));
         let prev = pages.find(v => v.id === $(".page.show").attr("id").substring(idPrefix.length));
         //pause video
@@ -421,7 +418,6 @@ function goTo(pg, animationType) {
         next.html.addClass("show");
         adjust_clickables();
         lastest = prev.id;
-        console.log(lastest);
         if (animationType == "forward") {
             prev.html.addClass("walk_in_out");
             next.html.addClass("walk_in_in");
@@ -472,8 +468,6 @@ function createLastestClickable(clickables) {
 function createHtml(json) {
     let scrollSensitivity = 20;
     for (let jsonPage of json) {
-        console.log("pre", jsonPage.is_panorama);
-        console.log("after", jsonPage);
         let page = Page.fromJson(jsonPage);
         // let page = new Page(jsonPage.id, Media.fromJson(jsonPage.img));
         //let page = new Page(jsonPage.id, new Image(jsonPage.img));
@@ -495,6 +489,8 @@ function createHtml(json) {
             if (!gotoExists) {
                 console.log("Id '" + clickable.goto + "' does not exist");
             }
+            console.log(clickable.title, clickable.goto);
+            console.log(page.inlineObjects);
             clickable.html.find("button")
                 .on("click", gotoExists ? () => {
                 goTo(idPrefix + clickable.goto, clickable.animationType);
@@ -659,12 +655,15 @@ function createHtml(json) {
             .addClass("bg_container")
             .append(page.img.html)
             .append(page.inlineObjects
-            .filter(v => v.position === "media" && (!v.second))
-            .map(v => v.html)));
+            .filter(v => v.position == "media" && (!v.second))
+            .map(v => v.html)))
+            .append(page.inlineObjects
+            .filter(v => v.position == "page")
+            .map(v => v.html));
         if (page.is_360) {
             console.log("is_360");
             //add second clickables for second img in 360deg IMGs
-            page.addInlineObjects(...page.clickables.filter(v => !v.second).map(v => v.clone()));
+            page.addInlineObjects(...page.clickables.filter(v => v.position == "media" && (!v.second)).map(v => v.clone()));
             page.secondaryImg = page.img.clone();
             //second img
             let bgContainer1 = $("<div></div>")
@@ -692,11 +691,6 @@ function createHtml(json) {
                     self.scrollLeft(this.scrollLeft + page.img.html.width());
                 }
             });
-        }
-        else {
-            // page.html.children(".pg_wrapper")
-            //     .append(page.imgHtml)
-            //     .append(page.clickables.map(v => v.html));
         }
         page.html.appendTo("body");
     }
@@ -746,5 +740,4 @@ function init(pagesJsonPath) {
     //     );
 }
 init("pages.js");
-console.warn(pages);
 //# sourceMappingURL=script.js.map
