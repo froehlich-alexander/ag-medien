@@ -16,9 +16,30 @@
             <button class="btn-close btn" type="button"></button>
         </div>
     </nav>
-
-
-<!--    <div class="h1">Color Picker</div>-->
+    <div class="row">
+        <div class="col-9 btn-group">
+            <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown">Color Scheme
+            </button>
+            <ul class="dropdown-menu">
+                <li><h6 class="dropdown-header">Predefined</h6></li>
+                <li><a class="dropdown-item">Default</a> </li>
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                    <button type="button" class="btn dropdown-item">Add</button>
+                </li>
+            </ul>
+            <div class="btn-group">
+                <button type="button" class="btn btn-success">Activate</button>
+                <button type="button" class="btn btn-success dropdown-toggle dropdown-toggle-split"
+                        data-bs-toggle="dropdown"></button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item bg-success">Activate</a></li>
+                    <li><a class="dropdown-item bg-danger">Delete</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <!--    <div class="h1">Color Picker</div>-->
 </div>
 
 <script src="index.js" type="module"></script>
