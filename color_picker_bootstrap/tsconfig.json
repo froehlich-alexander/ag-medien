@@ -1,0 +1,22 @@
+{
+  "compileOnSave": true,
+  "compilerOptions": {
+    "baseUrl": "./",
+    "module": "ES2020",
+    "target": "ES6",
+    "moduleResolution": "node",
+    "lib": [
+      "ESNext",
+      "DOM"
+    ],
+    "strict": true,
+    "alwaysStrict": true,
+    "useDefineForClassFields": true,
+    "sourceMap": true,
+    "removeComments": false
+  },
+  "include": [
+    "./**/+.ts",
+    "./*.ts"
+  ]
+}
