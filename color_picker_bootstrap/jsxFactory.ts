@@ -14,7 +14,7 @@ declare global {
         }
 
         interface ElementAttributesProperty {
-            props: {};
+            props: { class?: string };
         }
 
         interface ElementChildrenAttribute {
@@ -33,29 +33,53 @@ declare global {
     }
 }
 
-export abstract class ClassComponent implements JSX.ElementClass {
-    declare props: {};
+export abstract class ClassComponent implements JSX.ElementClass, JSX.ElementAttributesProperty, JSX.ElementChildrenAttribute {
+    props: { class?: string };
+    children: Array<Node> = [];
+
+    constructor(props: { class?: string, [index: string]: any }) {
+        this.props = props;
+    }
 
     public abstract render(): JSX.Element;
+
+    public _render(element: JSX.Element): JSX.Element {
+        // add props
+        for (let [k, v] of Object.entries(filterStandardClassAttributes(this.props))) {
+            // if k is prop which can be extended and not overridden
+            if (["class"].includes(k)) {
+                element.setAttribute(k, element.getAttribute(k) + " " + v);
+            } else {
+                element.setAttribute(k, v);
+            }
+        }
+        // append children
+        for (let i in this.children) {
+            appendChildren(element, i);
+        }
+        return element;
+    }
 }
 
-export default function jsx(tag: JSX.Tag | JSX.Component | ClassComponent,
+export default function jsx(tag: JSX.Tag | JSX.Component,
                             attributes: { [key: string]: any } | null,
-                            ...children: (Node | string)[]) {
+                            ...children: (Node | string)[]): Node {
 
     if (typeof tag === 'function') {
-        console.log(tag, attributes, ...children)
+        // console.log(tag, attributes, ...children)
         // if we have a class component (stateful)
-        if (tag instanceof ClassComponent) {
-            let component = new tag(attributes ?? {});
-            component.children.extend(children);
-            return component.render();
+        if (tag.prototype instanceof ClassComponent) {
+            //@ts-ignore
+            let component: ClassComponent = new tag(attributes ?? {}) as ClassComponent;
+            appendChildren(component, children);
+            // console.log("props:", component.props, filterStandardClassAttributes(component.props))
+            return component.render()
+            // return jsx(component.render.bind(component), filterStandardClassAttributes(component.props), ...component.children);
         }
+        // console.log("func", tag, tag.prototype instanceof ClassComponent, tag instanceof ClassComponent)
         return tag(attributes ?? {}, children);
     }
-    // else if (typeof tag == 'object') {
-    //     return tag.render(attributes ?? {}, children)
-    // }
+
     type Tag = typeof tag;
     const element: HTMLElementTagNameMap[Tag] = document.createElement(tag);
 
@@ -103,16 +127,32 @@ export default function jsx(tag: JSX.Tag | JSX.Component | ClassComponent,
 
 }
 
-function appendChildren(parent: Node, child: Node | string | (Node | string)[]) {
+function appendChildren(parent: Node | ClassComponent, child: Node | string | (Node | string)[]) {
     if (Array.isArray(child)) {
-        for (let i in child) {
+        for (let i of child) {
             appendChildren(parent, i)
         }
     } else {
         if (typeof child == "string") {
-            parent.appendChild(document.createTextNode(child));
+            child = document.createTextNode(child);
+        }
+        if (parent instanceof Node) {
+            parent.appendChild(child);
         } else {
-            parent.appendChild(child)
+            parent.children.push(child);
         }
     }
+}
+
+const standardClassAttributes = ["class"];
+
+function filterStandardClassAttributes(attributes: { [key: string]: any } | null): { [key: string]: any } {
+    let res = {}
+    for (let [k, v] of Object.entries(attributes ?? {})) {
+        if (standardClassAttributes.includes(k)) {
+            // @ts-ignore
+            res[k] = v;
+        }
+    }
+    return res;
 }

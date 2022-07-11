@@ -16,23 +16,19 @@ const colorPicker = $("#color-picker")
 class ColorSchemeDropdownMenu extends ClassComponent {
     private dropDownMenu?: HTMLUListElement;
 
-    constructor() {
-        super();
-    }
-
     public render(): JSX.Element {
-        this.dropDownMenu = <ul className="dropdown-menu" id="color-schemes-dropdown-menu">
-            <li><a className="btn dropdown-item" href="#">Add</a></li>
+        this.dropDownMenu = <ul class="dropdown-menu" id="color-schemes-dropdown-menu">
+            <li><a class="btn dropdown-item" href="#">Add</a></li>
             <li>
-                <hr className="dropdown-divider"/>
+                <hr class="dropdown-divider"/>
             </li>
-            <li><h6 className="dropdown-header">Predefined</h6></li>
+            <li><h6 class="dropdown-header">Predefined</h6></li>
             {   //predefined color schemes
                 [...colorPickerService.all.values()]
                     .filter(v => v.preDefined)
                     .map(ColorSchemeDropdownItem)}
-            {/*<li><a className="dropdown-item" href="#">Default</a></li>*/}
-            <li><h6 className='dropdown-header'>Custom</h6></li>
+            {/*<li><a class="dropdown-item" href="#">Default</a></li>*/}
+            <li><h6 class='dropdown-header'>Custom</h6></li>
             {
                 // custom color schemes
                 [...colorPickerService.all.values()]
@@ -43,12 +39,13 @@ class ColorSchemeDropdownMenu extends ClassComponent {
         // event listener
         this.dropDownMenu.addEventListener("click", () => console.log("click up"))
 
-        return <div>
-            <button type="button" className="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown">
+        return this._render(<div class='btn-group'>
+            <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown">
                 Color Scheme
             </button>
             {this.dropDownMenu}
-        </div>
+        </div>);
+
     }
 
     /**
@@ -108,46 +105,65 @@ class ColorSchemeActions extends ClassComponent {
     private button?: HTMLButtonElement;
     private dropDownButton?: HTMLButtonElement;
     private dropDownMenu?: HTMLUListElement;
+    private state: string = "Activate";
+
+    static states = {
+        "Activate": "success",
+        "Delete": "danger"
+    }
 
     public render(): JSX.Element {
         this.button = <button type="button" class="btn btn-success">Activate</button> as HTMLButtonElement;
         this.dropDownButton = <button type="button" class="btn btn-success dropdown-toggle dropdown-toggle-split"
                                       data-bs-toggle="dropdown"></button> as HTMLButtonElement
-        this.dropDownMenu = <ul className="dropdown-menu">
-            <li><a class="dropdown-item bg-success" href="#">Activate</a></li>
-            <li><a class="dropdown-item bg-danger" href="#">Delete</a></li>
-        </ul> as HTMLUListElement
-        return (<div class="btn-group">
+        this.dropDownMenu =
+            <ul class="dropdown-menu" onclick={(event: MouseEvent) => this.stateChanged((event.target as Element).innerHTML)}>
+                <li><a class="dropdown-item bg-success" href="#">Activate</a></li>
+                <li><a class="dropdown-item bg-danger" href="#">Delete</a></li>
+            </ul> as HTMLUListElement
+        return this._render(<div class="btn-group">
             {this.button}
             {this.dropDownButton}
             {this.dropDownMenu}
         </div>);
     }
+
+    private stateChanged(state: string) {
+        console.log("state changed", state);
+        let prev = this.state;
+        this.state = state;
+        this.button?.classList.remove("btn-" + ColorSchemeActions.states[prev as keyof ColorSchemeActions.states]);
+        this.button?.classList.add("btn-"+ColorSchemeActions.states[state])
+        this.button!.innerHTML = state
+        this.dropDownButton?.classList.remove("btn-" + ColorSchemeActions.states[prev as keyof ColorSchemeActions.states]);
+        this.dropDownButton?.classList.add("btn-"+ColorSchemeActions.states[state])
+    }
 }
 
 
 const NavBar = (props: { onClose: () => any }) =>
-    <nav className="navbar navbar-expand bg-dark navbar-dark">
-        <div className="container-fluid">
-            <a className="navbar-brand">Color Picker</a>
-            <ul className="navbar-nav">
+    <nav class="navbar navbar-expand bg-dark navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand">Color Picker</a>
+            <ul class="navbar-nav">
             </ul>
-            <button className="btn-close btn" type="button" onclick={props.onClose}></button>
+            <button class="btn-close btn" type="button" onclick={props.onClose}></button>
         </div>
     </nav>
 
 
 class ColorPicker extends ClassComponent {
     public render(): JSX.Element {
-        return <div class='container-fluid p-5'>
+        return this._render(<div class='container p-5'>
             <NavBar onClose={() => console.log("colorpicker closed")}></NavBar>
             <div class='row'>
-                <ColorSchemeDropdownMenu/>
-                <ColorSchemeActions/>
+                <ColorSchemeDropdownMenu class='col-5'/>
+                <div class='col-2'></div>
+                <ColorSchemeActions class='col-5'/>
             </div>
-        </div>
+        </div>);
     }
 
 }
 
-document.append(<ColorPicker a={2}>Hello</ColorPicker>);
+document.body.append(<ColorPicker></ColorPicker>);
