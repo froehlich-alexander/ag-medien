@@ -797,7 +797,7 @@ let ColorSchemeItem = class ColorSchemeItem extends ListTile {
             .setLabel(colorScheme.name)
             .enableCheckbox(true)
             .on(FavoriteEvents.unFavored, (event, favored) => { var _a, _b; return console.log(favored, (_a = this.domObject) === null || _a === void 0 ? void 0 : _a.closest((_b = event.originalEvent) === null || _b === void 0 ? void 0 : _b.target).length); })
-            .on(FavoriteEvents.unFavored, (event) => { var _a; return ((event.originalEvent instanceof MouseEvent) && ((_a = this.domObject) === null || _a === void 0 ? void 0 : _a.closest(event.originalEvent.tar).length) > 0) ? this.setFavored(true) : null; });
+            .on(FavoriteEvents.unFavored, (event) => { var _a; return ((event.originalEvent instanceof MouseEvent) && ((_a = this.domObject) === null || _a === void 0 ? void 0 : _a.closest(event.originalEvent.target).length) > 0) ? this.setFavored(true) : null; });
     }
     build(suppressCallback = false) {
         super.build(true)

@@ -1,7 +1,13 @@
 {
   "compileOnSave": true,
   "compilerOptions": {
+    "jsx": "react",
+    "jsxFactory": "jsx",
     "baseUrl": "./",
+    "types": [
+      "jquery",
+      "./jsxFactory.ts"
+    ],
     "module": "ES2020",
     "target": "ES6",
     "moduleResolution": "node",
@@ -11,12 +17,10 @@
     ],
     "strict": true,
     "alwaysStrict": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
     "useDefineForClassFields": true,
     "sourceMap": true,
     "removeComments": false
-  },
-  "include": [
-    "./**/+.ts",
-    "./*.ts"
-  ]
+  }
 }
