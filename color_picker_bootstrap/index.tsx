@@ -2,6 +2,7 @@
 import "../node_modules/jquery/dist/jquery.js"
 import {ColorPickerService, ColorScheme} from "./colorpickerBackend.js";
 import jsx, {ClassComponent, EventType, NormalEventType, DefaultPropsType, PropsType} from "./jsxFactory.js"
+import {Modal} from 'bootstrap';
 
 
 class ColorSchemeDropdownMenu extends ClassComponent {
@@ -16,7 +17,7 @@ class ColorSchemeDropdownMenu extends ClassComponent {
     public render(): JSX.Element {
         this.dropDownMenu = <ul class="dropdown-menu" id="color-schemes-dropdown-menu"
                                 onclick={(event: MouseEvent) => this.colorSchemeSelected((event.target as Element).getAttribute("color-scheme-id")!)}>
-            <li><a class="btn dropdown-item" href="#">Add</a></li>
+            <li><a class="btn dropdown-item" href="#" onclick={this.invokeNewColorScheme.bind(this)}>Add</a></li>
             <li>
                 <hr class="dropdown-divider"/>
             </li>
@@ -33,6 +34,9 @@ class ColorSchemeDropdownMenu extends ClassComponent {
                     .filter(v => !v.preDefined)
                     .map(ColorSchemeDropdownItem)}
         </ul> as HTMLUListElement;
+
+        this.props.service.on("delete", this.removeColorScheme);
+        this.props.service.on("add", this.addColorScheme);
 
         return this._render(<div class='btn-group'>
             <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown">
@@ -52,6 +56,14 @@ class ColorSchemeDropdownMenu extends ClassComponent {
     }
 
     /**
+     * Invokes a creation of a new colorScheme<br>
+     * This is used as a callback function for the <add> button
+     * @private
+     */
+    private invokeNewColorScheme(): void {
+    }
+
+    /**
      * remove a custom color Scheme from the dropdown menu
      * @param {ColorScheme} colorScheme
      */
@@ -66,7 +78,7 @@ class ColorSchemeDropdownMenu extends ClassComponent {
     private colorSchemeSelected(colorSchemeId: string) {
         console.log(this.constructor.name, "colro selected", colorSchemeId)
         if (this.props.colorSchemeId == colorSchemeId) {
-            // return //todo
+            return
         }
         let prev = this.props.colorSchemeId;
         this.props.colorSchemeId = colorSchemeId;
@@ -197,6 +209,7 @@ class ColorPicker extends ClassComponent {
                                                      class='col-5'/>
         return this._render(<div class='container p-5'>
             <NavBar onClose={() => console.log("colorpicker closed")}></NavBar>
+            <NewColorSchemeDialog />
             <div class='row'>
                 <ColorSchemeDropdownMenu service={this.props.service} colorSchemeId={this.props.service.getCurrent().id}
                                          onColorSchemeSelected={(colorSchemeActions.jsObject! as ColorSchemeActions).setColorSchemeId.bind(colorSchemeActions.jsObject)}
@@ -207,6 +220,46 @@ class ColorPicker extends ClassComponent {
         </div>);
     }
 
+}
+
+class NewColorSchemeDialog extends ClassComponent {
+    modal?: Modal;
+
+    declare props: PropsType<ClassComponent>&{service: ColorPickerService, parentColorScheme: ColorScheme};
+
+    public render(): JSX.Element {
+        if (this.rendered) {
+            this.modal!.dispose();
+        }
+        let htmlModal =
+            <div class='modal fade' id='new-color-scheme-dialog'>
+                <div class='modal-dialog modal-dialog-centered'>
+                    <div class='modal-content'>
+                        <div class='modal-header'>
+                            <h5 class='modal-title'>New Color Scheme</h5>
+                            <button class='btn-close' type='button' data-bs-dismiss='modal' aria-label='Close'></button>
+                        </div>
+                        <div className='modal-body'>
+                            <label for='new-cs-name-input'>Name</label>
+                            <input id="new-cs-name-input" type='text' placeholder={this.props.parentColorScheme.name}/>
+                        </div>
+                        <div className='modal-footer'>
+                            <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" onclick={this.} className="btn btn-primary" data-bs-dismiss='modal'>Add</button>
+                        </div>
+                    </div>
+                </div>
+            </div>;
+        this.modal = Modal.getInstance(htmlModal)!;
+        return this._render(htmlModal);
+    }
+
+    public setParentColorScheme(colorScheme: ColorScheme) {
+        if (this.props.parentColorScheme == colorScheme) {
+            return
+        }
+        this.props.parentColorScheme = colorScheme;
+    }
 }
 
 document.body.append(<ColorPicker service={new ColorPickerService()}></ColorPicker>);

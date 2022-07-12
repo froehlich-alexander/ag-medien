@@ -227,7 +227,11 @@ class ColorPickerService {
     private readonly _all: ColorSchemeMap = new Map<string, ColorScheme>();
     private readonly _colorTypes: string[] = [];
     private readonly fruits: string[] = ["fgf", "fd", "gfdsg"];
-    private readonly callbacks = {"delete": [], "add": []};
+    private readonly callbacks: {
+        "delete": ((colorScheme: ColorScheme) => any)[],
+        "add": ((colorScheme: ColorScheme) => any)[],
+        "activate": ((colorScheme: ColorScheme) => any)[]
+    } = {delete: [], add: [], activate: []};
 
     constructor() {
         let default1 = this.getDefault(true);
@@ -278,6 +282,7 @@ class ColorPickerService {
             }
         }
         this.save();
+        this.trigger("activate", colorScheme);
     }
 
     /**
@@ -300,6 +305,7 @@ class ColorPickerService {
         }
         let newColorScheme = new ColorScheme(this, id);
         this._all.set(newColorScheme.id, newColorScheme);
+        this.trigger("add", newColorScheme);
         return newColorScheme;
     }
 
@@ -357,6 +363,7 @@ class ColorPickerService {
     /**
      * gets all data from local storage (if present) and writes them into this object<br>
      * <b>DO NOT CALL THIS IN A LOOP</b>, That would be very inefficient
+     * @deprecated no reason to reload anything from storage at any time after init
      */
     public reloadFromStorage(colorScheme: ColorScheme) {
         // let colors = window.localStorage.getItem("colors") != null ? JSON.parse(window.localStorage.getItem("colors")) : {};
@@ -433,32 +440,38 @@ class ColorPickerService {
         return this._all;
     }
 
-    public delete(...colorScheme: (ColorScheme | string)[] | (ColorScheme | string)[][]): this {
-        console.log(colorScheme);
-        for (let i of colorScheme) {
-            for (let j of (i instanceof Array ? i : [i])) {
+    public delete(...colorSchemes: (ColorScheme | string)[] | ((ColorScheme | string)[][])): this {
+        console.log(colorSchemes);
+        let edited = false;
+        for (let i of colorSchemes) {
+            for (let j of (Array.isArray(i) ? i : [i])) {
                 if (j instanceof ColorScheme) {
                     j = j.id;
                 }
 
-                let colorScheme1 = this._all.get(j);
-                if (colorScheme1 !== undefined) {
-                    if (colorScheme1.preDefined) {
+                let deletingColorScheme = this._all.get(j);
+                if (deletingColorScheme !== undefined) {
+                    if (deletingColorScheme.preDefined) {
                         //TODO 12.04.2022 alert user ??? bc predefined?
+                        console.log("cannot delete predefined color scheme", deletingColorScheme);
                         continue;
                     }
-                    if (colorScheme1.current) {
+                    if (deletingColorScheme.current) {
                         this.activate(this.getDefault());
                     }
                     console.log(j);
                     console.log(this._all.delete(j));
+                    edited = true;
+                    this.trigger("delete", deletingColorScheme)
                 } else {
                     console.warn("Cannot find ColorScheme (-id)'", j, "' in ColorPickerService.all");
                 }
             }
         }
         console.log(this._all);
-        this.save();
+        if (edited) {
+            this.save();
+        }
         return this;
     }
 
@@ -494,6 +507,18 @@ class ColorPickerService {
         newColorType = newColorType.charAt(0).toLocaleUpperCase() + newColorType.substring(1, newColorType.length);
         return newColorType;
         //todo parse string
+    }
+
+    public on(event: keyof ColorPickerService["callbacks"], handler: ColorPickerService["callbacks"][typeof event][number]) {
+        this.callbacks[event].push(handler);
+    }
+
+    private trigger(event: keyof ColorPickerService["callbacks"], ...args: Parameters<ColorPickerService["callbacks"][typeof event][number]>) {
+        let handler: ColorPickerService["callbacks"][typeof event][number];
+        for (handler of this.callbacks[event]) {
+            // @ts-ignore
+            handler(...args);
+        }
     }
 }
 

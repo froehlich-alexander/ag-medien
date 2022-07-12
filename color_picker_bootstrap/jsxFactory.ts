@@ -50,6 +50,7 @@ export abstract class ClassComponent implements JSX.ElementClass, JSX.ElementAtt
     children: Array<Node> = [];
     declare readonly events: { all?: () => any };
     protected static readonly eventList: string[] = []
+    public rendered: boolean = false;
 
     //@ts-ignore
     protected readonly handler: { [k in keyof ClassComponent["events"] as Lowercase<k>]-?: ClassComponent["events"][k][] } = {};
@@ -120,6 +121,7 @@ export abstract class ClassComponent implements JSX.ElementClass, JSX.ElementAtt
     public abstract render(): JSX.Element;
 
     public _render(element: JSX.Element): JSX.Element {
+        this.rendered = true;
         // add props
         for (let [k, v] of Object.entries(filterStandardClassAttributes(this.props))) {
             // if k is prop which can be extended and not overridden
