@@ -2,7 +2,7 @@
 
 declare global {
     namespace JSX {
-        type Element = HTMLElement;
+        type Element = HTMLElement & { jsObject?: ClassComponent };
 
         type IntrinsicElementMap = {
             [K in keyof HTMLElementTagNameMap]: {
@@ -14,31 +14,107 @@ declare global {
         }
 
         interface ElementAttributesProperty {
-            props: { class?: string };
+            props: PropsType<ClassComponent>;
         }
 
         interface ElementChildrenAttribute {
-            children: {};
+            children: Node[];
         }
 
         interface Component {
-            (properties?: { [key: string]: any }, children?: (Node | string)[]): Node
+            (properties?: { [key: string]: any }, children?: (Node | string)[]): HTMLElement
         }
 
         interface ElementClass {
-            render: () => JSX.Element;
+            render: () => HTMLElement;
         }
 
         type Tag = keyof HTMLElementTagNameMap;
     }
 }
 
-export abstract class ClassComponent implements JSX.ElementClass, JSX.ElementAttributesProperty, JSX.ElementChildrenAttribute {
-    props: { class?: string };
-    children: Array<Node> = [];
+function JSXElement<T extends ClassComponent>(htmlElement: HTMLElement, jsObject?: T): JSX.Element {
+    //@ts-ignore
+    htmlElement.jsObject = jsObject;
+    return htmlElement;
+}
 
-    constructor(props: { class?: string, [index: string]: any }) {
-        this.props = props;
+export type NormalEventType<T extends ClassComponent> = { [k in keyof T["events"]]: T["events"][k] };
+export type EventType<T extends ClassComponent> = { [k in keyof NormalEventType<T> as `on${Capitalize<string & k>}`]: NormalEventType<T>[k] };
+export type NormalPropsType<T extends ClassComponent> = { [k in keyof T["props"]]: T["props"][k] }
+export type PropsType<T extends ClassComponent> = NormalPropsType<T> | EventType<T>;
+export type DefaultPropsType<T extends ClassComponent> = { [k in keyof NormalPropsType<T>]?: NormalPropsType<T>[k] }
+
+export abstract class ClassComponent implements JSX.ElementClass, JSX.ElementAttributesProperty, JSX.ElementChildrenAttribute {
+    props: EventType<ClassComponent> & { class?: string };
+    children: Array<Node> = [];
+    declare readonly events: { all?: () => any };
+    protected static readonly eventList: string[] = []
+
+    //@ts-ignore
+    protected readonly handler: { [k in keyof ClassComponent["events"] as Lowercase<k>]-?: ClassComponent["events"][k][] } = {};
+    protected static readonly defaultProps: DefaultPropsType<ClassComponent> = {}
+
+    constructor(props: PropsType<ClassComponent>) {
+        // default properties
+        this.props = {};
+        let o: typeof ClassComponent = this.constructor as typeof ClassComponent;
+        while (o.prototype instanceof ClassComponent || o == ClassComponent) {
+            // inherit defaultProps
+            for (let [k, v] of Object.entries(o.defaultProps)) {
+                if (!(k in this.props)) {
+                    this.props[k as keyof NormalPropsType<ClassComponent>] = v as string & ((...rest: any[]) => any);
+                }
+            }
+            // inherit events
+            for (let i of o.eventList) {
+                if (!(this.constructor as typeof ClassComponent).eventList.includes(i)) {
+                    if (typeof i !== "string") {
+                        console.log("i not strong", i)
+                    }
+                    (this.constructor as typeof ClassComponent).eventList.push(i);
+                }
+            }
+            o = Object.getPrototypeOf(o) as typeof ClassComponent;
+        }
+
+        // init event handlers
+        for (let eventsKey of (this.constructor as typeof ClassComponent).eventList) {
+            this.handler[eventsKey.toLowerCase() as Lowercase<keyof ClassComponent["events"]>] = [];
+            this.props[("on" + eventsKey.replace(/^[a-zA-Z]/, eventsKey[0].toUpperCase())) as keyof PropsType<ClassComponent>] = ((...args: any[]) => this.handleEvent(eventsKey as keyof ClassComponent["events"], ...args)) as ClassComponent["events"][keyof ClassComponent["events"]];
+        }
+
+        console.log((this.constructor as typeof ClassComponent).name, "event list", (this.constructor as typeof ClassComponent).eventList)
+
+        for (let [k, v] of (Object.entries(props) as [keyof PropsType<ClassComponent>, string | (() => any)][])) {
+            // if [k, v] is an event handler entry
+            if (k.startsWith("on") && (this.constructor as typeof ClassComponent).eventList.map(v=>v.toLowerCase()).includes(k.substring(2).toLowerCase())) {
+                if (typeof v == "function") {
+                    this.handler[k.substring(2).toLowerCase() as Lowercase<keyof ClassComponent["events"]>].push(v);
+                } else {
+                    console.log("typeof v != function but starts with on etc. ", k, v)
+                }
+            }
+            // if [k, v] is a normal property
+            else {
+                this.props[k] = v as any;
+            }
+        }
+
+        console.log(this.constructor.name, "props", this.props, this.handler, (this.constructor as typeof ClassComponent).eventList);
+    }
+
+    /**
+     * This method calls all registred event handlers of a specific event
+     * @param {keyof EventType<ClassComponent>} event
+     * @param args
+     * @private
+     */
+    private handleEvent(event: keyof ClassComponent["events"], ...args: any[]): any {
+        for (let i of this.handler[event.toLowerCase() as Lowercase<keyof ClassComponent["events"]>]) {
+            // we don't know the real signature
+            (i as (...rest: any[]) => any)(...args);
+        }
     }
 
     public abstract render(): JSX.Element;
@@ -63,7 +139,7 @@ export abstract class ClassComponent implements JSX.ElementClass, JSX.ElementAtt
 
 export default function jsx(tag: JSX.Tag | JSX.Component,
                             attributes: { [key: string]: any } | null,
-                            ...children: (Node | string)[]): Node {
+                            ...children: (HTMLElement | string)[]): JSX.Element {
 
     if (typeof tag === 'function') {
         // console.log(tag, attributes, ...children)
@@ -73,11 +149,11 @@ export default function jsx(tag: JSX.Tag | JSX.Component,
             let component: ClassComponent = new tag(attributes ?? {}) as ClassComponent;
             appendChildren(component, children);
             // console.log("props:", component.props, filterStandardClassAttributes(component.props))
-            return component.render()
+            return JSXElement(component.render(), component)
             // return jsx(component.render.bind(component), filterStandardClassAttributes(component.props), ...component.children);
         }
         // console.log("func", tag, tag.prototype instanceof ClassComponent, tag instanceof ClassComponent)
-        return tag(attributes ?? {}, children);
+        return JSXElement(tag(attributes ?? {}, children));
     }
 
     type Tag = typeof tag;
@@ -123,7 +199,7 @@ export default function jsx(tag: JSX.Tag | JSX.Component,
         // }
         // element.appendChild(child);
     }
-    return element;
+    return JSXElement(element);
 
 }
 
@@ -135,6 +211,8 @@ function appendChildren(parent: Node | ClassComponent, child: Node | string | (N
     } else {
         if (typeof child == "string") {
             child = document.createTextNode(child);
+        } else if (!(child instanceof Node)) {
+            console.log("child not string nor node", child)
         }
         if (parent instanceof Node) {
             parent.appendChild(child);

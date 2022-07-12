@@ -227,6 +227,7 @@ class ColorPickerService {
     private readonly _all: ColorSchemeMap = new Map<string, ColorScheme>();
     private readonly _colorTypes: string[] = [];
     private readonly fruits: string[] = ["fgf", "fd", "gfdsg"];
+    private readonly callbacks = {"delete": [], "add": []};
 
     constructor() {
         let default1 = this.getDefault(true);
@@ -280,16 +281,17 @@ class ColorPickerService {
     }
 
     /**
-     * Return a new {@link ColorScheme} instance and add it to {@link ColorPickerService.all}
-     * @return {ColorScheme}
-     */
-    public getColorScheme(): ColorScheme;
-    /**
      * Get the instance by the id given or create a new one and add ite to {@link ColorPickerService.all}
      * @param {string} id
      * @return {ColorScheme | undefined}
      */
     public getColorScheme(id: string): ColorScheme;
+
+    /**
+     * Return a new {@link ColorScheme} instance and add it to {@link ColorPickerService.all}
+     * @return {ColorScheme}
+     */
+    public getColorScheme(): ColorScheme;
 
     public getColorScheme(id?: string): ColorScheme {
         //todo check necessary if

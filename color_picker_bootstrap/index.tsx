@@ -1,43 +1,38 @@
 // import "../../build/js/jquery.js";
 import "../node_modules/jquery/dist/jquery.js"
 import {ColorPickerService, ColorScheme} from "./colorpickerBackend.js";
-import jsx, {ClassComponent} from "./jsxFactory.js"
-
-
-const colorPickerService = new ColorPickerService();
-const colorPicker = $("#color-picker")
-
-// let colorSchemesDropDownMenu = {
-//     headerAdded: false,
-//     html: colorPicker.find("#color-schemes-dropdown-menu").eq(0)
-// };
+import jsx, {ClassComponent, EventType, NormalEventType, DefaultPropsType, PropsType} from "./jsxFactory.js"
 
 
 class ColorSchemeDropdownMenu extends ClassComponent {
     private dropDownMenu?: HTMLUListElement;
 
+    declare props: PropsType<ClassComponent> & EventType<ColorSchemeDropdownMenu> & { service: ColorPickerService, colorSchemeId: string };
+    declare events: NormalEventType<ClassComponent> & { "colorSchemeSelected": (s: string) => any }// = {"colorSchemeSelected": (s: string): any => null};
+    static override eventList: string[] = ["colorSchemeSelected"];
+    static override defaultProps: DefaultPropsType<ColorSchemeDropdownMenu> = {}
+
+
     public render(): JSX.Element {
-        this.dropDownMenu = <ul class="dropdown-menu" id="color-schemes-dropdown-menu">
+        this.dropDownMenu = <ul class="dropdown-menu" id="color-schemes-dropdown-menu"
+                                onclick={(event: MouseEvent) => this.colorSchemeSelected((event.target as Element).getAttribute("color-scheme-id")!)}>
             <li><a class="btn dropdown-item" href="#">Add</a></li>
             <li>
                 <hr class="dropdown-divider"/>
             </li>
             <li><h6 class="dropdown-header">Predefined</h6></li>
             {   //predefined color schemes
-                [...colorPickerService.all.values()]
+                [...this.props.service.all.values()]
                     .filter(v => v.preDefined)
                     .map(ColorSchemeDropdownItem)}
             {/*<li><a class="dropdown-item" href="#">Default</a></li>*/}
             <li><h6 class='dropdown-header'>Custom</h6></li>
             {
                 // custom color schemes
-                [...colorPickerService.all.values()]
+                [...this.props.service.all.values()]
                     .filter(v => !v.preDefined)
                     .map(ColorSchemeDropdownItem)}
         </ul> as HTMLUListElement;
-
-        // event listener
-        this.dropDownMenu.addEventListener("click", () => console.log("click up"))
 
         return this._render(<div class='btn-group'>
             <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown">
@@ -61,7 +56,21 @@ class ColorSchemeDropdownMenu extends ClassComponent {
      * @param {ColorScheme} colorScheme
      */
     public removeColorScheme(colorScheme: ColorScheme) {
-        $(this.dropDownMenu!).remove(`color-scheme-id=${colorScheme.id}]`)
+        $(this.dropDownMenu!).remove(`[color-scheme-id=${colorScheme.id}]`)
+    }
+
+    /**
+     * Fired when the user selects an colorScheme element in the dropdown menu
+     * @private
+     */
+    private colorSchemeSelected(colorSchemeId: string) {
+        console.log(this.constructor.name, "colro selected", colorSchemeId)
+        if (this.props.colorSchemeId == colorSchemeId) {
+            // return //todo
+        }
+        let prev = this.props.colorSchemeId;
+        this.props.colorSchemeId = colorSchemeId;
+        this.props.onColorSchemeSelected(colorSchemeId);
     }
 }
 
@@ -105,21 +114,30 @@ class ColorSchemeActions extends ClassComponent {
     private button?: HTMLButtonElement;
     private dropDownButton?: HTMLButtonElement;
     private dropDownMenu?: HTMLUListElement;
-    private state: string = "Activate";
 
-    static states = {
+    static override readonly defaultProps: DefaultPropsType<ColorSchemeActions> = {state: "Activate"}
+    declare props: PropsType<ClassComponent> & { service: ColorPickerService, state?: string, colorSchemeId: string };
+
+    static states: { [k: string]: string } = {
         "Activate": "success",
-        "Delete": "danger"
+        "Delete": "danger",
+        "Edit": "primary",
     }
 
     public render(): JSX.Element {
-        this.button = <button type="button" class="btn btn-success">Activate</button> as HTMLButtonElement;
-        this.dropDownButton = <button type="button" class="btn btn-success dropdown-toggle dropdown-toggle-split"
+        console.log("render actions", this.props)
+        this.button = <button type="button" class={`btn btn-${ColorSchemeActions.states[this.props.state!]}`}
+                              onclick={this.buttonClicked.bind(this)}>{this.props.state!}</button> as HTMLButtonElement;
+        this.dropDownButton = <button type="button"
+                                      class={`btn btn-${ColorSchemeActions.states[this.props.state!]} dropdown-toggle dropdown-toggle-split`}
                                       data-bs-toggle="dropdown"></button> as HTMLButtonElement
         this.dropDownMenu =
-            <ul class="dropdown-menu" onclick={(event: MouseEvent) => this.stateChanged((event.target as Element).innerHTML)}>
-                <li><a class="dropdown-item bg-success" href="#">Activate</a></li>
-                <li><a class="dropdown-item bg-danger" href="#">Delete</a></li>
+            <ul class="dropdown-menu"
+                onclick={(event: MouseEvent) => this.stateChanged((event.target as Element).innerHTML)}>
+                {/*<li><a class="dropdown-item bg-success" href="#">Activate</a></li>*/}
+                {/*<li><a class="dropdown-item bg-danger" href="#">Delete</a></li>*/}
+                {Object.entries(ColorSchemeActions.states).map(([k, v]) =>
+                    <li><a class={`dropdown-item bg-${v}`} href='#'>{k}</a></li>)}
             </ul> as HTMLUListElement
         return this._render(<div class="btn-group">
             {this.button}
@@ -130,16 +148,34 @@ class ColorSchemeActions extends ClassComponent {
 
     private stateChanged(state: string) {
         console.log("state changed", state);
-        let prev = this.state;
-        this.state = state;
-        this.button?.classList.remove("btn-" + ColorSchemeActions.states[prev as keyof ColorSchemeActions.states]);
-        this.button?.classList.add("btn-"+ColorSchemeActions.states[state])
+        let prev = this.props.state!;
+        this.props.state! = state;
+        this.button?.classList.remove("btn-" + ColorSchemeActions.states[prev]);
+        this.button?.classList.add("btn-" + ColorSchemeActions.states[state])
         this.button!.innerHTML = state
-        this.dropDownButton?.classList.remove("btn-" + ColorSchemeActions.states[prev as keyof ColorSchemeActions.states]);
-        this.dropDownButton?.classList.add("btn-"+ColorSchemeActions.states[state])
+        this.dropDownButton?.classList.remove("btn-" + ColorSchemeActions.states[prev]);
+        this.dropDownButton?.classList.add("btn-" + ColorSchemeActions.states[state])
+    }
+
+    private buttonClicked() {
+        let colorScheme = this.props.service.getColorScheme(this.props.colorSchemeId)
+        switch (this.props.state!) {
+            case "Activate":
+                this.props.service.activate(colorScheme)
+                break;
+            case "Delete":
+                this.props.service.delete(colorScheme)
+                break;
+            case "Edit":
+                break;
+        }
+    }
+
+    public setColorSchemeId(id: string) {
+        console.log((this.constructor as typeof ClassComponent).name, "setCOlorSchemeID", id)
+        this.props.colorSchemeId = id;
     }
 }
-
 
 const NavBar = (props: { onClose: () => any }) =>
     <nav class="navbar navbar-expand bg-dark navbar-dark">
@@ -153,17 +189,24 @@ const NavBar = (props: { onClose: () => any }) =>
 
 
 class ColorPicker extends ClassComponent {
+    declare props: PropsType<ClassComponent> & { service: ColorPickerService };
+
     public render(): JSX.Element {
+        let colorSchemeActions = <ColorSchemeActions service={this.props.service}
+                                                     colorSchemeId={this.props.service.getCurrent().id}
+                                                     class='col-5'/>
         return this._render(<div class='container p-5'>
             <NavBar onClose={() => console.log("colorpicker closed")}></NavBar>
             <div class='row'>
-                <ColorSchemeDropdownMenu class='col-5'/>
+                <ColorSchemeDropdownMenu service={this.props.service} colorSchemeId={this.props.service.getCurrent().id}
+                                         onColorSchemeSelected={(colorSchemeActions.jsObject! as ColorSchemeActions).setColorSchemeId.bind(colorSchemeActions.jsObject)}
+                                         class='col-5'/>
                 <div class='col-2'></div>
-                <ColorSchemeActions class='col-5'/>
+                {colorSchemeActions}
             </div>
         </div>);
     }
 
 }
 
-document.body.append(<ColorPicker></ColorPicker>);
+document.body.append(<ColorPicker service={new ColorPickerService()}></ColorPicker>);
