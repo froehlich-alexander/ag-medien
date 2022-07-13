@@ -1,8 +1,18 @@
 // import "../../build/js/jquery.js";
-import "../node_modules/jquery/dist/jquery.js"
-import {ColorPickerService, ColorScheme} from "./colorpickerBackend.js";
-import jsx, {ClassComponent, EventType, NormalEventType, DefaultPropsType, PropsType} from "./jsxFactory.js"
-import {Modal} from 'bootstrap';
+import "../node_modules/jquery/dist/jquery.js";
+import '../node_modules/bootstrap/dist/js/bootstrap.bundle.min.js';
+import {ColorPickerService, ColorScheme, Designs} from "./colorpickerBackend.js";
+import jsx, {
+    ClassComponent,
+    DefaultPropsType,
+    EventType,
+    NormalEventType,
+    PropsType,
+    RemoveProperty
+} from "./jsxFactory.js"
+
+//@ts-ignore
+let Modal = bootstrap.Modal;
 
 
 class ColorSchemeDropdownMenu extends ClassComponent {
@@ -171,12 +181,16 @@ class ColorSchemeActions extends ClassComponent {
 
     private buttonClicked() {
         let colorScheme = this.props.service.getColorScheme(this.props.colorSchemeId)
+        if (colorScheme == null) {
+            console.warn("button on non existent color scheme clicked");
+            return
+        }
         switch (this.props.state!) {
             case "Activate":
-                this.props.service.activate(colorScheme)
+                this.props.service.activate(colorScheme);
                 break;
             case "Delete":
-                this.props.service.delete(colorScheme)
+                this.props.service.delete(colorScheme);
                 break;
             case "Edit":
                 break;
@@ -209,7 +223,8 @@ class ColorPicker extends ClassComponent {
                                                      class='col-5'/>
         return this._render(<div class='container p-5'>
             <NavBar onClose={() => console.log("colorpicker closed")}></NavBar>
-            <NewColorSchemeDialog />
+            <NewColorSchemeDialog defaultDesign={Designs.system} parentColorScheme={this.props.service.getDefault()}
+                                  service={this.props.service}/>
             <div class='row'>
                 <ColorSchemeDropdownMenu service={this.props.service} colorSchemeId={this.props.service.getCurrent().id}
                                          onColorSchemeSelected={(colorSchemeActions.jsObject! as ColorSchemeActions).setColorSchemeId.bind(colorSchemeActions.jsObject)}
@@ -224,13 +239,41 @@ class ColorPicker extends ClassComponent {
 
 class NewColorSchemeDialog extends ClassComponent {
     modal?: Modal;
+    inputs?: {
+        name: HTMLInputElement,
+        description: HTMLInputElement,
+        author: HTMLInputElement,
+        design: HTMLSelectElement,
+    };
 
-    declare props: PropsType<ClassComponent>&{service: ColorPickerService, parentColorScheme: ColorScheme};
+    declare props: PropsType<ClassComponent> & EventType<NewColorSchemeDialog> & { service: ColorPickerService, parentColorScheme: ColorScheme, defaultDesign: Designs };
+    declare events: NormalEventType<ClassComponent> & { colorSchemeCreated?: (colorScheme: ColorScheme) => any };
+
+    static override eventList = ["colorSchemeCreated"];
 
     public render(): JSX.Element {
         if (this.rendered) {
             this.modal!.dispose();
         }
+
+        console.log(this.constructor.name, "Designs", Object.keys(Designs), Object.entries(Designs))
+
+        this.inputs = {
+            name: <input id="new-cs-name-input" class='form-control' type='text'
+                         placeholder={this.props.parentColorScheme.name}/> as HTMLInputElement,
+            description:
+                <input id="new-cs-description-input" type='text' className='form-control'
+                       placeholder={this.props.parentColorScheme.description}/> as HTMLInputElement,
+            author:
+                <input id="new-cs-author-input" type='text' class='form-control'
+                       placeholder={this.props.parentColorScheme.author}/> as HTMLInputElement,
+            design: <select id="new-cs-design-select" className='form-select' disabled>
+                {Object.entries(Designs).map(([k, v]) =>
+                    <option selected={this.props.defaultDesign == v ? true : RemoveProperty}
+                            value={k}>{v}</option>)}
+            </select> as HTMLSelectElement,
+        }
+
         let htmlModal =
             <div class='modal fade' id='new-color-scheme-dialog'>
                 <div class='modal-dialog modal-dialog-centered'>
@@ -240,18 +283,43 @@ class NewColorSchemeDialog extends ClassComponent {
                             <button class='btn-close' type='button' data-bs-dismiss='modal' aria-label='Close'></button>
                         </div>
                         <div className='modal-body'>
-                            <label for='new-cs-name-input'>Name</label>
-                            <input id="new-cs-name-input" type='text' placeholder={this.props.parentColorScheme.name}/>
+                            {this.inputs.name}
+                            <label for='new-cs-name-input' class='form-label'>Name</label>
+
+                            {this.inputs.description}
+                            <label for='new-cs-description-input' class='form-label'>Description</label>
+
+                            {this.inputs.author}
+                            <label for='new-cs-author-input' class='form-label'>Author</label>
+
+                            {this.inputs.design}
+                            <label for='new-cs-design-select' class='form-label'>Author</label>
                         </div>
                         <div className='modal-footer'>
                             <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                            <button type="button" onclick={this.} className="btn btn-primary" data-bs-dismiss='modal'>Add</button>
+                            <button type="button" onclick={this.createNewColorScheme.bind(this)}
+                                    className="btn btn-primary"
+                                    data-bs-dismiss='modal'>Add
+                            </button>
                         </div>
                     </div>
                 </div>
             </div>;
         this.modal = Modal.getInstance(htmlModal)!;
         return this._render(htmlModal);
+    }
+
+    private createNewColorScheme(): void {
+        console.log(this.constructor.name, "create new color sceheme ");
+        let newColorScheme = this.props.service.newColorScheme({
+            name: this.inputs!.name.value,
+            description: this.inputs!.description.value,
+            author: this.inputs!.author.value,
+            design: Designs[this.inputs!.design.value as "dark" | "light" | "system"],
+            colors: this.props.parentColorScheme.colors
+        });
+        this.props.onColorSchemeCreated!(newColorScheme);
+        console.log(this.constructor.name, newColorScheme);
     }
 
     public setParentColorScheme(colorScheme: ColorScheme) {

@@ -17,6 +17,7 @@ export enum Designs {
  */
 class ColorSchemeData {
     public name: string | undefined;
+    public description?: string;
     public author: string | undefined;
     public id: string | undefined;
     public current: boolean | undefined;
@@ -26,9 +27,10 @@ class ColorSchemeData {
 }
 
 class ColorSchemeInterface {
-    protected _name: string | undefined;
-    protected _author: string | undefined;
-    protected _id: string | undefined;
+    protected _name?: string;
+    protected _description?: string;
+    protected _author?: string;
+    protected _id?: string;
     protected readonly _colors: ColorMap = new ColorMap();
     protected _design: Designs = Designs.system;
 
@@ -39,25 +41,30 @@ class ColorSchemeInterface {
 class ColorScheme extends ColorSchemeInterface {
     protected override readonly _id: string = "";
 
-    constructor(service: ColorPickerService, id?: string, name?: string, author?: string, colors?: ColorMap);
+    constructor(service: ColorPickerService, id?: string, name?: string, description?: string, author?: string, design?: Designs, colors?: ColorMap);
     constructor(rawDataObject: ColorSchemeInterface);
 
     /**
-     * DON'T USE THIS CONSTRUCTOR!!! USE {@link get} instead<br>
-     * This will insert (random) strings if you set null for {@link _name} or {@link _id}
-     * @param service {ColorPickerService}
-     * @param id {string | null}
-     * @param author {string | null}
-     * @param name {string | null}
-     * @param colors {{string: string}}
+     * DON'T USE THIS CONSTRUCTOR!!!<br>
+     * USE {@link ColorPickerService.getColorScheme} or {@link ColorPickerService.newColorScheme} instead<br>
+     * This will insert (random) strings if you set null for {@link _name} and / or {@link _id}
+     * @param {ColorPickerService | ColorSchemeInterface} service
+     * @param {string} id
+     * @param {string} name
+     * @param {string} description
+     * @param {string} author
+     * @param {Designs} design
+     * @param {ColorMap} colors
      */
-    public constructor(service: ColorPickerService | ColorSchemeInterface, id?: string, name?: string, author?: string, colors: ColorMap = new Map()) {
+    public constructor(service: ColorPickerService | ColorSchemeInterface, id?: string, name?: string, description?: string, author?: string, design?: Designs, colors: ColorMap = new Map()) {
         super();
         console.assert(service != null, "service is null");
         if (service instanceof ColorPickerService) {
             this._id = id != null ? id : service.generateId();
             this._name = name != null ? name : service.generateName();
+            this._description = description ?? "No Description";
             this._author = author != null ? author : "unknown";
+            this._design = design ?? Designs.system;
             this._preDefined = false;
             for (let key of colors.keys()) {
                 this._colors.set(key, colors.get(key) != null ? Color.toHex(colors.get(key)!) : "inherit");
@@ -150,6 +157,7 @@ class ColorScheme extends ColorSchemeInterface {
         return colorScheme
             .setName(this.name)
             .setAuthor(this.author)
+            .setDescription(this.description)
             .setDesign(this.design)
             .setColors(this.colors);
     }
@@ -169,6 +177,15 @@ class ColorScheme extends ColorSchemeInterface {
 
     public setAuthor(author: string): this {
         this._author = author;
+        return this;
+    }
+
+    public get description(): string {
+        return this._description!;
+    }
+
+    public setDescription(description: string): this {
+        this._description = description;
         return this;
     }
 
@@ -226,7 +243,7 @@ class ColorPickerService {
 
     private readonly _all: ColorSchemeMap = new Map<string, ColorScheme>();
     private readonly _colorTypes: string[] = [];
-    private readonly fruits: string[] = ["fgf", "fd", "gfdsg"];
+    private readonly fruits: string[] = ["Strawberry", "Fraise", "Erdbeere"];
     private readonly callbacks: {
         "delete": ((colorScheme: ColorScheme) => any)[],
         "add": ((colorScheme: ColorScheme) => any)[],
@@ -286,26 +303,26 @@ class ColorPickerService {
     }
 
     /**
-     * Get the instance by the id given or create a new one and add ite to {@link ColorPickerService.all}
+     * Returns the instance by the id given or {@link null} if the no item with the id was found
      * @param {string} id
      * @return {ColorScheme | undefined}
      */
-    public getColorScheme(id: string): ColorScheme;
 
-    /**
-     * Return a new {@link ColorScheme} instance and add it to {@link ColorPickerService.all}
-     * @return {ColorScheme}
-     */
-    public getColorScheme(): ColorScheme;
+    public getColorScheme(id: string): ColorScheme | undefined {
+        return this._all.get(id);
+        // //t odo check necessary if
+        // if (id !== undefined && this._all.has(id)) {
+        //     return this._all.get(id)!;
+        // }
+        // let newColorScheme = new ColorScheme(this, id);
+        // this._all.set(newColorScheme.id, newColorScheme);
+        // this.trigger("add", newColorScheme);
+        // return newColorScheme;
+    }
 
-    public getColorScheme(id?: string): ColorScheme {
-        //todo check necessary if
-        if (id !== undefined && this._all.has(id)) {
-            return this._all.get(id)!;
-        }
-        let newColorScheme = new ColorScheme(this, id);
+    public newColorScheme({ name, description, author, design, colors}: { [k in keyof ColorScheme]?: ColorScheme[k] }): ColorScheme {
+        let newColorScheme = new ColorScheme(this, undefined, name, description, author, design, colors);
         this._all.set(newColorScheme.id, newColorScheme);
-        this.trigger("add", newColorScheme);
         return newColorScheme;
     }
 
@@ -354,7 +371,7 @@ class ColorPickerService {
         let result = this._all.get("default");
         if (forceReload || result == null) {
             let colors: ColorMap = this.getCSSVariables(document.styleSheets, "farben.css");
-            result = new ColorScheme(this, "default", "default", "default", colors)
+            result = new ColorScheme(this, "default", "default", "Default Color Scheme", "AG-Medien", Designs.system, colors)
                 .setPreDefined(true);
         }
         return result;
@@ -422,11 +439,12 @@ class ColorPickerService {
      * should be used when the color input onChange fires
      * @param colorType {string}
      * @param newColor {string}
+     * @deprecated
      */
     public onChange(colorType: string, newColor: string) {
         let colorScheme = this.getCurrent();
         if (colorScheme.preDefined) {
-            colorScheme = new ColorScheme(this, undefined, undefined, undefined, this.getCurrent().colors);
+            colorScheme = new ColorScheme(this, undefined, undefined, undefined, undefined, undefined, this.getCurrent().colors);
             console.log("hmm");
             console.log(colorScheme);
         }

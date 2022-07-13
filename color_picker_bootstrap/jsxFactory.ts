@@ -48,8 +48,8 @@ export type DefaultPropsType<T extends ClassComponent> = { [k in keyof NormalPro
 export abstract class ClassComponent implements JSX.ElementClass, JSX.ElementAttributesProperty, JSX.ElementChildrenAttribute {
     props: EventType<ClassComponent> & { class?: string };
     children: Array<Node> = [];
-    declare readonly events: { all?: () => any };
-    protected static readonly eventList: string[] = []
+    declare readonly events: { all?: (...args: any[]) => any };
+    protected static readonly eventList: Array<string> = ["all"]
     public rendered: boolean = false;
 
     //@ts-ignore
@@ -89,7 +89,7 @@ export abstract class ClassComponent implements JSX.ElementClass, JSX.ElementAtt
 
         for (let [k, v] of (Object.entries(props) as [keyof PropsType<ClassComponent>, string | (() => any)][])) {
             // if [k, v] is an event handler entry
-            if (k.startsWith("on") && (this.constructor as typeof ClassComponent).eventList.map(v=>v.toLowerCase()).includes(k.substring(2).toLowerCase())) {
+            if (k.startsWith("on") && (this.constructor as typeof ClassComponent).eventList.map(v => v.toLowerCase()).includes(k.substring(2).toLowerCase())) {
                 if (typeof v == "function") {
                     this.handler[k.substring(2).toLowerCase() as Lowercase<keyof ClassComponent["events"]>].push(v);
                 } else {
@@ -114,7 +114,10 @@ export abstract class ClassComponent implements JSX.ElementClass, JSX.ElementAtt
     private handleEvent(event: keyof ClassComponent["events"], ...args: any[]): any {
         for (let i of this.handler[event.toLowerCase() as Lowercase<keyof ClassComponent["events"]>]) {
             // we don't know the real signature
-            (i as (...rest: any[]) => any)(...args);
+            i!(...args);
+        }
+        if (event.toLowerCase() != "all"){
+            this.props.onAll!(...args);
         }
     }
 
@@ -138,6 +141,15 @@ export abstract class ClassComponent implements JSX.ElementClass, JSX.ElementAtt
         return element;
     }
 }
+
+/**
+ * use this when you want a property (attribute without value) to disappear<br>
+ * Example: <input disabled={condition ? "" : {@link RemoveProperty}} />
+ * compiles to following html:<br>
+ * <input> (if condition is false) or <input disabled=""> (if condition is true)
+ * @type {{}}
+ */
+export const RemoveProperty = {};
 
 export default function jsx(tag: JSX.Tag | JSX.Component,
                             attributes: { [key: string]: any } | null,
@@ -167,7 +179,11 @@ export default function jsx(tag: JSX.Tag | JSX.Component,
         if (key.toLowerCase().startsWith("on") && key.toLowerCase() in window) {
             element.addEventListener(key.toLowerCase().substring(2), val);
         } else {
-            element.setAttribute(key, val.toString());
+            if (val === RemoveProperty) {
+                element.removeAttribute(key);
+            } else {
+                element.setAttribute(key, val.toString());
+            }
         }
     }
 
