@@ -53,7 +53,7 @@ export abstract class ClassComponent implements JSX.ElementClass, JSX.ElementAtt
     public rendered: boolean = false;
 
     //@ts-ignore
-    protected readonly handler: { [k in keyof ClassComponent["events"] as Lowercase<k>]-?: ClassComponent["events"][k][] } = {};
+    protected readonly eventHandlers: { [k in keyof ClassComponent["events"] as Lowercase<k>]-?: ClassComponent["events"][k][] } = {};
     protected static readonly defaultProps: DefaultPropsType<ClassComponent> = {}
 
     constructor(props: PropsType<ClassComponent>) {
@@ -81,7 +81,7 @@ export abstract class ClassComponent implements JSX.ElementClass, JSX.ElementAtt
 
         // init event handlers
         for (let eventsKey of (this.constructor as typeof ClassComponent).eventList) {
-            this.handler[eventsKey.toLowerCase() as Lowercase<keyof ClassComponent["events"]>] = [];
+            this.eventHandlers[eventsKey.toLowerCase() as Lowercase<keyof ClassComponent["events"]>] = [];
             this.props[("on" + eventsKey.replace(/^[a-zA-Z]/, eventsKey[0].toUpperCase())) as keyof PropsType<ClassComponent>] = ((...args: any[]) => this.handleEvent(eventsKey as keyof ClassComponent["events"], ...args)) as ClassComponent["events"][keyof ClassComponent["events"]];
         }
 
@@ -91,7 +91,7 @@ export abstract class ClassComponent implements JSX.ElementClass, JSX.ElementAtt
             // if [k, v] is an event handler entry
             if (k.startsWith("on") && (this.constructor as typeof ClassComponent).eventList.map(v => v.toLowerCase()).includes(k.substring(2).toLowerCase())) {
                 if (typeof v == "function") {
-                    this.handler[k.substring(2).toLowerCase() as Lowercase<keyof ClassComponent["events"]>].push(v);
+                    this.eventHandlers[k.substring(2).toLowerCase() as Lowercase<keyof ClassComponent["events"]>].push(v);
                 } else {
                     console.log("typeof v != function but starts with on etc. ", k, v)
                 }
@@ -102,7 +102,7 @@ export abstract class ClassComponent implements JSX.ElementClass, JSX.ElementAtt
             }
         }
 
-        console.log(this.constructor.name, "props", this.props, this.handler, (this.constructor as typeof ClassComponent).eventList);
+        console.log(this.constructor.name, "props", this.props, this.eventHandlers, (this.constructor as typeof ClassComponent).eventList);
     }
 
     /**
@@ -112,13 +112,30 @@ export abstract class ClassComponent implements JSX.ElementClass, JSX.ElementAtt
      * @private
      */
     private handleEvent(event: keyof ClassComponent["events"], ...args: any[]): any {
-        for (let i of this.handler[event.toLowerCase() as Lowercase<keyof ClassComponent["events"]>]) {
+        for (let i of this.eventHandlers[event.toLowerCase() as Lowercase<keyof ClassComponent["events"]>]) {
             // we don't know the real signature
             i!(...args);
         }
         if (event.toLowerCase() != "all"){
             this.props.onAll!(...args);
         }
+    }
+
+    /**
+     * Registers an event callback on a specific event
+     * @param {keyof ClassComponent["events"]} event
+     * @param {NonNullable<ClassComponent["events"][typeof event]>} handler
+     * @returns {this}
+     */
+    public on(event: string&NonNullable<keyof NormalEventType<this>>, handler: NonNullable<NormalEventType<this>[keyof NormalEventType<this>]>): this {
+        // the args signature is clean and right but we need to cast them when we use them, because for ts, this (as a type types) == any
+        if (!((event.toLowerCase() as keyof NormalEventType<ClassComponent>) in this.eventHandlers)) {
+            console.warn("event not in handlers:", event, this.eventHandlers);
+            return this
+        }
+        // s. o.
+        this.eventHandlers[event.toLowerCase() as keyof NormalEventType<ClassComponent>].push(handler! as NormalEventType<this>[keyof NormalEventType<ClassComponent>]);
+        return this;
     }
 
     public abstract render(): JSX.Element;

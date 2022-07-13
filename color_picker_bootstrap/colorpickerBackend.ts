@@ -323,6 +323,8 @@ class ColorPickerService {
     public newColorScheme({ name, description, author, design, colors}: { [k in keyof ColorScheme]?: ColorScheme[k] }): ColorScheme {
         let newColorScheme = new ColorScheme(this, undefined, name, description, author, design, colors);
         this._all.set(newColorScheme.id, newColorScheme);
+        this.save();
+        this.trigger("add", newColorScheme);
         return newColorScheme;
     }
 

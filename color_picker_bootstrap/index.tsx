@@ -1,6 +1,3 @@
-// import "../../build/js/jquery.js";
-import "../node_modules/jquery/dist/jquery.js";
-import '../node_modules/bootstrap/dist/js/bootstrap.bundle.min.js';
 import {ColorPickerService, ColorScheme, Designs} from "./colorpickerBackend.js";
 import jsx, {
     ClassComponent,
@@ -11,23 +8,39 @@ import jsx, {
     RemoveProperty
 } from "./jsxFactory.js"
 
-//@ts-ignore
-let Modal = bootstrap.Modal;
+//import bootstrap types
+declare var bootstrap: any;
+const Modal: typeof import('bootstrap').Modal = bootstrap.Modal;
+type Modal = import("bootstrap").Modal;
 
 
 class ColorSchemeDropdownMenu extends ClassComponent {
     private dropDownMenu?: HTMLUListElement;
 
     declare props: PropsType<ClassComponent> & EventType<ColorSchemeDropdownMenu> & { service: ColorPickerService, colorSchemeId: string };
-    declare events: NormalEventType<ClassComponent> & { "colorSchemeSelected": (s: string) => any }// = {"colorSchemeSelected": (s: string): any => null};
-    static override eventList: string[] = ["colorSchemeSelected"];
-    static override defaultProps: DefaultPropsType<ColorSchemeDropdownMenu> = {}
+    declare events: NormalEventType<ClassComponent> & {
+        "colorSchemeSelected"?: (s: string) => any,
+    }
+    static override eventList: string[] = [
+        "colorSchemeSelected",
+    ];
+    // static override defaultProps: DefaultPropsType<ColorSchemeDropdownMenu> = {}
+
+    constructor(props: ColorSchemeDropdownMenu["props"]) {
+        super(props);
+        props.service.on("add", this.addColorScheme.bind(this));
+        props.service.on("delete", this.removeColorScheme.bind(this));
+    }
 
 
     public render(): JSX.Element {
         this.dropDownMenu = <ul class="dropdown-menu" id="color-schemes-dropdown-menu"
-                                onclick={(event: MouseEvent) => this.colorSchemeSelected((event.target as Element).getAttribute("color-scheme-id")!)}>
-            <li><a class="btn dropdown-item" href="#" onclick={this.invokeNewColorScheme.bind(this)}>Add</a></li>
+                                onclick={this.colorSchemeSelected.bind(this)}>
+            <li>
+                <button type='button' data-bs-toggle='modal' data-bs-target='#new-color-scheme-dialog'
+                        class="btn dropdown-item" onclick={this.invokeNewColorScheme.bind(this)}>Add
+                </button>
+            </li>
             <li>
                 <hr class="dropdown-divider"/>
             </li>
@@ -44,9 +57,6 @@ class ColorSchemeDropdownMenu extends ClassComponent {
                     .filter(v => !v.preDefined)
                     .map(ColorSchemeDropdownItem)}
         </ul> as HTMLUListElement;
-
-        this.props.service.on("delete", this.removeColorScheme);
-        this.props.service.on("add", this.addColorScheme);
 
         return this._render(<div class='btn-group'>
             <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown">
@@ -78,21 +88,27 @@ class ColorSchemeDropdownMenu extends ClassComponent {
      * @param {ColorScheme} colorScheme
      */
     public removeColorScheme(colorScheme: ColorScheme) {
-        $(this.dropDownMenu!).remove(`[color-scheme-id=${colorScheme.id}]`)
+        $(this.dropDownMenu!).remove(`[color-scheme-id=${colorScheme.id}]`);
     }
 
     /**
      * Fired when the user selects an colorScheme element in the dropdown menu
      * @private
      */
-    private colorSchemeSelected(colorSchemeId: string) {
-        console.log(this.constructor.name, "colro selected", colorSchemeId)
+    private colorSchemeSelected(event: MouseEvent) {
+        let colorSchemeId = (event.target as Element).getAttribute("color-scheme-id");
+        if (colorSchemeId == null) {
+            // no color scheme dropDownElement has been clicked
+            // maybe another action button like the "add" button
+            return;
+        }
+        console.log(this.constructor.name, "colro selected", colorSchemeId);
         if (this.props.colorSchemeId == colorSchemeId) {
             return
         }
         let prev = this.props.colorSchemeId;
         this.props.colorSchemeId = colorSchemeId;
-        this.props.onColorSchemeSelected(colorSchemeId);
+        this.props.onColorSchemeSelected!(colorSchemeId);
     }
 }
 
@@ -221,14 +237,26 @@ class ColorPicker extends ClassComponent {
         let colorSchemeActions = <ColorSchemeActions service={this.props.service}
                                                      colorSchemeId={this.props.service.getCurrent().id}
                                                      class='col-5'/>
+        let newColorSchemeDialog = <NewColorSchemeDialog defaultDesign={Designs.system}
+                                                         parentColorScheme={this.props.service.getDefault()}
+                                                         service={this.props.service}/>;
+        let colorSchemeDropdownMenu = <ColorSchemeDropdownMenu service={this.props.service}
+                                                               colorSchemeId={this.props.service.getCurrent().id}
+                                                               class='col-5'/>;
+
+        // update NewColorSchemeDialog and ColorSchemeActions when a new CS is selected
+        (colorSchemeDropdownMenu.jsObject! as ColorSchemeDropdownMenu).on("colorSchemeSelected",
+            (newColorSchemeDialog.jsObject! as NewColorSchemeDialog).setParentColorScheme.bind(newColorSchemeDialog.jsObject!));
+        (colorSchemeDropdownMenu.jsObject! as ColorSchemeDropdownMenu).on("colorSchemeSelected",
+            (colorSchemeActions.jsObject! as ColorSchemeActions).setColorSchemeId.bind(colorSchemeActions.jsObject!))
+
+
         return this._render(<div class='container p-5'>
             <NavBar onClose={() => console.log("colorpicker closed")}></NavBar>
-            <NewColorSchemeDialog defaultDesign={Designs.system} parentColorScheme={this.props.service.getDefault()}
-                                  service={this.props.service}/>
+            {newColorSchemeDialog}
+
             <div class='row'>
-                <ColorSchemeDropdownMenu service={this.props.service} colorSchemeId={this.props.service.getCurrent().id}
-                                         onColorSchemeSelected={(colorSchemeActions.jsObject! as ColorSchemeActions).setColorSchemeId.bind(colorSchemeActions.jsObject)}
-                                         class='col-5'/>
+                {colorSchemeDropdownMenu}
                 <div class='col-2'></div>
                 {colorSchemeActions}
             </div>
@@ -240,16 +268,26 @@ class ColorPicker extends ClassComponent {
 class NewColorSchemeDialog extends ClassComponent {
     modal?: Modal;
     inputs?: {
+        parentColorScheme: HTMLSelectElement,
         name: HTMLInputElement,
         description: HTMLInputElement,
         author: HTMLInputElement,
         design: HTMLSelectElement,
     };
 
-    declare props: PropsType<ClassComponent> & EventType<NewColorSchemeDialog> & { service: ColorPickerService, parentColorScheme: ColorScheme, defaultDesign: Designs };
-    declare events: NormalEventType<ClassComponent> & { colorSchemeCreated?: (colorScheme: ColorScheme) => any };
+    declare props: PropsType<ClassComponent> & EventType<NewColorSchemeDialog> & {
+        service: ColorPickerService,
+        parentColorScheme: ColorScheme,
+        defaultDesign: Designs,
+    };
 
-    static override eventList = ["colorSchemeCreated"];
+    declare events: NormalEventType<ClassComponent> & {
+        colorSchemeCreated?: (colorScheme: ColorScheme) => any,
+    };
+
+    static override eventList = [
+        "colorSchemeCreated",
+    ];
 
     public render(): JSX.Element {
         if (this.rendered) {
@@ -259,15 +297,21 @@ class NewColorSchemeDialog extends ClassComponent {
         console.log(this.constructor.name, "Designs", Object.keys(Designs), Object.entries(Designs))
 
         this.inputs = {
-            name: <input id="new-cs-name-input" class='form-control' type='text'
-                         placeholder={this.props.parentColorScheme.name}/> as HTMLInputElement,
+            parentColorScheme: <select id='new-cs-parent-cs-input' class='form-select' disabled>
+                <option selected value={this.props.parentColorScheme.id}>{this.props.parentColorScheme.name}</option>
+            </select> as HTMLSelectElement,
+
+            name: <input id="new-cs-name-input" aria-describedby='new-cs-name-invalid' class='form-control'
+                         type='text' required placeholder="Your Color Scheme's name"/> as HTMLInputElement,
             description:
-                <input id="new-cs-description-input" type='text' className='form-control'
-                       placeholder={this.props.parentColorScheme.description}/> as HTMLInputElement,
+                <textarea id="new-cs-description-input" aria-describedby="new-cs-description-invalid"
+                          class='form-control'
+                          placeholder='A very interesting description...'/> as HTMLInputElement,
             author:
-                <input id="new-cs-author-input" type='text' class='form-control'
+                <input id="new-cs-author-input" aria-describedby='new-cs-author-invalid' type='text'
+                       class='form-control'
                        placeholder={this.props.parentColorScheme.author}/> as HTMLInputElement,
-            design: <select id="new-cs-design-select" className='form-select' disabled>
+            design: <select id="new-cs-design-select" class='form-select'>
                 {Object.entries(Designs).map(([k, v]) =>
                     <option selected={this.props.defaultDesign == v ? true : RemoveProperty}
                             value={k}>{v}</option>)}
@@ -275,31 +319,50 @@ class NewColorSchemeDialog extends ClassComponent {
         }
 
         let htmlModal =
-            <div class='modal fade' id='new-color-scheme-dialog'>
+            <div class='modal fade' id='new-color-scheme-dialog' tabindex={-1} aria-hidden={true}
+                 aria-labelledby='Dialog to create a new Color Scheme'>
                 <div class='modal-dialog modal-dialog-centered'>
                     <div class='modal-content'>
                         <div class='modal-header'>
                             <h5 class='modal-title'>New Color Scheme</h5>
                             <button class='btn-close' type='button' data-bs-dismiss='modal' aria-label='Close'></button>
                         </div>
-                        <div className='modal-body'>
-                            {this.inputs.name}
-                            <label for='new-cs-name-input' class='form-label'>Name</label>
+                        <div class='modal-body'>
+                            <form>
+                                <div class='mb-3'>
+                                    <label for='new-cs-paren-cs-input' class='form-label'>Colors</label>
+                                    {this.inputs.parentColorScheme}
+                                    <div class='form-text'>You can later manually edit the colors</div>
+                                </div>
+                                <div class='mb-3'>
+                                    <label for='new-cs-name-input' class='form-label'>Name</label>
+                                    {this.inputs.name}
+                                    <div id='new-cs-name-invalid' class='invalid-feedback'>You must provide a name</div>
+                                </div>
 
-                            {this.inputs.description}
-                            <label for='new-cs-description-input' class='form-label'>Description</label>
+                                <div class='mb-3'>
+                                    <label for='new-cs-description-input' class='form-label'>Description</label>
+                                    {this.inputs.description}
+                                </div>
 
-                            {this.inputs.author}
-                            <label for='new-cs-author-input' class='form-label'>Author</label>
+                                <div class='mb-3'>
+                                    <label for='new-cs-author-input' class='form-label'>Author</label>
+                                    {this.inputs.author}
+                                    <div id='new-cs-author-invalid' class='invalid-feedback'>You must provide an
+                                        author
+                                    </div>
+                                </div>
 
-                            {this.inputs.design}
-                            <label for='new-cs-design-select' class='form-label'>Author</label>
+                                <div class='mb-3'>
+                                    <label for='new-cs-design-select' class='form-label'>Design</label>
+                                    {this.inputs.design}
+                                </div>
+                            </form>
                         </div>
-                        <div className='modal-footer'>
-                            <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <div class='modal-footer'>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                             <button type="button" onclick={this.createNewColorScheme.bind(this)}
-                                    className="btn btn-primary"
-                                    data-bs-dismiss='modal'>Add
+                                    class="btn btn-primary" data-bs-dismiss='modal'>Add
                             </button>
                         </div>
                     </div>
@@ -322,11 +385,14 @@ class NewColorSchemeDialog extends ClassComponent {
         console.log(this.constructor.name, newColorScheme);
     }
 
-    public setParentColorScheme(colorScheme: ColorScheme) {
-        if (this.props.parentColorScheme == colorScheme) {
+    public setParentColorScheme(colorSchemeId: string) {
+        if (this.props.parentColorScheme.id == colorSchemeId) {
             return
         }
+        let colorScheme = this.props.service.getColorScheme(colorSchemeId)!;
         this.props.parentColorScheme = colorScheme;
+        this.inputs?.parentColorScheme!.add(<option selected
+                                                    value={colorScheme.id}>{colorScheme.name}</option> as HTMLOptionElement);
     }
 }
 
