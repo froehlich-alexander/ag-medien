@@ -2,12 +2,11 @@
   "compileOnSave": true,
   "compilerOptions": {
     "jsx": "react",
-    "jsxFactory": "jsx",
     "baseUrl": "./",
     "types": [
       "jquery",
       "bootstrap",
-      "./jsxFactory.ts"
+      "react"
     ],
     "module": "ES2022",
     "target": "ES6",
@@ -23,5 +22,8 @@
     "useDefineForClassFields": true,
     "sourceMap": true,
     "removeComments": false
-  }
+  },
+  "exclude": [
+    "jsxFactory.ts",
+  ]
 }

@@ -15,15 +15,31 @@ export enum Designs {
 /**
  * Class for the colorSchemes saved to the local storage
  */
-class ColorSchemeData {
-    public name: string | undefined;
+export class ColorSchemeData {
+    // constructor(id: string, name: string, description: string, author: string, current: boolean, preDefined: boolean, design: Designs, colors: {[index: string]: string});
+
+    // constructor(id?: string, name?: string, description?: string, author?: string, current?: boolean, preDefined?: boolean, design?: Designs, colors?: {[index: string]: string}) {
+    constructor(other?: { [k in keyof ColorSchemeData]-?: NonNullable<ColorSchemeData[k]> }) {
+        if (other) {
+            this.id = other.id;
+            this.name = other.name;
+            this.description = other.description;
+            this.author = other.author;
+            this.current = other.current;
+            this.preDefined = other.preDefined;
+            this.design = other.design;
+            this.colors = other.colors;
+        }
+    }
+
+    public id?: string;
+    public name?: string;
     public description?: string;
-    public author: string | undefined;
-    public id: string | undefined;
-    public current: boolean | undefined;
-    public preDefined: boolean | undefined;
-    public colors: { [index: string]: string } | undefined;
-    public design: string & Designs | undefined;
+    public author?: string;
+    public current?: boolean;
+    public preDefined?: boolean;
+    public colors?: { [index: string]: string };
+    public design?: string & Designs;
 }
 
 class ColorSchemeInterface {
@@ -85,6 +101,33 @@ class ColorScheme extends ColorSchemeInterface {
      * @return {ColorSchemeData}
      */
     public toJSON(): ColorSchemeData {
+        // let res = new ColorSchemeData(this.id, this.name, this.description, this.author, this.current, this.design, this.preDefined, {});
+        let res = new ColorSchemeData({
+            id: this.id,
+            name: this.name,
+            description: this.description,
+            author: this.author,
+            design: this.design,
+            colors: {},
+            preDefined: this.preDefined,
+            current: this.current,
+        });
+
+        // colors
+        for (let [k, v] of this.colors.entries()) {
+            res.colors![k] = v;
+        }
+        return res;
+    }
+
+    /**
+     * Used for the {@link JSON.stringify} call<br>
+     * This is the dynamic but much worse readable variant
+     * @deprecated
+     * @return {ColorSchemeData}
+     */
+    /*
+    public toJSON(): ColorSchemeData {
         let copy: ColorSchemeData = new ColorSchemeData;
         for (let key of Object.keys(this)) {
             let newKey: keyof ColorSchemeData = key.replace("#", "") as keyof ColorSchemeData;
@@ -105,6 +148,7 @@ class ColorScheme extends ColorSchemeInterface {
         // copy["default"] = this._preDefined;
         return copy;
     }
+    */
 
     /**
      * Convert a json object (not a json string) to an object which defines the same <b>properties</b> as {@link ColorScheme}<br>
@@ -320,7 +364,13 @@ class ColorPickerService {
         // return newColorScheme;
     }
 
-    public newColorScheme({ name, description, author, design, colors}: { [k in keyof ColorScheme]?: ColorScheme[k] }): ColorScheme {
+    public newColorScheme({
+                              name,
+                              description,
+                              author,
+                              design,
+                              colors
+                          }: { [k in keyof ColorScheme]?: ColorScheme[k] }): ColorScheme {
         let newColorScheme = new ColorScheme(this, undefined, name, description, author, design, colors);
         this._all.set(newColorScheme.id, newColorScheme);
         this.save();
@@ -456,8 +506,12 @@ class ColorPickerService {
         this.save(colorScheme);
     }
 
-    public get all() {
+    public get all(): ColorSchemeMap {
         return this._all;
+    }
+
+    public get allList(): ColorScheme[] {
+        return [...this._all.values()];
     }
 
     public delete(...colorSchemes: (ColorScheme | string)[] | ((ColorScheme | string)[][])): this {

@@ -1,36 +1,34 @@
 /// <reference lib="DOM" />
 
-declare global {
-    namespace JSX {
-        type Element = HTMLElement & { jsObject?: ClassComponent };
+declare namespace JSX {
+    type Element = HTMLElement & { jsObject?: ClassComponent };
 
-        type IntrinsicElementMap = {
-            [K in keyof HTMLElementTagNameMap]: {
-                [k: string]: any
-            }
+    type IntrinsicElementMap = {
+        [K in keyof HTMLElementTagNameMap]: {
+            [k: string]: any
         }
-
-        export interface IntrinsicElements extends IntrinsicElementMap {
-        }
-
-        interface ElementAttributesProperty {
-            props: PropsType<ClassComponent>;
-        }
-
-        interface ElementChildrenAttribute {
-            children: Node[];
-        }
-
-        interface Component {
-            (properties?: { [key: string]: any }, children?: (Node | string)[]): HTMLElement
-        }
-
-        interface ElementClass {
-            render: () => HTMLElement;
-        }
-
-        type Tag = keyof HTMLElementTagNameMap;
     }
+
+    export interface IntrinsicElements extends IntrinsicElementMap {
+    }
+
+    interface ElementAttributesProperty {
+        props: PropsType<ClassComponent>;
+    }
+
+    interface ElementChildrenAttribute {
+        children: Node[];
+    }
+
+    interface Component {
+        (properties?: { [key: string]: any }, children?: (Node | string)[]): HTMLElement
+    }
+
+    interface ElementClass {
+        render: () => HTMLElement;
+    }
+
+    type Tag = keyof HTMLElementTagNameMap;
 }
 
 function JSXElement<T extends ClassComponent>(htmlElement: HTMLElement, jsObject?: T): JSX.Element {
@@ -116,7 +114,7 @@ export abstract class ClassComponent implements JSX.ElementClass, JSX.ElementAtt
             // we don't know the real signature
             i!(...args);
         }
-        if (event.toLowerCase() != "all"){
+        if (event.toLowerCase() != "all") {
             this.props.onAll!(...args);
         }
     }
@@ -127,7 +125,7 @@ export abstract class ClassComponent implements JSX.ElementClass, JSX.ElementAtt
      * @param {NonNullable<ClassComponent["events"][typeof event]>} handler
      * @returns {this}
      */
-    public on(event: string&NonNullable<keyof NormalEventType<this>>, handler: NonNullable<NormalEventType<this>[keyof NormalEventType<this>]>): this {
+    public on(event: string & NonNullable<keyof NormalEventType<this>>, handler: NonNullable<NormalEventType<this>[keyof NormalEventType<this>]>): this {
         // the args signature is clean and right but we need to cast them when we use them, because for ts, this (as a type types) == any
         if (!((event.toLowerCase() as keyof NormalEventType<ClassComponent>) in this.eventHandlers)) {
             console.warn("event not in handlers:", event, this.eventHandlers);

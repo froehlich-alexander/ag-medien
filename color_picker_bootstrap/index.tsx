@@ -1,5 +1,6 @@
-import {ColorPickerService, ColorScheme, Designs} from "./colorpickerBackend.js";
-import jsx, {
+// <reference path="react.d.ts" />
+import {ColorPickerService, ColorScheme, ColorSchemeData, Designs} from "./colorpickerBackend.js";
+import {
     ClassComponent,
     DefaultPropsType,
     EventType,
@@ -7,6 +8,14 @@ import jsx, {
     PropsType,
     RemoveProperty
 } from "./jsxFactory.js"
+
+import * as React from "react";
+import {
+    Component, FormEvent,
+    MouseEvent, ReactElement,
+} from "react";
+import {Simulate} from "react-dom/test-utils";
+import keyDown = Simulate.keyDown;
 
 //import bootstrap types
 declare var bootstrap: any;
@@ -16,132 +25,152 @@ type Modal = import("bootstrap").Modal;
 //import react
 // declare var React: any;
 // declare var ReactDOM: any;
-// const Component: import("react").Component = React.Component;
+// const Component = React.Component;
+// type Component = import("react").Component;
 
 
-class ColorSchemeDropdownMenu extends ClassComponent {
-    private colorSchemesCount = 0;
+interface ColorSchemeDropdownMenuProps {
+    // service: ColorPickerService,
+    activeColorScheme: ColorScheme,
+    colorSchemes: ColorScheme[];
+    onColorSchemeSelected: (cs: string) => any,
+}
 
-    private dropDownMenu?: HTMLUListElement;
-    private noCustomColorSchemesPlaceholder?: HTMLAnchorElement;
+interface ColorSchemeDropdownMenuState {
 
-    declare props: PropsType<ClassComponent> & EventType<ColorSchemeDropdownMenu> & { service: ColorPickerService, colorSchemeId: string };
-    declare events: NormalEventType<ClassComponent> & {
-        "colorSchemeSelected"?: (s: string) => any,
-    }
-    static override eventList: string[] = [
-        "colorSchemeSelected",
-    ];
+}
 
+class ColorSchemeDropdownMenu extends Component<ColorSchemeDropdownMenuProps, ColorSchemeDropdownMenuState> {
+    // private colorSchemesCount = 0;
+    //
+    // private dropDownMenu?: HTMLUListElement;
+    // private noCustomColorSchemesPlaceholder?: HTMLAnchorElement;
+    //
+    // declare props: PropsType<Component> & EventType<ColorSchemeDropdownMenu> & { service: ColorPickerService, colorSchemeId: string };
+    // declare events: NormalEventType<Component> & {
+    //     "colorSchemeSelected"?: (s: string) => any,
+    // }
+    // static override eventList: string[] = [
+    //     "colorSchemeSelected",
+    // ];
+    //
     // static override defaultProps: DefaultPropsType<ColorSchemeDropdownMenu> = {}
 
-    constructor(props: ColorSchemeDropdownMenu["props"]) {
+    constructor(props: ColorSchemeDropdownMenuProps) {
         super(props);
-        props.service.on("add", this.addColorScheme.bind(this));
-        props.service.on("delete", this.removeColorScheme.bind(this));
+        // props.service.on("add", this.addColorScheme.bind(this));
+        // props.service.on("delete", this.removeColorScheme.bind(this));
     }
 
 
-    public render(): JSX.Element {
-        this.colorSchemesCount = [...this.props.service.all.values()].filter(v => !v.preDefined).length;
+    public render() {
+        // this.colorSchemesCount = [...this.props.service.all.values()].filter(v => !v.preDefined).length;
 
-        this.noCustomColorSchemesPlaceholder =
-            <a class='dropdown-item disabled' href='#'>Nothing here yet</a> as HTMLAnchorElement;
-        this.dropDownMenu = <ul class="dropdown-menu" id="color-schemes-dropdown-menu"
-                                onclick={this.colorSchemeSelected.bind(this)}>
-            <li>
-                <button type='button' data-bs-toggle='modal' data-bs-target='#new-color-scheme-dialog'
-                        class="btn dropdown-item" onclick={this.invokeNewColorScheme.bind(this)}>Add
+        let customColorSchemes = this.props.colorSchemes.filter(v => !v.preDefined);
+        let preDefinedColorSchemes = this.props.colorSchemes.filter(v => v.preDefined);
+
+        return (
+            <div className='btn-group'>
+                <button type="button" className="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown">
+                    Color Scheme
                 </button>
-            </li>
-            <li>
-                <hr class="dropdown-divider"/>
-            </li>
-            <li><h6 class="dropdown-header">Predefined</h6></li>
-            {   //predefined color schemes
-                [...this.props.service.all.values()]
-                    .filter(v => v.preDefined)
-                    .map(ColorSchemeDropdownItem)}
-            {/*<li><a class="dropdown-item" href="#">Default</a></li>*/}
-            <li><h6 class='dropdown-header'>Custom</h6></li>
-            <li>{this.noCustomColorSchemesPlaceholder}</li>
-            {
-                // custom color schemes
-                [...this.props.service.all.values()]
-                    .filter(v => !v.preDefined)
-                    .map(ColorSchemeDropdownItem)}
-        </ul> as HTMLUListElement;
-        this.setVisibilityOfNoCustomColorSchemesPlaceHolder();
-
-        return this._render(<div class='btn-group'>
-            <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown">
-                Color Scheme
-            </button>
-            {this.dropDownMenu}
-        </div>);
-
+                <ul className="dropdown-menu" id="color-schemes-dropdown-menu"
+                    // onClick={this.colorSchemeSelected.bind(this)}
+                    onClick={this.handleDropDownClick}>
+                    <li>
+                        <button type='button'
+                                data-bs-toggle='modal'
+                                data-bs-target='#new-color-scheme-dialog'
+                                className="btn dropdown-item"
+                                onClick={this.invokeNewColorScheme.bind(this)}>
+                            Add
+                        </button>
+                    </li>
+                    <li>
+                        <hr className="dropdown-divider"/>
+                    </li>
+                    <li><h6 className="dropdown-header">Predefined</h6></li>
+                    {preDefinedColorSchemes.map(ColorSchemeDropdownItem)}
+                    {/*<li><a className="dropdown-item" href="#">Default</a></li>*/}
+                    <li><h6 className='dropdown-header'>Custom</h6></li>
+                    <li><a className='dropdown-item disabled' href='#' hidden={customColorSchemes.length > 0}>
+                        Nothing here yet
+                    </a></li>
+                    {customColorSchemes.map(ColorSchemeDropdownItem)}
+                </ul>
+            </div>
+        );
     }
 
-    /**
-     * Add a <b>custom</b> color Scheme to the dropdown menu
-     * @param {ColorScheme} colorScheme
-     */
-    public addColorScheme(colorScheme: ColorScheme) {
-        this.colorSchemesCount++;
-        this.dropDownMenu!.append(ColorSchemeDropdownItem(colorScheme));
-        this.setVisibilityOfNoCustomColorSchemesPlaceHolder();
+    private handleDropDownClick = (e: MouseEvent<HTMLUListElement>) => {
+        let csId = (e.target as Element).getAttribute("data-color-scheme-id");
+        if (csId != null) {
+            this.props.onColorSchemeSelected(csId);
+        }
     }
 
     /**
      * Invokes a creation of a new colorScheme<br>
      * This is used as a callback function for the <add> button
      * @private
+     * @deprecated
      */
     private invokeNewColorScheme(): void {
     }
 
-    /**
-     * remove a custom color Scheme from the dropdown menu
-     * @param {ColorScheme} colorScheme
-     */
-    public removeColorScheme(colorScheme: ColorScheme) {
-        console.log("remove color scheme from dropdown", colorScheme)
-        this.colorSchemesCount--;
-        $(this.dropDownMenu!).find(`[color-scheme-id=${colorScheme.id}]`).remove();
-        this.setVisibilityOfNoCustomColorSchemesPlaceHolder();
-    }
-
-    /**
-     * Fired when the user selects an colorScheme element in the dropdown menu
-     * @private
-     */
-    private colorSchemeSelected(event: MouseEvent) {
-        let colorSchemeId = (event.target as Element).getAttribute("color-scheme-id");
-        if (colorSchemeId == null) {
-            // no color scheme dropDownElement has been clicked
-            // maybe another action button like the "add" button
-            return;
-        }
-        console.log(this.constructor.name, "colro selected", colorSchemeId);
-        if (this.props.colorSchemeId == colorSchemeId) {
-            return
-        }
-        let prev = this.props.colorSchemeId;
-        this.props.colorSchemeId = colorSchemeId;
-        this.props.onColorSchemeSelected!(colorSchemeId);
-    }
-
-    private setVisibilityOfNoCustomColorSchemesPlaceHolder() {
-        console.log("set vis", this.colorSchemesCount)
-        this.noCustomColorSchemesPlaceholder!.toggleAttribute("hidden", this.colorSchemesCount > 0);
-    }
+    // /**
+    //  * Add a <b>custom</b> color Scheme to the dropdown menu
+    //  * @param {ColorScheme} colorScheme
+    //  */
+    // public addColorScheme(colorScheme: ColorScheme) {
+    //     this.colorSchemesCount++;
+    //     this.dropDownMenu!.append(ColorSchemeDropdownItem(colorScheme));
+    //     this.setVisibilityOfNoCustomColorSchemesPlaceHolder();
+    // }
+    //
+    // /**
+    //  * remove a custom color Scheme from the dropdown menu
+    //  * @param {ColorScheme} colorScheme
+    //  */
+    // public removeColorScheme(colorScheme: ColorScheme) {
+    //     console.log("remove color scheme from dropdown", colorScheme)
+    //     this.colorSchemesCount--;
+    //     $(this.dropDownMenu!).find(`[color-scheme-id=${colorScheme.id}]`).remove();
+    //     this.setVisibilityOfNoCustomColorSchemesPlaceHolder();
+    // }
+    //
+    // /**
+    //  * Fired when the user selects an colorScheme element in the dropdown menu
+    //  * @private
+    //  * @deprecated
+    //  */
+    // private colorSchemeSelected(event: MouseEvent) {
+    //     let colorSchemeId = (event.target as Element).getAttribute("color-scheme-id");
+    //     if (colorSchemeId == null) {
+    //         // no color scheme dropDownElement has been clicked
+    //         // maybe another action button like the "add" button
+    //         return;
+    //     }
+    //     console.log(this.constructor.name, "colro selected", colorSchemeId);
+    //     if (this.props.colorSchemeId == colorSchemeId) {
+    //         return
+    //     }
+    //     let prev = this.props.colorSchemeId;
+    //     this.props.colorSchemeId = colorSchemeId;
+    //     this.props.onColorSchemeSelected!(colorSchemeId);
+    // }
+    //
+    // private setVisibilityOfNoCustomColorSchemesPlaceHolder() {
+    //     console.log("set vis", this.colorSchemesCount)
+    //     this.noCustomColorSchemesPlaceholder!.toggleAttribute("hidden", this.colorSchemesCount > 0);
+    // }
 }
 
 // function initColorSchemeDropdown() {
 //     // add pre defined color schemes
 //     for (let i of colorPickerService.all.values()) {
 //         if (i.preDefined) {
-//             colorSchemesDropDownMenu.html.append(<li><a class='dropdown-item' href='#'
+//             colorSchemesDropDownMenu.html.append(<li><a className='dropdown-item' href='#'
 //                                                         color-scheme-id={i.id}>{i.name}</a>
 //             </li>);
 //         }
@@ -160,245 +189,362 @@ class ColorSchemeDropdownMenu extends ClassComponent {
 //  */
 // function addColorSchemesToDropdown(...schemes: ColorScheme[]) {
 //     if (!colorSchemesDropDownMenu.headerAdded) {
-//         colorSchemesDropDownMenu.html.append(<div class='dropdown-header'>Custom</div>);
+//         colorSchemesDropDownMenu.html.append(<div className='dropdown-header'>Custom</div>);
 //         colorSchemesDropDownMenu.headerAdded = true;
 //     }
 //     for (let i of schemes) {
-//         colorSchemesDropDownMenu.html.append(<li><a href='#' class='dropdown-item'
+//         colorSchemesDropDownMenu.html.append(<li><a href='#' className='dropdown-item'
 //                                                     color-scheme-id={i.id}>{i.name}</a>
 //         </li>)
 //     }
 // }
 
 const ColorSchemeDropdownItem = (colorScheme: { id: string, name: string }) =>
-    <li><a class='dropdown-item' href='#' color-scheme-id={colorScheme.id}>{colorScheme.name}</a></li>
+    (<li>
+        <a className='dropdown-item'
+           href='#'
+           key={colorScheme.id}
+           data-color-scheme-id={colorScheme.id}>
+            {colorScheme.name}
+        </a>
+    </li>);
 
-class ColorSchemeActions extends ClassComponent {
-    private button?: HTMLButtonElement;
-    private dropDownButton?: HTMLButtonElement;
-    private dropDownMenu?: HTMLUListElement;
+interface ColorSchemeActionProps {
+    onStateSelected?: (state: ColorSchemeActionsState["selection"]) => any,
+    onDelete: () => any,
+    onActivate: () => any,
+    onEdit: () => any,
+}
 
-    static override readonly defaultProps: DefaultPropsType<ColorSchemeActions> = {state: "Activate"}
-    declare props: PropsType<ClassComponent> & { service: ColorPickerService, state?: string, colorSchemeId: string };
+interface ColorSchemeActionsState {
+    selection: typeof ColorSchemeActions.State[keyof typeof ColorSchemeActions.State],
+}
 
-    static states: { [k: string]: string } = {
-        "Activate": "success",
-        "Delete": "danger",
-        "Edit": "primary",
+class ColorSchemeActions extends Component<ColorSchemeActionProps, ColorSchemeActionsState> {
+    // private button?: HTMLButtonElement;
+    // private dropDownButton?: HTMLButtonElement;
+    // private dropDownMenu?: HTMLUListElement;
+
+    constructor(props: ColorSchemeActionProps) {
+        super(props);
+        this.state = {
+            selection: ColorSchemeActions.State["activate"],
+        }
     }
+
+    // static override readonly defaultProps: DefaultPropsType<ColorSchemeActions> = {state: "Activate"}
+    // declare props: PropsType<Component> & { service: ColorPickerService, state?: string, colorSchemeId: string };
+    static readonly State = {
+        activate: {name: "Activate", buttonStyle: "success"},
+        delete: {name: "Delete", buttonStyle: "danger"},
+        edit: {name: "Edit", buttonStyle: "primary"},
+    };
 
     public render(): JSX.Element {
         console.log("render actions", this.props)
-        this.button = <button type="button" class={`btn btn-${ColorSchemeActions.states[this.props.state!]}`}
-                              onclick={this.buttonClicked.bind(this)}>{this.props.state!}</button> as HTMLButtonElement;
-        this.dropDownButton = <button type="button"
-                                      class={`btn btn-${ColorSchemeActions.states[this.props.state!]} dropdown-toggle dropdown-toggle-split`}
-                                      data-bs-toggle="dropdown"></button> as HTMLButtonElement
-        this.dropDownMenu =
-            <ul class="dropdown-menu"
-                onclick={(event: MouseEvent) => this.stateChanged((event.target as Element).innerHTML)}>
-                {/*<li><a class="dropdown-item bg-success" href="#">Activate</a></li>*/}
-                {/*<li><a class="dropdown-item bg-danger" href="#">Delete</a></li>*/}
-                {Object.entries(ColorSchemeActions.states).map(([k, v]) =>
-                    <li><a class={`dropdown-item bg-${v}`} href='#'>{k}</a></li>)}
-            </ul> as HTMLUListElement
-        return this._render(<div class="btn-group">
-            {this.button}
-            {this.dropDownButton}
-            {this.dropDownMenu}
-        </div>);
+        return (
+            <div className="btn-group">
+                <button type="button"
+                        className={`btn btn-${this.state.selection.buttonStyle}`}
+                        onClick={this.handleButtonClick.bind(this)}>
+                    {this.state.selection.name}
+                </button>
+                <button type="button"
+                        className={`btn btn-${this.state.selection.buttonStyle} dropdown-toggle dropdown-toggle-split`}
+                        data-bs-toggle="dropdown"/>
+
+                <ul className="dropdown-menu"
+                    onClick={this.handleStateSelect}>
+                    {/*<li><a className="dropdown-item bg-success" href="#">Activate</a></li>*/}
+                    {/*<li><a className="dropdown-item bg-danger" href="#">Delete</a></li>*/}
+                    {Object.entries(ColorSchemeActions.State).map(([id, {name, buttonStyle}]) =>
+                        <li><a className={`dropdown-item bg-${buttonStyle}`} data-state-id={id} href='#'>{name}</a>
+                        </li>)}
+                </ul>
+            </div>
+        );
     }
 
-    private stateChanged(state: string) {
-        console.log("state changed", state);
-        let prev = this.props.state!;
-        this.props.state! = state;
-        this.button?.classList.remove("btn-" + ColorSchemeActions.states[prev]);
-        this.button?.classList.add("btn-" + ColorSchemeActions.states[state])
-        this.button!.innerHTML = state
-        this.dropDownButton?.classList.remove("btn-" + ColorSchemeActions.states[prev]);
-        this.dropDownButton?.classList.add("btn-" + ColorSchemeActions.states[state])
-    }
+    private handleStateSelect(event: MouseEvent) {
+        let stateId = (event.target as Element).getAttribute("data-state-id");
+        if (stateId) {
+            let state = ColorSchemeActions.State[stateId as keyof typeof ColorSchemeActions.State];
 
-    private buttonClicked() {
-        let colorScheme = this.props.service.getColorScheme(this.props.colorSchemeId)
-        if (colorScheme == null) {
-            console.warn("button on non existent color scheme clicked");
-            return
+            if (state != null) {
+                this.setState({
+                    selection: state,
+                });
+                this.props.onStateSelected?.(state);
+            } else {
+                console.warn(ColorSchemeActions.name, "state == null", state, stateId)
+            }
+            console.log("state changed", state);
         }
-        switch (this.props.state!) {
-            case "Activate":
-                this.props.service.activate(colorScheme);
-                break;
-            case "Delete":
-                this.props.service.delete(colorScheme);
-                break;
-            case "Edit":
-                break;
-        }
+        // let prev = this.props.state!;
+        // this.props.state! = state;
+        // this.button?.classList.remove("btn-" + ColorSchemeActions.states[prev]);
+        // this.button?.classList.add("btn-" + ColorSchemeActions.states[state])
+        // this.button!.innerHTML = state
+        // this.dropDownButton?.classList.remove("btn-" + ColorSchemeActions.states[prev]);
+        // this.dropDownButton?.classList.add("btn-" + ColorSchemeActions.states[state])
     }
 
-    public setColorSchemeId(id: string) {
-        console.log((this.constructor as typeof ClassComponent).name, "setCOlorSchemeID", id)
-        this.props.colorSchemeId = id;
+    private handleButtonClick() {
+        //switch id (= key in ColorSchemeAction.State) of this.state.selection
+        switch (Object.entries(ColorSchemeActions.State).find(([k, v]) =>
+            v == this.state.selection)![0] as keyof typeof ColorSchemeActions.State) {
+            case "activate":
+                this.props.onActivate();
+                break;
+            case "delete":
+                this.props.onDelete();
+                break;
+            case "edit":
+                this.props.onEdit();
+                break;
+        }
+
+        // let colorScheme = this.props.service.getColorScheme(this.props.colorSchemeId)
+        // if (colorScheme == null) {
+        //     console.warn("button on non existent color scheme clicked");
+        //     return
+        // }
+        // switch (this.props.state!) {
+        //     case "Activate":
+        //         this.props.service.activate(colorScheme);
+        //         break;
+        //     case "Delete":
+        //         this.props.service.delete(colorScheme);
+        //         break;
+        //     case "Edit":
+        //         break;
+        // }
     }
+
+    // public setColorSchemeId(id: string) {
+    //     console.log((this.constructor as typeof Component).name, "setCOlorSchemeID", id)
+    //     this.props.colorSchemeId = id;
+    // }
 }
 
-const NavBar = (props: { onClose: () => any }) =>
-    <nav class="navbar navbar-expand bg-dark navbar-dark">
-        <div class="container-fluid">
-            <a class="navbar-brand">Color Picker</a>
-            <ul class="navbar-nav">
+const NavBar = (props:
+                    {
+                        onClose: () => any
+                    }
+) =>
+    <nav className="navbar navbar-expand bg-dark navbar-dark">
+        <div className="container-fluid">
+            <a className="navbar-brand">Color Picker</a>
+            <ul className="navbar-nav">
             </ul>
-            <button class="btn-close btn" type="button" onclick={props.onClose}></button>
+            <button className="btn-close btn" type="button" onclick={props.onClose}></button>
         </div>
     </nav>
 
+interface ColorPickerProps {
+    service: ColorPickerService,
+}
 
-class ColorPicker extends ClassComponent {
-    declare props: PropsType<ClassComponent> & { service: ColorPickerService };
+interface ColorPickerState {
+    activeColorScheme: ColorScheme,
+}
+
+class ColorPicker extends Component<ColorPickerProps, ColorPickerState> {
+    // declare props: PropsType<Component> & { service: ColorPickerService };
 
     public render(): JSX.Element {
-        let colorSchemeActions = <ColorSchemeActions service={this.props.service}
-                                                     colorSchemeId={this.props.service.getCurrent().id}
-                                                     class='col-5'/>
-        let newColorSchemeDialog = <NewColorSchemeDialog defaultDesign={Designs.system}
-                                                         parentColorScheme={this.props.service.getDefault()}
-                                                         service={this.props.service}/>;
-        let colorSchemeDropdownMenu = <ColorSchemeDropdownMenu service={this.props.service}
-                                                               colorSchemeId={this.props.service.getCurrent().id}
-                                                               class='col-5'/>;
 
         // update NewColorSchemeDialog and ColorSchemeActions when a new CS is selected
         (colorSchemeDropdownMenu.jsObject! as ColorSchemeDropdownMenu).on("colorSchemeSelected",
             (newColorSchemeDialog.jsObject! as NewColorSchemeDialog).setParentColorScheme.bind(newColorSchemeDialog.jsObject!));
-        (colorSchemeDropdownMenu.jsObject! as ColorSchemeDropdownMenu).on("colorSchemeSelected",
-            (colorSchemeActions.jsObject! as ColorSchemeActions).setColorSchemeId.bind(colorSchemeActions.jsObject!))
+        // (colorSchemeDropdownMenu.jsObject! as ColorSchemeDropdownMenu).on("colorSchemeSelected",
+        //     (colorSchemeActions.jsObject! as ColorSchemeActions).setColorSchemeId.bind(colorSchemeActions.jsObject!))
 
 
-        return this._render(<div class='container p-5'>
-            <NavBar onClose={() => console.log("colorpicker closed")}></NavBar>
-            {newColorSchemeDialog}
+        return (
+            <div className='container p-5'>
+                <NavBar onClose={() => console.log("colorpicker closed")}></NavBar>
+                <NewColorSchemeDialog
+                    defaultDesign={Designs.system}
+                    activeColorScheme={this.props.service.getDefault()}
+                    onNewColorScheme={this.handleNewColorScheme}/>
 
-            <div class='row'>
-                {colorSchemeDropdownMenu}
-                <div class='col-2'></div>
-                {colorSchemeActions}
+                <div className='row'>
+                    <ColorSchemeDropdownMenu
+                        activeColorScheme={this.state.activeColorScheme}
+                        colorSchemes={this.props.service.allList}
+                        onColorSchemeSelected={this.handleColorSchemeSelected}
+                        className='col-5'/>
+                    <div className='col-2'></div>
+                    <ColorSchemeActions onActivate={this.handleActivate}
+                                        onDelete={this.handleDelete}
+                                        onEdit={this.handleEdit}
+                                        className='col-5'/>
+                </div>
             </div>
-        </div>);
+        );
+    }
+
+    private handleColorSchemeSelected = (colorSchemeId: string) => {
+        let colorScheme = this.props.service.getColorScheme(colorSchemeId);
+        if (colorScheme != null && colorScheme != this.state.activeColorScheme) {
+            this.setState({
+                activeColorScheme: colorScheme,
+            });
+        }
+    }
+
+    private handleNewColorScheme = (colorScheme: ColorScheme) => {
+        this.props.service.newColorScheme(colorScheme);
+    }
+
+    private handleActivate = (): void => {
+        this.props.service.activate(this.state.activeColorScheme);
+    }
+
+    private handleDelete = (): void => {
+        this.props.service.delete(this.state.activeColorScheme);
+        //todo we now have an "deleted" colorscheme as state
+    }
+
+    private handleEdit = (): void => {
+        //todo implement edit dialog
     }
 
 }
 
-class NewColorSchemeDialog extends ClassComponent {
-    modal?: Modal;
-    inputs?: {
-        parentColorScheme: HTMLSelectElement,
-        name: HTMLInputElement,
-        description: HTMLInputElement,
-        author: HTMLInputElement,
-        design: HTMLSelectElement,
-    };
+interface NewColorSchemeDialogProps {
+    onNewColorScheme: (colorScheme: ColorScheme) => any,
+    activeColorScheme: ColorScheme, // used to get e.g. the colors for the new colorscheme
+    defaultDesign: Designs,
+}
 
-    declare props: PropsType<ClassComponent> & EventType<NewColorSchemeDialog> & {
-        service: ColorPickerService,
-        parentColorScheme: ColorScheme,
-        defaultDesign: Designs,
-    };
+interface NewColorSchemeDialogState {
+    workingColorScheme: ColorScheme, // the attributes of the form are saved here
+}
 
-    declare events: NormalEventType<ClassComponent> & {
-        colorSchemeCreated?: (colorScheme: ColorScheme) => any,
-    };
-
-    static override eventList = [
-        "colorSchemeCreated",
-    ];
+class NewColorSchemeDialog extends Component<NewColorSchemeDialogProps, NewColorSchemeDialogState> {
+    modal ?: Modal;
+    //
+    // declare events: NormalEventType<Component> & {
+    //     colorSchemeCreated?: (colorScheme: ColorScheme) => any,
+    // };
+    //
+    // static override eventList = [
+    //     "colorSchemeCreated",
+    // ];
 
     public render(): JSX.Element {
-        if (this.rendered) {
-            this.modal!.dispose();
-        }
-
         console.log(this.constructor.name, "Designs", Object.keys(Designs), Object.entries(Designs))
 
-        this.inputs = {
-            parentColorScheme: <select id='new-cs-parent-cs-input' class='form-select' disabled>
-                <option selected value={this.props.parentColorScheme.id}>{this.props.parentColorScheme.name}</option>
-            </select> as HTMLSelectElement,
-
-            name: <input id="new-cs-name-input" aria-describedby='new-cs-name-invalid' class='form-control'
-                         type='text' required placeholder="Your Color Scheme's name"/> as HTMLInputElement,
-            description:
-                <textarea id="new-cs-description-input" aria-describedby="new-cs-description-invalid"
-                          class='form-control'
-                          placeholder='A very interesting description...'/> as HTMLInputElement,
-            author:
-                <input id="new-cs-author-input" aria-describedby='new-cs-author-invalid' type='text'
-                       class='form-control'
-                       placeholder={this.props.parentColorScheme.author}/> as HTMLInputElement,
-            design: <select id="new-cs-design-select" class='form-select'>
-                {Object.entries(Designs).map(([k, v]) =>
-                    <option selected={this.props.defaultDesign == v ? true : RemoveProperty}
-                            value={k}>{v}</option>)}
-            </select> as HTMLSelectElement,
-        }
-
-        let htmlModal =
-            <div class='modal fade' id='new-color-scheme-dialog' tabindex={-1} aria-hidden={true}
+        return (
+            <div className='modal fade' id='new-color-scheme-dialog' tabIndex={-1} aria-hidden={true}
                  aria-labelledby='Dialog to create a new Color Scheme'>
-                <div class='modal-dialog modal-dialog-centered'>
-                    <div class='modal-content'>
-                        <div class='modal-header'>
-                            <h5 class='modal-title'>New Color Scheme</h5>
-                            <button class='btn-close' type='button' data-bs-dismiss='modal' aria-label='Close'></button>
+                <div className='modal-dialog modal-dialog-centered'>
+                    <div className='modal-content'>
+                        <div className='modal-header'>
+                            <h5 className='modal-title'>New Color Scheme</h5>
+                            <button className='btn-close' type='button' data-bs-dismiss='modal'
+                                    aria-label='Close'></button>
                         </div>
-                        <div class='modal-body'>
-                            <form id='new-cs-form' action='javascript:void(0);' onsubmit={this.createNewColorScheme.bind(this)}>
-                                <div class='mb-3'>
-                                    <label for='new-cs-paren-cs-input' class='form-label'>Colors</label>
-                                    {this.inputs.parentColorScheme}
-                                    <div class='form-text'>You can later manually edit the colors</div>
-                                </div>
-                                <div class='mb-3'>
-                                    <label for='new-cs-name-input' class='form-label'>Name</label>
-                                    {this.inputs.name}
-                                    <div id='new-cs-name-invalid' class='invalid-feedback'>You must provide a name</div>
+                        <div className='modal-body'>
+                            <form id='new-cs-form'
+                                  action='javascript:void(0);'
+                                  onSubmit={this.createNewColorScheme.bind(this)}>
+
+                                {/*Parent Color Scheme*/}
+                                <div className='mb-3'>
+                                    <label htmlFor='new-cs-paren-cs-input' className='form-label'>Colors</label>
+                                    <select id='new-cs-parent-cs-input'
+                                            name='colorScheme'
+                                            className='form-select'
+                                            disabled>
+                                        <option selected value={this.props.activeColorScheme.id}>
+                                            {this.props.activeColorScheme.name}
+                                        </option>
+                                    </select>
+                                    <div className='form-text'>You can later manually edit the colors</div>
                                 </div>
 
-                                <div class='mb-3'>
-                                    <label for='new-cs-description-input' class='form-label'>Description</label>
-                                    {this.inputs.description}
-                                </div>
-
-                                <div class='mb-3'>
-                                    <label for='new-cs-author-input' class='form-label'>Author</label>
-                                    {this.inputs.author}
-                                    <div id='new-cs-author-invalid' class='invalid-feedback'>You must provide an
-                                        author
+                                {/*Name*/}
+                                <div className='mb-3'>
+                                    <label htmlFor='new-cs-name-input' className='form-label'>Name</label>
+                                    <input id="new-cs-name-input"
+                                           name='name'
+                                           aria-describedby='new-cs-name-invalid'
+                                           className='form-control'
+                                           type='text'
+                                           required
+                                           placeholder="Your Color Scheme's name"/>
+                                    <div id='new-cs-name-invalid' className='invalid-feedback'>You must provide
+                                        a name
                                     </div>
                                 </div>
 
-                                <div class='mb-3'>
-                                    <label for='new-cs-design-select' class='form-label'>Design</label>
-                                    {this.inputs.design}
+                                {/*Description*/}
+                                <div className='mb-3'>
+                                    <label htmlFor='new-cs-description-input'
+                                           className='form-label'>Description</label>
+                                    <textarea id="new-cs-description-input"
+                                              name='description'
+                                              aria-describedby="new-cs-description-invalid"
+                                              className='form-control'
+                                              placeholder='A very interesting description...'/>
+                                </div>
+
+                                {/*Author*/}
+                                <div className='mb-3'>
+                                    <label htmlFor='new-cs-author-input' className='form-label'>Author</label>
+                                    <input id="new-cs-author-input"
+                                           name='author'
+                                           aria-describedby='new-cs-author-invalid'
+                                           type='text'
+                                           required
+                                           className='form-control'
+                                           placeholder={this.props.activeColorScheme.author}/>
+                                    <div id='new-cs-author-invalid' className='invalid-feedback'>
+                                        You must provide an author
+                                    </div>
+                                </div>
+
+                                {/*Design*/}
+                                <div className='mb-3'>
+                                    <label htmlFor='new-cs-design-select' className='form-label'>Design</label>
+                                    <select id="new-cs-design-select"
+                                            name='design'
+                                            className='form-select'
+                                            required>
+                                        {Object.entries(Designs).map(([k, v]) =>
+                                            <option selected={this.props.defaultDesign == v} value={k}>{v}</option>
+                                        )}
+                                    </select>
                                 </div>
                             </form>
                         </div>
-                        <div class='modal-footer'>
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <div className='modal-footer'>
+                            <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">Cancel
+                            </button>
                             <button type="submit" form='new-cs-form'
-                                    class="btn btn-primary">Add
+                                    className="btn btn-primary">Add
                             </button>
                         </div>
                     </div>
                 </div>
-            </div>;
-        this.modal = Modal.getInstance(htmlModal)!;
-        return this._render(htmlModal);
+            </div>
+        );
     }
 
-    private createNewColorScheme(): void {
-        console.log(this.constructor.name, "create new color sceheme ");
+    private createNewColorScheme(event: FormEvent): void {
+        let formData = new FormData(event.target as HTMLFormElement);
+        console.log(this.constructor.name, "create new color sceheme form data:", formData);
+        let colorScheme = {
+            name: (formData.get("name")!),
+            description: formData.get("description")!,
+            author: formData.get("author")!,
+            design: formData.get("design")!,
+            colors: this.props.activeColorScheme.colors,
+        };
+        this.props.onNewColorScheme(colorScheme);
         let newColorScheme = this.props.service.newColorScheme({
             name: this.inputs!.name.value,
             description: this.inputs!.description.value,
@@ -411,15 +557,18 @@ class NewColorSchemeDialog extends ClassComponent {
         this.modal!.hide();
     }
 
-    public setParentColorScheme(colorSchemeId: string) {
-        if (this.props.parentColorScheme.id == colorSchemeId) {
-            return
-        }
-        let colorScheme = this.props.service.getColorScheme(colorSchemeId)!;
-        this.props.parentColorScheme = colorScheme;
-        this.inputs?.parentColorScheme!.add(<option selected
-                                                    value={colorScheme.id}>{colorScheme.name}</option> as HTMLOptionElement);
-    }
+    //
+    // public setParentColorScheme(colorSchemeId: string) {
+    //     if (this.props.parentColorScheme.id == colorSchemeId) {
+    //         return
+    //     }
+    //     let colorScheme = this.props.service.getColorScheme(colorSchemeId)!;
+    //     this.props.parentColorScheme = colorScheme;
+    //     this.inputs?.parentColorScheme!.add(<option selected
+    //                                                 value={colorScheme.id}>{colorScheme.name}</option> as HTMLOptionElement);
+    // }
 }
 
-document.body.append(<ColorPicker service={new ColorPickerService()}></ColorPicker>);
+document.body.append(
+    <ColorPicker service={new ColorPickerService()}></ColorPicker>
+);
