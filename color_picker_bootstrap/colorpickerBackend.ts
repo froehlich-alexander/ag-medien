@@ -1,5 +1,7 @@
 import {toObject} from "../widgets/src/ts/base.js";
 import {Color} from "../widgets/src/ts/WidgetBase.js";
+import {Simulate} from "react-dom/test-utils";
+import keyDown = Simulate.keyDown;
 
 type ColorSchemeMap = Map<string, ColorScheme>;
 
@@ -43,27 +45,42 @@ export class ColorSchemeData {
 }
 
 class ColorSchemeInterface {
-    protected _name?: string;
-    protected _description?: string;
-    protected _author?: string;
-    protected _id?: string;
-    protected readonly _colors: ColorMap = new ColorMap();
-    protected _design: Designs = Designs.system;
+    public id: string;
+    public name: string;
+    public description: string;
+    public author: string;
+    public readonly colors: ColorMap = new ColorMap();
+    public design: Designs = Designs.system;
+    public current: boolean = false;
+    public preDefined: boolean = false;
 
-    protected _current: boolean = false;
-    protected _preDefined: boolean = false;
+    constructor(other: { [k in Exclude<keyof ColorSchemeInterface, "id" | "name">]?: ColorSchemeInterface[k] } & { id: ColorSchemeInterface["id"], name: ColorSchemeInterface["name"] }) {
+        this.id = other.id;
+        this.name = other.name;
+        this.description = other.description ?? "Very interesting description";
+        this.author = other.author ?? "Author unknown";
+        this.design = other.design ?? Designs.system;
+        this.current = other.current ?? false;
+        this.preDefined = other.preDefined ?? false;
+        if (other.colors) {
+            for (let [k, v] of other.colors.entries()) {
+                this.colors.set(k, v);
+            }
+        }
+    }
 }
 
 class ColorScheme extends ColorSchemeInterface {
-    protected override readonly _id: string = "";
+    public override readonly id: string = "";
 
-    constructor(service: ColorPickerService, id?: string, name?: string, description?: string, author?: string, design?: Designs, colors?: ColorMap);
-    constructor(rawDataObject: ColorSchemeInterface);
+    // constructor(service: ColorPickerService, id?: string, name?: string, description?: string, author?: string, design?: Designs, colors?: ColorMap);
+    constructor(data: { [k in keyof ColorSchemeInterface]?: ColorSchemeInterface[k] }, service: ColorPickerService);
+    constructor(data: { [k in keyof ColorSchemeInterface]: ColorSchemeInterface[k] });
 
     /**
      * DON'T USE THIS CONSTRUCTOR!!!<br>
      * USE {@link ColorPickerService.getColorScheme} or {@link ColorPickerService.newColorScheme} instead<br>
-     * This will insert (random) strings if you set null for {@link _name} and / or {@link _id}
+     * This will insert (random) strings if you set null for {@link name} and / or {@link id}
      * @param {ColorPickerService | ColorSchemeInterface} service
      * @param {string} id
      * @param {string} name
@@ -72,28 +89,45 @@ class ColorScheme extends ColorSchemeInterface {
      * @param {Designs} design
      * @param {ColorMap} colors
      */
-    public constructor(service: ColorPickerService | ColorSchemeInterface, id?: string, name?: string, description?: string, author?: string, design?: Designs, colors: ColorMap = new Map()) {
-        super();
-        console.assert(service != null, "service is null");
-        if (service instanceof ColorPickerService) {
-            this._id = id != null ? id : service.generateId();
-            this._name = name != null ? name : service.generateName();
-            this._description = description ?? "No Description";
-            this._author = author != null ? author : "unknown";
-            this._design = design ?? Designs.system;
-            this._preDefined = false;
-            for (let key of colors.keys()) {
-                this._colors.set(key, colors.get(key) != null ? Color.toHex(colors.get(key)!) : "inherit");
-            }
-            service.all.set(this._id, this);
-        } else {
-            for (let key of Object.keys(service)) {
-                // console.log(key);
-                // console.log(Object.getOwnPropertyDescriptor(service, key));
-                // Object.defineProperty(this, key, Object.getOwnPropertyDescriptor(service, key));
-                this[key as keyof ColorSchemeInterface] = service[key as keyof ColorSchemeInterface];
-            }
-        }
+    // public constructor(service: ColorPickerService | ColorSchemeInterface, id?: string, name?: string, description?: string, author?: string, design?: Designs, colors: ColorMap = new Map()) {
+    public constructor(data: { [k in keyof ColorSchemeInterface]?: ColorSchemeInterface[k] }, service?: ColorPickerService) {
+        super(service ? {
+            id: data.id ?? service.generateId(),
+            name: data.name ?? service.generateName(),
+            description: data.description,
+            author: data.author,
+            design: data.design,
+            colors: data.colors,
+            current: data.current,
+            preDefined: data.preDefined,
+        } : data as ColorSchemeInterface);
+
+        // console.assert(service != null, "service is null");
+        // if (service instanceof ColorPickerService) {
+        //     this.id = id != null ? id : service.generateId();
+        //     this.name = name != null ? name : service.generateName();
+        //     this.description = description ?? "No Description";
+        //     this.author = author != null ? author : "unknown";
+        //     this.design = design ?? Designs.system;
+        //     this.preDefined = false;
+        //     for (let key of colors.keys()) {
+        //         this.colors.set(key, colors.get(key) != null ? Color.toHex(colors.get(key)!) : "inherit");
+        //     }
+        //     service.all.set(this.id, this);
+        // } else {
+        //     for (let key of Object.keys(service)) {
+        //         // console.log(key);
+        //         // console.log(Object.getOwnPropertyDescriptor(service, key));
+        //         // Object.defineProperty(this, key, Object.getOwnPropertyDescriptor(service, key));
+        //         if (key as keyof ColorSchemeInterface == "colors") {
+        //             for (let [k, v] of service.colors.entries()) {
+        //                 this.colors.set(k, v);
+        //             }
+        //         } else {
+        //             this[key as Exclude<keyof ColorSchemeInterface, "colors">] = service[key as keyof ColorSchemeInterface];
+        //         }
+        //     }
+        // }
     }
 
     /**
@@ -126,6 +160,7 @@ class ColorScheme extends ColorSchemeInterface {
      * @deprecated
      * @return {ColorSchemeData}
      */
+
     /*
     public toJSON(): ColorSchemeData {
         let copy: ColorSchemeData = new ColorSchemeData;
@@ -157,6 +192,23 @@ class ColorScheme extends ColorSchemeInterface {
      * @return {Object}
      */
     public static fromJSON(jsonColorScheme: ColorSchemeData): ColorScheme {
+        return new ColorScheme(
+            {
+                id: jsonColorScheme.id,
+                name: jsonColorScheme.name,
+                description: jsonColorScheme.description,
+                author: jsonColorScheme.author,
+                design: jsonColorScheme.design,
+                colors: new ColorMap(),
+                current: jsonColorScheme.current,
+                preDefined: jsonColorScheme.preDefined,
+            } as ColorSchemeInterface
+        )
+    }
+
+    /*
+    This is the dynamic very bad to read version of this function
+    public static fromJSON(jsonColorScheme: ColorSchemeData): ColorScheme {
         let colorScheme: ColorSchemeInterface = new ColorSchemeInterface();
         for (let [key, value] of Object.entries(jsonColorScheme)) {
             let newKey = "";
@@ -187,6 +239,7 @@ class ColorScheme extends ColorSchemeInterface {
         }
         return new ColorScheme(colorScheme);
     }
+    */
 
     /**
      * Copies this colorScheme into {@link colorScheme}<br>
@@ -206,77 +259,77 @@ class ColorScheme extends ColorSchemeInterface {
             .setColors(this.colors);
     }
 
-    public get name(): string {
-        return this._name!;
-    }
+    // public get name(): string {
+    //     return this._name!;
+    // }
 
     public setName(name: string): this {
-        this._name = name;
+        this.name = name;
         return this;
     }
 
-    public get author(): string {
-        return this._author!;
-    }
+    // public get author(): string {
+    //     return this._author!;
+    // }
 
     public setAuthor(author: string): this {
-        this._author = author;
+        this.author = author;
         return this;
     }
 
-    public get description(): string {
-        return this._description!;
-    }
+    // public get description(): string {
+    //     return this._description!;
+    // }
 
     public setDescription(description: string): this {
-        this._description = description;
+        this.description = description;
         return this;
     }
 
-    public get id(): string {
-        return this._id;
-    }
-
-    public get colors(): ColorMap {
-        return this._colors;
-    }
+    // public get id(): string {
+    //     return this._id;
+    // }
+    //
+    // public get colors(): ColorMap {
+    //     return this._colors;
+    // }
 
     public setColors(colors: ColorMap): this {
         for (let [k, v] of colors) {
-            this._colors.set(k, v);
+            this.colors.set(k, v);
         }
         return this;
     }
 
-    public get current(): boolean {
-        return this._current;
-    }
+    // public get current(): boolean {
+    //     return this._current;
+    // }
 
     public setCurrent(current: boolean): this {
-        this._current = current;
+        this.current = current;
         return this;
     }
 
-    public get preDefined(): boolean {
-        return this._preDefined;
-    }
+    // public get preDefined(): boolean {
+    //     return this._preDefined;
+    // }
 
     public setPreDefined(preDefined: boolean): this {
-        this._preDefined = preDefined;
+        this.preDefined = preDefined;
         return this;
     }
 
-    public get design(): Designs {
-        return this._design;
-    }
+    // public get design(): Designs {
+    //     return this._design;
+    // }
 
     public setDesign(design: Designs): this {
-        this._design = design;
+        this.design = design;
         return this;
     }
 
     public setColor(colorId: string, value: string): this {
-        this._colors.set(colorId, value);
+        this.colors.set(colorId, value);
         return this;
     }
 }

@@ -135,14 +135,14 @@ class ColorScheme extends ColorSchemeInterface {
         });
         console.assert(service != null, "service is null");
         if (service instanceof ColorPickerService) {
-            this._id = id != null ? id : service.generateId();
-            this._name = name != null ? name : service.generateName();
-            this._author = author != null ? author : "unknown";
-            this._preDefined = false;
+            this.id = id != null ? id : service.generateId();
+            this.name = name != null ? name : service.generateName();
+            this.author = author != null ? author : "unknown";
+            this.preDefined = false;
             for (let key of colors.keys()) {
                 this._colors.set(key, colors.get(key) != null ? Color.toHex(colors.get(key)) : "inherit");
             }
-            service.all.set(this._id, this);
+            service.all.set(this.id, this);
         }
         else {
             for (let key of Object.keys(service)) {
@@ -246,7 +246,7 @@ class ColorScheme extends ColorSchemeInterface {
         return this;
     }
     get id() {
-        return this._id;
+        return this.id;
     }
     get colors() {
         return this._colors;
