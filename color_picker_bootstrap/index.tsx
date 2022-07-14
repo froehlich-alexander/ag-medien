@@ -13,9 +13,17 @@ declare var bootstrap: any;
 const Modal: typeof import('bootstrap').Modal = bootstrap.Modal;
 type Modal = import("bootstrap").Modal;
 
+//import react
+// declare var React: any;
+// declare var ReactDOM: any;
+// const Component: import("react").Component = React.Component;
+
 
 class ColorSchemeDropdownMenu extends ClassComponent {
+    private colorSchemesCount = 0;
+
     private dropDownMenu?: HTMLUListElement;
+    private noCustomColorSchemesPlaceholder?: HTMLAnchorElement;
 
     declare props: PropsType<ClassComponent> & EventType<ColorSchemeDropdownMenu> & { service: ColorPickerService, colorSchemeId: string };
     declare events: NormalEventType<ClassComponent> & {
@@ -24,6 +32,7 @@ class ColorSchemeDropdownMenu extends ClassComponent {
     static override eventList: string[] = [
         "colorSchemeSelected",
     ];
+
     // static override defaultProps: DefaultPropsType<ColorSchemeDropdownMenu> = {}
 
     constructor(props: ColorSchemeDropdownMenu["props"]) {
@@ -34,6 +43,10 @@ class ColorSchemeDropdownMenu extends ClassComponent {
 
 
     public render(): JSX.Element {
+        this.colorSchemesCount = [...this.props.service.all.values()].filter(v => !v.preDefined).length;
+
+        this.noCustomColorSchemesPlaceholder =
+            <a class='dropdown-item disabled' href='#'>Nothing here yet</a> as HTMLAnchorElement;
         this.dropDownMenu = <ul class="dropdown-menu" id="color-schemes-dropdown-menu"
                                 onclick={this.colorSchemeSelected.bind(this)}>
             <li>
@@ -51,12 +64,14 @@ class ColorSchemeDropdownMenu extends ClassComponent {
                     .map(ColorSchemeDropdownItem)}
             {/*<li><a class="dropdown-item" href="#">Default</a></li>*/}
             <li><h6 class='dropdown-header'>Custom</h6></li>
+            <li>{this.noCustomColorSchemesPlaceholder}</li>
             {
                 // custom color schemes
                 [...this.props.service.all.values()]
                     .filter(v => !v.preDefined)
                     .map(ColorSchemeDropdownItem)}
         </ul> as HTMLUListElement;
+        this.setVisibilityOfNoCustomColorSchemesPlaceHolder();
 
         return this._render(<div class='btn-group'>
             <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown">
@@ -72,7 +87,9 @@ class ColorSchemeDropdownMenu extends ClassComponent {
      * @param {ColorScheme} colorScheme
      */
     public addColorScheme(colorScheme: ColorScheme) {
+        this.colorSchemesCount++;
         this.dropDownMenu!.append(ColorSchemeDropdownItem(colorScheme));
+        this.setVisibilityOfNoCustomColorSchemesPlaceHolder();
     }
 
     /**
@@ -88,7 +105,10 @@ class ColorSchemeDropdownMenu extends ClassComponent {
      * @param {ColorScheme} colorScheme
      */
     public removeColorScheme(colorScheme: ColorScheme) {
-        $(this.dropDownMenu!).remove(`[color-scheme-id=${colorScheme.id}]`);
+        console.log("remove color scheme from dropdown", colorScheme)
+        this.colorSchemesCount--;
+        $(this.dropDownMenu!).find(`[color-scheme-id=${colorScheme.id}]`).remove();
+        this.setVisibilityOfNoCustomColorSchemesPlaceHolder();
     }
 
     /**
@@ -109,6 +129,11 @@ class ColorSchemeDropdownMenu extends ClassComponent {
         let prev = this.props.colorSchemeId;
         this.props.colorSchemeId = colorSchemeId;
         this.props.onColorSchemeSelected!(colorSchemeId);
+    }
+
+    private setVisibilityOfNoCustomColorSchemesPlaceHolder() {
+        console.log("set vis", this.colorSchemesCount)
+        this.noCustomColorSchemesPlaceholder!.toggleAttribute("hidden", this.colorSchemesCount > 0);
     }
 }
 
@@ -328,7 +353,7 @@ class NewColorSchemeDialog extends ClassComponent {
                             <button class='btn-close' type='button' data-bs-dismiss='modal' aria-label='Close'></button>
                         </div>
                         <div class='modal-body'>
-                            <form>
+                            <form id='new-cs-form' action='javascript:void(0);' onsubmit={this.createNewColorScheme.bind(this)}>
                                 <div class='mb-3'>
                                     <label for='new-cs-paren-cs-input' class='form-label'>Colors</label>
                                     {this.inputs.parentColorScheme}
@@ -361,8 +386,8 @@ class NewColorSchemeDialog extends ClassComponent {
                         </div>
                         <div class='modal-footer'>
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                            <button type="button" onclick={this.createNewColorScheme.bind(this)}
-                                    class="btn btn-primary" data-bs-dismiss='modal'>Add
+                            <button type="submit" form='new-cs-form'
+                                    class="btn btn-primary">Add
                             </button>
                         </div>
                     </div>
@@ -383,6 +408,7 @@ class NewColorSchemeDialog extends ClassComponent {
         });
         this.props.onColorSchemeCreated!(newColorScheme);
         console.log(this.constructor.name, newColorScheme);
+        this.modal!.hide();
     }
 
     public setParentColorScheme(colorSchemeId: string) {
