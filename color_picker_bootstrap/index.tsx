@@ -8,14 +8,14 @@ import {
 } from "./colorpickerBackend";
 
 import * as bootstrap from 'bootstrap';
-import * as $ from 'jquery';
 
 import * as React from "react";
 import {
-    ChangeEvent, createRef, FormEvent,
+    ChangeEvent, ComponentProps, createRef, FormEvent, HTMLProps,
     MouseEvent,
 } from 'react';
 import {createRoot} from "react-dom/client";
+import {Modal} from "bootstrap";
 
 //import bootstrap types
 // declare var bootstrap: any;
@@ -34,8 +34,8 @@ interface DefaultProps {
     className?: string,
 }
 
-function concatClass(...classes: (string | undefined)[]): string | undefined {
-    return classes.filter(v => v != null).join(" ") ?? undefined;
+function concatClass(...classes: (string | false | undefined)[]): string | undefined {
+    return classes.filter(v => v).join(" ") ?? undefined;
 }
 
 
@@ -380,7 +380,6 @@ const NavBar = (props: DefaultProps & { onClose: (event: MouseEvent<HTMLButtonEl
     </nav>
 
 interface ColorPickerProps extends DefaultProps {
-    service: ColorPickerService,
 }
 
 interface ColorPickerState {
@@ -392,14 +391,16 @@ interface ColorPickerState {
 
 class ColorPicker extends React.Component<ColorPickerProps, ColorPickerState> {
     // declare props: PropsType<Component> & { service: ColorPickerService };
+    private service: ColorPickerService;
 
     constructor(props: ColorPickerProps) {
         super(props);
+        this.service = new ColorPickerService();
         this.state = {
-            selectedColorScheme: props.service.getDefault(),
+            selectedColorScheme: this.service.getDefault(),
             newColorSchemeDialogVisibility: false, // = dialog hidden
-            allColorSchemes: this.props.service.allList,
-            activeColorScheme: this.props.service.getCurrent(),
+            allColorSchemes: this.service.allList,
+            activeColorScheme: this.service.getCurrent(),
         }
     }
 
@@ -439,7 +440,7 @@ class ColorPicker extends React.Component<ColorPickerProps, ColorPickerState> {
     }
 
     private handleColorSchemeSelected = (colorSchemeId: string) => {
-        let colorScheme = this.props.service.getColorScheme(colorSchemeId);
+        let colorScheme = this.service.getColorScheme(colorSchemeId);
         if (colorScheme != null && colorScheme != this.state.selectedColorScheme) {
             this.setState({
                 selectedColorScheme: colorScheme,
@@ -448,25 +449,26 @@ class ColorPicker extends React.Component<ColorPickerProps, ColorPickerState> {
     }
 
     private handleNewColorScheme = (colorScheme: ColorSchemeFragmentType) => {
-        this.props.service.newColorScheme(colorScheme);
+        this.service.newColorScheme(colorScheme);
         this.setState({
             newColorSchemeDialogVisibility: false,
-            allColorSchemes: this.props.service.allList,
+            allColorSchemes: this.service.allList,
         });
     }
 
     private handleActivate = (): void => {
-        this.props.service.activate(this.state.selectedColorScheme);
+        this.service.activate(this.state.selectedColorScheme);
         this.setState({
-            activeColorScheme: this.props.service.getCurrent(),
+            activeColorScheme: this.service.getCurrent(),
         })
     }
 
     private handleDelete = (): void => {
-        let newSelectedColorScheme = this.props.service.getCurrent();
-        this.props.service.delete(this.state.selectedColorScheme);
+        let newSelectedColorScheme = this.service.getCurrent();
+        this.service.delete(this.state.selectedColorScheme);
         this.setState({
             selectedColorScheme: newSelectedColorScheme,
+            allColorSchemes: this.service.allList,
         });
     }
 
@@ -528,7 +530,6 @@ class NewColorSchemeDialog extends React.Component<NewColorSchemeDialogProps, Ne
             <div className={concatClass('modal fade', this.props.className)}
                  id='new-color-scheme-dialog'
                  ref={this.modal}
-                 hidden={this.props.hidden}
                  tabIndex={-1} aria-hidden={true}
                  aria-labelledby='Dialog to create a new Color Scheme'>
                 <div className='modal-dialog modal-dialog-centered'>
@@ -539,7 +540,7 @@ class NewColorSchemeDialog extends React.Component<NewColorSchemeDialogProps, Ne
                                     aria-label='Close'></button>
                         </div>
                         <div className='modal-body'>
-                            <form id='new-cs-form'
+                            <Form id='new-cs-form'
                                   action='javascript:void(0);'
                                   onSubmit={this.createNewColorScheme.bind(this)}>
 
@@ -620,19 +621,29 @@ class NewColorSchemeDialog extends React.Component<NewColorSchemeDialogProps, Ne
                                         )}
                                     </select>
                                 </div>
-                            </form>
+                            </Form>
                         </div>
                         <div className='modal-footer'>
                             <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">Cancel
                             </button>
                             <button type="submit" form='new-cs-form'
-                                    className="btn btn-primary">Add
+                                    className="btn btn-primary">Create
                             </button>
                         </div>
                     </div>
                 </div>
             </div>
         );
+    }
+
+    public override componentDidUpdate(prevProps: Readonly<NewColorSchemeDialogProps>, prevState: Readonly<NewColorSchemeDialogState>, snapshot?: any): void {
+        if (prevProps.hidden != this.props.hidden) {
+            if (this.props.hidden) {
+                Modal.getInstance(this.modal.current!)!.hide();
+            } else {
+                Modal.getInstance(this.modal.current!)!.show();
+            }
+        }
     }
 
     public override componentDidMount(): void {
@@ -681,6 +692,7 @@ class NewColorSchemeDialog extends React.Component<NewColorSchemeDialogProps, Ne
         //     design: formData.get("design")!,
         //     colors: this.props.activeColorScheme.colors,
         // });
+        console.log(NewColorSchemeDialog.name, "create new color scheme")
         this.props.onNewColorScheme({
             ...this.state,
             colors: this.props.selectedColorScheme.colors,
@@ -709,6 +721,47 @@ class NewColorSchemeDialog extends React.Component<NewColorSchemeDialogProps, Ne
     // }
 }
 
+interface FormProps extends HTMLProps<HTMLFormElement> {
+}
+
+interface FormState {
+}
+
+/**
+ * A bootstrap form which can apply custom validation feedbacks
+ */
+class Form extends React.Component<FormProps, FormState> {
+    private readonly formRef;
+
+    constructor(props: FormProps) {
+        super(props);
+
+        this.handleSubmit = this.handleSubmit.bind(this);
+        this.formRef = createRef<HTMLFormElement>();
+    }
+
+    public render(): React.ReactNode {
+        return (
+            <form noValidate
+                  {...this.props}
+                  ref={this.formRef}
+                  onSubmit={this.handleSubmit}>
+                {this.props.children}
+            </form>
+        );
+    }
+
+    private handleSubmit(event: FormEvent<HTMLFormElement>) {
+        this.formRef.current!.classList.add("was-validated");
+        if (!this.formRef.current!.checkValidity()) {
+            event.preventDefault();
+            event.stopPropagation();
+        } else {
+            this.props.onSubmit?.(event);
+        }
+    }
+}
+
 const root = createRoot(
     document.getElementById("color-picker-root")!);
-root.render(<ColorPicker service={new ColorPickerService()}></ColorPicker>);
+root.render(<ColorPicker/>);
