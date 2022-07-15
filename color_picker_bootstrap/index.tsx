@@ -1,35 +1,45 @@
 // <reference path="react.d.ts" />
-import {ColorPickerService, ColorScheme, ColorSchemeData, Designs} from "./colorpickerBackend.js";
 import {
-    ClassComponent,
-    DefaultPropsType,
-    EventType,
-    NormalEventType,
-    PropsType,
-    RemoveProperty
-} from "./jsxFactory.js"
+    ColorPickerService,
+    ColorScheme,
+    ColorSchemeData, ColorSchemeType,
+    ColorSchemeTypeOptional,
+    Designs
+} from "./colorpickerBackend";
+
+import * as bootstrap from 'bootstrap';
+import * as $ from 'jquery';
 
 import * as React from "react";
 import {
-    Component, FormEvent,
-    MouseEvent, ReactElement,
-} from "react";
-import {Simulate} from "react-dom/test-utils";
-import keyDown = Simulate.keyDown;
+    ChangeEvent, FormEvent,
+    MouseEvent,
+} from 'react';
+import {createRoot} from "react-dom/client";
 
 //import bootstrap types
-declare var bootstrap: any;
-const Modal: typeof import('bootstrap').Modal = bootstrap.Modal;
-type Modal = import("bootstrap").Modal;
+// declare var bootstrap: any;
+// const Modal: typeof import('bootstrap').Modal = bootstrap.Modal;
+// type Modal = import("bootstrap").Modal;
 
 //import react
 // declare var React: any;
 // declare var ReactDOM: any;
 // const Component = React.Component;
 // type Component = import("react").Component;
+// declare var ReactDOM: any;
+// declare var React: import("react");
+
+interface DefaultProps {
+    className?: string,
+}
+
+function concatClass(...classes: (string | undefined)[]): string | undefined {
+    return classes.filter(v => v != null).join(" ") ?? undefined;
+}
 
 
-interface ColorSchemeDropdownMenuProps {
+interface ColorSchemeDropdownMenuProps extends DefaultProps {
     // service: ColorPickerService,
     activeColorScheme: ColorScheme,
     colorSchemes: ColorScheme[];
@@ -40,7 +50,7 @@ interface ColorSchemeDropdownMenuState {
 
 }
 
-class ColorSchemeDropdownMenu extends Component<ColorSchemeDropdownMenuProps, ColorSchemeDropdownMenuState> {
+class ColorSchemeDropdownMenu extends React.Component<ColorSchemeDropdownMenuProps, ColorSchemeDropdownMenuState> {
     // private colorSchemesCount = 0;
     //
     // private dropDownMenu?: HTMLUListElement;
@@ -66,18 +76,18 @@ class ColorSchemeDropdownMenu extends Component<ColorSchemeDropdownMenuProps, Co
     public render() {
         // this.colorSchemesCount = [...this.props.service.all.values()].filter(v => !v.preDefined).length;
 
-        let customColorSchemes = this.props.colorSchemes.filter(v => !v.preDefined);
-        let preDefinedColorSchemes = this.props.colorSchemes.filter(v => v.preDefined);
+        let customColorSchemes = this.props.colorSchemes.filter((v: ColorScheme) => !v.preDefined);
+        let preDefinedColorSchemes = this.props.colorSchemes.filter((v: ColorScheme) => v.preDefined);
 
         return (
-            <div className='btn-group'>
+            <div className={concatClass('btn-group', this.props.className)}>
                 <button type="button" className="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown">
                     Color Scheme
                 </button>
                 <ul className="dropdown-menu" id="color-schemes-dropdown-menu"
                     // onClick={this.colorSchemeSelected.bind(this)}
                     onClick={this.handleDropDownClick}>
-                    <li>
+                    <li key='open-new-cs-dialog-button'>
                         <button type='button'
                                 data-bs-toggle='modal'
                                 data-bs-target='#new-color-scheme-dialog'
@@ -86,14 +96,15 @@ class ColorSchemeDropdownMenu extends Component<ColorSchemeDropdownMenuProps, Co
                             Add
                         </button>
                     </li>
-                    <li>
+                    <li key='divider-0'>
                         <hr className="dropdown-divider"/>
                     </li>
-                    <li><h6 className="dropdown-header">Predefined</h6></li>
+                    <li key='predefined-header'><h6 className="dropdown-header">Predefined</h6></li>
                     {preDefinedColorSchemes.map(ColorSchemeDropdownItem)}
                     {/*<li><a className="dropdown-item" href="#">Default</a></li>*/}
-                    <li><h6 className='dropdown-header'>Custom</h6></li>
-                    <li><a className='dropdown-item disabled' href='#' hidden={customColorSchemes.length > 0}>
+                    <li key='custom-header'><h6 className='dropdown-header' >Custom</h6></li>
+                    <li key='nothing-here-label'><a className='dropdown-item disabled'  href='#'
+                           hidden={customColorSchemes.length > 0}>
                         Nothing here yet
                     </a></li>
                     {customColorSchemes.map(ColorSchemeDropdownItem)}
@@ -200,16 +211,15 @@ class ColorSchemeDropdownMenu extends Component<ColorSchemeDropdownMenuProps, Co
 // }
 
 const ColorSchemeDropdownItem = (colorScheme: { id: string, name: string }) =>
-    (<li>
+    (<li key={colorScheme.id}>
         <a className='dropdown-item'
            href='#'
-           key={colorScheme.id}
            data-color-scheme-id={colorScheme.id}>
             {colorScheme.name}
         </a>
     </li>);
 
-interface ColorSchemeActionProps {
+interface ColorSchemeActionProps extends DefaultProps {
     onStateSelected?: (state: ColorSchemeActionsState["selection"]) => any,
     onDelete: () => any,
     onActivate: () => any,
@@ -220,7 +230,7 @@ interface ColorSchemeActionsState {
     selection: typeof ColorSchemeActions.State[keyof typeof ColorSchemeActions.State],
 }
 
-class ColorSchemeActions extends Component<ColorSchemeActionProps, ColorSchemeActionsState> {
+class ColorSchemeActions extends React.Component<ColorSchemeActionProps, ColorSchemeActionsState> {
     // private button?: HTMLButtonElement;
     // private dropDownButton?: HTMLButtonElement;
     // private dropDownMenu?: HTMLUListElement;
@@ -243,7 +253,7 @@ class ColorSchemeActions extends Component<ColorSchemeActionProps, ColorSchemeAc
     public render(): JSX.Element {
         console.log("render actions", this.props)
         return (
-            <div className="btn-group">
+            <div className={concatClass("btn-group", this.props.className)}>
                 <button type="button"
                         className={`btn btn-${this.state.selection.buttonStyle}`}
                         onClick={this.handleButtonClick.bind(this)}>
@@ -258,7 +268,8 @@ class ColorSchemeActions extends Component<ColorSchemeActionProps, ColorSchemeAc
                     {/*<li><a className="dropdown-item bg-success" href="#">Activate</a></li>*/}
                     {/*<li><a className="dropdown-item bg-danger" href="#">Delete</a></li>*/}
                     {Object.entries(ColorSchemeActions.State).map(([id, {name, buttonStyle}]) =>
-                        <li><a className={`dropdown-item bg-${buttonStyle}`} data-state-id={id} href='#'>{name}</a>
+                        <li key={id}><a className={`dropdown-item bg-${buttonStyle}`} data-state-id={id}
+                               href='#'>{name}</a>
                         </li>)}
                 </ul>
             </div>
@@ -327,21 +338,17 @@ class ColorSchemeActions extends Component<ColorSchemeActionProps, ColorSchemeAc
     // }
 }
 
-const NavBar = (props:
-                    {
-                        onClose: () => any
-                    }
-) =>
-    <nav className="navbar navbar-expand bg-dark navbar-dark">
+const NavBar = (props: DefaultProps & { onClose: (event: MouseEvent<HTMLButtonElement>) => any }) =>
+    <nav className={concatClass("navbar navbar-expand bg-dark navbar-dark", props.className)}>
         <div className="container-fluid">
             <a className="navbar-brand">Color Picker</a>
             <ul className="navbar-nav">
             </ul>
-            <button className="btn-close btn" type="button" onclick={props.onClose}></button>
+            <button className="btn-close btn" type="button" onClick={props.onClose}></button>
         </div>
     </nav>
 
-interface ColorPickerProps {
+interface ColorPickerProps extends DefaultProps {
     service: ColorPickerService,
 }
 
@@ -349,24 +356,30 @@ interface ColorPickerState {
     activeColorScheme: ColorScheme,
 }
 
-class ColorPicker extends Component<ColorPickerProps, ColorPickerState> {
+class ColorPicker extends React.Component<ColorPickerProps, ColorPickerState> {
     // declare props: PropsType<Component> & { service: ColorPickerService };
+
+    constructor(props: ColorPickerProps) {
+        super(props);
+        this.state = {
+            activeColorScheme: props.service.getDefault(),
+        }
+    }
 
     public render(): JSX.Element {
 
         // update NewColorSchemeDialog and ColorSchemeActions when a new CS is selected
-        (colorSchemeDropdownMenu.jsObject! as ColorSchemeDropdownMenu).on("colorSchemeSelected",
-            (newColorSchemeDialog.jsObject! as NewColorSchemeDialog).setParentColorScheme.bind(newColorSchemeDialog.jsObject!));
+        // (colorSchemeDropdownMenu.jsObject! as ColorSchemeDropdownMenu).on("colorSchemeSelected",
+        //     (newColorSchemeDialog.jsObject! as NewColorSchemeDialog).setParentColorScheme.bind(newColorSchemeDialog.jsObject!));
         // (colorSchemeDropdownMenu.jsObject! as ColorSchemeDropdownMenu).on("colorSchemeSelected",
         //     (colorSchemeActions.jsObject! as ColorSchemeActions).setColorSchemeId.bind(colorSchemeActions.jsObject!))
 
-
         return (
-            <div className='container p-5'>
+            <div className={concatClass('container p-5', this.props.className)}>
                 <NavBar onClose={() => console.log("colorpicker closed")}></NavBar>
                 <NewColorSchemeDialog
                     defaultDesign={Designs.system}
-                    activeColorScheme={this.props.service.getDefault()}
+                    activeColorScheme={this.state.activeColorScheme}
                     onNewColorScheme={this.handleNewColorScheme}/>
 
                 <div className='row'>
@@ -394,7 +407,7 @@ class ColorPicker extends Component<ColorPickerProps, ColorPickerState> {
         }
     }
 
-    private handleNewColorScheme = (colorScheme: ColorScheme) => {
+    private handleNewColorScheme = (colorScheme: ColorSchemeFragmentType) => {
         this.props.service.newColorScheme(colorScheme);
     }
 
@@ -413,18 +426,24 @@ class ColorPicker extends Component<ColorPickerProps, ColorPickerState> {
 
 }
 
-interface NewColorSchemeDialogProps {
-    onNewColorScheme: (colorScheme: ColorScheme) => any,
+interface NewColorSchemeDialogProps extends DefaultProps {
+    onNewColorScheme: (colorScheme: ColorSchemeFragmentType) => any,
     activeColorScheme: ColorScheme, // used to get e.g. the colors for the new colorscheme
     defaultDesign: Designs,
 }
 
 interface NewColorSchemeDialogState {
-    workingColorScheme: ColorScheme, // the attributes of the form are saved here
+    // workingColorScheme: ColorSchemeTypeOptional, // the attributes of the form are saved here
+    name: string,
+    description: string,
+    author: string,
+    design: Designs,
 }
 
-class NewColorSchemeDialog extends Component<NewColorSchemeDialogProps, NewColorSchemeDialogState> {
-    modal ?: Modal;
+type ColorSchemeFragmentType = { [k in Exclude<keyof ColorSchemeType, "id" | "preDefined" | "current">]: ColorSchemeType[k] };
+
+class NewColorSchemeDialog extends React.Component<NewColorSchemeDialogProps, NewColorSchemeDialogState> {
+    // modal ?: Modal;
     //
     // declare events: NormalEventType<Component> & {
     //     colorSchemeCreated?: (colorScheme: ColorScheme) => any,
@@ -434,11 +453,25 @@ class NewColorSchemeDialog extends Component<NewColorSchemeDialogProps, NewColor
     //     "colorSchemeCreated",
     // ];
 
+    constructor(props: NewColorSchemeDialogProps) {
+        super(props);
+        this.state = {
+            name: "",
+            description: "",
+            author: "",
+            design: props.defaultDesign,
+        }
+
+        this.handleInputChange = this.handleInputChange.bind(this);
+    }
+
     public render(): JSX.Element {
         console.log(this.constructor.name, "Designs", Object.keys(Designs), Object.entries(Designs))
 
         return (
-            <div className='modal fade' id='new-color-scheme-dialog' tabIndex={-1} aria-hidden={true}
+            <div className={concatClass('modal fade', this.props.className)}
+                 id='new-color-scheme-dialog'
+                 tabIndex={-1} aria-hidden={true}
                  aria-labelledby='Dialog to create a new Color Scheme'>
                 <div className='modal-dialog modal-dialog-centered'>
                     <div className='modal-content'>
@@ -458,8 +491,9 @@ class NewColorSchemeDialog extends Component<NewColorSchemeDialogProps, NewColor
                                     <select id='new-cs-parent-cs-input'
                                             name='colorScheme'
                                             className='form-select'
+                                            value={this.props.activeColorScheme.id}
                                             disabled>
-                                        <option selected value={this.props.activeColorScheme.id}>
+                                        <option value={this.props.activeColorScheme.id}>
                                             {this.props.activeColorScheme.name}
                                         </option>
                                     </select>
@@ -471,13 +505,15 @@ class NewColorSchemeDialog extends Component<NewColorSchemeDialogProps, NewColor
                                     <label htmlFor='new-cs-name-input' className='form-label'>Name</label>
                                     <input id="new-cs-name-input"
                                            name='name'
+                                           value={this.state.name}
+                                           onChange={this.handleInputChange}
                                            aria-describedby='new-cs-name-invalid'
                                            className='form-control'
                                            type='text'
                                            required
                                            placeholder="Your Color Scheme's name"/>
-                                    <div id='new-cs-name-invalid' className='invalid-feedback'>You must provide
-                                        a name
+                                    <div id='new-cs-name-invalid' className='invalid-feedback'>
+                                        You must provide a name
                                     </div>
                                 </div>
 
@@ -487,6 +523,8 @@ class NewColorSchemeDialog extends Component<NewColorSchemeDialogProps, NewColor
                                            className='form-label'>Description</label>
                                     <textarea id="new-cs-description-input"
                                               name='description'
+                                              value={this.state.description}
+                                              onChange={this.handleInputChange}
                                               aria-describedby="new-cs-description-invalid"
                                               className='form-control'
                                               placeholder='A very interesting description...'/>
@@ -497,6 +535,8 @@ class NewColorSchemeDialog extends Component<NewColorSchemeDialogProps, NewColor
                                     <label htmlFor='new-cs-author-input' className='form-label'>Author</label>
                                     <input id="new-cs-author-input"
                                            name='author'
+                                           value={this.state.author}
+                                           onChange={this.handleInputChange}
                                            aria-describedby='new-cs-author-invalid'
                                            type='text'
                                            required
@@ -512,10 +552,12 @@ class NewColorSchemeDialog extends Component<NewColorSchemeDialogProps, NewColor
                                     <label htmlFor='new-cs-design-select' className='form-label'>Design</label>
                                     <select id="new-cs-design-select"
                                             name='design'
+                                            value={this.state.design}
+                                            onChange={this.handleInputChange}
                                             className='form-select'
                                             required>
                                         {Object.entries(Designs).map(([k, v]) =>
-                                            <option selected={this.props.defaultDesign == v} value={k}>{v}</option>
+                                            <option value={v}>{v}</option>
                                         )}
                                     </select>
                                 </div>
@@ -534,27 +576,48 @@ class NewColorSchemeDialog extends Component<NewColorSchemeDialogProps, NewColor
         );
     }
 
-    private createNewColorScheme(event: FormEvent): void {
-        let formData = new FormData(event.target as HTMLFormElement);
-        console.log(this.constructor.name, "create new color sceheme form data:", formData);
-        let colorScheme = {
-            name: (formData.get("name")!),
-            description: formData.get("description")!,
-            author: formData.get("author")!,
-            design: formData.get("design")!,
-            colors: this.props.activeColorScheme.colors,
-        };
-        this.props.onNewColorScheme(colorScheme);
-        let newColorScheme = this.props.service.newColorScheme({
-            name: this.inputs!.name.value,
-            description: this.inputs!.description.value,
-            author: this.inputs!.author.value,
-            design: Designs[this.inputs!.design.value as "dark" | "light" | "system"],
-            colors: this.props.parentColorScheme.colors
+    private handleInputChange(event: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) {
+        const target = event.target;
+        const type = target.type;
+        const name: keyof NewColorSchemeDialogState = target.name as keyof NewColorSchemeDialogState;
+        let value: NewColorSchemeDialogState[typeof name];
+        switch (type) {
+            // case "checkbox":
+            //     value = (target as HTMLInputElement).checked;
+            //     break;
+            default:
+                value = target.value;
+        }
+        // @ts-ignore
+        this.setState({
+            [name]: value,
         });
-        this.props.onColorSchemeCreated!(newColorScheme);
-        console.log(this.constructor.name, newColorScheme);
-        this.modal!.hide();
+    }
+
+    private createNewColorScheme(event: FormEvent): void {
+        // let formData = new FormData(event.target as HTMLFormElement);
+        // console.log(this.constructor.name, "create new color sceheme form data:", formData);
+        // let colorScheme = new ColorScheme({
+        //     name: (formData.get("name")!),
+        //     description: formData.get("description")!,
+        //     author: formData.get("author")!,
+        //     design: formData.get("design")!,
+        //     colors: this.props.activeColorScheme.colors,
+        // });
+        this.props.onNewColorScheme({
+            ...this.state,
+            colors: this.props.activeColorScheme.colors,
+        });
+        // let newColorScheme = this.props.service.newColorScheme({
+        //     name: this.inputs!.name.value,
+        //     description: this.inputs!.description.value,
+        //     author: this.inputs!.author.value,
+        //     design: Designs[this.inputs!.design.value as "dark" | "light" | "system"],
+        //     colors: this.props.parentColorScheme.colors
+        // });
+        // this.props.onColorSchemeCreated!(newColorScheme);
+        // console.log(this.constructor.name, newColorScheme);
+        // this.modal!.hide();
     }
 
     //
@@ -569,6 +632,6 @@ class NewColorSchemeDialog extends Component<NewColorSchemeDialogProps, NewColor
     // }
 }
 
-document.body.append(
-    <ColorPicker service={new ColorPickerService()}></ColorPicker>
-);
+const root = createRoot(
+    document.getElementById("color-picker-root")!);
+root.render(<ColorPicker service={new ColorPickerService()}></ColorPicker>);

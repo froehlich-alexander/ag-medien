@@ -220,21 +220,6 @@ function getAllMixins(constructor: typeof MixinImplementing): (typeof Mixin)[] {
     return [...constructor.__mixinDependencies, ...getAllMixins(Object.getPrototypeOf(constructor))];
 }
 
-/**
- * This converts a object of a type (like a Map) into an object.<br>
- * This can be useful e.g. if you want to convert something to json
- * @param input
- * @return {Object}
- */
-function toObject(input: Object): any {
-    // assertType<[Pair<string, number>]>(input, Pair);
-    if (input instanceof Map) {
-        return Object.fromEntries(input);
-    } else {
-        return input;
-    }
-}
-
 function extendsClass(clazz: Function, superClass: Function): boolean {
     let next = Object.getPrototypeOf(clazz);
     while (next !== null) {
@@ -327,4 +312,4 @@ function assertType<T extends Object, T1 extends Object = Object, T2 extends Obj
     }
 }
 
-export {Pair, Tripel, Mixin, MixinImplementing, mixin, toObject, assertType, hasMixins, extendsClass};
+export {Pair, Tripel, Mixin, MixinImplementing, mixin, assertType, hasMixins, extendsClass};

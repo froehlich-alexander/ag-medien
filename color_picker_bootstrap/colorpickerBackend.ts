@@ -1,7 +1,4 @@
-import {toObject} from "../widgets/src/ts/base.js";
-import {Color} from "../widgets/src/ts/WidgetBase.js";
-import {Simulate} from "react-dom/test-utils";
-import keyDown = Simulate.keyDown;
+import * as $ from 'jquery';
 
 type ColorSchemeMap = Map<string, ColorScheme>;
 
@@ -44,6 +41,12 @@ export class ColorSchemeData {
     public design?: string & Designs;
 }
 
+export type ColorSchemeTypeStrict = { [k in keyof ColorSchemeInterface]: ColorSchemeInterface[k] };
+export type ColorSchemeType =
+    { id: ColorSchemeInterface["id"], name: ColorSchemeInterface["name"] }
+    & { [k in Exclude<keyof ColorSchemeInterface, "id" | "name">]?: ColorSchemeInterface[k] };
+export type ColorSchemeTypeOptional = { [k in keyof ColorSchemeInterface]?: ColorSchemeInterface[k] };
+
 class ColorSchemeInterface {
     public id: string;
     public name: string;
@@ -54,7 +57,7 @@ class ColorSchemeInterface {
     public current: boolean = false;
     public preDefined: boolean = false;
 
-    constructor(other: { [k in Exclude<keyof ColorSchemeInterface, "id" | "name">]?: ColorSchemeInterface[k] } & { id: ColorSchemeInterface["id"], name: ColorSchemeInterface["name"] }) {
+    constructor(other: ColorSchemeType) {
         this.id = other.id;
         this.name = other.name;
         this.description = other.description ?? "Very interesting description";
@@ -71,26 +74,21 @@ class ColorSchemeInterface {
 }
 
 class ColorScheme extends ColorSchemeInterface {
-    public override readonly id: string = "";
+    declare public readonly id: string;
 
     // constructor(service: ColorPickerService, id?: string, name?: string, description?: string, author?: string, design?: Designs, colors?: ColorMap);
-    constructor(data: { [k in keyof ColorSchemeInterface]?: ColorSchemeInterface[k] }, service: ColorPickerService);
-    constructor(data: { [k in keyof ColorSchemeInterface]: ColorSchemeInterface[k] });
+    constructor(data: ColorSchemeType);
+    constructor(data: ColorSchemeTypeOptional, service: ColorPickerService);
 
     /**
      * DON'T USE THIS CONSTRUCTOR!!!<br>
      * USE {@link ColorPickerService.getColorScheme} or {@link ColorPickerService.newColorScheme} instead<br>
      * This will insert (random) strings if you set null for {@link name} and / or {@link id}
-     * @param {ColorPickerService | ColorSchemeInterface} service
-     * @param {string} id
-     * @param {string} name
-     * @param {string} description
-     * @param {string} author
-     * @param {Designs} design
-     * @param {ColorMap} colors
+     * @param {{[k in keyof ColorSchemeInterface]?: ColorSchemeInterface[k]}} data
+     * @param {ColorPickerService} service
      */
     // public constructor(service: ColorPickerService | ColorSchemeInterface, id?: string, name?: string, description?: string, author?: string, design?: Designs, colors: ColorMap = new Map()) {
-    public constructor(data: { [k in keyof ColorSchemeInterface]?: ColorSchemeInterface[k] }, service?: ColorPickerService) {
+    public constructor(data: ColorSchemeTypeOptional, service?: ColorPickerService) {
         super(service ? {
             id: data.id ?? service.generateId(),
             name: data.name ?? service.generateName(),
@@ -100,7 +98,7 @@ class ColorScheme extends ColorSchemeInterface {
             colors: data.colors,
             current: data.current,
             preDefined: data.preDefined,
-        } : data as ColorSchemeInterface);
+        } : data as ColorSchemeType);
 
         // console.assert(service != null, "service is null");
         // if (service instanceof ColorPickerService) {
@@ -249,12 +247,14 @@ class ColorScheme extends ColorSchemeInterface {
      */
     public copy(colorScheme?: ColorScheme): ColorScheme {
         if (colorScheme === undefined) {
-            colorScheme = new ColorScheme(new ColorSchemeInterface());
+            return new ColorScheme(this)
+                .setPreDefined(false)
+                .setCurrent(false);
         }
         return colorScheme
             .setName(this.name)
-            .setAuthor(this.author)
             .setDescription(this.description)
+            .setAuthor(this.author)
             .setDesign(this.design)
             .setColors(this.colors);
     }
@@ -331,6 +331,21 @@ class ColorScheme extends ColorSchemeInterface {
     public setColor(colorId: string, value: string): this {
         this.colors.set(colorId, value);
         return this;
+    }
+}
+
+/**
+ * This converts an object of a type (like a Map) into an object.<br>
+ * This can be useful e.g. if you want to convert something to json
+ * @param input
+ * @return {Object}
+ */
+function toObject(input: Object): any {
+    // assertType<[Pair<string, number>]>(input, Pair);
+    if (input instanceof Map) {
+        return Object.fromEntries(input);
+    } else {
+        return input;
     }
 }
 
@@ -417,14 +432,8 @@ class ColorPickerService {
         // return newColorScheme;
     }
 
-    public newColorScheme({
-                              name,
-                              description,
-                              author,
-                              design,
-                              colors
-                          }: { [k in keyof ColorScheme]?: ColorScheme[k] }): ColorScheme {
-        let newColorScheme = new ColorScheme(this, undefined, name, description, author, design, colors);
+    public newColorScheme(other: { [k in Exclude<keyof ColorSchemeInterface, "id">]?: ColorSchemeInterface[k] }): ColorScheme {
+        let newColorScheme = new ColorScheme(other, this);
         this._all.set(newColorScheme.id, newColorScheme);
         this.save();
         this.trigger("add", newColorScheme);
@@ -476,8 +485,16 @@ class ColorPickerService {
         let result = this._all.get("default");
         if (forceReload || result == null) {
             let colors: ColorMap = this.getCSSVariables(document.styleSheets, "farben.css");
-            result = new ColorScheme(this, "default", "default", "Default Color Scheme", "AG-Medien", Designs.system, colors)
-                .setPreDefined(true);
+            result = new ColorScheme({
+                id: "default",
+                name: "Default",
+                description: "Default Color Scheme",
+                author: "AG-Medien",
+                design: Designs.system,
+                colors: colors,
+                current: false,
+                preDefined: true,
+            });
         }
         return result;
     }
@@ -540,24 +557,24 @@ class ColorPickerService {
         return this;
     }
 
-    /**
-     * should be used when the color input onChange fires
-     * @param colorType {string}
-     * @param newColor {string}
-     * @deprecated
-     */
-    public onChange(colorType: string, newColor: string) {
-        let colorScheme = this.getCurrent();
-        if (colorScheme.preDefined) {
-            colorScheme = new ColorScheme(this, undefined, undefined, undefined, undefined, undefined, this.getCurrent().colors);
-            console.log("hmm");
-            console.log(colorScheme);
-        }
-
-        colorScheme.colors.set(colorType, newColor);
-        this.activate(colorScheme);
-        this.save(colorScheme);
-    }
+    // /**
+    //  * should be used when the color input onChange fires
+    //  * @param colorType {string}
+    //  * @param newColor {string}
+    //  * @deprecated
+    //  */
+    // public onChange(colorType: string, newColor: string) {
+    //     let colorScheme = this.getCurrent();
+    //     if (colorScheme.preDefined) {
+    //         colorScheme = new ColorScheme(this, undefined, undefined, undefined, undefined, undefined, this.getCurrent().colors);
+    //         console.log("hmm");
+    //         console.log(colorScheme);
+    //     }
+    //
+    //     colorScheme.colors.set(colorType, newColor);
+    //     this.activate(colorScheme);
+    //     this.save(colorScheme);
+    // }
 
     public get all(): ColorSchemeMap {
         return this._all;
@@ -651,3 +668,4 @@ class ColorPickerService {
 
 export {ColorPickerService};
 export {ColorScheme};
+export {toObject};

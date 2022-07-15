@@ -21,9 +21,10 @@
     "strictFunctionTypes": true,
     "useDefineForClassFields": true,
     "sourceMap": true,
-    "removeComments": false
+    "removeComments": false,
+    "skipLibCheck": true,
   },
   "exclude": [
-    "jsxFactory.ts",
+    "jsxFactory.ts"
   ]
 }
