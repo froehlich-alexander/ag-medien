@@ -398,6 +398,7 @@ class ColorPicker extends React.Component<ColorPickerProps, ColorPickerState> {
             <div className={concatClass('container p-5', this.props.className)}>
                 <NavBar onClose={() => console.log("colorpicker closed")}></NavBar>
                 <NewColorSchemeDialog
+                    allColorSchemes={this.state.allColorSchemes}
                     hidden={!this.state.newColorSchemeDialogVisibility}
                     onDialogVisibilityChange={(visibility) => this.setState({newColorSchemeDialogVisibility: visibility})}
                     defaultDesign={Designs.system}

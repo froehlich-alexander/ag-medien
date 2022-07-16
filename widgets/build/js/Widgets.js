@@ -682,7 +682,7 @@ let Top = class Top extends FlexBox {
         // createMixinFields(this, new OneIconContaining());
         this.setIcon(Icon.Close());
         // this.enableIcon(true);
-        this.label = new Text().setFontWeight(FontWeight.bold);
+        this.labelString = new Text().setFontWeight(FontWeight.bold);
         this.addItem(this.label);
         this.addItem(this.icon, FlexAlign.end);
         this.setSpacing("20px", "20px", "10px");

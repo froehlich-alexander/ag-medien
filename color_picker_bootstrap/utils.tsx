@@ -5,6 +5,8 @@ interface DefaultProps {
     className?: string,
 }
 
+type FunctionComponent<P extends {[k: string]:any}> = React.FunctionComponent<(P extends {"children":any} ? P : React.PropsWithChildren<P>)>;
+
 function concatClass(...classes: (string | false | undefined)[]): string | undefined {
     return classes.filter(v => v).join(" ") ?? undefined;
 }
@@ -50,4 +52,4 @@ class Form extends React.Component<FormProps, FormState> {
     }
 }
 
-export {Form, concatClass, DefaultProps};
+export {Form, concatClass, DefaultProps, FunctionComponent};

@@ -3,7 +3,7 @@ import * as React from "react";
 import {ChangeEvent, createRef, FormEvent, RefObject} from "react";
 import {Modal} from "bootstrap";
 import {concatClass, DefaultProps, Form} from "../utils.js";
-import {ColorSchemeSelect} from "../forms/colorSchemes.js";
+import {AuthorInput, ColorSchemeSelect, DescriptionInput, DesignInput, NameInput} from "../forms/colorSchemes.js";
 
 interface NewColorSchemeDialogProps extends DefaultProps {
     onNewColorScheme: (colorScheme: ColorSchemeFragmentType) => any,
@@ -74,10 +74,24 @@ export class NewColorSchemeDialog extends React.Component<NewColorSchemeDialogPr
                                   onSubmit={this.createNewColorScheme.bind(this)}>
 
                                 <ColorSchemeSelect value={this.props.selectedColorScheme.id}
-                                                   options={this.props.allColorSchemes.map(cs =>
-                                                       <option value={cs.id} key={cs.id}>{cs.name}</option>)}
-                                                   text={"You can later manually edit the colors"}
-                                                   label={"Colors"}/>
+                                                   text="You can later manually edit the colors"
+                                                   labelString="Colors">
+                                    {this.props.allColorSchemes.map(cs =>
+                                        <option value={cs.id} key={cs.id}>{cs.name}</option>)}
+                                </ColorSchemeSelect>
+
+                                <NameInput onChange={this.handleInputChange} value={this.state.name}/>
+
+                                <DescriptionInput onChange={this.handleInputChange} value={this.state.name}/>
+
+                                <AuthorInput placeholder={this.props.selectedColorScheme.author}
+                                             onChange={this.handleInputChange} value={this.state.author}/>
+
+                                <DesignInput onChange={this.handleInputChange} value={this.state.design}>
+                                    {Object.entries(Designs).map(([k, v]) =>
+                                        <option value={v} key={v}>{v}</option>
+                                    )}
+                                </DesignInput>
                             </Form>
                         </div>
                         <div className='modal-footer'>
