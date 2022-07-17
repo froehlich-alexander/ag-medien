@@ -26,6 +26,7 @@ export type ColorSchemeFragmentType = { [k in Exclude<keyof ColorSchemeType, "id
 
 export class NewColorSchemeDialog extends React.Component<NewColorSchemeDialogProps, NewColorSchemeDialogState> {
     private readonly modal: RefObject<HTMLDivElement>;
+    private inputId: string = "new-dialog";
     //
     // declare events: NormalEventType<Component> & {
     //     colorSchemeCreated?: (colorScheme: ColorScheme) => any,
@@ -71,23 +72,31 @@ export class NewColorSchemeDialog extends React.Component<NewColorSchemeDialogPr
                         <div className='modal-body'>
                             <Form id='new-cs-form'
                                   action='javascript:void(0);'
-                                  onSubmit={this.createNewColorScheme.bind(this)}>
+                                  onSubmit={this.createNewColorScheme.bind(this)}
+                                  successfulSubmitted={this.props.hidden || undefined}>
 
                                 <ColorSchemeSelect value={this.props.selectedColorScheme.id}
-                                                   text="You can later manually edit the colors"
-                                                   labelString="Colors">
+                                                   text={"You can later manually edit the colors"}
+                                                   labelString="Base Color Scheme"
+                                                   id={this.inputId}>
                                     {this.props.allColorSchemes.map(cs =>
                                         <option value={cs.id} key={cs.id}>{cs.name}</option>)}
                                 </ColorSchemeSelect>
 
-                                <NameInput onChange={this.handleInputChange} value={this.state.name}/>
+                                <NameInput onChange={this.handleInputChange}
+                                           value={this.state.name}
+                                           id={this.inputId}/>
 
-                                <DescriptionInput onChange={this.handleInputChange} value={this.state.name}/>
+                                <DescriptionInput onChange={this.handleInputChange} value={this.state.name}
+                                                  id={this.inputId}/>
 
                                 <AuthorInput placeholder={this.props.selectedColorScheme.author}
-                                             onChange={this.handleInputChange} value={this.state.author}/>
+                                             onChange={this.handleInputChange} value={this.state.author}
+                                             id={this.inputId}/>
 
-                                <DesignInput onChange={this.handleInputChange} value={this.state.design}>
+                                <DesignInput onChange={this.handleInputChange}
+                                             value={this.state.design}
+                                             id={this.inputId}>
                                     {Object.entries(Designs).map(([k, v]) =>
                                         <option value={v} key={v}>{v}</option>
                                     )}

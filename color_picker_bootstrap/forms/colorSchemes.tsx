@@ -2,7 +2,6 @@ import {Designs} from "../colorpickerBackend.js";
 import * as React from "react";
 import {
     ChangeEventHandler,
-    ComponentProps,
     DetailedReactHTMLElement,
     HTMLProps,
     ReactElement,
@@ -18,6 +17,9 @@ interface InputProps<T extends HTMLInputElements> extends HTMLProps<T> {
     onChange?: ChangeEventHandler,
     text?: string | number,
     labelString?: string | number,
+    invalidFeedback?: string,
+    validFeedback?: string,
+    id: NonNullable<HTMLProps<T>["id"]>,
     children?: T extends HTMLSelectElement
         ? ReactElement<HTMLProps<HTMLOptionElement>> | ReactElement<HTMLProps<HTMLOptionElement>>[]
         : never,
@@ -26,24 +28,32 @@ interface InputProps<T extends HTMLInputElements> extends HTMLProps<T> {
 interface InputContainerProps {
     labelString: InputProps<any>["labelString"],
     text?: InputProps<any>["text"],
-    invalidFeedback?: string,
-    validFeedback?: string,
+    invalidFeedback?: InputProps<any>["invalidFeedback"],
+    validFeedback?: InputProps<any>["validFeedback"],
     children: ReactElement<HTMLProps<HTMLInputElements>>,
 }
 
 const InputContainer: FunctionComponent<InputContainerProps> = (props) => {
     let invalidFeedback;
-    let inputProps: typeof props.children.props = {};
+    let text;
+    let inputProps: typeof props.children.props = {
+        "aria-describedby": props.children.props["aria-describedby"],
+    };
+
     if (props.invalidFeedback) {
         invalidFeedback = <div id={props.children.props.id + "-invalid-feedback"}
                                className='invalid-feedback'>{props.invalidFeedback}</div>;
-        inputProps["aria-describedby"] = concatClass(props.children.props["aria-describedby"], invalidFeedback.props.id);
+        inputProps["aria-describedby"] = concatClass(inputProps["aria-describedby"], invalidFeedback.props.id);
+    }
+    if (props.text) {
+        text = <div id={props.children.props.id + "-form-text"} className='form-text'>{props.text}</div>;
+        inputProps["aria-describedby"] = concatClass(inputProps["aria-describedby"], text.props.id);
     }
     return (
         <div className='mb-3'>
             <label htmlFor={props.children.props.id} className='form-label'>{props.labelString}</label>
             {React.cloneElement(props.children, inputProps)}
-            {props.text && <div className='form-text'>{props.text}</div>}
+            {text}
             {invalidFeedback}
             {props.validFeedback && <div id={props.children.props.id + "-valid-feedback"}
                                          className='valid-feedback'>{props.validFeedback}</div>}
@@ -57,14 +67,25 @@ interface ColorSchemeSelectProps extends InputProps<HTMLSelectElement> {
     labelString: InputProps<any>["labelString"],
 }
 
-const ColorSchemeSelect: FunctionComponent<ColorSchemeSelectProps> = (props: ColorSchemeSelectProps) => {
+const ColorSchemeSelect: FunctionComponent<ColorSchemeSelectProps> = (
+    {
+        id,
+        text,
+        labelString,
+        className,
+        invalidFeedback,
+        validFeedback,
+        ...inputProps
+    }) => {
     return (
-        <InputContainer text={props.text} labelString={props.labelString}>
-            <select id='new-cs-parent-cs-input'
-                    name='colorScheme'
-                    {...props}
-                    className={concatClass(props.className, 'form-select')}>
-                {props.children}
+        <InputContainer text={text}
+                        labelString={labelString}
+                        invalidFeedback={invalidFeedback}
+                        validFeedback={validFeedback}>
+            <select name='colorScheme'
+                    {...inputProps}
+                    id={id + "-" + 'color-scheme-input'}
+                    className={concatClass(className, 'form-select')}>
             </select>
         </InputContainer>
     );
@@ -73,71 +94,132 @@ const ColorSchemeSelect: FunctionComponent<ColorSchemeSelectProps> = (props: Col
 interface NameInputProps extends InputProps<HTMLInputElement> {
 }
 
-const NameInput: FunctionComponent<NameInputProps> = (props) => {
+const NameInput: FunctionComponent<NameInputProps> = (
+    {
+        id,
+        text,
+        labelString,
+        className,
+        invalidFeedback,
+        validFeedback,
+        ...inputProps
+    }) => {
     return (
-        <InputContainer labelString={props.labelString ?? "Name"}
-                        invalidFeedback='You must provide a name'
-                        text={props.text}>
-            <input id="new-cs-name-input"
-                   name='name'
-                   className={concatClass(props.className, 'form-control')}
+        <InputContainer labelString={labelString}
+                        text={text}
+                        invalidFeedback={invalidFeedback}
+                        validFeedback={validFeedback}>
+            <input name='name'
                    type='text'
                    required
                    placeholder="Your Color Scheme's name"
-                   {...props}/>
+                   {...inputProps}
+                   className={concatClass(className, 'form-control')}
+                   id={id + "-" + 'name-input'}/>
         </InputContainer>
     );
+}
+NameInput.defaultProps = {
+    labelString: "Name",
+    invalidFeedback: "You must provide a name",
 }
 
 interface DescriptionInputProps extends InputProps<HTMLTextAreaElement> {
 
 }
 
-const DescriptionInput: FunctionComponent<DescriptionInputProps> = (props) => {
+const DescriptionInput: FunctionComponent<DescriptionInputProps> = (
+    {
+        id,
+        text,
+        labelString,
+        className,
+        invalidFeedback,
+        validFeedback,
+        ...inputProps
+    }) => {
     return (
-        <InputContainer labelString={props.labelString ?? "Description"}>
-            <textarea id="new-cs-description-input"
-                      name='description'
+        <InputContainer labelString={labelString}
+                        text={text}
+                        invalidFeedback={invalidFeedback}
+                        validFeedback={validFeedback}>
+            <textarea name='description'
                       placeholder='A very interesting description...'
-                      {...props}
-                      className={concatClass(props.className, 'form-control')}/>
+                      {...inputProps}
+                      className={concatClass(className, 'form-control')}
+                      id={id + "-" + 'description-input'}/>
         </InputContainer>);
 }
+DescriptionInput.defaultProps = {
+    labelString: "Description",
 
+}
 interface AuthorInputProps extends InputProps<HTMLInputElement> {
+
 
 }
 
-const AuthorInput: FunctionComponent<AuthorInputProps> = (props) => {
+const AuthorInput: FunctionComponent<AuthorInputProps> = (
+    {
+        id,
+        text,
+        labelString,
+        className,
+        invalidFeedback,
+        validFeedback,
+        ...inputProps
+    }) => {
     return (
-        <InputContainer labelString={props.labelString ?? "Author"}
-                        invalidFeedback='You must provide an author'>
-            <input id="new-cs-author-input"
-                   name='author'
+        <InputContainer labelString={labelString}
+                        text={text}
+                        invalidFeedback={invalidFeedback ?? "You must provide an author"}
+                        validFeedback={validFeedback ?? ("Hello " + inputProps.value)}
+        >
+            <input name='author'
                    type='text'
                    required
-                   {...props}
-                   className={concatClass(props.className, 'form-control')}/>
+                   {...inputProps}
+                   className={concatClass(className, 'form-control')}
+                   id={id + "-" + 'author-input'}
+            />
         </InputContainer>
     );
+}
+AuthorInput.defaultProps = {
+    labelString: "Author",
 }
 
 interface DesignProps extends InputProps<HTMLSelectElement> {
 
 }
 
-const DesignInput: FunctionComponent<DesignProps> = (props) => {
+const DesignInput: FunctionComponent<DesignProps> = (
+    {
+        id,
+        text,
+        labelString,
+        className,
+        invalidFeedback,
+        validFeedback,
+        ...inputProps
+    }) => {
     return (
-        <InputContainer labelString={props.labelString ?? "Design"}>
-            <select id="new-cs-design-select"
-                    name='design'
-                    required
-                    {...props}
-                    className={concatClass(props.className, 'form-select')}>
-                {props.children}
+        <InputContainer labelString={labelString}
+                        text={text}
+                        invalidFeedback={invalidFeedback}
+                        validFeedback={validFeedback}>
+            <select
+                name='design'
+                required
+                {...inputProps}
+                className={concatClass(className, 'form-select')}
+                id={id + "-" + 'design-select'}>
             </select>
         </InputContainer>
     );
+}
+DesignInput.defaultProps = {
+    labelString: "Design",
 }
 
 export {ColorSchemeSelect, NameInput, DescriptionInput, AuthorInput, DesignInput};
