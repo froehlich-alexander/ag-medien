@@ -3,7 +3,7 @@ import * as React from "react";
 import {ChangeEvent, createRef, FormEvent, RefObject} from "react";
 import {Modal} from "bootstrap";
 import {concatClass, DefaultProps, Form} from "../utils.js";
-import {AuthorInput, ColorSchemeSelect, DescriptionInput, DesignInput, NameInput} from "../forms/colorSchemes.js";
+import {AuthorInput, ColorSchemeSelect, DescriptionInput, DesignInput, NameInput} from "../forms/inputs.js";
 
 interface NewColorSchemeDialogProps extends DefaultProps {
     onNewColorScheme: (colorScheme: ColorSchemeFragmentType) => any,

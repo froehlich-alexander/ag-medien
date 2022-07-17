@@ -247,16 +247,16 @@ class ColorScheme extends ColorSchemeInterface {
      */
     public copy(colorScheme?: ColorScheme): ColorScheme {
         if (colorScheme === undefined) {
-            return new ColorScheme(this)
-                .setPreDefined(false)
-                .setCurrent(false);
+            return new ColorScheme(this);
         }
         return colorScheme
             .setName(this.name)
             .setDescription(this.description)
             .setAuthor(this.author)
             .setDesign(this.design)
-            .setColors(this.colors);
+            .setColors(this.colors)
+            .setCurrent(this.current)
+            .setPreDefined(this.preDefined);
     }
 
     // public get name(): string {

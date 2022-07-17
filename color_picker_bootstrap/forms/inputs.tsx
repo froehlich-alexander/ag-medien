@@ -277,4 +277,4 @@ const ColorInput: FunctionComponent<ColorInputProps> = (
     );
 }
 
-export {ColorSchemeSelect, NameInput, DescriptionInput, AuthorInput, DesignInput};
+export {ColorSchemeSelect, NameInput, DescriptionInput, AuthorInput, DesignInput, ColorInput};
