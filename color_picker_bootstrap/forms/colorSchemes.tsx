@@ -30,14 +30,17 @@ interface InputContainerProps {
     text?: InputProps<any>["text"],
     invalidFeedback?: InputProps<any>["invalidFeedback"],
     validFeedback?: InputProps<any>["validFeedback"],
+    inputGroup?: boolean,
     children: ReactElement<HTMLProps<HTMLInputElements>>,
 }
 
 const InputContainer: FunctionComponent<InputContainerProps> = (props) => {
     let invalidFeedback;
+    let validFeedback;
     let text;
     let inputProps: typeof props.children.props = {
         "aria-describedby": props.children.props["aria-describedby"],
+        className: props.children.props.className,
     };
 
     if (props.invalidFeedback) {
@@ -45,20 +48,46 @@ const InputContainer: FunctionComponent<InputContainerProps> = (props) => {
                                className='invalid-feedback'>{props.invalidFeedback}</div>;
         inputProps["aria-describedby"] = concatClass(inputProps["aria-describedby"], invalidFeedback.props.id);
     }
+
     if (props.text) {
-        text = <div id={props.children.props.id + "-form-text"} className='form-text'>{props.text}</div>;
+        text = <div id={props.children.props.id + "-form-text"} className='form-text col-12'>{props.text}</div>;
         inputProps["aria-describedby"] = concatClass(inputProps["aria-describedby"], text.props.id);
     }
-    return (
-        <div className='mb-3'>
-            <label htmlFor={props.children.props.id} className='form-label'>{props.labelString}</label>
-            {React.cloneElement(props.children, inputProps)}
-            {text}
-            {invalidFeedback}
-            {props.validFeedback && <div id={props.children.props.id + "-valid-feedback"}
-                                         className='valid-feedback'>{props.validFeedback}</div>}
-        </div>
-    );
+
+    if (props.validFeedback) {
+        validFeedback = <div id={props.children.props.id + "-valid-feedback"}
+                             className='valid-feedback'>{props.validFeedback}</div>;
+    }
+
+    if (props.inputGroup) {
+        return (
+            <div className='row input-group mb-3'>
+                <label htmlFor={props.children.props.id}
+                       className='col-auto input-group-text'>{props.labelString}</label>
+                {React.cloneElement(props.children, {
+                    ...inputProps,
+                    className: concatClass(inputProps.className, "col")
+                })}
+                {invalidFeedback}
+                {validFeedback}
+                {text}
+            </div>
+        );
+    } else {
+        return (
+            <div className='mb-3'>
+                <label htmlFor={props.children.props.id} className='form-label'>{props.labelString}</label>
+                {React.cloneElement(props.children, inputProps)}
+                {text}
+                {invalidFeedback}
+                {validFeedback}
+            </div>
+        );
+    }
+}
+
+InputContainer.defaultProps = {
+    inputGroup: true,
 }
 
 
@@ -154,6 +183,7 @@ DescriptionInput.defaultProps = {
     labelString: "Description",
 
 }
+
 interface AuthorInputProps extends InputProps<HTMLInputElement> {
 
 
@@ -180,7 +210,7 @@ const AuthorInput: FunctionComponent<AuthorInputProps> = (
                    required
                    {...inputProps}
                    className={concatClass(className, 'form-control')}
-                   id={id + "-" + 'author-input'}
+                   id={id + '-author-input'}
             />
         </InputContainer>
     );
@@ -220,6 +250,31 @@ const DesignInput: FunctionComponent<DesignProps> = (
 }
 DesignInput.defaultProps = {
     labelString: "Design",
+}
+
+type ColorInputProps = Omit<InputProps<HTMLInputElement>, "text">;
+// interface ColorInputProps extends ExcludeKey<InputProps<HTMLInputElement>, "text">{}
+
+const ColorInput: FunctionComponent<ColorInputProps> = (
+    {
+        id,
+        labelString,
+        className,
+        invalidFeedback,
+        validFeedback,
+        ...inputProps
+    }) => {
+    return (
+        <InputContainer labelString={labelString}
+            // text={text}
+                        invalidFeedback={invalidFeedback}
+                        validFeedback={validFeedback}>
+            <input type='color'
+                   className={concatClass(className, "form-select")}
+                   id={id + "-color-input"}
+                   {...inputProps}/>
+        </InputContainer>
+    );
 }
 
 export {ColorSchemeSelect, NameInput, DescriptionInput, AuthorInput, DesignInput};
