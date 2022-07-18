@@ -31,6 +31,12 @@ interface InputContainerProps {
     invalidFeedback?: InputProps<any>["invalidFeedback"],
     validFeedback?: InputProps<any>["validFeedback"],
     inputGroup?: boolean,
+
+    /** col-n for the label */
+    labelCol?: number | string,
+
+    /** col-n for the input */
+    inputCol?: number | string,
     children: ReactElement<HTMLProps<HTMLInputElements>>,
 }
 
@@ -61,12 +67,14 @@ const InputContainer: FunctionComponent<InputContainerProps> = (props) => {
 
     if (props.inputGroup) {
         return (
-            <div className='row input-group mb-3'>
+            <div className='input-group mb-3'>
                 <label htmlFor={props.children.props.id}
-                       className='col-auto input-group-text'>{props.labelString}</label>
+                       className={`col-${props.labelCol} input-group-text`}>
+                    {props.labelString}
+                </label>
                 {React.cloneElement(props.children, {
                     ...inputProps,
-                    className: concatClass(inputProps.className, "col")
+                    className: concatClass(inputProps.className, props.inputCol != null ? `col-${props.inputCol}` : "col"),
                 })}
                 {invalidFeedback}
                 {validFeedback}
@@ -88,6 +96,7 @@ const InputContainer: FunctionComponent<InputContainerProps> = (props) => {
 
 InputContainer.defaultProps = {
     inputGroup: true,
+    labelCol: "auto",
 }
 
 
@@ -268,9 +277,11 @@ const ColorInput: FunctionComponent<ColorInputProps> = (
         <InputContainer labelString={labelString}
             // text={text}
                         invalidFeedback={invalidFeedback}
-                        validFeedback={validFeedback}>
+                        validFeedback={validFeedback}
+        inputCol={1}
+        labelCol={11}>
             <input type='color'
-                   className={concatClass(className, "form-select")}
+                   className={concatClass(className, "form-control form-control-color")}
                    id={id + "-color-input"}
                    {...inputProps}/>
         </InputContainer>

@@ -65,6 +65,7 @@ class Form extends React.Component<FormProps, FormState> {
                 wasValidated: !this.props.successfulSubmitted,
             });
         }
+        return null;
     }
 
     private handleSubmit(event: FormEvent<HTMLFormElement>) {

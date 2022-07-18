@@ -1,12 +1,12 @@
 import * as React from "react";
 import {Form} from "../utils";
-import {ColorScheme} from "../colorpickerBackend";
+import {ColorPickerService, ColorScheme} from "../colorpickerBackend";
 import {ColorInput} from "./inputs";
-import {ChangeEventHandler} from "react";
+import {ChangeEventHandler, FormEventHandler} from "react";
 
 interface ColorPickerFormProps {
     selectedColorScheme: ColorScheme,
-    colorTypes: string[],
+    colorTypes: readonly string[],
     onColorSchemeChange: (colorScheme: ColorScheme) => any
 }
 
@@ -18,7 +18,7 @@ interface ColorPickerFormState {
 
 }
 
-class ColorPickerForm extends React.Component<ColorPickerFormProps, ColorPickerFormState> {
+export class ColorPickerForm extends React.Component<ColorPickerFormProps, ColorPickerFormState> {
 
     constructor(props: ColorPickerFormProps) {
         super(props);
@@ -32,21 +32,26 @@ class ColorPickerForm extends React.Component<ColorPickerFormProps, ColorPickerF
 
 
     public render(): React.ReactNode {
-
         return (
-            <div className='container'>
-                <Form>
-                    {this.props.colorTypes.map(colorType =>
-                        <ColorInput labelString={colorType}
-                                    id={colorType}
-                                    key={colorType}
-                                    data-color-id={colorType}
-                                    value={this.props.selectedColorScheme.colors.get(colorType)}
-                                    onChange={this.handleColorInputChange}
-                        />)}
-                </Form>
-            </div>
+            <Form onSubmit={this.handleSubmit}
+                  className='row gx-3'>
+                    {this.props.colorTypes.map(colorType => [colorType, ColorPickerService.getDisplayColorName(colorType)])
+                        .map(([colorType, displayName]) =>
+                            <div className='col-6'
+                                 key={colorType}>
+                                <ColorInput labelString={displayName}
+                                            id={colorType}
+                                            data-color-id={colorType}
+                                            value={this.props.selectedColorScheme.colors.get(colorType)}
+                                            onChange={this.handleColorInputChange}
+                                />
+                            </div>)}
+            </Form>
         );
+    }
+
+    private handleSubmit: FormEventHandler<HTMLFormElement> = (event) => {
+        console.log("color picker form submitted");
     }
 
     private handleColorInputChange: ChangeEventHandler<HTMLInputElement> = (event) => {
@@ -55,7 +60,7 @@ class ColorPickerForm extends React.Component<ColorPickerFormProps, ColorPickerF
         if (this.props.selectedColorScheme.colors.get(colorId) != newValue) {
             this.props.selectedColorScheme.setColor(colorId, newValue);
             let history = this.state.history.concat({
-                colorScheme:this.props.selectedColorScheme.copy(),
+                colorScheme: this.props.selectedColorScheme.copy(),
                 timestamp: Date.now(),
             });
             this.setState({

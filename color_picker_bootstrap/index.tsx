@@ -6,6 +6,7 @@ import {MouseEvent} from "react";
 import {createRoot} from "react-dom/client";
 import {ColorSchemeFragmentType, NewColorSchemeDialog} from "./dialogs/new.js";
 import {concatClass, DefaultProps} from "./utils.js";
+import {ColorPickerForm} from "./forms/colorPickerForm";
 
 //import bootstrap types
 // declare var bootstrap: any;
@@ -418,6 +419,9 @@ class ColorPicker extends React.Component<ColorPickerProps, ColorPickerState> {
                                         onEdit={this.handleEdit}
                                         className='col-5'/>
                 </div>
+                <ColorPickerForm colorTypes={this.service.colorTypes}
+                                 selectedColorScheme={this.state.selectedColorScheme}
+                                 onColorSchemeChange={this.handleColorSchemeChange}/>
             </div>
         );
     }
@@ -453,6 +457,22 @@ class ColorPicker extends React.Component<ColorPickerProps, ColorPickerState> {
             selectedColorScheme: newSelectedColorScheme,
             allColorSchemes: this.service.allList,
         });
+    }
+
+    private handleColorSchemeChange = (colorScheme: ColorScheme) => {
+        let serviceColorScheme = this.service.getColorScheme(colorScheme.id)!;
+        if (!colorScheme.equals(serviceColorScheme)) {
+            colorScheme.copy(serviceColorScheme);
+
+            if (this.state.activeColorScheme.id == serviceColorScheme.id || this.state.selectedColorScheme.id == serviceColorScheme.id) {
+                this.setState({
+                    activeColorScheme: this.service.getCurrent(),
+                    selectedColorScheme: this.service.getColorScheme(this.state.selectedColorScheme.id)!,
+                    allColorSchemes: this.service.allList,
+                });
+            }
+        }
+
     }
 
     private handleEdit = (): void => {

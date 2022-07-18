@@ -242,6 +242,7 @@ class ColorScheme extends ColorSchemeInterface {
     /**
      * Copies this colorScheme into {@link colorScheme}<br>
      * Creates a new colorScheme if {@link colorScheme} is empty<br>
+     * If {@link colorScheme} is present, {@link ColorScheme.id} will <b>not</b> be copied!
      * @param {ColorScheme} colorScheme
      * @returns {ColorScheme} {@link colorScheme}
      */
@@ -332,6 +333,21 @@ class ColorScheme extends ColorSchemeInterface {
         this.colors.set(colorId, value);
         return this;
     }
+
+    public equals(other: ColorScheme): boolean {
+        return this == other || (
+            this.id == other.id &&
+            this.name == other.name &&
+            this.description == other.description &&
+            this.author == other.author &&
+            this.design == other.design &&
+            [...this.colors.entries()]
+                .map(([k, v]) => v === other.colors.get(k))
+                .reduce((b, b1) => b && b1, true) &&
+            this.current == other.current &&
+            this.preDefined == other.preDefined
+        );
+    }
 }
 
 /**
@@ -354,7 +370,7 @@ class ColorPickerService {
     // #preDefined: boolean = false;
 
     private readonly _all: ColorSchemeMap = new Map<string, ColorScheme>();
-    private readonly _colorTypes: string[] = [];
+    private readonly _colorTypes: Array<string> = [];
     private readonly fruits: string[] = ["Strawberry", "Fraise", "Erdbeere"];
     private readonly callbacks: {
         "delete": ((colorScheme: ColorScheme) => any)[],
@@ -370,6 +386,7 @@ class ColorPickerService {
                 this._colorTypes.push(i);
             }
         }
+        // console.log("inti service", this._colorTypes, default1, default1.colors, [...default1.colors.keys()]);
         let all: { [index: number]: ColorSchemeData } = JSON.parse(window.localStorage.getItem("colors") ?? "{}");
         // let all = window.localStorage.getItem("colors") != null ? JSON.parse(window.localStorage.getItem("colors")) : {};
         for (let colorJson of Object.values(all)) {
@@ -637,7 +654,7 @@ class ColorPickerService {
         //     this._all.get(window.localStorage.getItem("current_color")) : this.getDefault()) : this.getDefault();
     }
 
-    public get colorTypes(): string[] {
+    public get colorTypes(): readonly string[] {
         return this._colorTypes;
     }
 
@@ -646,7 +663,7 @@ class ColorPickerService {
      * @param colorType {string}
      * @returns {string}
      */
-    public getDisplayColorName(colorType: string): string {
+    public static getDisplayColorName(colorType: string): string {
         let newColorType = colorType.replace("--", "");
         newColorType = newColorType.charAt(0).toLocaleUpperCase() + newColorType.substring(1, newColorType.length);
         return newColorType;
