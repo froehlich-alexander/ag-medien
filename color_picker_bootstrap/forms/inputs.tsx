@@ -9,7 +9,7 @@ import {
 } from "react";
 import {concatClass, FunctionComponent} from "../utils.js";
 
-type HTMLInputElements = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
+export type HTMLInputElements = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
 
 
 // @ts-ignore

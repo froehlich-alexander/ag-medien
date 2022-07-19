@@ -1,14 +1,26 @@
-import * as $ from 'jquery';
-
 type ColorSchemeMap = Map<string, ColorScheme>;
 
-class ColorMap extends Map<string, string> {
+export class ColorMap extends Map<string, string> {
 }
 
-export enum Designs {
-    light = "light",
-    dark = "darke",
-    system = "system",
+export type Design = "light" | "dark" | "system";
+
+
+export const Designs: { [k in Design]: k } & { all: () => Design[], __all?: Design[] } = {
+    light: "light",
+    dark: "dark",
+    system: "system",
+    all: () => {
+        if (Designs.__all != null) {
+            console.log("all desings", Designs.__all);
+            return Designs.__all;
+        } else {
+            let all = Object.keys(Designs);
+            all.splice(all.indexOf("all"), 1);
+            Designs.__all = all as Design[];
+            return Designs.__all;
+        }
+    },
 }
 
 /**
@@ -38,14 +50,14 @@ export class ColorSchemeData {
     public current?: boolean;
     public preDefined?: boolean;
     public colors?: { [index: string]: string };
-    public design?: string & Designs;
+    public design?: Design;
 }
 
 export type ColorSchemeTypeStrict = { [k in keyof ColorSchemeInterface]: ColorSchemeInterface[k] };
 export type ColorSchemeType =
     { id: ColorSchemeInterface["id"], name: ColorSchemeInterface["name"] }
     & { [k in Exclude<keyof ColorSchemeInterface, "id" | "name">]?: ColorSchemeInterface[k] };
-export type ColorSchemeTypeOptional = { [k in keyof ColorSchemeInterface]?: ColorSchemeInterface[k] };
+export type ColorSchemeDataTypeOptional = { -readonly [k in keyof ColorSchemeInterface]?: ColorSchemeInterface[k] };
 
 class ColorSchemeInterface {
     public id: string;
@@ -53,9 +65,11 @@ class ColorSchemeInterface {
     public description: string;
     public author: string;
     public readonly colors: ColorMap = new ColorMap();
-    public design: Designs = Designs.system;
+    public design: Design = Designs.system;
     public current: boolean = false;
     public preDefined: boolean = false;
+
+    public static readonly fields: Array<keyof ColorSchemeInterface> = ["id", "name", "description", "author", "design", "colors", "preDefined", "current"];
 
     constructor(other: ColorSchemeType) {
         this.id = other.id;
@@ -78,7 +92,7 @@ class ColorScheme extends ColorSchemeInterface {
 
     // constructor(service: ColorPickerService, id?: string, name?: string, description?: string, author?: string, design?: Designs, colors?: ColorMap);
     constructor(data: ColorSchemeType);
-    constructor(data: ColorSchemeTypeOptional, service: ColorPickerService);
+    constructor(data: ColorSchemeDataTypeOptional, service: ColorPickerService);
 
     /**
      * DON'T USE THIS CONSTRUCTOR!!!<br>
@@ -88,7 +102,7 @@ class ColorScheme extends ColorSchemeInterface {
      * @param {ColorPickerService} service
      */
     // public constructor(service: ColorPickerService | ColorSchemeInterface, id?: string, name?: string, description?: string, author?: string, design?: Designs, colors: ColorMap = new Map()) {
-    public constructor(data: ColorSchemeTypeOptional, service?: ColorPickerService) {
+    public constructor(data: ColorSchemeDataTypeOptional, service?: ColorPickerService) {
         super(service ? {
             id: data.id ?? service.generateId(),
             name: data.name ?? service.generateName(),
@@ -99,6 +113,7 @@ class ColorScheme extends ColorSchemeInterface {
             current: data.current,
             preDefined: data.preDefined,
         } : data as ColorSchemeType);
+
 
         // console.assert(service != null, "service is null");
         // if (service instanceof ColorPickerService) {
@@ -324,7 +339,7 @@ class ColorScheme extends ColorSchemeInterface {
     //     return this._design;
     // }
 
-    public setDesign(design: Designs): this {
+    public setDesign(design: Design): this {
         this.design = design;
         return this;
     }
@@ -347,6 +362,28 @@ class ColorScheme extends ColorSchemeInterface {
             this.current == other.current &&
             this.preDefined == other.preDefined
         );
+    }
+
+    /**
+     * Returns a <b>new</b> color scheme
+     * @param {ColorSchemeDataTypeOptional} others
+     * @returns {ColorScheme}
+     */
+    public withUpdate(...others: ColorSchemeDataTypeOptional[]): ColorScheme {
+        let other: ColorSchemeDataTypeOptional = {};
+        others.push(this);
+        for (let i of others.reverse()) {
+            for (let k of ColorSchemeInterface.fields) {
+                if (other[k] === undefined) {
+                    let v1 = i[k];
+                    if (v1 !== undefined) {
+                        // @ts-ignore
+                        other[k] = v1;
+                    }
+                }
+            }
+        }
+        return new ColorScheme(other as ColorSchemeType);
     }
 }
 
@@ -416,10 +453,9 @@ class ColorPickerService {
         for (let [type, color] of colorScheme.colors.entries()) {
             document.body.style.setProperty(type, color);
         }
-        $(document.body)
-            .toggleClass("light-design", colorScheme.design === Designs.light)
-            .toggleClass("dark-design", colorScheme.design === Designs.dark)
-            .toggleClass("system-design", colorScheme.design === Designs.system);
+        document.body.classList.toggle("light-design", colorScheme.design === Designs.light);
+        document.body.classList.toggle("dark-design", colorScheme.design === Designs.dark);
+        document.body.classList.toggle("system-design", colorScheme.design === Designs.system);
 
         colorScheme.setCurrent(true);
         for (let i of this.all.values()) {
@@ -436,7 +472,6 @@ class ColorPickerService {
      * @param {string} id
      * @return {ColorScheme | undefined}
      */
-
     public getColorScheme(id: string): ColorScheme | undefined {
         return this._all.get(id);
         // //t odo check necessary if
@@ -447,6 +482,15 @@ class ColorPickerService {
         // this._all.set(newColorScheme.id, newColorScheme);
         // this.trigger("add", newColorScheme);
         // return newColorScheme;
+    }
+
+    /**
+     * Updates the colorScheme
+     * @param {ColorScheme} colorScheme
+     */
+    public setColorScheme(colorScheme: ColorScheme): void {
+        this._all.set(colorScheme.id, colorScheme);
+        this.save();
     }
 
     public newColorScheme(other: { [k in Exclude<keyof ColorSchemeInterface, "id">]?: ColorSchemeInterface[k] }): ColorScheme {
@@ -488,8 +532,10 @@ class ColorPickerService {
             } catch (error) {
             }
         }
-        console.log("cssVars");
-        console.log(cssVars);
+        console.log("cssVars", cssVars);
+        if (cssVars.size <= 0) {
+            console.warn("No colors / coloTypes found in stylesheet, default colorscheme won't have any colors");
+        }
         return cssVars;
     };
 

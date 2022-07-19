@@ -1,5 +1,5 @@
 // <reference path="react.d.ts" />
-import {ColorPickerService, ColorScheme, Designs} from "./colorpickerBackend";
+import {ColorPickerService, ColorScheme, ColorSchemeDataTypeOptional, Designs} from "./colorpickerBackend";
 
 import * as React from "react";
 import {MouseEvent} from "react";
@@ -7,6 +7,7 @@ import {createRoot} from "react-dom/client";
 import {ColorSchemeFragmentType, NewColorSchemeDialog} from "./dialogs/new.js";
 import {concatClass, DefaultProps} from "./utils.js";
 import {ColorPickerForm} from "./forms/colorPickerForm";
+import {ColorPickerMetadata} from "./forms/colorPickerMetadata";
 
 //import bootstrap types
 // declare var bootstrap: any;
@@ -419,9 +420,40 @@ class ColorPicker extends React.Component<ColorPickerProps, ColorPickerState> {
                                         onEdit={this.handleEdit}
                                         className='col-5'/>
                 </div>
-                <ColorPickerForm colorTypes={this.service.colorTypes}
-                                 selectedColorScheme={this.state.selectedColorScheme}
-                                 onColorSchemeChange={this.handleColorSchemeChange}/>
+                <div className="accordion" id="color-picker-main-accordion">
+                    <div className="accordion-item">
+                        {/*Color Picker*/}
+                        <h2 className="accordion-header" id="color-picker-form-header">
+                            <button className="accordion-button" type="button" data-bs-toggle="collapse"
+                                    data-bs-target="#color-picker-form" aria-expanded="true" aria-controls="color-picker-form">
+                                Colors
+                            </button>
+                        </h2>
+                        <div id="color-picker-form" className="accordion-collapse collapse show" aria-labelledby="color-picker-form-header"
+                             data-bs-parent="#color-picker-main-accordion">
+                            <div className="accordion-body">
+                                <ColorPickerForm colorTypes={this.service.colorTypes}
+                                                 selectedColorScheme={this.state.selectedColorScheme}
+                                                 onColorSchemeChange={this.handleColorSchemeChange}/>
+                            </div>
+                        </div>
+
+                        {/*Edit Color Scheme*/}
+                        <h2 className="accordion-header" id="edit-color-scheme-metadata-header">
+                            <button className="accordion-button" type="button" data-bs-toggle="collapse"
+                                    data-bs-target="#edit-color-scheme-metadata" aria-expanded="true" aria-controls="edit-color-scheme-metadata">
+                                Color Scheme Metadata
+                            </button>
+                        </h2>
+                        <div id="edit-color-scheme-metadata" className="accordion-collapse collapse show" aria-labelledby="edit-color-scheme-metadata-header"
+                             data-bs-parent="#color-picker-main-accordion">
+                            <div className="accordion-body">
+                                <ColorPickerMetadata selectedColorScheme={this.state.selectedColorScheme}
+                                onUpdate={this.handleColorSchemeChange}/>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         );
     }
@@ -459,19 +491,31 @@ class ColorPicker extends React.Component<ColorPickerProps, ColorPickerState> {
         });
     }
 
-    private handleColorSchemeChange = (colorScheme: ColorScheme) => {
-        let serviceColorScheme = this.service.getColorScheme(colorScheme.id)!;
-        if (!colorScheme.equals(serviceColorScheme)) {
-            colorScheme.copy(serviceColorScheme);
+    private handleColorSchemeChange = (colorScheme: ColorSchemeDataTypeOptional) => {
+        const selected = this.state.selectedColorScheme;
+        const edited = selected.withUpdate(colorScheme);
 
-            if (this.state.activeColorScheme.id == serviceColorScheme.id || this.state.selectedColorScheme.id == serviceColorScheme.id) {
-                this.setState({
-                    activeColorScheme: this.service.getCurrent(),
-                    selectedColorScheme: this.service.getColorScheme(this.state.selectedColorScheme.id)!,
-                    allColorSchemes: this.service.allList,
-                });
-            }
+        if (!selected.equals(edited)) {
+            this.service.setColorScheme(edited);
+            this.setState({
+                selectedColorScheme: this.service.getColorScheme(selected.id)!,
+                activeColorScheme: this.service.getCurrent(),
+                allColorSchemes: this.service.allList,
+            });
         }
+
+        // let serviceColorScheme = this.service.getColorScheme(colorScheme.id)!;
+        // if (!colorScheme.equals(serviceColorScheme)) {
+        //     colorScheme.copy(serviceColorScheme);
+        //
+        //     if (this.state.activeColorScheme.id == serviceColorScheme.id || this.state.selectedColorScheme.id == serviceColorScheme.id) {
+        //         this.setState({
+        //             activeColorScheme: this.service.getCurrent(),
+        //             selectedColorScheme: this.service.getColorScheme(this.state.selectedColorScheme.id)!,
+        //             allColorSchemes: this.service.allList,
+        //         });
+        //     }
+        // }
 
     }
 

@@ -1,4 +1,4 @@
-import {ColorScheme, ColorSchemeType, Designs} from "../colorpickerBackend.js";
+import {ColorScheme, ColorSchemeType, Design, Designs} from "../colorpickerBackend.js";
 import * as React from "react";
 import {ChangeEvent, createRef, FormEvent, RefObject} from "react";
 import {Modal} from "bootstrap";
@@ -10,7 +10,7 @@ interface NewColorSchemeDialogProps extends DefaultProps {
     onDialogVisibilityChange: (visibility: boolean) => any,
     hidden: boolean,
     selectedColorScheme: ColorScheme, // used to get e.g. the colors for the new colorscheme
-    defaultDesign: Designs,
+    defaultDesign: Design,
     allColorSchemes: ColorScheme[],
 }
 
@@ -19,7 +19,7 @@ interface NewColorSchemeDialogState {
     name: string,
     description: string,
     author: string,
-    design: Designs,
+    design: Design,
 }
 
 export type ColorSchemeFragmentType = { [k in Exclude<keyof ColorSchemeType, "id" | "preDefined" | "current">]: ColorSchemeType[k] };
@@ -97,8 +97,8 @@ export class NewColorSchemeDialog extends React.Component<NewColorSchemeDialogPr
                                 <DesignInput onChange={this.handleInputChange}
                                              value={this.state.design}
                                              id={this.inputId}>
-                                    {Object.entries(Designs).map(([k, v]) =>
-                                        <option value={v} key={v}>{v}</option>
+                                    {Designs.all().map((design) =>
+                                        <option value={design} key={design}>{design}</option>
                                     )}
                                 </DesignInput>
                             </Form>
