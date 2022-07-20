@@ -1,3 +1,6 @@
+import {css} from "jquery";
+import {ClassComponent} from "./jsxFactory";
+
 type ColorSchemeMap = Map<string, ColorScheme>;
 
 export class ColorMap extends Map<string, string> {
@@ -59,29 +62,46 @@ export type ColorSchemeType =
     & { [k in Exclude<keyof ColorSchemeInterface, "id" | "name">]?: ColorSchemeInterface[k] };
 export type ColorSchemeDataTypeOptional = { -readonly [k in keyof ColorSchemeInterface]?: ColorSchemeInterface[k] };
 
-interface ColorSchemeInterface {
-    readonly id: string;
-    name: string;
-    description: string;
-    author: string;
-    readonly colors: Colors;
-    design: Design;
-    current: boolean;
-    preDefined: boolean;
-}
-
 export type Color = string;
 
-export class Colors {
-    private readonly _colors: { [k: string]: Color };
+export class ColorsBuilder {
+    private _colors: { [k: string]: string } = {}
 
-    constructor(colors?: Colors | { [k: string]: Color }) {
+    public addColor(id: string, value: string) {
+        this._colors[id] = value;
+    }
+
+    public addColors(colors: { [k: string]: string } | Colors) {
+        for (let [k, v] of (colors instanceof Colors ? colors.entries() : Object.entries(colors))) {
+            this._colors[k] = v;
+        }
+    }
+
+    public build(): Colors {
+        return new Colors(this._colors);
+    }
+}
+
+export class Colors {
+    public static readonly Builder = ColorsBuilder;
+
+    private readonly _colors: { [k: string]: Color };
+    private readonly _size: number;
+
+    public get size(): number {
+        return this._size;
+    }
+
+    constructor(colors?: Colors | { [k: string]: Color | string }) {
         if (colors === undefined) {
             this._colors = {};
+            this._size = 0;
         } else if (colors instanceof Colors) {
             this._colors = {...colors._colors};
+            this._size = colors.size;
         } else {
             this._colors = {...colors};
+            this._size = Object.keys(this._colors).length;
         }
     }
 
@@ -89,15 +109,15 @@ export class Colors {
         return new Colors({...this, [colorId]: colorValue});
     }
 
-    public withColors(colors?: Colors): Colors {
-        return new Colors(colors ? {...this._colors, ...colors._colors} : this);
+    public withColors(colors?: Colors | Colors["_colors"]): Colors {
+        return new Colors(colors ? {...this._colors, ...(colors instanceof Colors ? colors._colors : colors)} : this);
     }
 
     public get(colorId: string): Color | undefined {
         return this._colors[colorId];
     }
 
-    public get all(): [string, Color][] {
+    public entries(): [string, Color][] {
         return Object.entries(this._colors);
     }
 
@@ -113,89 +133,147 @@ export class Colors {
                 .reduce((prev, now) => prev && now, true)
         );
     }
+
+    public keys(): string[] {
+        return Object.keys(this._colors);
+    }
 }
 
+export interface ColorSchemeInterface {
+    readonly id: string;
+    name: string;
+    description: string;
+    author: string;
+    readonly colors: Colors;
+    design: Design;
+    current: boolean;
+    preDefined: boolean;
+}
 
-// class ColorSchemeInterface {
-//     public id: string;
-//     public name: string;
-//     public description: string;
-//     public author: string;
-//     public readonly colors: ColorMap = new ColorMap();
-//     public design: Design = Designs.system;
-//     public current: boolean = false;
-//     public preDefined: boolean = false;
-//
-//     public static readonly fields: Array<keyof ColorSchemeInterface> = ["id", "name", "description", "author", "design", "colors", "preDefined", "current"];
-//
-//     constructor(other: ColorSchemeType) {
-//         this.id = other.id;
-//         this.name = other.name;
-//         this.description = other.description ?? "Very interesting description";
-//         this.author = other.author ?? "Author unknown";
-//         this.design = other.design ?? Designs.system;
-//         this.current = other.current ?? false;
-//         this.preDefined = other.preDefined ?? false;
-//         if (other.colors) {
-//             for (let [k, v] of other.colors.entries()) {
-//                 this.colors.set(k, v);
-//             }
-//         }
-//     }
-// }
+export class ColorSchemeFragmentBuilder {
+    private _name?: string;
+    private _description?: string;
+    private _author?: string;
+    private _design?: Design;
+    public readonly colors: ColorsBuilder = new ColorsBuilder();
 
-class ColorSchemeFragment implements ColorSchemeDataTypeOptional {
-    public readonly id?: string;
+    constructor(colorSchemeFragment?: ColorSchemeFragmentType) {
+        if (colorSchemeFragment) {
+            this.update(colorSchemeFragment);
+        }
+    }
+
+    public name(name?: string): this {
+        this._name = name;
+        return this;
+    }
+
+    public description(description?: string): this {
+        this._description = description;
+        return this;
+    }
+
+    public author(author?: string): this {
+        this._author = author;
+        return this;
+    }
+
+    public design(design?: Design): this {
+        this._design = design;
+        return this;
+    }
+
+    public set(key: keyof ColorSchemeFragment, value?: ColorSchemeFragment[typeof key]): this {
+        if (key == "colors") {
+            this.colors.addColors(value as Colors);
+        } else {
+            // @ts-ignore
+            this[key](value);
+        }
+        return this;
+    }
+
+    public update(other: ColorSchemeFragmentType): this {
+        this._name = other.name ?? this._name;
+        this._description = other.description ?? this._description;
+        this._author = other.author ?? this._author;
+        this._design = other.design ?? this._design;
+        if (other.colors) {
+            this.colors.addColors(other.colors);
+        }
+        return this;
+    }
+
+    public build(): ColorSchemeFragment {
+        return new ColorSchemeFragment({
+            name: this._name,
+            description: this._description,
+            author: this._author,
+            design: this._design,
+            colors: this.colors.build(),
+        });
+    }
+}
+
+export type ColorSchemeFragmentType = { [k in Exclude<keyof ColorSchemeInterface, "id" | "preDefined" | "current">]?: ColorSchemeInterface[k] };
+
+export class ColorSchemeFragment implements ColorSchemeFragmentType {
     public readonly name?: string;
     public readonly description?: string;
     public readonly author?: string;
     public readonly design?: Design;
     public readonly colors?: Colors;
-    public readonly current?: boolean;
-    public readonly preDefined?: boolean;
 
-    public static readonly fields: Array<keyof ColorSchemeInterface> = ["id", "name", "description", "author", "design", "colors", "preDefined", "current"];
+    public static readonly Builder = ColorSchemeFragmentBuilder;
 
-    constructor(other: ColorSchemeFragment);
-    constructor(name: string,);
-
-    constructor(other: ColorSchemeFragment | string, name?: string, description?: string, author?: string, design?: Design, colors?: Colors, current?: boolean, preDefined?: boolean) {
-        let id;
-        if (other instanceof ColorSchemeFragment) {
-            ({id, name, description, author, design, colors, current, preDefined} = other);
-        } else {
-            id = other;
-        }
-        this.id = id;
+    constructor(other: ColorSchemeFragmentType);
+    constructor(other: ColorSchemeFragmentType) {
+        const {name, description, author, design, colors} = other;
         this.name = name;
         this.description = description;
         this.author = author;
         this.design = design;
-        this.current = current;
-        this.preDefined = preDefined;
         this.colors = new Colors(colors);
     }
 
-    public static fromJSON(json: ColorSchemeData) {
+    public withName(name: string): ColorSchemeFragment {
+        return new ColorSchemeFragment({...this, name: name});
+    }
 
+    public withDescription(description: string): ColorSchemeFragment {
+        return new ColorSchemeFragment({...this, description: description});
+    }
+
+    public withAuthor(author: string): ColorSchemeFragment {
+        return new ColorSchemeFragment({...this, author: author});
+    }
+
+    public withDesign(design: Design): ColorSchemeFragment {
+        return new ColorSchemeFragment({...this, design: design});
+    }
+
+    public withColors(colors: Colors): ColorSchemeFragment {
+        return new ColorSchemeFragment({...this, colors: colors});
+    }
+
+    public withUpdate(other: ColorSchemeFragmentType): ColorSchemeFragment {
+        return new ColorSchemeFragment({...this, ...other});
     }
 }
 
-
 class ColorScheme implements ColorSchemeInterface {
-    public author: string;
-    public colors: Colors;
-    public current: boolean;
-    public description: string;
-    public design: Design;
     public readonly id: string;
-    public name: string;
-    public preDefined: boolean;
+    public readonly name: string;
+    public readonly description: string;
+    public readonly author: string;
+    public readonly design: Design;
+    public readonly colors: Colors;
+    public current: boolean;
+    public readonly preDefined: boolean;
 
+    private readonly _service: ColorPickerService;
 
-    // constructor(service: ColorPickerService, id?: string, name?: string, description?: string, author?: string, design?: Designs, colors?: ColorMap);
-    constructor(other: ColorSchemeType);
-    constructor(other: ColorSchemeFragment, service: ColorPickerService);
+    public static readonly fields: Array<keyof ColorSchemeInterface> = ["id", "name", "description", "author", "design", "colors", "preDefined", "current"];
 
     /**
      * DON'T USE THIS CONSTRUCTOR!!!<br>
@@ -205,16 +283,18 @@ class ColorScheme implements ColorSchemeInterface {
      * @param {ColorPickerService} service
      */
     // public constructor(service: ColorPickerService | ColorSchemeInterface, id?: string, name?: string, description?: string, author?: string, design?: Designs, colors: ColorMap = new Map()) {
-    public constructor(other: ColorSchemeFragment, service?: ColorPickerService) {
+    public constructor(other: Partial<ColorSchemeInterface>, service: ColorPickerService) {
         this.id = other.id ?? service.generateId();
         this.name = other.name ?? service.generateName();
         this.description = other.description ?? "Very interesting description";
         this.author = other.author ?? "Author unknown";
         this.design = other.design ?? Designs.system;
         // colors = other colors; if other colors are not defined, fill with default colors
-        this.colors = new Colors(service?.getDefault().colors.withColors(other.colors) ?? other.colors);
+        this.colors = new Colors(service.getDefault().colors.withColors(other.colors));
         this.current = other.current ?? false;
         this.preDefined = other.preDefined ?? false;
+
+        this._service = service;
 
         // add default colors if colors are not provided
         // if (service) {
@@ -358,57 +438,20 @@ class ColorScheme implements ColorSchemeInterface {
     }
     */
 
-    /**
-     * Copies this colorScheme into {@link colorScheme}<br>
-     * Creates a new colorScheme if {@link colorScheme} is empty<br>
-     * If {@link colorScheme} is present, {@link ColorScheme.id} will <b>not</b> be copied!
-     * @param {ColorScheme} colorScheme
-     * @returns {ColorScheme} {@link colorScheme}
-     * @deprecated
-     */
-    public copy(colorScheme?: ColorScheme): ColorScheme {
-        if (colorScheme === undefined) {
-            return new ColorScheme(this);
-        }
-        return colorScheme
-            .setName(this.name)
-            .setDescription(this.description)
-            .setAuthor(this.author)
-            .setDesign(this.design)
-            .setColors(this.colors)
-            .setCurrent(this.current)
-            .setPreDefined(this.preDefined);
-    }
-
-    public setName(name: string): this {
-        this.name = name;
-        return this;
-    }
-
     public withName(name: string): ColorScheme {
-        return new ColorScheme({...this, name: name});
-    }
-
-    public setAuthor(author: string): this {
-        this.author = author;
-        return this;
+        return new ColorScheme({...this, name: name}, this._service);
     }
 
     public withAuthor(author: string): ColorScheme {
-        return new ColorScheme({...this, author: author});
-    }
-
-    public setDescription(description: string): this {
-        this.description = description;
-        return this;
+        return new ColorScheme({...this, author: author}, this._service);
     }
 
     public withDescription(description: string): ColorScheme {
-        return new ColorScheme({...this, description: description});
+        return new ColorScheme({...this, description: description}, this._service);
     }
 
     public withColors(colors: Colors): ColorScheme {
-        return new ColorScheme({...this, colors: colors});
+        return new ColorScheme({...this, colors: colors}, this._service);
     }
 
     public setCurrent(current: boolean): this {
@@ -416,30 +459,20 @@ class ColorScheme implements ColorSchemeInterface {
         return this;
     }
 
-    public withCurrent(current: boolean): ColorScheme {
-        return new ColorScheme({...this, current: current});
+    public withDesign(design: Design): ColorScheme {
+        return new ColorScheme({...this, design: design}, this._service);
     }
 
-    public setPreDefined(preDefined: boolean): this {
-        this.preDefined = preDefined;
-        return this;
+    public withCurrent(current: boolean): ColorScheme {
+        return new ColorScheme({...this, current: current}, this._service);
     }
 
     public withPreDefined(preDefined: boolean): ColorScheme {
-        return new ColorScheme({...this, preDefined: preDefined});
+        return new ColorScheme({...this, preDefined: preDefined}, this._service);
     }
 
-    public setDesign(design: Design): this {
-        this.design = design;
-        return this;
-    }
-
-    public withDesign(design: Design): ColorScheme {
-        return new ColorScheme({...this, design: design});
-    }
-
-    public equals(other: ColorScheme): boolean {
-        return this == other || (
+    public equals(other: ColorScheme | null | undefined): boolean {
+        return other != null && (this == other || (
             this.id == other.id &&
             this.name == other.name &&
             this.description == other.description &&
@@ -448,31 +481,34 @@ class ColorScheme implements ColorSchemeInterface {
             this.colors.equals(other.colors) &&
             this.current == other.current &&
             this.preDefined == other.preDefined
-        );
+        ));
     }
 
     /**
      * Returns a <b>new</b> color scheme <br>
      * Object on the right hand side will override these on the left side
-     * @param {ColorSchemeDataTypeOptional} others
+     * @param {ColorSchemeFragment[]} others
      * @returns {ColorScheme}
      */
-    public withUpdate(...others: ColorSchemeDataTypeOptional[]): ColorScheme {
-        let other: ColorSchemeDataTypeOptional = {};
-        others.reverse(); // reverse is in-place
-        others.push(this);
+    public withUpdate(...others: ColorSchemeFragmentType[]): ColorScheme {
+        let other: ColorSchemeFragmentBuilder = new ColorSchemeFragment.Builder(this);
+        // others.reverse(); // reverse is in-place
+        // others.push(this);
         for (let i of others) {
-            for (let k of ColorSchemeInterface.fields) {
-                if (other[k] === undefined) {
-                    let v1 = i[k];
-                    if (v1 !== undefined) {
-                        // @ts-ignore
-                        other[k] = v1;
-                    }
-                }
-            }
+            other.update(i)
         }
-        return new ColorScheme(other as ColorSchemeType);
+        // for (let i of others) {
+        //     for (let k of ColorScheme.fields) {
+        //         if (other[k] === undefined) {
+        //             let v1 = i[k];
+        //             if (v1 !== undefined) {
+        //                 // @ts-ignore
+        //                 other[k] = v1;
+        //             }
+        //         }
+        //     }
+        // }
+        return new ColorScheme(other.build(), this._service);
     }
 }
 
@@ -516,7 +552,7 @@ class ColorPickerService {
         let all: { [index: number]: ColorSchemeData } = JSON.parse(window.localStorage.getItem("colors") ?? "{}");
         // let all = window.localStorage.getItem("colors") != null ? JSON.parse(window.localStorage.getItem("colors")) : {};
         for (let colorJson of Object.values(all)) {
-            let color = ColorScheme.fromJSON(colorJson);
+            let color = ColorScheme.fromJSON(colorJson, this);
             this._all.set(color.id, color);
             // if (this._all.has(window.localStorage.getItem("current_color"))) {
             //     this.activate(this._all.get(window.localStorage.getItem("current_color")));
@@ -535,7 +571,7 @@ class ColorPickerService {
      * Writes all colors into body to override the default colors
      */
     public activate(colorScheme: ColorScheme) {
-        if (colorScheme !== this._all.get(colorScheme.id)) {
+        if (!colorScheme.equals(this._all.get(colorScheme.id))) {
             throw "AUAUAUAUAUUA";
         }
         //write to body
@@ -546,10 +582,14 @@ class ColorPickerService {
         document.body.classList.toggle("dark-design", colorScheme.design === Designs.dark);
         document.body.classList.toggle("system-design", colorScheme.design === Designs.system);
 
-        colorScheme.setCurrent(true);
+        if (!colorScheme.current) {
+            this._setColorScheme(colorScheme.withCurrent(true));
+        }
         for (let i of this.all.values()) {
             if (i.id !== colorScheme.id) {
-                i.setCurrent(false);
+                if (i.current) {
+                    this._setColorScheme(i.withCurrent(false));
+                }
             }
         }
         this.save();
@@ -557,7 +597,7 @@ class ColorPickerService {
     }
 
     /**
-     * Returns the instance by the id given or {@link null} if the no item with the id was found
+     * Returns the instance by the id given or null if the no item with the id was found
      * @param {string} id
      * @return {ColorScheme | undefined}
      */
@@ -571,6 +611,10 @@ class ColorPickerService {
         // this._all.set(newColorScheme.id, newColorScheme);
         // this.trigger("add", newColorScheme);
         // return newColorScheme;
+    }
+
+    private _setColorScheme(colorScheme: ColorScheme): void {
+        this._all.set(colorScheme.id, colorScheme);
     }
 
     /**
@@ -598,7 +642,7 @@ class ColorPickerService {
      * @return {Map<string, string>}
      */
     public getCSSVariables(styleSheets: StyleSheetList = document.styleSheets, href?: string, selector?: string) {
-        const cssVars: Map<string, string> = new Map<string, string>();
+        const cssVars = new Colors.Builder();
 
         for (let i = 0; i < styleSheets.length; i++) {
             if (href != null && !new RegExp(href).test(styleSheets[i].href ?? "")) {
@@ -614,18 +658,19 @@ class ColorPickerService {
 
                     for (let k = 0; k < rule.style.length; k++) {
                         if (rule.style.item(k).startsWith("--")) {
-                            cssVars.set(rule.style.item(k), rule.style.getPropertyValue(rule.style.item(k)));
+                            cssVars.addColor(rule.style.item(k), rule.style.getPropertyValue(rule.style.item(k)));
                         }
                     }
                 }
             } catch (error) {
             }
         }
+        const colors = cssVars.build();
         console.log("cssVars", cssVars);
-        if (cssVars.size <= 0) {
+        if (colors.size <= 0) {
             console.warn("No colors / coloTypes found in stylesheet, default colorscheme won't have any colors");
         }
-        return cssVars;
+        return colors;
     };
 
     /**
@@ -636,36 +681,19 @@ class ColorPickerService {
     public getDefault(forceReload: boolean = false): ColorScheme {
         let result = this._all.get("default");
         if (forceReload || result == null) {
-            let colors: ColorMap = this.getCSSVariables(document.styleSheets, "farben.css");
+            let colors: Colors = this.getCSSVariables(document.styleSheets, "farben.css");
             result = new ColorScheme({
                 id: "default",
                 name: "Default",
                 description: "Default Color Scheme",
                 author: "AG-Medien",
                 design: Designs.system,
-                colors: colors,
+                colors: new Colors(colors),
                 current: false,
                 preDefined: true,
-            });
+            }, this);
         }
         return result;
-    }
-
-    /**
-     * gets all data from local storage (if present) and writes them into this object<br>
-     * <b>DO NOT CALL THIS IN A LOOP</b>, That would be very inefficient
-     * @deprecated no reason to reload anything from storage at any time after init
-     */
-    public reloadFromStorage(colorScheme: ColorScheme) {
-        // let colors = window.localStorage.getItem("colors") != null ? JSON.parse(window.localStorage.getItem("colors")) : {};
-        let colors = JSON.parse(window.localStorage.getItem("colors") ?? "{}");
-        if (colorScheme.id in Object.keys(colors)) {
-            colorScheme.setName(colors[colorScheme.id].name);
-            colorScheme.setAuthor(colors[colorScheme.id].author);
-            for (let i in colors[colorScheme.id].colors) {
-                colorScheme.colors.set(i, colors[colorScheme.id].colors[i]);
-            }
-        }
     }
 
     public generateName(): string {

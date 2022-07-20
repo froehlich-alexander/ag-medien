@@ -1,9 +1,8 @@
 import * as React from "react";
 import {AuthorInput, ColorSchemeSelect, DescriptionInput, DesignInput, HTMLInputElements, NameInput} from "./inputs";
-import {ColorScheme, ColorSchemeType, ColorSchemeTypeStrict, Designs} from "../colorpickerBackend";
+import {ColorScheme, ColorSchemeFragment, ColorSchemeType, ColorSchemeTypeStrict, Designs} from "../colorpickerBackend";
 import {Form} from "../utils";
 import {ChangeEventHandler, FormEventHandler} from "react";
-import {ColorSchemeFragmentType} from "../dialogs/new";
 
 export type ColorSchemeMetadata = Omit<ColorSchemeTypeStrict, "colors" | "id" | "current" | "preDefined">;
 
@@ -13,7 +12,7 @@ interface ColorPickerMetadataProps {
 }
 
 interface ColorPickerMetadataState {
-    workingColorScheme: ColorSchemeMetadata,
+    workingColorScheme: ColorSchemeFragment,
 }
 
 export class ColorPickerMetadata extends React.Component<ColorPickerMetadataProps, ColorPickerMetadataState> {
@@ -23,7 +22,7 @@ export class ColorPickerMetadata extends React.Component<ColorPickerMetadataProp
         super(props);
 
         this.state = {
-            workingColorScheme: this.props.selectedColorScheme,
+            workingColorScheme: new ColorSchemeFragment(this.props.selectedColorScheme),
         }
     }
 
@@ -60,7 +59,7 @@ export class ColorPickerMetadata extends React.Component<ColorPickerMetadataProp
         const selectedColorScheme = this.props.selectedColorScheme;
         if (prevProps.selectedColorScheme.id != selectedColorScheme.id) {
             this.setState({
-                workingColorScheme: selectedColorScheme,
+                workingColorScheme: new ColorSchemeFragment(selectedColorScheme),
             });
         }
         return null;
@@ -69,20 +68,24 @@ export class ColorPickerMetadata extends React.Component<ColorPickerMetadataProp
     private handleSubmit: FormEventHandler<HTMLFormElement> = (event) => {
         // save color scheme
         const working = this.state.workingColorScheme;
+        // we could have some unwanted fields (like "colors") in our working cs
         this.props.onUpdate({
-            name: working.name,
-            description: working.description,
-            author: working.author,
-            design: working.design,
+            name: working.name!,
+            description: working.description!,
+            author: working.author!,
+            design: working.design!,
         });
     }
 
     private handleInputChange: ChangeEventHandler<HTMLInputElements> = (event) => {
         this.setState(prevState => ({
-            workingColorScheme: {
-                ...prevState.workingColorScheme,
-                [event.target.name]: event.target.value,
-            }
+            workingColorScheme: prevState.workingColorScheme.withUpdate({[event.target.name]: event.target.value})
         }));
+        // this.setState(prevState => ({
+        //     workingColorScheme: {
+        //         ...prevState.workingColorScheme,
+        //         [event.target.name]: event.target.value,
+        //     }
+        // }));
     }
 }

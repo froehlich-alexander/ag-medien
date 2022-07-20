@@ -1,4 +1,4 @@
-import {ColorScheme, ColorSchemeType, Design, Designs} from "../colorpickerBackend.js";
+import {ColorScheme, ColorSchemeFragmentType, ColorSchemeType, Design, Designs} from "../colorpickerBackend.js";
 import * as React from "react";
 import {ChangeEvent, createRef, FormEvent, RefObject} from "react";
 import {Modal} from "bootstrap";
@@ -22,7 +22,6 @@ interface NewColorSchemeDialogState {
     design: Design,
 }
 
-export type ColorSchemeFragmentType = { [k in Exclude<keyof ColorSchemeType, "id" | "preDefined" | "current">]: ColorSchemeType[k] };
 
 export class NewColorSchemeDialog extends React.Component<NewColorSchemeDialogProps, NewColorSchemeDialogState> {
     private readonly modal: RefObject<HTMLDivElement>;

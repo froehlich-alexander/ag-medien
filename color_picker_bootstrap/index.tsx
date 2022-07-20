@@ -1,10 +1,16 @@
 // <reference path="react.d.ts" />
-import {ColorPickerService, ColorScheme, ColorSchemeDataTypeOptional, Designs} from "./colorpickerBackend";
+import {
+    ColorPickerService,
+    ColorScheme,
+    ColorSchemeDataTypeOptional,
+    ColorSchemeFragment, ColorSchemeFragmentType,
+    Designs
+} from "./colorpickerBackend";
 
 import * as React from "react";
 import {MouseEvent} from "react";
 import {createRoot} from "react-dom/client";
-import {ColorSchemeFragmentType, NewColorSchemeDialog} from "./dialogs/new.js";
+import {NewColorSchemeDialog} from "./dialogs/new.js";
 import {concatClass, DefaultProps} from "./utils.js";
 import {ColorPickerForm} from "./forms/colorPickerForm";
 import {ColorPickerMetadata} from "./forms/colorPickerMetadata";
@@ -491,9 +497,9 @@ class ColorPicker extends React.Component<ColorPickerProps, ColorPickerState> {
         });
     }
 
-    private handleColorSchemeChange = (colorScheme: ColorSchemeDataTypeOptional) => {
+    private handleColorSchemeChange = (colorSchemeFragment: ColorSchemeFragmentType) => {
         const selected = this.state.selectedColorScheme;
-        const edited = selected.withUpdate(colorScheme);
+        const edited = selected.withUpdate(colorSchemeFragment);
         console.log("cs change", selected, edited)
 
         if (!selected.equals(edited)) {

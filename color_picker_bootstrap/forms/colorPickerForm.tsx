@@ -1,13 +1,13 @@
 import * as React from "react";
 import {Form} from "../utils";
-import {ColorMap, ColorPickerService, ColorScheme} from "../colorpickerBackend";
+import {ColorMap, ColorPickerService, Colors, ColorScheme} from "../colorpickerBackend";
 import {ColorInput} from "./inputs";
 import {ChangeEventHandler, FormEventHandler} from "react";
 
 interface ColorPickerFormProps {
     selectedColorScheme: ColorScheme,
     colorTypes: readonly string[],
-    onColorSchemeChange: (colors: { colors: ColorMap }) => any,
+    onColorSchemeChange: (colors: { colors: Colors }) => any,
 }
 
 interface ColorPickerFormState {
@@ -60,10 +60,7 @@ export class ColorPickerForm extends React.Component<ColorPickerFormProps, Color
     private handleColorInputChange: ChangeEventHandler<HTMLInputElement> = (event) => {
         const colorId = event.target.dataset.colorId!;
         const newValue = event.target.value;
-        let colors = new ColorMap(this.props.selectedColorScheme.colors);
-
-        colors.set(colorId, newValue);
-        this.props.onColorSchemeChange({colors: colors});
+        this.props.onColorSchemeChange({colors: this.props.selectedColorScheme.colors.withColor(colorId, newValue)});
         // if (this.props.selectedColorScheme.colors.get(colorId) != newValue) {
         //     this.props.selectedColorScheme.setColor(colorId, newValue);
         //     let history = this.state.history.concat({
