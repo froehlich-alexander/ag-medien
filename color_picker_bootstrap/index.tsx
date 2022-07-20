@@ -494,8 +494,10 @@ class ColorPicker extends React.Component<ColorPickerProps, ColorPickerState> {
     private handleColorSchemeChange = (colorScheme: ColorSchemeDataTypeOptional) => {
         const selected = this.state.selectedColorScheme;
         const edited = selected.withUpdate(colorScheme);
+        console.log("cs change", selected, edited)
 
         if (!selected.equals(edited)) {
+            console.log("cs unequal, update")
             this.service.setColorScheme(edited);
             this.setState({
                 selectedColorScheme: this.service.getColorScheme(selected.id)!,

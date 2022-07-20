@@ -34,6 +34,7 @@ export class ColorPickerForm extends React.Component<ColorPickerFormProps, Color
 
 
     public render(): React.ReactNode {
+        console.log("render color picker form", this.props.selectedColorScheme.colors)
         return (
             <Form onSubmit={this.handleSubmit}
                   className='row gx-3'>

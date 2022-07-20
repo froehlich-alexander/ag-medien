@@ -114,6 +114,16 @@ class ColorScheme extends ColorSchemeInterface {
             preDefined: data.preDefined,
         } : data as ColorSchemeType);
 
+        // add default colors if colors are not provided
+        if (service) {
+            const defaultColors = service.getDefault().colors;
+            for (let i of service.colorTypes) {
+                if (this.colors.get(i) == null) {
+                    this.colors.set(i, defaultColors.get(i)!);
+                }
+            }
+        }
+
 
         // console.assert(service != null, "service is null");
         // if (service instanceof ColorPickerService) {
@@ -275,40 +285,32 @@ class ColorScheme extends ColorSchemeInterface {
             .setPreDefined(this.preDefined);
     }
 
-    // public get name(): string {
-    //     return this._name!;
-    // }
-
     public setName(name: string): this {
         this.name = name;
         return this;
     }
 
-    // public get author(): string {
-    //     return this._author!;
-    // }
+    public withName(name: string): ColorScheme {
+        return new ColorScheme({...this, name: name});
+    }
 
     public setAuthor(author: string): this {
         this.author = author;
         return this;
     }
 
-    // public get description(): string {
-    //     return this._description!;
-    // }
+    public withAuthor(author: string): ColorScheme{
+        return new ColorScheme({...this, author: author});
+    }
 
     public setDescription(description: string): this {
         this.description = description;
         return this;
     }
 
-    // public get id(): string {
-    //     return this._id;
-    // }
-    //
-    // public get colors(): ColorMap {
-    //     return this._colors;
-    // }
+    public withDescription(description: string): ColorScheme {
+        return new ColorScheme({...this, description: description});
+    }
 
     public setColors(colors: ColorMap): this {
         for (let [k, v] of colors) {
@@ -317,31 +319,35 @@ class ColorScheme extends ColorSchemeInterface {
         return this;
     }
 
-    // public get current(): boolean {
-    //     return this._current;
-    // }
+    public withColors(colors: ColorMap): ColorScheme {
+        return new ColorScheme({...this, colors: colors});
+    }
 
     public setCurrent(current: boolean): this {
         this.current = current;
         return this;
     }
 
-    // public get preDefined(): boolean {
-    //     return this._preDefined;
-    // }
+    public withCurrent(current: boolean): ColorScheme {
+        return new ColorScheme({...this, current: current});
+    }
 
     public setPreDefined(preDefined: boolean): this {
         this.preDefined = preDefined;
         return this;
     }
 
-    // public get design(): Designs {
-    //     return this._design;
-    // }
+    public withPreDefined(preDefined: boolean): ColorScheme {
+        return new ColorScheme({...this, preDefined: preDefined});
+    }
 
     public setDesign(design: Design): this {
         this.design = design;
         return this;
+    }
+
+    public withDesign(design: Design): ColorScheme {
+        return new ColorScheme({...this, design: design});
     }
 
     public setColor(colorId: string, value: string): this {
@@ -365,14 +371,16 @@ class ColorScheme extends ColorSchemeInterface {
     }
 
     /**
-     * Returns a <b>new</b> color scheme
+     * Returns a <b>new</b> color scheme <br>
+     * Object on the right hand side will override these on the left side
      * @param {ColorSchemeDataTypeOptional} others
      * @returns {ColorScheme}
      */
     public withUpdate(...others: ColorSchemeDataTypeOptional[]): ColorScheme {
         let other: ColorSchemeDataTypeOptional = {};
+        others.reverse(); // reverse is in-place
         others.push(this);
-        for (let i of others.reverse()) {
+        for (let i of others) {
             for (let k of ColorSchemeInterface.fields) {
                 if (other[k] === undefined) {
                     let v1 = i[k];
@@ -428,6 +436,7 @@ class ColorPickerService {
         // let all = window.localStorage.getItem("colors") != null ? JSON.parse(window.localStorage.getItem("colors")) : {};
         for (let colorJson of Object.values(all)) {
             let color = ColorScheme.fromJSON(colorJson);
+            this.newColorScheme()
             this._all.set(color.id, color);
             // if (this._all.has(window.localStorage.getItem("current_color"))) {
             //     this.activate(this._all.get(window.localStorage.getItem("current_color")));

@@ -78,13 +78,11 @@ export class ColorPickerMetadata extends React.Component<ColorPickerMetadataProp
     }
 
     private handleInputChange: ChangeEventHandler<HTMLInputElements> = (event) => {
-        let workingColorScheme: ColorSchemeMetadata = {
-            ...this.state.workingColorScheme,
-            [event.target.name]: event.target.value
-        };
-
-        this.setState({
-            workingColorScheme: workingColorScheme,
-        });
+        this.setState(prevState => ({
+            workingColorScheme: {
+                ...prevState.workingColorScheme,
+                [event.target.name]: event.target.value,
+            }
+        }));
     }
 }
