@@ -1,4 +1,4 @@
-import {Designs} from "../colorpickerBackend.js";
+import {Designs} from "../color-base/colorpickerBackend.js";
 import * as React from "react";
 import {
     ChangeEventHandler,

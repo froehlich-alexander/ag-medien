@@ -1,10 +1,15 @@
 import * as React from "react";
 import {AuthorInput, ColorSchemeSelect, DescriptionInput, DesignInput, HTMLInputElements, NameInput} from "./inputs";
-import {ColorScheme, ColorSchemeFragment, ColorSchemeType, ColorSchemeTypeStrict, Designs} from "../colorpickerBackend";
+import {
+    ColorScheme,
+    ColorSchemeFragment,
+    ColorSchemeInterface,
+    Designs,
+} from "../color-base/colorpickerBackend";
 import {Form} from "../utils";
 import {ChangeEventHandler, FormEventHandler} from "react";
 
-export type ColorSchemeMetadata = Omit<ColorSchemeTypeStrict, "colors" | "id" | "current" | "preDefined">;
+export type ColorSchemeMetadata = Omit<ColorSchemeInterface, "colors" | "id" | "current" | "preDefined">;
 
 interface ColorPickerMetadataProps {
     selectedColorScheme: ColorScheme,

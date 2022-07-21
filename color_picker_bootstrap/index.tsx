@@ -1,15 +1,15 @@
 // <reference path="react.d.ts" />
 import {
-    ColorPickerService,
     ColorScheme,
-    ColorSchemeDataTypeOptional,
+    ColorSchemeTypeOptional,
     ColorSchemeFragment, ColorSchemeFragmentType,
     Designs
-} from "./colorpickerBackend";
+} from "./color-base/colorpickerBackend";
 
 import * as React from "react";
 import {MouseEvent} from "react";
 import {createRoot} from "react-dom/client";
+import {ColorPickerService} from "./color-base/ColorPickerService";
 import {NewColorSchemeDialog} from "./dialogs/new.js";
 import {concatClass, DefaultProps} from "./utils.js";
 import {ColorPickerForm} from "./forms/colorPickerForm";
@@ -387,7 +387,7 @@ class ColorPicker extends React.Component<ColorPickerProps, ColorPickerState> {
         super(props);
         this.service = new ColorPickerService();
         this.state = {
-            selectedColorScheme: this.service.getDefault(),
+            selectedColorScheme: this.service.getCurrent(),
             newColorSchemeDialogVisibility: false, // = dialog hidden
             allColorSchemes: this.service.allList,
             activeColorScheme: this.service.getCurrent(),

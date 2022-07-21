@@ -1,4 +1,4 @@
-import {ColorScheme, ColorSchemeFragmentType, ColorSchemeType, Design, Designs} from "../colorpickerBackend.js";
+import {ColorScheme, ColorSchemeFragmentType, ColorSchemeType, Design, Designs} from "../color-base/colorpickerBackend.js";
 import * as React from "react";
 import {ChangeEvent, createRef, FormEvent, RefObject} from "react";
 import {Modal} from "bootstrap";
