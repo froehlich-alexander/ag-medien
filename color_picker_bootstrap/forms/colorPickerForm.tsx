@@ -35,19 +35,21 @@ export class ColorPickerForm extends React.Component<ColorPickerFormProps, Color
 
 
     public render(): React.ReactNode {
-        console.log("render color picker form", this.props.selectedColorScheme.colors)
+        console.log("render color picker form", this.props.selectedColorScheme.colors);
+        const disabled = this.props.selectedColorScheme.preDefined;
         return (
             <Form onSubmit={this.handleSubmit}
-                  className='row gx-3'>
+                  className="row gx-3">
                 {this.props.colorTypes.map(colorType => [colorType, ColorPickerService.getDisplayColorName(colorType)])
                     .map(([colorType, displayName]) =>
-                        <div className='col-6'
+                        <div className="col-6"
                              key={colorType}>
                             <ColorInput labelString={displayName}
                                         id={colorType}
                                         data-color-id={colorType}
                                         value={this.props.selectedColorScheme.colors.get(colorType)}
                                         onChange={this.handleColorInputChange}
+                                        disabled={disabled}
                             />
                         </div>)}
             </Form>
@@ -56,12 +58,14 @@ export class ColorPickerForm extends React.Component<ColorPickerFormProps, Color
 
     private handleSubmit: FormEventHandler<HTMLFormElement> = (event) => {
         console.log("color picker form submitted");
-    }
+    };
 
     private handleColorInputChange: ChangeEventHandler<HTMLInputElement> = (event) => {
         const colorId = event.target.dataset.colorId!;
         const newValue = event.target.value;
-        this.props.onColorSchemeChange({colors: this.props.selectedColorScheme.colors.withColor(colorId, newValue)});
+        let newCS = this.props.selectedColorScheme.colors.withColor(colorId, newValue);
+        // console.log("color inpt change", colorId, newValue, newCS.colors);
+        this.props.onColorSchemeChange({colors: newCS});
         // if (this.props.selectedColorScheme.colors.get(colorId) != newValue) {
         //     this.props.selectedColorScheme.setColor(colorId, newValue);
         //     let history = this.state.history.concat({
@@ -73,5 +77,5 @@ export class ColorPickerForm extends React.Component<ColorPickerFormProps, Color
         //     })
         //     this.props.onColorSchemeChange(this.props.selectedColorScheme);
         // }
-    }
+    };
 }

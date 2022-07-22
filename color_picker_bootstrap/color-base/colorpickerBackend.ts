@@ -53,11 +53,11 @@ export class Colors {
     }
 
     public withColor(colorId: string, colorValue: Color): Colors {
-        return new Colors({...this, [colorId]: colorValue});
+        return new Colors({...this._colors, [colorId]: colorValue});
     }
 
     public withColors(colors?: Colors | ColorsType): Colors {
-        return new Colors(colors ? {...this._colors, ...(colors instanceof Colors ? colors._colors : colors)} : this);
+        return new Colors(colors != null ? {...this._colors, ...(colors instanceof Colors ? colors._colors : colors)} : this);
     }
 
     public withUpdate(colors?: Parameters<Colors["withColors"]>[0]): Colors {
@@ -72,7 +72,7 @@ export class Colors {
         return Object.entries(this._colors);
     }
 
-    public colors(): Readonly<ColorsType> {
+    public get colors(): Readonly<ColorsType> {
         return this._colors;
     }
 
@@ -373,7 +373,9 @@ class ColorScheme implements ColorSchemeInterface {
         //         }
         //     }
         // }
+        // console.log("with update", other.build(), others.map(v=>v.colors?.colors));
         if (!other.equals(this)) {
+            // console.log(" with update not eq");
             return new ColorScheme(other.build(), this._service);
         } else {
             return this;

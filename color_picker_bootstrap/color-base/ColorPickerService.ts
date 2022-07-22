@@ -2,7 +2,7 @@ import {
     Colors,
     ColorScheme,
     ColorSchemeData,
-    ColorSchemeFragment,
+    ColorSchemeFragment, ColorSchemeFragmentType,
     ColorSchemeInterface,
     Designs,
 } from "./colorpickerBackend";
@@ -135,7 +135,7 @@ class ColorPickerService {
         return res;
     }
 
-    public newColorScheme(other: ColorSchemeFragment): ColorScheme {
+    public newColorScheme(other: ColorSchemeFragmentType): ColorScheme {
         return this.setColorScheme(new ColorScheme(other, this));
     }
 

@@ -34,6 +34,7 @@ abstract class Builder<T, TType = { [k in keyof T]: T[k] }> {
      * @param value
      */
     public set(key: keyof TType, value: TType[typeof key]): this {
+        console.log("builder set", key, value);
         // @ts-ignore
         this[key](value);
         return this;
@@ -56,7 +57,7 @@ abstract class Builder<T, TType = { [k in keyof T]: T[k] }> {
         return this;
     }
 
-    public equals(other: T | this) {
+    public equals(other: T | this): boolean {
         if (this == other) {
             return true;
         }
@@ -68,7 +69,7 @@ abstract class Builder<T, TType = { [k in keyof T]: T[k] }> {
         }
         return (this.constructor as typeof Builder).FIELDS.map(v =>
             // @ts-ignore
-            this["_" + v]?.equals(other[prefix + v]) ?? (this["_" + v] == other[prefix + v] || (!isBuilder && this["_" + v] === undefined)))
+            this["_" + v].equals?.(other[prefix + v]) ?? (this["_" + v] == other[prefix + v] || (!isBuilder && this["_" + v] === undefined)))
             .reduce((p, n) => p && n, true);
     }
 }
@@ -89,6 +90,7 @@ export class ColorsBuilder extends Builder<Colors, ColorsType> {
     }
 
     public set(colorId: keyof ColorsType, value: ColorsType[typeof colorId]): this {
+        console.log("colors builder set called", colorId, value);
         this._colors[colorId] = value;
         if (!(colorId in this._colors)) {
             this._size++;
@@ -99,9 +101,11 @@ export class ColorsBuilder extends Builder<Colors, ColorsType> {
     public update(other?: ColorsType | Colors): this {
         if (other !== undefined) {
             Object.assign(this._colors, other instanceof Colors ? other.colors : other);
+            console.log("update colros builder", other, this._colors);
+            this._size = Object.keys(this._colors).length;
         }
-        this._size = Object.keys(this._colors).length;
         return this;
+
     }
 
     public override reset(colorsId?: keyof ColorsType): this {
@@ -118,7 +122,9 @@ export class ColorsBuilder extends Builder<Colors, ColorsType> {
     }
 
     public build(): Colors {
-        return new Colors(this._colors);
+        let colors = new Colors(this._colors);
+        console.log("build colors", this._colors, colors);
+        return colors;
     }
 
     public equals(other: ColorsBuilder | Colors): boolean {
@@ -179,6 +185,9 @@ abstract class ColorSchemeLikeBuilder<T extends ColorSchemeFragment | ColorSchem
         if (key === undefined) {
             this._colors.reset();
             for (let i of (this.constructor as typeof ColorSchemeLikeBuilder).FIELDS) {
+                if (i == "colors") {
+                    continue;
+                }
                 // @ts-ignore
                 this["_" + i] = undefined;
             }

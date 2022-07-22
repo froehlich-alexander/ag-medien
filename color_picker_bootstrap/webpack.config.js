@@ -2,7 +2,7 @@ const path = require("path");
 
 module.exports = {
     mode: "development",
-    devtool: "inline-source-map",
+    devtool: "source-map",
     output: {
         path: path.resolve(__dirname, "dist"),
         filename: "bundle.js",
@@ -23,7 +23,14 @@ module.exports = {
             }
         ]
     },
+    externals: {
+        "jquery": "jQuery",
+        "react": "React",
+        "react-dom": "ReactDOM",
+        "bootstrap": "bootstrap",
+    },
     resolve: {
         extensions: [".tsx", ".ts", ".js"]
     },
+    cache: true,
 }

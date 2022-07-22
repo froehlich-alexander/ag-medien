@@ -1,5 +1,5 @@
 import * as React from "react";
-import {AuthorInput, ColorSchemeSelect, DescriptionInput, DesignInput, HTMLInputElements, NameInput} from "./inputs";
+import {AuthorInput, DescriptionInput, DesignInput, HTMLInputElements, NameInput} from "./inputs";
 import {
     ColorScheme,
     ColorSchemeFragment,
@@ -21,39 +21,44 @@ interface ColorPickerMetadataState {
 }
 
 export class ColorPickerMetadata extends React.Component<ColorPickerMetadataProps, ColorPickerMetadataState> {
-    inputId = "color-picker-metadata"
+    inputId = "color-picker-metadata";
 
     constructor(props: ColorPickerMetadataProps) {
         super(props);
 
         this.state = {
             workingColorScheme: new ColorSchemeFragment(this.props.selectedColorScheme),
-        }
+        };
     }
 
 
     public render(): React.ReactNode {
+        const disabled = this.props.selectedColorScheme.preDefined;
         return (
-            <Form id='new-cs-form'
+            <Form id="new-cs-form"
                 // action='javascript:void(0);'
                   onSubmit={this.handleSubmit}>
 
                 <NameInput onChange={this.handleInputChange}
                            value={this.state.workingColorScheme.name}
-                           id={this.inputId}/>
+                           id={this.inputId}
+                           disabled={disabled}/>
 
                 <DescriptionInput onChange={this.handleInputChange} value={this.state.workingColorScheme.description}
-                                  id={this.inputId}/>
+                                  id={this.inputId}
+                                  disabled={disabled}/>
 
                 <AuthorInput placeholder={this.props.selectedColorScheme.author}
                              onChange={this.handleInputChange} value={this.state.workingColorScheme.author}
-                             id={this.inputId}/>
+                             id={this.inputId}
+                             disabled={disabled}/>
 
                 <DesignInput onChange={this.handleInputChange}
                              value={this.state.workingColorScheme.design}
-                             id={this.inputId}>
+                             id={this.inputId}
+                             disabled={disabled}>
                     {Designs.all().map(design =>
-                        <option value={design} key={design}>{design}</option>
+                        <option value={design} key={design}>{design}</option>,
                     )}
                 </DesignInput>
             </Form>
@@ -80,11 +85,11 @@ export class ColorPickerMetadata extends React.Component<ColorPickerMetadataProp
             author: working.author!,
             design: working.design!,
         });
-    }
+    };
 
     private handleInputChange: ChangeEventHandler<HTMLInputElements> = (event) => {
         this.setState(prevState => ({
-            workingColorScheme: prevState.workingColorScheme.withUpdate({[event.target.name]: event.target.value})
+            workingColorScheme: prevState.workingColorScheme.withUpdate({[event.target.name]: event.target.value}),
         }));
         // this.setState(prevState => ({
         //     workingColorScheme: {
@@ -92,5 +97,5 @@ export class ColorPickerMetadata extends React.Component<ColorPickerMetadataProp
         //         [event.target.name]: event.target.value,
         //     }
         // }));
-    }
+    };
 }

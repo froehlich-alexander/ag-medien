@@ -3,13 +3,13 @@ import {
     ColorScheme,
     ColorSchemeTypeOptional,
     ColorSchemeFragment, ColorSchemeFragmentType,
-    Designs
+    Designs,
 } from "./color-base/colorpickerBackend";
 
 import * as React from "react";
 import {MouseEvent} from "react";
 import {createRoot} from "react-dom/client";
-import {ColorPickerService} from "./color-base/ColorPickerService";
+import ColorPickerService from "./color-base/ColorPickerService";
 import {NewColorSchemeDialog} from "./dialogs/new.js";
 import {concatClass, DefaultProps} from "./utils.js";
 import {ColorPickerForm} from "./forms/colorPickerForm";
@@ -72,30 +72,30 @@ class ColorSchemeDropdownMenu extends React.Component<ColorSchemeDropdownMenuPro
         let preDefinedColorSchemes = this.props.colorSchemes.filter((v: ColorScheme) => v.preDefined);
 
         return (
-            <div className={concatClass('btn-group', this.props.className)}>
+            <div className={concatClass("btn-group", this.props.className)}>
                 <button type="button" className="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown">
                     Color Scheme
                 </button>
                 <ul className="dropdown-menu" id="color-schemes-dropdown-menu"
                     // onClick={this.colorSchemeSelected.bind(this)}
                     onClick={this.handleDropDownClick}>
-                    <li key='open-new-cs-dialog-button'>
-                        <button type='button'
-                                data-bs-toggle='modal'
-                                data-bs-target='#new-color-scheme-dialog'
+                    <li key="open-new-cs-dialog-button">
+                        <button type="button"
+                                data-bs-toggle="modal"
+                                data-bs-target="#new-color-scheme-dialog"
                                 className="btn dropdown-item"
                                 onClick={this.invokeNewColorScheme}>
                             Add
                         </button>
                     </li>
-                    <li key='divider-0'>
+                    <li key="divider-0">
                         <hr className="dropdown-divider"/>
                     </li>
-                    <li key='predefined-header'><h6 className="dropdown-header">Predefined</h6></li>
+                    <li key="predefined-header"><h6 className="dropdown-header">Predefined</h6></li>
                     {preDefinedColorSchemes.map(ColorSchemeDropdownItem)}
                     {/*<li><a className="dropdown-item" href="#">Default</a></li>*/}
-                    <li key='custom-header'><h6 className='dropdown-header'>Custom</h6></li>
-                    <li key='nothing-here-label'><a className='dropdown-item disabled' href='#'
+                    <li key="custom-header"><h6 className="dropdown-header">Custom</h6></li>
+                    <li key="nothing-here-label"><a className="dropdown-item disabled" href="#"
                                                     hidden={customColorSchemes.length > 0}>
                         Nothing here yet
                     </a></li>
@@ -110,7 +110,7 @@ class ColorSchemeDropdownMenu extends React.Component<ColorSchemeDropdownMenuPro
         if (csId != null) {
             this.props.onColorSchemeSelected(csId);
         }
-    }
+    };
 
     /**
      * Invokes a creation of a new colorScheme<br>
@@ -202,12 +202,19 @@ class ColorSchemeDropdownMenu extends React.Component<ColorSchemeDropdownMenuPro
 //     }
 // }
 
-const ColorSchemeDropdownItem = (colorScheme: { id: string, name: string }) =>
+const ColorSchemeDropdownItem = (colorScheme: { id: string, name: string, current: boolean }) =>
     (<li key={colorScheme.id}>
-        <a className='dropdown-item'
-           href='#'
+        <a className="dropdown-item"
+           href="#"
            data-color-scheme-id={colorScheme.id}>
             {colorScheme.name}
+            {colorScheme.current &&
+                <span className='badge bg-success rounded-pill start-100 position-absolute'>
+                    active
+                    <span className='visually-hidden'>
+                        Active Color Scheme
+                    </span>
+            </span>}
         </a>
     </li>);
 
@@ -233,7 +240,7 @@ class ColorSchemeActions extends React.Component<ColorSchemeActionProps, ColorSc
         super(props);
         this.state = {
             selection: ColorSchemeActions.State["activate"],
-        }
+        };
 
         this.buttonShouldBeDisabled = this.buttonShouldBeDisabled.bind(this);
         this.handleStateSelect = this.handleStateSelect.bind(this);
@@ -250,7 +257,7 @@ class ColorSchemeActions extends React.Component<ColorSchemeActionProps, ColorSc
     };
 
     public render(): JSX.Element {
-        console.log("render actions", this.props)
+        console.log("render actions", this.props);
         return (
             <div className={concatClass("btn-group", this.props.className)}>
                 <button type="button"
@@ -291,7 +298,7 @@ class ColorSchemeActions extends React.Component<ColorSchemeActionProps, ColorSc
         let colorScheme = this.props.selectedColorScheme;
         switch (type) {
             case "activate":
-                return colorScheme.preDefined;
+                return colorScheme.preDefined || colorScheme.current;
             case "delete":
                 return colorScheme.preDefined || colorScheme.current;
             case "edit":
@@ -310,7 +317,7 @@ class ColorSchemeActions extends React.Component<ColorSchemeActionProps, ColorSc
                 });
                 this.props.onStateSelected?.(state);
             } else {
-                console.warn(ColorSchemeActions.name, "state == null", state, stateId)
+                console.warn(ColorSchemeActions.name, "state == null", state, stateId);
             }
             console.log("state changed", state);
         }
@@ -367,7 +374,7 @@ const NavBar = (props: DefaultProps & { onClose: (event: MouseEvent<HTMLButtonEl
             </ul>
             <button className="btn-close btn" type="button" onClick={props.onClose}></button>
         </div>
-    </nav>
+    </nav>;
 
 interface ColorPickerProps extends DefaultProps {
 }
@@ -391,7 +398,7 @@ class ColorPicker extends React.Component<ColorPickerProps, ColorPickerState> {
             newColorSchemeDialogVisibility: false, // = dialog hidden
             allColorSchemes: this.service.allList,
             activeColorScheme: this.service.getCurrent(),
-        }
+        };
     }
 
     public render(): JSX.Element {
@@ -403,7 +410,7 @@ class ColorPicker extends React.Component<ColorPickerProps, ColorPickerState> {
         //     (colorSchemeActions.jsObject! as ColorSchemeActions).setColorSchemeId.bind(colorSchemeActions.jsObject!))
 
         return (
-            <div className={concatClass('container p-5', this.props.className)}>
+            <div className={concatClass("container p-5", this.props.className)}>
                 <NavBar onClose={() => console.log("colorpicker closed")}></NavBar>
                 <NewColorSchemeDialog
                     allColorSchemes={this.state.allColorSchemes}
@@ -413,29 +420,31 @@ class ColorPicker extends React.Component<ColorPickerProps, ColorPickerState> {
                     selectedColorScheme={this.state.selectedColorScheme}
                     onNewColorScheme={this.handleNewColorScheme}/>
 
-                <div className='row'>
+                <div className="row">
                     <ColorSchemeDropdownMenu
                         selectedColorScheme={this.state.selectedColorScheme}
                         colorSchemes={this.state.allColorSchemes}
                         onColorSchemeSelected={this.handleColorSchemeSelected}
-                        className='col-5'/>
-                    <div className='col-2'></div>
+                        className="col-5"/>
+                    <div className="col-2"></div>
                     <ColorSchemeActions selectedColorScheme={this.state.selectedColorScheme}
                                         onActivate={this.handleActivate}
                                         onDelete={this.handleDelete}
                                         onEdit={this.handleEdit}
-                                        className='col-5'/>
+                                        className="col-5"/>
                 </div>
                 <div className="accordion" id="color-picker-main-accordion">
                     <div className="accordion-item">
                         {/*Color Picker*/}
                         <h2 className="accordion-header" id="color-picker-form-header">
                             <button className="accordion-button" type="button" data-bs-toggle="collapse"
-                                    data-bs-target="#color-picker-form" aria-expanded="true" aria-controls="color-picker-form">
+                                    data-bs-target="#color-picker-form" aria-expanded="true"
+                                    aria-controls="color-picker-form">
                                 Colors
                             </button>
                         </h2>
-                        <div id="color-picker-form" className="accordion-collapse collapse show" aria-labelledby="color-picker-form-header"
+                        <div id="color-picker-form" className="accordion-collapse collapse show"
+                             aria-labelledby="color-picker-form-header"
                              data-bs-parent="#color-picker-main-accordion">
                             <div className="accordion-body">
                                 <ColorPickerForm colorTypes={this.service.colorTypes}
@@ -447,15 +456,17 @@ class ColorPicker extends React.Component<ColorPickerProps, ColorPickerState> {
                         {/*Edit Color Scheme*/}
                         <h2 className="accordion-header" id="edit-color-scheme-metadata-header">
                             <button className="accordion-button" type="button" data-bs-toggle="collapse"
-                                    data-bs-target="#edit-color-scheme-metadata" aria-expanded="true" aria-controls="edit-color-scheme-metadata">
+                                    data-bs-target="#edit-color-scheme-metadata" aria-expanded="true"
+                                    aria-controls="edit-color-scheme-metadata">
                                 Color Scheme Metadata
                             </button>
                         </h2>
-                        <div id="edit-color-scheme-metadata" className="accordion-collapse collapse show" aria-labelledby="edit-color-scheme-metadata-header"
+                        <div id="edit-color-scheme-metadata" className="accordion-collapse collapse"
+                             aria-labelledby="edit-color-scheme-metadata-header"
                              data-bs-parent="#color-picker-main-accordion">
                             <div className="accordion-body">
                                 <ColorPickerMetadata selectedColorScheme={this.state.selectedColorScheme}
-                                onUpdate={this.handleColorSchemeChange}/>
+                                                     onUpdate={this.handleColorSchemeChange}/>
                             </div>
                         </div>
                     </div>
@@ -471,7 +482,7 @@ class ColorPicker extends React.Component<ColorPickerProps, ColorPickerState> {
                 selectedColorScheme: colorScheme,
             });
         }
-    }
+    };
 
     private handleNewColorScheme = (colorScheme: ColorSchemeFragmentType) => {
         this.service.newColorScheme(colorScheme);
@@ -479,14 +490,14 @@ class ColorPicker extends React.Component<ColorPickerProps, ColorPickerState> {
             newColorSchemeDialogVisibility: false,
             allColorSchemes: this.service.allList,
         });
-    }
+    };
 
     private handleActivate = (): void => {
         this.service.activate(this.state.selectedColorScheme);
         this.setState({
             activeColorScheme: this.service.getCurrent(),
-        })
-    }
+        });
+    };
 
     private handleDelete = (): void => {
         let newSelectedColorScheme = this.service.getCurrent();
@@ -495,15 +506,15 @@ class ColorPicker extends React.Component<ColorPickerProps, ColorPickerState> {
             selectedColorScheme: newSelectedColorScheme,
             allColorSchemes: this.service.allList,
         });
-    }
+    };
 
     private handleColorSchemeChange = (colorSchemeFragment: ColorSchemeFragmentType) => {
         const selected = this.state.selectedColorScheme;
         const edited = selected.withUpdate(colorSchemeFragment);
-        console.log("cs change", selected, edited)
+        console.log("cs change", colorSchemeFragment, selected, edited);
 
         if (!selected.equals(edited)) {
-            console.log("cs unequal, update")
+            console.log("cs unequal, update");
             this.service.setColorScheme(edited);
             this.setState({
                 selectedColorScheme: this.service.getColorScheme(selected.id)!,
@@ -525,11 +536,11 @@ class ColorPicker extends React.Component<ColorPickerProps, ColorPickerState> {
         //     }
         // }
 
-    }
+    };
 
     private handleEdit = (): void => {
         //todo implement edit dialog
-    }
+    };
 }
 
 const root = createRoot(

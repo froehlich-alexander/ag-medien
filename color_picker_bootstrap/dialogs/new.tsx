@@ -1,4 +1,4 @@
-import {ColorScheme, ColorSchemeFragmentType, ColorSchemeType, Design, Designs} from "../color-base/colorpickerBackend.js";
+import {ColorScheme, ColorSchemeFragmentType, Design, Designs} from "../color-base/colorpickerBackend.js";
 import * as React from "react";
 import {ChangeEvent, createRef, FormEvent, RefObject} from "react";
 import {Modal} from "bootstrap";
@@ -42,7 +42,7 @@ export class NewColorSchemeDialog extends React.Component<NewColorSchemeDialogPr
             description: "",
             author: "",
             design: props.defaultDesign,
-        }
+        };
 
         this.modal = createRef<HTMLDivElement>();
 
@@ -53,24 +53,24 @@ export class NewColorSchemeDialog extends React.Component<NewColorSchemeDialogPr
     }
 
     public render(): JSX.Element {
-        console.log(this.constructor.name, "Designs", Object.keys(Designs), Object.entries(Designs))
+        console.log(this.constructor.name, "Designs", Object.keys(Designs), Object.entries(Designs));
 
         return (
-            <div className={concatClass('modal fade', this.props.className)}
-                 id='new-color-scheme-dialog'
+            <div className={concatClass("modal fade", this.props.className)}
+                 id="new-color-scheme-dialog"
                  ref={this.modal}
                  tabIndex={-1} aria-hidden={true}
-                 aria-labelledby='Dialog to create a new Color Scheme'>
-                <div className='modal-dialog modal-dialog-centered'>
-                    <div className='modal-content'>
-                        <div className='modal-header'>
-                            <h5 className='modal-title'>New Color Scheme</h5>
-                            <button className='btn-close' type='button' data-bs-dismiss='modal'
-                                    aria-label='Close'></button>
+                 aria-labelledby="Dialog to create a new Color Scheme">
+                <div className="modal-dialog modal-dialog-centered">
+                    <div className="modal-content">
+                        <div className="modal-header">
+                            <h5 className="modal-title">New Color Scheme</h5>
+                            <button className="btn-close" type="button" data-bs-dismiss="modal"
+                                    aria-label="Close"></button>
                         </div>
-                        <div className='modal-body'>
-                            <Form id='new-cs-form'
-                                  action='javascript:void(0);'
+                        <div className="modal-body">
+                            <Form id="new-cs-form"
+                                  action="javascript:void(0);"
                                   onSubmit={this.createNewColorScheme.bind(this)}
                                   successfulSubmitted={this.props.hidden || undefined}>
 
@@ -86,26 +86,28 @@ export class NewColorSchemeDialog extends React.Component<NewColorSchemeDialogPr
                                            value={this.state.name}
                                            id={this.inputId}/>
 
-                                <DescriptionInput onChange={this.handleInputChange} value={this.state.name}
+                                <DescriptionInput onChange={this.handleInputChange}
+                                                  value={this.state.description}
                                                   id={this.inputId}/>
 
                                 <AuthorInput placeholder={this.props.selectedColorScheme.author}
-                                             onChange={this.handleInputChange} value={this.state.author}
+                                             onChange={this.handleInputChange}
+                                             value={this.state.author}
                                              id={this.inputId}/>
 
                                 <DesignInput onChange={this.handleInputChange}
                                              value={this.state.design}
                                              id={this.inputId}>
                                     {Designs.all().map((design) =>
-                                        <option value={design} key={design}>{design}</option>
+                                        <option value={design} key={design}>{design}</option>,
                                     )}
                                 </DesignInput>
                             </Form>
                         </div>
-                        <div className='modal-footer'>
+                        <div className="modal-footer">
                             <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">Cancel
                             </button>
-                            <button type="submit" form='new-cs-form'
+                            <button type="submit" form="new-cs-form"
                                     className="btn btn-primary">Create
                             </button>
                         </div>
@@ -171,7 +173,7 @@ export class NewColorSchemeDialog extends React.Component<NewColorSchemeDialogPr
         //     design: formData.get("design")!,
         //     colors: this.props.activeColorScheme.colors,
         // });
-        console.log(NewColorSchemeDialog.name, "create new color scheme")
+        console.log(NewColorSchemeDialog.name, "create new color scheme");
         this.props.onNewColorScheme({
             ...this.state,
             colors: this.props.selectedColorScheme.colors,
