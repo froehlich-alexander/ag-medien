@@ -76,7 +76,7 @@ class ColorSchemeDropdownMenu extends React.Component<ColorSchemeDropdownMenuPro
                 <button type="button" className="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown">
                     Color Scheme
                 </button>
-                <ul className="dropdown-menu" id="color-schemes-dropdown-menu"
+                <ul className="dropdown-menu row-cols-3" id="color-schemes-dropdown-menu"
                     // onClick={this.colorSchemeSelected.bind(this)}
                     onClick={this.handleDropDownClick}>
                     <li key="open-new-cs-dialog-button">
@@ -92,14 +92,14 @@ class ColorSchemeDropdownMenu extends React.Component<ColorSchemeDropdownMenuPro
                         <hr className="dropdown-divider"/>
                     </li>
                     <li key="predefined-header"><h6 className="dropdown-header">Predefined</h6></li>
-                    {preDefinedColorSchemes.map(ColorSchemeDropdownItem)}
+                    {preDefinedColorSchemes.map(cs=>ColorSchemeDropdownItem(cs, this.props.selectedColorScheme.id))}
                     {/*<li><a className="dropdown-item" href="#">Default</a></li>*/}
                     <li key="custom-header"><h6 className="dropdown-header">Custom</h6></li>
                     <li key="nothing-here-label"><a className="dropdown-item disabled" href="#"
                                                     hidden={customColorSchemes.length > 0}>
                         Nothing here yet
                     </a></li>
-                    {customColorSchemes.map(ColorSchemeDropdownItem)}
+                    {customColorSchemes.map(cs=>ColorSchemeDropdownItem(cs, this.props.selectedColorScheme.id))}
                 </ul>
             </div>
         );
@@ -202,16 +202,16 @@ class ColorSchemeDropdownMenu extends React.Component<ColorSchemeDropdownMenuPro
 //     }
 // }
 
-const ColorSchemeDropdownItem = (colorScheme: { id: string, name: string, current: boolean }) =>
+const ColorSchemeDropdownItem = (colorScheme: ColorScheme, activeColorSchemeId: string) =>
     (<li key={colorScheme.id}>
-        <a className="dropdown-item"
+        <a className={concatClass("dropdown-item text-truncate", activeColorSchemeId == colorScheme.id && "bg-secondary bg-opacity-25")}
            href="#"
            data-color-scheme-id={colorScheme.id}>
             {colorScheme.name}
             {colorScheme.current &&
-                <span className='badge bg-success rounded-pill start-100 position-absolute'>
+                <span className="badge bg-success rounded-pill badge ms-2 align-middle">
                     active
-                    <span className='visually-hidden'>
+                    <span className="visually-hidden">
                         Active Color Scheme
                     </span>
             </span>}
@@ -298,7 +298,7 @@ class ColorSchemeActions extends React.Component<ColorSchemeActionProps, ColorSc
         let colorScheme = this.props.selectedColorScheme;
         switch (type) {
             case "activate":
-                return colorScheme.preDefined || colorScheme.current;
+                return colorScheme.current;
             case "delete":
                 return colorScheme.preDefined || colorScheme.current;
             case "edit":
@@ -383,7 +383,8 @@ interface ColorPickerState {
     selectedColorScheme: ColorScheme, // the color scheme which is selected by the user and on which actions like delete will apply
     activeColorScheme: ColorScheme, // the color scheme which got activated via ColorSchemeService.activate()
     newColorSchemeDialogVisibility: boolean,
-    allColorSchemes: ColorScheme[];
+    allColorSchemes: ColorScheme[],
+    colorSchemeMetadataUnsaved: boolean, // whether the color scheme metadata inputs hold unsaved data
 }
 
 class ColorPicker extends React.Component<ColorPickerProps, ColorPickerState> {
@@ -398,6 +399,7 @@ class ColorPicker extends React.Component<ColorPickerProps, ColorPickerState> {
             newColorSchemeDialogVisibility: false, // = dialog hidden
             allColorSchemes: this.service.allList,
             activeColorScheme: this.service.getCurrent(),
+            colorSchemeMetadataUnsaved: false,
         };
     }
 
@@ -443,7 +445,7 @@ class ColorPicker extends React.Component<ColorPickerProps, ColorPickerState> {
                                 Colors
                             </button>
                         </h2>
-                        <div id="color-picker-form" className="accordion-collapse collapse show"
+                        <div id="color-picker-form" className="accordion-collapse collapse"
                              aria-labelledby="color-picker-form-header"
                              data-bs-parent="#color-picker-main-accordion">
                             <div className="accordion-body">
@@ -461,7 +463,7 @@ class ColorPicker extends React.Component<ColorPickerProps, ColorPickerState> {
                                 Color Scheme Metadata
                             </button>
                         </h2>
-                        <div id="edit-color-scheme-metadata" className="accordion-collapse collapse"
+                        <div id="edit-color-scheme-metadata" className="accordion-collapse collapse show"
                              aria-labelledby="edit-color-scheme-metadata-header"
                              data-bs-parent="#color-picker-main-accordion">
                             <div className="accordion-body">
@@ -496,6 +498,7 @@ class ColorPicker extends React.Component<ColorPickerProps, ColorPickerState> {
         this.service.activate(this.state.selectedColorScheme);
         this.setState({
             activeColorScheme: this.service.getCurrent(),
+            allColorSchemes: this.service.allList,
         });
     };
 

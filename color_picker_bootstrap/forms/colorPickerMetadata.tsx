@@ -7,13 +7,14 @@ import {
     Designs,
 } from "../color-base/colorpickerBackend";
 import {Form} from "../utils";
-import {ChangeEventHandler, FormEventHandler} from "react";
+import {ChangeEventHandler, FormEventHandler, MouseEventHandler} from "react";
 
 export type ColorSchemeMetadata = Omit<ColorSchemeInterface, "colors" | "id" | "current" | "preDefined">;
 
 interface ColorPickerMetadataProps {
     selectedColorScheme: ColorScheme,
     onUpdate: (metadata: ColorSchemeMetadata) => any,
+    changesUnsaved: (value: boolean) => any,
 }
 
 interface ColorPickerMetadataState {
@@ -36,7 +37,7 @@ export class ColorPickerMetadata extends React.Component<ColorPickerMetadataProp
         const disabled = this.props.selectedColorScheme.preDefined;
         return (
             <Form id="new-cs-form"
-                // action='javascript:void(0);'
+                  action="javascript:void(0);"
                   onSubmit={this.handleSubmit}>
 
                 <NameInput onChange={this.handleInputChange}
@@ -61,6 +62,18 @@ export class ColorPickerMetadata extends React.Component<ColorPickerMetadataProp
                         <option value={design} key={design}>{design}</option>,
                     )}
                 </DesignInput>
+                <div className="container-fluid">
+                    <div className="gx-3 row">
+                        <div className="col-auto">
+                            <button type="submit" className="btn btn-primary">Save</button>
+                        </div>
+                        <div className="col-auto">
+                            <button type="button" className="btn btn-secondary"
+                                    onClick={this.handleCancelClick}>Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </Form>
         );
     }
@@ -88,14 +101,24 @@ export class ColorPickerMetadata extends React.Component<ColorPickerMetadataProp
     };
 
     private handleInputChange: ChangeEventHandler<HTMLInputElements> = (event) => {
-        this.setState(prevState => ({
-            workingColorScheme: prevState.workingColorScheme.withUpdate({[event.target.name]: event.target.value}),
-        }));
+        this.setState((prevState, props) => {
+            const newWorking = prevState.workingColorScheme.withUpdate({[event.target.name]: event.target.value});
+            props.changesUnsaved(!newWorking.equals(props.selectedColorScheme));
+            return {
+                workingColorScheme: newWorking,
+            };
+        });
         // this.setState(prevState => ({
         //     workingColorScheme: {
         //         ...prevState.workingColorScheme,
         //         [event.target.name]: event.target.value,
         //     }
         // }));
+    };
+
+    private handleCancelClick: MouseEventHandler<HTMLButtonElement> = (event) => {
+        this.setState({
+            workingColorScheme: new ColorSchemeFragment(this.props.selectedColorScheme),
+        });
     };
 }

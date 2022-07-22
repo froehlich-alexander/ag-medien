@@ -80,13 +80,13 @@ export class Colors {
         return this._colors;
     }
 
-    public equals(other: Colors): boolean {
+    public equals(other?: Colors): boolean {
         let thisColors = Object.entries(this._colors);
-        return this == other || (
+        return other != null && (this == other || (
             thisColors.length == Object.keys(other._colors).length &&
             thisColors.map(([k, v]) => other._colors[k] === v)
                 .reduce((prev, now) => prev && now, true)
-        );
+        ));
     }
 
     public keys(): string[] {
@@ -124,6 +124,24 @@ export class ColorSchemeFragment implements ColorSchemeFragmentType {
         this.author = author;
         this.design = design;
         this.colors = new Colors(colors);
+    }
+
+    public equals(other: ColorSchemeFragment | ColorScheme): boolean {
+        return other != null && (this == other || (
+            other instanceof ColorScheme ? (
+                    (this.name === undefined || this.name == other.name) &&
+                    (this.description === undefined || this.description == other.description) &&
+                    (this.author === undefined || this.author == other.author) &&
+                    (this.design === undefined || this.design == other.design) &&
+                    (this.colors === undefined || this.colors.equals(other.colors))) //todo shouldnt this.colors be allowed to be partial???
+                : (
+                    this.name == other.name &&
+                    this.description == other.description &&
+                    this.author == other.author &&
+                    this.design == other.design &&
+                    (this.colors?.equals(other.colors) ?? other.colors === undefined)
+                )
+        ));
     }
 
     public withName(name: string): ColorSchemeFragment {
