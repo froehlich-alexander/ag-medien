@@ -8,7 +8,7 @@ import {
     ColorSchemeTypeOptional, ColorsType,
     Design,
 } from "./colorpickerBackend";
-import {ColorPickerService} from "./ColorPickerService";
+import ColorPickerService from "./ColorPickerService";
 
 abstract class Builder<T, TType = { [k in keyof T]: T[k] }> {
     declare public static readonly FIELDS: string[];
@@ -55,12 +55,29 @@ abstract class Builder<T, TType = { [k in keyof T]: T[k] }> {
         }
         return this;
     }
+
+    public equals(other: T | this) {
+        if (this == other) {
+            return true;
+        }
+        let prefix = "";
+        let isBuilder = false;
+        if (other instanceof Builder) {
+            prefix = "_";
+            isBuilder = true;
+        }
+        return (this.constructor as typeof Builder).FIELDS.map(v =>
+            // @ts-ignore
+            this["_" + v]?.equals(other[prefix + v]) ?? (this["_" + v] == other[prefix + v] || (!isBuilder && this["_" + v] === undefined)))
+            .reduce((p, n) => p && n, true);
+    }
 }
 
 export class ColorsBuilder extends Builder<Colors, ColorsType> {
     public static readonly FIELDS = [];
 
     private _colors: ColorsType = {};
+    private _size: number = 0;
 
     constructor(other?: Colors | ColorsType) {
         super();
@@ -73,6 +90,9 @@ export class ColorsBuilder extends Builder<Colors, ColorsType> {
 
     public set(colorId: keyof ColorsType, value: ColorsType[typeof colorId]): this {
         this._colors[colorId] = value;
+        if (!(colorId in this._colors)) {
+            this._size++;
+        }
         return this;
     }
 
@@ -80,20 +100,46 @@ export class ColorsBuilder extends Builder<Colors, ColorsType> {
         if (other !== undefined) {
             Object.assign(this._colors, other instanceof Colors ? other.colors : other);
         }
+        this._size = Object.keys(this._colors).length;
         return this;
     }
 
     public override reset(colorsId?: keyof ColorsType): this {
         if (colorsId !== undefined) {
+            if (colorsId in this._colors) {
+                this._size--;
+            }
             delete this._colors[colorsId];
         } else {
             this._colors = {};
+            this._size = 0;
         }
         return this;
     }
 
     public build(): Colors {
         return new Colors(this._colors);
+    }
+
+    public equals(other: ColorsBuilder | Colors): boolean {
+        if (this === other) {
+            return true;
+        }
+        if (other instanceof ColorsBuilder) {
+            // real equal
+            return this._size == other._size && Object.entries(other._colors).map(([k, v]) =>
+                this._colors[k] == v)
+                .reduce((prev, now) => prev && now, true);
+        } else {
+            // all colors in this must be equal or undefined
+            return other.size >= this._size && other.entries().map(([k, v]) =>
+                this._colors[k] == v || this._colors[k] === undefined)
+                .reduce((prev, now) => prev && now, true);
+        }
+    }
+
+    public get size() {
+        return this._size;
     }
 }
 
@@ -259,27 +305,27 @@ export class ColorSchemeBuilder extends ColorSchemeLikeBuilder<ColorScheme, Colo
         return this;
     }
 
-    public equals(other: ColorSchemeBuilder | ColorScheme): boolean {
-        if (other == this) {
-            return true;
-        }
-        if (other instanceof ColorSchemeBuilder) {
-            return this._id == other._id &&
-                this._name == other._name &&
-                this._description == other._description &&
-                this._author == other._author &&
-                this._design == other._design &&
-                this._colors.equals(other._colors) &&
-                this._preDefined == other._preDefined &&
-                this._current == other._current;
-        } else {
-            return (this._id === undefined || other.id) &&
-                (this._description === undefined || other.description) &&
-                (this._author === undefined || other.author) &&
-                (this._description === undefined || other.design) &&
-                (this._colors.equals(other.colors)) &&
-                (this._preDefined === undefined || other.preDefined) &&
-                (this._current === undefined || other.current);
-        }
-    }
+    // public equals(other: ColorSchemeBuilder | ColorScheme): boolean {
+    //     if (other == this) {
+    //         return true;
+    //     }
+    //     if (other instanceof ColorSchemeBuilder) {
+    //         return this._id == other._id &&
+    //             this._name == other._name &&
+    //             this._description == other._description &&
+    //             this._author == other._author &&
+    //             this._design == other._design &&
+    //             this._colors.equals(other._colors) &&
+    //             this._preDefined == other._preDefined &&
+    //             this._current == other._current;
+    //     } else {
+    //         return (this._id === undefined || other.id) &&
+    //             (this._description === undefined || other.description) &&
+    //             (this._author === undefined || other.author) &&
+    //             (this._description === undefined || other.design) &&
+    //             (this._colors.equals(other.colors)) &&
+    //             (this._preDefined === undefined || other.preDefined) &&
+    //             (this._current === undefined || other.current);
+    //     }
+    // }
 }
