@@ -23,7 +23,8 @@
     "useDefineForClassFields": true,
     "sourceMap": true,
     "removeComments": false,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "allowSyntheticDefaultImports": true,
   },
   "exclude": [
     "jsxFactory.ts"

@@ -1,3 +1,4 @@
+import {createRef, RefObject} from "react";
 import * as React from "react";
 import {ColorScheme, ColorSchemeFragmentType, Designs} from "./color-base/colorpickerBackend";
 import ColorPickerService from "./color-base/ColorPickerService";
@@ -7,7 +8,7 @@ import {ColorPickerForm} from "./forms/colorPickerForm";
 import {ColorPickerMetadata} from "./forms/colorPickerMetadata";
 import NavBar from "./NavBar";
 import ColorSchemeDropdownMenu from "./ColorSchemeDropdownMenu";
-import {concatClass, DefaultProps} from "./utils";
+import {concatClass, DefaultProps, saveToFile} from "./utils";
 
 interface ColorPickerProps extends DefaultProps {
 }
@@ -18,11 +19,13 @@ interface ColorPickerState {
     newColorSchemeDialogVisibility: boolean,
     allColorSchemes: ColorScheme[],
     colorSchemeMetadataUnsaved: boolean, // whether the color scheme metadata inputs hold unsaved data
+    exportMimeType: "application/json"|"application/xml", // the mime type which is used for exporting color schemes
 }
 
 export class ColorPicker extends React.Component<ColorPickerProps, ColorPickerState> {
     // declare props: PropsType<Component> & { service: ColorPickerService };
     private service: ColorPickerService;
+    private downloadAnchor: RefObject<HTMLAnchorElement> = createRef();
 
     constructor(props: ColorPickerProps) {
         super(props);
@@ -33,6 +36,7 @@ export class ColorPicker extends React.Component<ColorPickerProps, ColorPickerSt
             allColorSchemes: this.service.allList,
             activeColorScheme: this.service.getCurrent(),
             colorSchemeMetadataUnsaved: false,
+            exportMimeType: "application/json",
         };
     }
 
@@ -106,6 +110,9 @@ export class ColorPicker extends React.Component<ColorPickerProps, ColorPickerSt
                         </div>
                     </div>
                 </div>
+                <a className="d-none"
+                   aria-label="Hidden Anchor used for downloading text"
+                   ref={this.downloadAnchor}></a>
             </div>
         );
     }
@@ -129,20 +136,27 @@ export class ColorPicker extends React.Component<ColorPickerProps, ColorPickerSt
 
     private handleActivate = (): void => {
         this.service.activate(this.state.selectedColorScheme);
-        this.setState({
-            activeColorScheme: this.service.getCurrent(),
-            selectedColorScheme: this.service.getColorScheme(this.state.selectedColorScheme.id)!,
-            allColorSchemes: this.service.allList,
-        });
+        this.updateState();
     };
 
     private handleDelete = (): void => {
         let newSelectedColorScheme = this.service.getCurrent();
         this.service.delete(this.state.selectedColorScheme);
+        this.updateState();
+    };
+
+    private updateState() {
         this.setState({
-            selectedColorScheme: newSelectedColorScheme,
+            activeColorScheme: this.service.getCurrent(),
+            selectedColorScheme: this.service.getColorScheme(this.state.selectedColorScheme.id)!,
             allColorSchemes: this.service.allList,
         });
+    }
+
+    private handleDownloadClick = () => {
+        const colorScheme = this.state.selectedColorScheme;
+        const text = JSON.stringify(colorScheme);
+        saveToFile(text, colorScheme.name + ".color-scheme", this.state.exportMimeType, this.downloadAnchor.current!);
     };
 
     private handleColorSchemeChange = (colorSchemeFragment: ColorSchemeFragmentType) => {
