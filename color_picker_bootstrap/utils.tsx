@@ -11,8 +11,8 @@ type ComponentProps<T extends React.Component | React.ComponentType> = T extends
     ? JSX.LibraryManagedAttributes<T, P>
     : never;
 
-function concatClass(...classes: (string | false | undefined)[]): string | undefined {
-    return classes.filter(v => v).join(" ") ?? undefined;
+function concatClass(...className: (string | false | undefined)[]): string | undefined {
+    return className.filter(v => v).join(" ") ?? undefined;
 }
 
 interface FormProps extends HTMLProps<HTMLFormElement> {

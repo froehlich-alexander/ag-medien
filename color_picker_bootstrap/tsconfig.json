@@ -13,7 +13,8 @@
     "moduleResolution": "node",
     "lib": [
       "ESNext",
-      "DOM"
+      "DOM",
+      "dom"
     ],
     "strict": true,
     "alwaysStrict": true,
@@ -22,7 +23,7 @@
     "useDefineForClassFields": true,
     "sourceMap": true,
     "removeComments": false,
-    "skipLibCheck": true,
+    "skipLibCheck": true
   },
   "exclude": [
     "jsxFactory.ts"
