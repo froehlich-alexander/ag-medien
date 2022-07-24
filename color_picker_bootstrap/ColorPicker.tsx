@@ -1,3 +1,4 @@
+import {Modal} from "bootstrap";
 import {createRef, RefObject} from "react";
 import * as React from "react";
 import {ColorScheme, ColorSchemeFragmentType, Designs} from "./color-base/colorpickerBackend";
@@ -48,8 +49,7 @@ export class ColorPicker extends React.Component<ColorPickerProps, ColorPickerSt
         //     (colorSchemeActions.jsObject! as ColorSchemeActions).setColorSchemeId.bind(colorSchemeActions.jsObject!))
 
         return (
-            <div className={concatClass("container p-5", this.props.className)}>
-                <NavBar onClose={() => console.log("colorpicker closed")}></NavBar>
+            <>
                 <NewColorSchemeDialog
                     allColorSchemes={this.state.allColorSchemes}
                     hidden={!this.state.newColorSchemeDialogVisibility}
@@ -59,63 +59,71 @@ export class ColorPicker extends React.Component<ColorPickerProps, ColorPickerSt
                     onNewColorScheme={this.handleNewColorScheme}/>
                 <ExportDialog downloadAnchor={this.downloadAnchor}
                               allColorSchemes={this.state.allColorSchemes}/>
-
-                <div className="row">
-                    <ColorSchemeDropdownMenu
-                        selectedColorSchemes={new Set(this.state.selectedColorScheme.id)}
-                        colorSchemes={this.state.allColorSchemes}
-                        onColorSchemeSelected={this.handleColorSchemeSelected}
-                        className="col-5"/>
-                    <div className="col-2"></div>
-                    <ColorSchemeActions selectedColorScheme={this.state.selectedColorScheme}
-                                        onActivate={this.handleActivate}
-                                        onDelete={this.handleDelete}
-                                        className="col-5"/>
-                </div>
-                <div className="accordion" id="color-picker-main-accordion">
-                    <div className="accordion-item">
-                        {/*Color Picker*/}
-                        <h2 className="accordion-header" id="color-picker-form-header">
-                            <button className="accordion-button" type="button" data-bs-toggle="collapse"
-                                    data-bs-target="#color-picker-form" aria-expanded="true"
-                                    aria-controls="color-picker-form">
-                                Colors
-                            </button>
-                        </h2>
-                        <div id="color-picker-form" className="accordion-collapse collapse"
-                             aria-labelledby="color-picker-form-header"
-                             data-bs-parent="#color-picker-main-accordion">
-                            <div className="accordion-body">
-                                <ColorPickerForm colorTypes={this.service.colorTypes}
-                                                 selectedColorScheme={this.state.selectedColorScheme}
-                                                 onColorSchemeChange={this.handleColorSchemeChange}/>
+                <div className={concatClass("container p-5", this.props.className)}>
+                    <NavBar onClose={() => console.log("colorpicker closed")}></NavBar>
+                    <div className="row">
+                        <ColorSchemeDropdownMenu
+                            selectedColorSchemes={new Set(this.state.selectedColorScheme.id)}
+                            colorSchemes={this.state.allColorSchemes}
+                            onColorSchemeSelected={this.handleColorSchemeSelected}
+                            className="col-5"/>
+                        <div className="col-2"></div>
+                        <ColorSchemeActions selectedColorScheme={this.state.selectedColorScheme}
+                                            onActivate={this.handleActivate}
+                                            onDelete={this.handleDelete}
+                                            className="col-5"/>
+                    </div>
+                    <div className="accordion" id="color-picker-main-accordion">
+                        <div className="accordion-item">
+                            {/*Color Picker*/}
+                            <h2 className="accordion-header" id="color-picker-form-header">
+                                <button className="accordion-button" type="button" data-bs-toggle="collapse"
+                                        data-bs-target="#color-picker-form" aria-expanded="true"
+                                        aria-controls="color-picker-form">
+                                    Colors
+                                </button>
+                            </h2>
+                            <div id="color-picker-form" className="accordion-collapse collapse"
+                                 aria-labelledby="color-picker-form-header"
+                                 data-bs-parent="#color-picker-main-accordion">
+                                <div className="accordion-body">
+                                    <ColorPickerForm colorTypes={this.service.colorTypes}
+                                                     selectedColorScheme={this.state.selectedColorScheme}
+                                                     onColorSchemeChange={this.handleColorSchemeChange}/>
+                                </div>
                             </div>
-                        </div>
 
-                        {/*Edit Color Scheme*/}
-                        <h2 className="accordion-header" id="edit-color-scheme-metadata-header">
-                            <button className="accordion-button" type="button" data-bs-toggle="collapse"
-                                    data-bs-target="#edit-color-scheme-metadata" aria-expanded="true"
-                                    aria-controls="edit-color-scheme-metadata">
-                                Color Scheme Metadata
-                            </button>
-                        </h2>
-                        <div id="edit-color-scheme-metadata" className="accordion-collapse collapse show"
-                             aria-labelledby="edit-color-scheme-metadata-header"
-                             data-bs-parent="#color-picker-main-accordion">
-                            <div className="accordion-body">
-                                <ColorPickerMetadata selectedColorScheme={this.state.selectedColorScheme}
-                                                     onUpdate={this.handleColorSchemeChange}
-                                                     changesUnsaved={(value) => this.setState({colorSchemeMetadataUnsaved: value})}/>
+                            {/*Edit Color Scheme*/}
+                            <h2 className="accordion-header" id="edit-color-scheme-metadata-header">
+                                <button className="accordion-button" type="button" data-bs-toggle="collapse"
+                                        data-bs-target="#edit-color-scheme-metadata" aria-expanded="true"
+                                        aria-controls="edit-color-scheme-metadata">
+                                    Color Scheme Metadata
+                                </button>
+                            </h2>
+                            <div id="edit-color-scheme-metadata" className="accordion-collapse collapse show"
+                                 aria-labelledby="edit-color-scheme-metadata-header"
+                                 data-bs-parent="#color-picker-main-accordion">
+                                <div className="accordion-body">
+                                    <ColorPickerMetadata selectedColorScheme={this.state.selectedColorScheme}
+                                                         onUpdate={this.handleColorSchemeChange}
+                                                         changesUnsaved={(value) => this.setState({colorSchemeMetadataUnsaved: value})}/>
+                                </div>
                             </div>
                         </div>
                     </div>
+                    <a className="d-none"
+                       aria-label="Hidden Anchor used for downloading text"
+                       ref={this.downloadAnchor}></a>
                 </div>
-                <a className="d-none"
-                   aria-label="Hidden Anchor used for downloading text"
-                   ref={this.downloadAnchor}></a>
-            </div>
+            </>
         );
+    }
+
+    public componentDidMount(): void {
+        const modal = document.getElementById("export-dialog");
+        console.log(modal);
+        Modal.getOrCreateInstance(modal!)!.show();
     }
 
     private handleColorSchemeSelected = (selectedColorSchemes: Set<string>) => {

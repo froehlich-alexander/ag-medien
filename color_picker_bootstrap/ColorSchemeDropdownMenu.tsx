@@ -33,8 +33,14 @@ class ColorSchemeDropdownMenu extends React.Component<ColorSchemeDropdownMenuPro
         let preDefinedColorSchemes = this.props.colorSchemes.filter((v: ColorScheme) => v.preDefined);
 
         return (
-            <div className={classNames("btn-group dropdown", this.props.className)}>
-                <button type="button" className="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown">
+            <div className={classNames("dropdown input-group", this.props.className)}>
+                <label htmlFor="color-scheme-dropdown-menu-trigger-button"
+                       className={"input-group-text"}>Color Scheme{this.props.multiple && "s"}</label>
+                <button id={"color-scheme-dropdown-menu-trigger-button"}
+                        type="button"
+                        className="btn btn-primary dropdown-toggle form-control"
+                        data-bs-toggle="dropdown"
+                        data-bs-auto-close={this.props.multiple ? "outside" : "true"}>
                     Color Scheme
                 </button>
                 <ul className="dropdown-menu" id="color-schemes-dropdown-menu"
@@ -83,7 +89,7 @@ class ColorSchemeDropdownMenu extends React.Component<ColorSchemeDropdownMenuPro
                 if (csElement.classList.contains("active")) {
                     if (!this.props.selectedColorSchemes.has(csId)) {
                         const newSet = new Set(this.props.selectedColorSchemes);
-                        newSet.add(csId)
+                        newSet.add(csId);
                         this.props.onColorSchemeSelected(newSet);
                     }
                 } else {
@@ -110,6 +116,7 @@ const ColorSchemeDropdownItem = (props: ColorSchemeDropdownItemProps) =>
         <a className={classNames("dropdown-item",
             (props.selected || props.selectedColorSchemes.has(props.colorScheme.id)) && "active")}
            data-color-scheme-id={props.colorScheme.id}
+           href="#"
            {...(props.toggleable && {"data-bs-toggle": "button"})}>
             <span className="ColorSchemeDropdownItemText text-truncate d-inline-block">
                 {props.colorScheme.name}

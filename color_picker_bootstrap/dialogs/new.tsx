@@ -59,8 +59,9 @@ export class NewColorSchemeDialog extends React.Component<NewColorSchemeDialogPr
             <div className={concatClass("modal fade", this.props.className)}
                  id="new-color-scheme-dialog"
                  ref={this.modal}
-                 tabIndex={-1} aria-hidden={true}
-                 aria-labelledby="Dialog to create a new Color Scheme">
+                 tabIndex={-1}
+                 aria-hidden={true}
+                 aria-label="Dialog to create a new Color Scheme">
                 <div className="modal-dialog modal-dialog-centered">
                     <div className="modal-content">
                         <div className="modal-header">

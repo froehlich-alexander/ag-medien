@@ -31,26 +31,30 @@ export default class ExportDialog extends Component<ExportDialogProps, ExportDia
         return (
             <div className={classNames("modal fade", this.props.className)}
                  tabIndex={-1}
-                 id={"export-dialog"}>
-                <div className={"modal-dialog"}>
+                 aria-label="Dialog to export color schemes"
+                 aria-hidden={true}
+                 id="export-dialog">
+                <div className="modal-dialog modal-dialog-centered">
                     <div className={"modal-content"}>
                         <div className={"modal-header"}>
-                            <h5 className={"modal-title"}>Export</h5>
+                            <h5 className={"modal-title"}>Export Color schemes</h5>
                             <button type="button" className="btn-close" data-bs-dismiss="modal"
                                     aria-label="Close"></button>
                         </div>
                         <div className={"modal-body"}>
                             <Form action="javascript:void(0)"
                                   onSubmit={this.exportColorSchemes}
-                                  id={"export-dialog-form"}>
+                                  id={"export-dialog-form"}
+                                  className="row g-4">
                                 <ColorSchemeDropdownMenu
+                                    className="col-12"
                                     colorSchemes={this.props.allColorSchemes}
                                     multiple
                                     newButton={false}
                                     noCustomCSPlaceHolder={true}
                                     selectedColorSchemes={this.state.selectedColorSchemes}
                                     onColorSchemeSelected={this.handleColorSchemeSelected}/>
-                                <div className={"input-group"}>
+                                <div className={"input-group col-12"}>
                                     <label className={"input-group-text"} htmlFor={"mimetype-select"}>
                                         Export as
                                     </label>
@@ -63,7 +67,7 @@ export default class ExportDialog extends Component<ExportDialogProps, ExportDia
                                         <option value={"application/json"}>JSON</option>
                                         <option value={"application/xml"}>XML</option>
                                     </select>
-                                    <span className={"form-text"}>The filetype to export the color schemes</span>
+                                    <span className={"form-text col-12"}>The filetype to export the color schemes</span>
                                 </div>
                             </Form>
                         </div>

@@ -51,6 +51,7 @@ module.exports = {
         "react": "React",
         "react-dom": "ReactDOM",
         "bootstrap": "bootstrap",
+        "i18next": "i18next",
     },
     resolve: {
         extensions: [".tsx", ".ts", ".js"]

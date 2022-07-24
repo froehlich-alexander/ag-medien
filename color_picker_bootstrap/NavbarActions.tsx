@@ -37,7 +37,7 @@ class NavbarActions extends Component<NavbarActionsProps, NavbarActionsState> {
                         <button type={"button"}
                                 className="dropdown-item"
                                 data-bs-toggle={"modal"}
-                                data-bs-target={"export-dialog"}
+                                data-bs-target={"#export-dialog"}
                                 onClick={this.props.onExportClick}>
                             Export Color Schemes...
                         </button>
