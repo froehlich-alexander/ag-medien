@@ -1,17 +1,32 @@
 import classNames from "classnames";
-import React, {Component, MouseEventHandler, RefObject} from "react";
-import {DefaultProps, Form} from "../utils";
+import React, {ChangeEventHandler, Component, MouseEventHandler, RefObject} from "react";
+import {Simulate} from "react-dom/test-utils";
+import {ColorScheme} from "../color-base/colorpickerBackend";
+import ColorSchemeDropdownMenu from "../ColorSchemeDropdownMenu";
+import {DefaultProps, Form, saveToFile} from "../utils";
+import error = Simulate.error;
 
 interface ExportDialogProps extends DefaultProps {
-    onExport: () => any,
     downloadAnchor: RefObject<HTMLAnchorElement>,
+    allColorSchemes: ColorScheme[],
 }
 
 interface ExportDialogState {
-
+    selectedColorSchemes: Set<string>,
+    mimeType: "application/json" | "application/xml", // the mime type which is used for exporting color schemes
 }
 
+
 export default class ExportDialog extends Component<ExportDialogProps, ExportDialogState> {
+    constructor(props: ExportDialogProps) {
+        super(props);
+        this.state = {
+            selectedColorSchemes: new Set(),
+            mimeType: "application/json",
+        };
+    }
+
+
     public render(): React.ReactNode {
         return (
             <div className={classNames("modal fade", this.props.className)}
@@ -25,8 +40,16 @@ export default class ExportDialog extends Component<ExportDialogProps, ExportDia
                                     aria-label="Close"></button>
                         </div>
                         <div className={"modal-body"}>
-                            <Form action="javascript:void()"
-                                  onSubmit={this.exportColorSchemes}>
+                            <Form action="javascript:void(0)"
+                                  onSubmit={this.exportColorSchemes}
+                                  id={"export-dialog-form"}>
+                                <ColorSchemeDropdownMenu
+                                    colorSchemes={this.props.allColorSchemes}
+                                    multiple
+                                    newButton={false}
+                                    noCustomCSPlaceHolder={true}
+                                    selectedColorSchemes={this.state.selectedColorSchemes}
+                                    onColorSchemeSelected={this.handleColorSchemeSelected}/>
                                 <div className={"input-group"}>
                                     <label className={"input-group-text"} htmlFor={"mimetype-select"}>
                                         Export as
@@ -34,7 +57,9 @@ export default class ExportDialog extends Component<ExportDialogProps, ExportDia
                                     <select name={"mimetype"}
                                             id={"mimetype-select"}
                                             className={"form-select"}
-                                            value={"application/json"}>
+                                            value={this.state.mimeType}
+                                            required
+                                            onChange={this.handleMimeTypeChange}>
                                         <option value={"application/json"}>JSON</option>
                                         <option value={"application/xml"}>XML</option>
                                     </select>
@@ -48,9 +73,9 @@ export default class ExportDialog extends Component<ExportDialogProps, ExportDia
                                     data-bs-dismiss={"modal"}>
                                 Cancel
                             </button>
-                            <button type={"button"}
-                                    className={"btn btn-primary"}
-                                    onClick={this.handleExportClick}>
+                            <button type="submit"
+                                    form="export-dialog-form"
+                                    className={"btn btn-primary"}>
                                 Export
                             </button>
                         </div>
@@ -60,11 +85,36 @@ export default class ExportDialog extends Component<ExportDialogProps, ExportDia
         );
     }
 
-    private handleExportClick: MouseEventHandler<HTMLButtonElement> = (event) => {
+    private handleMimeTypeChange: ChangeEventHandler<HTMLSelectElement> = (event) => {
+        this.setState({
+            mimeType: event.target.value as ExportDialogState["mimeType"],
+        });
+    };
 
+    private handleColorSchemeSelected = (selectedColorSchemes: Set<string>) => {
+        this.setState({
+            selectedColorSchemes: selectedColorSchemes,
+        });
     };
 
     private exportColorSchemes = () => {
+        const colorSchemesToExport = this.props.allColorSchemes.filter(cs => this.state.selectedColorSchemes.has(cs.id));
+        const length = colorSchemesToExport.length;
+        let filename: string;
 
+        if (length === 0) {
+            console.error("color scheme to export length === 0");
+            return;
+        } else if (length === 1) {
+            filename = colorSchemesToExport[0].name + ".color-schemes";
+        } else {
+            filename = "collection.color-schemes";
+        }
+
+        let content = JSON.stringify({
+            "color-schemes": colorSchemesToExport,
+            timestamp: Date.now(),
+        });
+        saveToFile(content, filename, this.state.mimeType, this.props.downloadAnchor.current!);
     };
 }

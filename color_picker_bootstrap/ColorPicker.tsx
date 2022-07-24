@@ -20,7 +20,6 @@ interface ColorPickerState {
     newColorSchemeDialogVisibility: boolean,
     allColorSchemes: ColorScheme[],
     colorSchemeMetadataUnsaved: boolean, // whether the color scheme metadata inputs hold unsaved data
-    exportMimeType: "application/json"|"application/xml", // the mime type which is used for exporting color schemes
 }
 
 export class ColorPicker extends React.Component<ColorPickerProps, ColorPickerState> {
@@ -37,7 +36,6 @@ export class ColorPicker extends React.Component<ColorPickerProps, ColorPickerSt
             allColorSchemes: this.service.allList,
             activeColorScheme: this.service.getCurrent(),
             colorSchemeMetadataUnsaved: false,
-            exportMimeType: "application/json",
         };
     }
 
@@ -59,11 +57,12 @@ export class ColorPicker extends React.Component<ColorPickerProps, ColorPickerSt
                     defaultDesign={Designs.system}
                     selectedColorScheme={this.state.selectedColorScheme}
                     onNewColorScheme={this.handleNewColorScheme}/>
-                <ExportDialog downloadAnchor={this.downloadAnchor}/>
+                <ExportDialog downloadAnchor={this.downloadAnchor}
+                              allColorSchemes={this.state.allColorSchemes}/>
 
                 <div className="row">
                     <ColorSchemeDropdownMenu
-                        selectedColorScheme={this.state.selectedColorScheme}
+                        selectedColorSchemes={new Set(this.state.selectedColorScheme.id)}
                         colorSchemes={this.state.allColorSchemes}
                         onColorSchemeSelected={this.handleColorSchemeSelected}
                         className="col-5"/>
@@ -119,9 +118,9 @@ export class ColorPicker extends React.Component<ColorPickerProps, ColorPickerSt
         );
     }
 
-    private handleColorSchemeSelected = (colorSchemeId: string) => {
-        let colorScheme = this.service.getColorScheme(colorSchemeId);
-        if (colorScheme != null && colorScheme != this.state.selectedColorScheme) {
+    private handleColorSchemeSelected = (selectedColorSchemes: Set<string>) => {
+        let colorScheme = this.service.getColorScheme(Array.from(selectedColorSchemes)[0]);
+        if (colorScheme != null && !colorScheme.equals(this.state.selectedColorScheme)) {
             this.setState({
                 selectedColorScheme: colorScheme,
             });
@@ -142,7 +141,6 @@ export class ColorPicker extends React.Component<ColorPickerProps, ColorPickerSt
     };
 
     private handleDelete = (): void => {
-        let newSelectedColorScheme = this.service.getCurrent();
         this.service.delete(this.state.selectedColorScheme);
         this.updateState();
     };
@@ -150,16 +148,14 @@ export class ColorPicker extends React.Component<ColorPickerProps, ColorPickerSt
     private updateState() {
         this.setState({
             activeColorScheme: this.service.getCurrent(),
-            selectedColorScheme: this.service.getColorScheme(this.state.selectedColorScheme.id)!,
+            selectedColorScheme: this.service.getColorScheme(this.state.selectedColorScheme.id) ?? this.getDefaultSelectedColorScheme(),
             allColorSchemes: this.service.allList,
         });
     }
 
-    private handleDownloadClick = () => {
-        const colorScheme = this.state.selectedColorScheme;
-        const text = JSON.stringify(colorScheme);
-        saveToFile(text, colorScheme.name + ".color-scheme", this.state.exportMimeType, this.downloadAnchor.current!);
-    };
+    private getDefaultSelectedColorScheme(): ColorScheme {
+        return this.service.getCurrent();
+    }
 
     private handleColorSchemeChange = (colorSchemeFragment: ColorSchemeFragmentType) => {
         const selected = this.state.selectedColorScheme;
