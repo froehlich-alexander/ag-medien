@@ -3,6 +3,7 @@ import * as React from "react";
 import {ColorScheme, ColorSchemeFragmentType, Designs} from "./color-base/colorpickerBackend";
 import ColorPickerService from "./color-base/ColorPickerService";
 import ColorSchemeActions from "./ColorSchemeActions";
+import ExportDialog from "./dialogs/Export";
 import {NewColorSchemeDialog} from "./dialogs/new";
 import {ColorPickerForm} from "./forms/colorPickerForm";
 import {ColorPickerMetadata} from "./forms/colorPickerMetadata";
@@ -58,6 +59,7 @@ export class ColorPicker extends React.Component<ColorPickerProps, ColorPickerSt
                     defaultDesign={Designs.system}
                     selectedColorScheme={this.state.selectedColorScheme}
                     onNewColorScheme={this.handleNewColorScheme}/>
+                <ExportDialog downloadAnchor={this.downloadAnchor}/>
 
                 <div className="row">
                     <ColorSchemeDropdownMenu

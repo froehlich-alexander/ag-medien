@@ -1,6 +1,6 @@
 import classNames from "classnames";
 import React, {Component, MouseEventHandler, RefObject} from "react";
-import {DefaultProps} from "../utils";
+import {DefaultProps, Form} from "../utils";
 
 interface ExportDialogProps extends DefaultProps {
     onExport: () => any,
@@ -11,7 +11,7 @@ interface ExportDialogState {
 
 }
 
-class ExportDialog extends Component<ExportDialogProps, ExportDialogState> {
+export default class ExportDialog extends Component<ExportDialogProps, ExportDialogState> {
     public render(): React.ReactNode {
         return (
             <div className={classNames("modal fade", this.props.className)}
@@ -25,7 +25,22 @@ class ExportDialog extends Component<ExportDialogProps, ExportDialogState> {
                                     aria-label="Close"></button>
                         </div>
                         <div className={"modal-body"}>
-
+                            <Form action="javascript:void()"
+                                  onSubmit={this.exportColorSchemes}>
+                                <div className={"input-group"}>
+                                    <label className={"input-group-text"} htmlFor={"mimetype-select"}>
+                                        Export as
+                                    </label>
+                                    <select name={"mimetype"}
+                                            id={"mimetype-select"}
+                                            className={"form-select"}
+                                            value={"application/json"}>
+                                        <option value={"application/json"}>JSON</option>
+                                        <option value={"application/xml"}>XML</option>
+                                    </select>
+                                    <span className={"form-text"}>The filetype to export the color schemes</span>
+                                </div>
+                            </Form>
                         </div>
                         <div className={"modal-footer"}>
                             <button type={"button"}
@@ -46,6 +61,10 @@ class ExportDialog extends Component<ExportDialogProps, ExportDialogState> {
     }
 
     private handleExportClick: MouseEventHandler<HTMLButtonElement> = (event) => {
+
+    };
+
+    private exportColorSchemes = () => {
 
     };
 }
