@@ -56,6 +56,7 @@ export default class ExportDialog extends Component<ExportDialogProps, ExportDia
                                     formText={"Select the Color Schemes to export"}
                                     disablePlaceholderIfNoCustomCS={true}
                                     selectedColorSchemes={this.state.selectedColorSchemes}
+                                    oneItemRequired={true}
                                     onColorSchemeSelected={this.handleColorSchemeSelected}/>
                                 <div className={"input-group col-12"}>
                                     <label className={"input-group-text"} htmlFor={"mimetype-select"}>

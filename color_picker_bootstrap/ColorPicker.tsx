@@ -5,6 +5,7 @@ import {ColorScheme, ColorSchemeFragmentType, Designs} from "./color-base/colorp
 import ColorPickerService from "./color-base/ColorPickerService";
 import ColorSchemeActions from "./ColorSchemeActions";
 import ExportDialog from "./dialogs/Export";
+import ImportDialog from "./dialogs/Import";
 import {NewColorSchemeDialog} from "./dialogs/new";
 import {ColorPickerForm} from "./forms/colorPickerForm";
 import {ColorPickerMetadata} from "./forms/colorPickerMetadata";
@@ -59,6 +60,7 @@ export class ColorPicker extends React.Component<ColorPickerProps, ColorPickerSt
                     onNewColorScheme={this.handleNewColorScheme}/>
                 <ExportDialog downloadAnchor={this.downloadAnchor}
                               allColorSchemes={this.state.allColorSchemes}/>
+                <ImportDialog/>
                 <div className={concatClass("container p-5", this.props.className)}>
                     <NavBar onClose={() => console.log("colorpicker closed")}></NavBar>
                     <div className="row">
@@ -121,7 +123,7 @@ export class ColorPicker extends React.Component<ColorPickerProps, ColorPickerSt
     }
 
     public componentDidMount(): void {
-        const modal = document.getElementById("export-dialog");
+        const modal = document.getElementById("color-scheme-import-dialog");
         console.log(modal);
         Modal.getOrCreateInstance(modal!)!.show();
     }

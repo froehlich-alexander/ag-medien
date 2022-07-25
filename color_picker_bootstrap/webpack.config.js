@@ -21,30 +21,35 @@ module.exports = {
                 use: "ts-loader",
                 exclude: /node_modules/,
             },
+            // {
+            //     test: /\.css$/,
+            //     use: [
+            //         "style-loader",
+            //         "css-loader",
+            //     ],
+            // },
+            // {
+            //     test: /\.s[ac]ss$/,
+            //     exclude: /ColorPicker.scss$/,
+            //     use: [
+            //         "style-loader",
+            //         "css-loader",
+            //         {
+            //             loader: "sass-loader",
+            //             options: {
+            //                 implementation: require("sass"),
+            //                 sassOptions: {
+            //                     fiber: require("fiber"),
+            //                 }
+            //             }
+            //         }
+            //     ]
+            // },
             {
-                test: /\.css$/,
-                use: [
-                    "style-loader",
-                    "css-loader",
-                ],
-            },
-            {
-                test: /\.s[ac]ss$/,
-                use: [
-                    "style-loader",
-                    "css-loader",
-                    {
-                        loader: "sass-loader",
-                        // options: {
-                        //     implementation: require("sass"),
-                        //     sassOptions: {
-                        //         fiber: require("fiber"),
-                        //     }
-                        // }
-                    }
-                ]
+                test: /ColorPicker.scss$/,
+                use: ["css-loader","sass-loader"],
             }
-        ]
+        ],
     },
     externals: {
         "jquery": "jQuery",

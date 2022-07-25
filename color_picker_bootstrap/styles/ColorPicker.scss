@@ -1,0 +1,22 @@
+.ColorSchemeDropdownMenu {
+
+  .ColorSchemeDropdownItem {
+
+    &.active, &:active {
+      background-color: rgba(var(--bs-primary-rgb), 0.4) !important;
+      color: var(--bs-dark) !important;
+
+      &:hover {
+        background-color: rgba(var(--bs-primary-rgb), 0.3) !important;
+      }
+    }
+
+    .ColorSchemeDropdownItemText {
+      max-width: 20rem;
+    }
+
+    .CenteredBadge {
+      transform: translateY(-20%) !important;
+    }
+  }
+}
