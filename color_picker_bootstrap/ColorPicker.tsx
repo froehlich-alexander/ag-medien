@@ -63,7 +63,7 @@ export class ColorPicker extends React.Component<ColorPickerProps, ColorPickerSt
                     <NavBar onClose={() => console.log("colorpicker closed")}></NavBar>
                     <div className="row">
                         <ColorSchemeDropdownMenu
-                            selectedColorSchemes={new Set(this.state.selectedColorScheme.id)}
+                            selectedColorSchemes={(new Set<string>()).add(this.state.selectedColorScheme.id)}
                             colorSchemes={this.state.allColorSchemes}
                             onColorSchemeSelected={this.handleColorSchemeSelected}
                             className="col-5"/>

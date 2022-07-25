@@ -1,10 +1,10 @@
+import {Modal} from "bootstrap";
 import classNames from "classnames";
-import React, {ChangeEventHandler, Component, MouseEventHandler, RefObject} from "react";
+import React, {ChangeEventHandler, Component, createRef, MouseEventHandler, RefObject} from "react";
 import {Simulate} from "react-dom/test-utils";
 import {ColorScheme} from "../color-base/colorpickerBackend";
 import ColorSchemeDropdownMenu from "../ColorSchemeDropdownMenu";
 import {DefaultProps, Form, saveToFile} from "../utils";
-import error = Simulate.error;
 
 interface ExportDialogProps extends DefaultProps {
     downloadAnchor: RefObject<HTMLAnchorElement>,
@@ -18,6 +18,8 @@ interface ExportDialogState {
 
 
 export default class ExportDialog extends Component<ExportDialogProps, ExportDialogState> {
+    private modal: RefObject<HTMLDivElement> = createRef();
+
     constructor(props: ExportDialogProps) {
         super(props);
         this.state = {
@@ -26,11 +28,11 @@ export default class ExportDialog extends Component<ExportDialogProps, ExportDia
         };
     }
 
-
     public render(): React.ReactNode {
         return (
             <div className={classNames("modal fade", this.props.className)}
                  tabIndex={-1}
+                 ref={this.modal}
                  aria-label="Dialog to export color schemes"
                  aria-hidden={true}
                  id="export-dialog">
@@ -51,7 +53,8 @@ export default class ExportDialog extends Component<ExportDialogProps, ExportDia
                                     colorSchemes={this.props.allColorSchemes}
                                     multiple
                                     newButton={false}
-                                    noCustomCSPlaceHolder={true}
+                                    formText={"Select the Color Schemes to export"}
+                                    disablePlaceholderIfNoCustomCS={true}
                                     selectedColorSchemes={this.state.selectedColorSchemes}
                                     onColorSchemeSelected={this.handleColorSchemeSelected}/>
                                 <div className={"input-group col-12"}>
@@ -115,10 +118,22 @@ export default class ExportDialog extends Component<ExportDialogProps, ExportDia
             filename = "collection.color-schemes";
         }
 
-        let content = JSON.stringify({
+        const jsObj = {
             "color-schemes": colorSchemesToExport,
             timestamp: Date.now(),
-        });
+        };
+        let content: string;
+        switch (this.state.mimeType) {
+            case "application/json":
+                content = JSON.stringify(jsObj);
+                filename += ".json";
+                break;
+            case "application/xml":
+                return;
+                content =
+                filename += ".xml";
+        }
         saveToFile(content, filename, this.state.mimeType, this.props.downloadAnchor.current!);
+        Modal.getInstance(this.modal.current!)!.hide();
     };
 }

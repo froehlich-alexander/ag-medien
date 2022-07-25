@@ -11,7 +11,9 @@ interface ColorSchemeDropdownMenuProps extends DefaultProps {
     selectedColorSchemes: Set<string>, // these color scheme ids will be selected
     multiple?: boolean, // whether it is possible to select multiple color schemes
     newButton?: boolean, // whether there is a new button which opens the new dialog
-    noCustomCSPlaceHolder?: boolean,
+    disablePlaceholderIfNoCustomCS?: boolean,
+    formText?: string,
+    oneItemRequired?: boolean,
 }
 
 interface ColorSchemeDropdownMenuState {
@@ -25,12 +27,14 @@ class ColorSchemeDropdownMenu extends React.Component<ColorSchemeDropdownMenuPro
     static defaultProps: ColorSchemeDropdownMenuProps = {
         newButton: true,
         multiple: false,
-        noCustomCSPlaceHolder: false,
+        disablePlaceholderIfNoCustomCS: false,
+        oneItemRequired: true,
     } as ColorSchemeDropdownMenuProps;
 
     public render() {
         let customColorSchemes = this.props.colorSchemes.filter((v: ColorScheme) => !v.preDefined);
         let preDefinedColorSchemes = this.props.colorSchemes.filter((v: ColorScheme) => v.preDefined);
+        console.log(this.props.selectedColorSchemes);
 
         return (
             <div className={classNames("dropdown input-group", this.props.className)}>
@@ -38,11 +42,15 @@ class ColorSchemeDropdownMenu extends React.Component<ColorSchemeDropdownMenuPro
                        className={"input-group-text"}>Color Scheme{this.props.multiple && "s"}</label>
                 <button id={"color-scheme-dropdown-menu-trigger-button"}
                         type="button"
-                        className="btn btn-primary dropdown-toggle form-control"
+
+                        className={classNames("btn btn-primary dropdown-toggle form-control",
+                            this.props.oneItemRequired && (this.props.selectedColorSchemes.size === 0 ? "is-invalid" : "is-valid"))}
                         data-bs-toggle="dropdown"
                         data-bs-auto-close={this.props.multiple ? "outside" : "true"}>
-                    Color Scheme
+                    {this.props.multiple ? "Color Schemes" : this.props.colorSchemes.find(v => this.props.selectedColorSchemes.has(v.id))!.name}
                 </button>
+                <span className="invalid-feedback">You need to select at least 1 item</span>
+                <span className="form-text col-12">{this.props.formText}</span>
                 <ul className="dropdown-menu" id="color-schemes-dropdown-menu"
                     onClick={this.handleDropDownClick}>
                     {this.props.newButton && <li key="open-new-cs-dialog-button">
@@ -63,11 +71,11 @@ class ColorSchemeDropdownMenu extends React.Component<ColorSchemeDropdownMenuPro
                         toggleable={this.props.multiple}/>)}
 
                     <li key="custom-header"><h6 className="dropdown-header"
-                                                hidden={customColorSchemes.length === 0 && this.props.noCustomCSPlaceHolder}>
+                                                hidden={customColorSchemes.length === 0 && this.props.disablePlaceholderIfNoCustomCS}>
                         Custom
                     </h6></li>
                     <li key="nothing-here-label"><a className="dropdown-item disabled" href="#"
-                                                    hidden={customColorSchemes.length > 0 || this.props.noCustomCSPlaceHolder}>
+                                                    hidden={customColorSchemes.length > 0 || this.props.disablePlaceholderIfNoCustomCS}>
                         Nothing here yet
                     </a></li>
                     {customColorSchemes.map(cs => <ColorSchemeDropdownItem
@@ -86,18 +94,24 @@ class ColorSchemeDropdownMenu extends React.Component<ColorSchemeDropdownMenuPro
             const csId = csElement.getAttribute("data-color-scheme-id");
             console.log("csId", e.target, csId);
             if (csId != null) {
-                if (csElement.classList.contains("active")) {
-                    if (!this.props.selectedColorSchemes.has(csId)) {
-                        const newSet = new Set(this.props.selectedColorSchemes);
-                        newSet.add(csId);
-                        this.props.onColorSchemeSelected(newSet);
+                if (this.props.multiple) {
+                    if (csElement.classList.contains("active")) {
+                        if (!this.props.selectedColorSchemes.has(csId)) {
+                            const newSet = new Set(this.props.selectedColorSchemes);
+                            newSet.add(csId);
+                            this.props.onColorSchemeSelected(newSet);
+                        }
+                    } else {
+                        if (this.props.selectedColorSchemes.has(csId)) {
+                            const newSet = new Set(this.props.selectedColorSchemes);
+                            newSet.delete(csId);
+                            this.props.onColorSchemeSelected(newSet);
+                        }
                     }
                 } else {
-                    if (this.props.selectedColorSchemes.has(csId)) {
-                        const newSet = new Set(this.props.selectedColorSchemes);
-                        newSet.delete(csId);
-                        this.props.onColorSchemeSelected(newSet);
-                    }
+                    const newSet = new Set<string>();
+                    newSet.add(csId);
+                    this.props.onColorSchemeSelected(newSet);
                 }
             }
         }
