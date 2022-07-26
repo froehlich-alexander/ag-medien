@@ -60,7 +60,9 @@ export class ColorPicker extends React.Component<ColorPickerProps, ColorPickerSt
                     onNewColorScheme={this.handleNewColorScheme}/>
                 <ExportDialog downloadAnchor={this.downloadAnchor}
                               allColorSchemes={this.state.allColorSchemes}/>
-                <ImportDialog/>
+                <ImportDialog allColorSchemes={this.state.allColorSchemes}
+                              service={this.service}
+                              onColorSchemeImport={this.handleNewColorScheme}/>
                 <div className={concatClass("container p-5", this.props.className)}>
                     <NavBar onClose={() => console.log("colorpicker closed")}></NavBar>
                     <div className="row">
@@ -137,8 +139,12 @@ export class ColorPicker extends React.Component<ColorPickerProps, ColorPickerSt
         }
     };
 
-    private handleNewColorScheme = (colorScheme: ColorSchemeFragmentType) => {
-        this.service.newColorScheme(colorScheme);
+    private handleNewColorScheme = (...colorSchemes: (ColorSchemeFragmentType | ColorSchemeFragmentType[])[]) => {
+        for (let i of colorSchemes) {
+            for (let j of (Array.isArray(i) ? i : [i])) {
+                this.service.newColorScheme(j);
+            }
+        }
         this.setState({
             newColorSchemeDialogVisibility: false,
             allColorSchemes: this.service.allList,
@@ -155,13 +161,13 @@ export class ColorPicker extends React.Component<ColorPickerProps, ColorPickerSt
         this.updateState();
     };
 
-    private updateState() {
+    private updateState = () => {
         this.setState({
             activeColorScheme: this.service.getCurrent(),
             selectedColorScheme: this.service.getColorScheme(this.state.selectedColorScheme.id) ?? this.getDefaultSelectedColorScheme(),
             allColorSchemes: this.service.allList,
         });
-    }
+    };
 
     private getDefaultSelectedColorScheme(): ColorScheme {
         return this.service.getCurrent();

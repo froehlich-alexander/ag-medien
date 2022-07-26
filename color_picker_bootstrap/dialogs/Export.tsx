@@ -127,12 +127,10 @@ export default class ExportDialog extends Component<ExportDialogProps, ExportDia
         switch (this.state.mimeType) {
             case "application/json":
                 content = JSON.stringify(jsObj);
-                filename += ".json";
                 break;
             case "application/xml":
                 return;
-                content =
-                filename += ".xml";
+                content = null
         }
         saveToFile(content, filename, this.state.mimeType, this.props.downloadAnchor.current!);
         Modal.getInstance(this.modal.current!)!.hide();

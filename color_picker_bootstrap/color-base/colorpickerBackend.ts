@@ -167,6 +167,13 @@ export class ColorSchemeFragment implements ColorSchemeFragmentType {
     public withUpdate(other: ColorSchemeFragmentType): ColorSchemeFragment {
         return new ColorSchemeFragment({...this, ...other});
     }
+
+    public static fromJSON({colors, ...other}: ColorSchemeData): ColorSchemeFragment {
+        return new ColorSchemeFragment({
+            ...other,
+            colors: new Colors(colors),
+        });
+    }
 }
 
 class ColorScheme implements ColorSchemeInterface {
