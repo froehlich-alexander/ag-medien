@@ -2,7 +2,7 @@ import {Modal} from "bootstrap";
 import classNames from "classnames";
 import React, {ChangeEventHandler, Component, createRef, MouseEventHandler, RefObject} from "react";
 import {Simulate} from "react-dom/test-utils";
-import {ColorScheme} from "../color-base/colorpickerBackend";
+import {ColorScheme, ColorSchemeData} from "../color-base/colorpickerBackend";
 import ColorSchemeDropdownMenu from "../ColorSchemeDropdownMenu";
 import {DefaultProps, Form, saveToFile} from "../utils";
 
@@ -119,8 +119,8 @@ export default class ExportDialog extends Component<ExportDialogProps, ExportDia
             filename = "collection.color-schemes";
         }
 
-        const jsObj = {
-            "color-schemes": colorSchemesToExport,
+        const jsObj: ColorSchemesFile = {
+            colorSchemes: colorSchemesToExport as unknown as ColorSchemeData[], // JSON.stringify() automatically calls toJSON on the ColorScheme objects
             timestamp: Date.now(),
         };
         let content: string;
@@ -138,3 +138,9 @@ export default class ExportDialog extends Component<ExportDialogProps, ExportDia
         Modal.getInstance(this.modal.current!)!.hide();
     };
 }
+
+
+export type ColorSchemesFile = {
+    colorSchemes: ColorSchemeData[],
+    timestamp: number,
+};

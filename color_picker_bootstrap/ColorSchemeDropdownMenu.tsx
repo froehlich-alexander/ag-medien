@@ -44,6 +44,7 @@ class ColorSchemeDropdownMenu extends React.Component<ColorSchemeDropdownMenuPro
                 <input type={"checkbox"}
                        checked={this.props.selectedColorSchemes.size > 0}
                        required={this.props.oneItemRequired}
+                       readOnly
                        className={"d-none"}/>
                 <button id={"color-scheme-dropdown-menu-trigger-button"}
                         type="button"
