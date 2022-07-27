@@ -116,7 +116,6 @@ export class ColorSchemeFragment implements ColorSchemeFragmentType {
 
     public static readonly Builder = ColorSchemeFragmentBuilder;
 
-    constructor(other: ColorSchemeFragmentType);
     constructor(other: ColorSchemeFragmentType) {
         const {name, description, author, design, colors} = other;
         this.name = name;
@@ -285,6 +284,8 @@ class ColorScheme implements ColorSchemeInterface {
         );
     }
 
+    public static from(other: ColorSchemeInterface)
+
     /*
     This is the dynamic very bad to read version of this function
     public static fromJSON(jsonColorScheme: ColorSchemeData): ColorScheme {
@@ -361,8 +362,8 @@ class ColorScheme implements ColorSchemeInterface {
         }
     }
 
-    public equals(other: ColorScheme | null | undefined): boolean {
-        return other != null && (this == other || (
+    public equals(other: ColorSchemeInterface | null | undefined): boolean {
+        return other != null && (this === other || (
             this.id == other.id &&
             this.name == other.name &&
             this.description == other.description &&
@@ -371,6 +372,22 @@ class ColorScheme implements ColorSchemeInterface {
             this.colors.equals(other.colors) &&
             this.current == other.current &&
             this.preDefined == other.preDefined
+        ));
+    }
+
+    /**
+     * Checks the Value Equality between this and {@link other}<br>
+     * <b>IGNORES {@link ColorScheme} specific non-data fields like
+     * {@link ColorScheme.id}, {@link ColorScheme.preDefined}, {@link ColorScheme.current} </b>
+     * @param other
+     */
+    public equalsFragment(other: ColorSchemeFragmentType | null | undefined): boolean {
+        return other != null && (this === other || (
+            this.name == other.name &&
+            this.description == other.description &&
+            this.author == other.author &&
+            this.design == other.design &&
+            this.colors.equals(other.colors)
         ));
     }
 
@@ -405,6 +422,10 @@ class ColorScheme implements ColorSchemeInterface {
         } else {
             return this;
         }
+    }
+
+    public toFragment(): ColorSchemeFragment {
+        return new ColorSchemeFragment(this);
     }
 }
 

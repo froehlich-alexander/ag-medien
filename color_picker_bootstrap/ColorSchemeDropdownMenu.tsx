@@ -14,6 +14,8 @@ interface ColorSchemeDropdownMenuProps extends DefaultProps {
     disablePlaceholderIfNoCustomCS?: boolean,
     formText?: string,
     oneItemRequired?: boolean,
+    // Whether "preDefined" and "custom" headers are present
+    hasHeaders?: boolean,
 }
 
 interface ColorSchemeDropdownMenuState {
@@ -29,6 +31,7 @@ class ColorSchemeDropdownMenu extends React.Component<ColorSchemeDropdownMenuPro
         multiple: false,
         disablePlaceholderIfNoCustomCS: false,
         oneItemRequired: true,
+        hasHeaders: true,
     } as ColorSchemeDropdownMenuProps;
 
     public render() {
@@ -38,7 +41,7 @@ class ColorSchemeDropdownMenu extends React.Component<ColorSchemeDropdownMenuPro
 
         return (
             <div className={classNames("dropdown input-group ColorSchemeDropdownMenu", this.props.className)}>
-                
+
                 <label htmlFor="color-scheme-dropdown-menu-trigger-button"
                        className={"input-group-text"}>Color Scheme{this.props.multiple && "s"}</label>
                 <input type={"checkbox"}
@@ -72,16 +75,17 @@ class ColorSchemeDropdownMenu extends React.Component<ColorSchemeDropdownMenuPro
                     {this.props.newButton && <li key="divider-0">
                         <hr className="dropdown-divider"/>
                     </li>}
-                    <li key="predefined-header"><h6 className="dropdown-header">Predefined</h6></li>
+                    {this.props.hasHeaders &&
+                        <li key="predefined-header"><h6 className="dropdown-header">Predefined</h6></li>}
                     {preDefinedColorSchemes.map(cs => <ColorSchemeDropdownItem
                         colorScheme={cs}
                         selectedColorSchemes={this.props.selectedColorSchemes}
                         toggleable={this.props.multiple}/>)}
 
-                    <li key="custom-header"><h6 className="dropdown-header"
-                                                hidden={customColorSchemes.length === 0 && this.props.disablePlaceholderIfNoCustomCS}>
+                    {this.props.hasHeaders && <li key="custom-header"><h6 className="dropdown-header"
+                                                                          hidden={customColorSchemes.length === 0 && this.props.disablePlaceholderIfNoCustomCS}>
                         Custom
-                    </h6></li>
+                    </h6></li>}
                     <li key="nothing-here-label"><a className="dropdown-item disabled" href="#"
                                                     hidden={customColorSchemes.length > 0 || this.props.disablePlaceholderIfNoCustomCS}>
                         Nothing here yet
