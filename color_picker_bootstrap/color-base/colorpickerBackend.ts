@@ -185,8 +185,6 @@ class ColorScheme implements ColorSchemeInterface {
     public current: boolean;
     public readonly preDefined: boolean;
 
-    private readonly _service: ColorPickerService;
-
     public static readonly fields: Array<keyof ColorSchemeInterface> = ["id", "name", "description", "author", "design", "colors", "preDefined", "current"];
     public static readonly Builder = ColorSchemeBuilder;
 
@@ -198,18 +196,16 @@ class ColorScheme implements ColorSchemeInterface {
      * @param {ColorPickerService} service
      */
     // public constructor(service: ColorPickerService | ColorSchemeInterface, id?: string, name?: string, description?: string, author?: string, design?: Designs, colors: ColorMap = new Map()) {
-    public constructor(other: Partial<ColorSchemeInterface>, service: ColorPickerService) {
-        this.id = other.id ?? service.generateId();
-        this.name = other.name ?? service.generateName();
+    public constructor(other: Partial<ColorSchemeInterface>, service?: ColorPickerService) {
+        this.id = other.id ?? service!.generateId();
+        this.name = other.name ?? service!.generateName();
         this.description = other.description ?? "Very interesting description";
         this.author = other.author ?? "Author unknown";
         this.design = other.design ?? Designs.system;
         // colors = other colors; if other colors are not defined, fill with default colors
-        this.colors = new Colors(other.colors?.size ?? 0 >= service.colorTypes.length ? other.colors : service.getDefault().colors.withColors(other.colors));
+        this.colors = new Colors(other.colors?.size ?? 0 >= (service?.colorTypes.length ?? 0) ? other.colors : service?.getDefault().colors.withColors(other.colors));
         this.current = other.current ?? false;
         this.preDefined = other.preDefined ?? false;
-
-        this._service = service;
 
         // add default colors if colors are not provided
         // if (service) {
@@ -273,18 +269,15 @@ class ColorScheme implements ColorSchemeInterface {
      * @param jsonColorScheme
      * @param service
      */
-    public static fromJSON(jsonColorScheme: ColorSchemeData, service: ColorPickerService): ColorScheme {
+    public static fromJSON(jsonColorScheme: ColorSchemeData, service?: ColorPickerService): ColorScheme {
         let {colors, ...otherFields} = jsonColorScheme;
         return new ColorScheme(
             {
                 colors: new Colors(colors),
                 ...otherFields,
-            },
-            service,
+            }, service,
         );
     }
-
-    public static from(other: ColorSchemeInterface)
 
     /*
     This is the dynamic very bad to read version of this function
@@ -322,43 +315,38 @@ class ColorScheme implements ColorSchemeInterface {
     */
 
     public withName(name: string): ColorScheme {
-        return new ColorScheme({...this, name: name}, this._service);
+        return new ColorScheme({...this, name: name});
     }
 
     public withAuthor(author: string): ColorScheme {
-        return new ColorScheme({...this, author: author}, this._service);
+        return new ColorScheme({...this, author: author});
     }
 
     public withDescription(description: string): ColorScheme {
-        return new ColorScheme({...this, description: description}, this._service);
+        return new ColorScheme({...this, description: description});
     }
 
     public withColors(colors: Colors): ColorScheme {
-        return new ColorScheme({...this, colors: colors}, this._service);
-    }
-
-    public setCurrent(current: boolean): this {
-        this.current = current;
-        return this;
+        return new ColorScheme({...this, colors: this.colors.withColors(colors)});
     }
 
     public withDesign(design: Design): ColorScheme {
-        return new ColorScheme({...this, design: design}, this._service);
+        return new ColorScheme({...this, design: design});
     }
 
     public withCurrent(current: boolean): ColorScheme {
-        if (this.current == current) {
+        if (this.current === current) {
             return this;
         } else {
-            return new ColorScheme({...this, current: current}, this._service);
+            return new ColorScheme({...this, current: current});
         }
     }
 
     public withPreDefined(preDefined: boolean): ColorScheme {
-        if (this.preDefined == preDefined) {
+        if (this.preDefined === preDefined) {
             return this;
         } else {
-            return new ColorScheme({...this, preDefined: preDefined}, this._service);
+            return new ColorScheme({...this, preDefined: preDefined});
         }
     }
 
@@ -397,8 +385,8 @@ class ColorScheme implements ColorSchemeInterface {
      * @param {ColorSchemeFragment[]} others
      * @returns {ColorScheme}
      */
-    public withUpdate(...others: ColorSchemeFragmentType[]): ColorScheme {
-        let other: ColorSchemeBuilder = new ColorSchemeBuilder(this._service, this);
+    public withUpdate(...others: Partial<ColorSchemeInterface>[]): ColorScheme {
+        let other: ColorSchemeBuilder = new ColorSchemeBuilder(this);
         // others.reverse(); // reverse is in-place
         // others.push(this);
         for (let i of others) {
@@ -418,7 +406,7 @@ class ColorScheme implements ColorSchemeInterface {
         // console.log("with update", other.build(), others.map(v=>v.colors?.colors));
         if (!other.equals(this)) {
             // console.log(" with update not eq");
-            return new ColorScheme(other.build(), this._service);
+            return other.build();
         } else {
             return this;
         }

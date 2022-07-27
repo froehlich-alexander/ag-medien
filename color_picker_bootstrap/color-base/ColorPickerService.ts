@@ -127,8 +127,12 @@ class ColorPickerService {
             res = this._setColorScheme(prev.withUpdate(new ColorSchemeFragment(colorScheme)));
         } else {
             res = this._setColorScheme(colorScheme
-                .withPreDefined(false)
-                .withCurrent(false));
+                .withUpdate({
+                    // ensure that all colors are specified
+                    colors: this.getDefault().colors.withColors(colorScheme.colors),
+                    current: false,
+                    preDefined: false,
+                }));
             this.trigger("add", res);
         }
         this.save();

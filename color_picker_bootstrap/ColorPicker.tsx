@@ -178,14 +178,10 @@ export class ColorPicker extends React.Component<ColorPickerProps, ColorPickerSt
         const edited = selected.withUpdate(colorSchemeFragment);
         console.log("cs change", colorSchemeFragment, selected, edited);
 
-        if (!selected.equals(edited)) {
+        if (!selected.equalsFragment(edited)) {
             console.log("cs unequal, update");
             this.service.setColorScheme(edited);
-            this.setState({
-                selectedColorScheme: this.service.getColorScheme(selected.id)!,
-                activeColorScheme: this.service.getCurrent(),
-                allColorSchemes: this.service.allList,
-            });
+            this.updateState();
         }
 
         // let serviceColorScheme = this.service.getColorScheme(colorScheme.id)!;

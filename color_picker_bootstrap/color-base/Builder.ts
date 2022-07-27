@@ -270,11 +270,9 @@ export class ColorSchemeBuilder extends ColorSchemeLikeBuilder<ColorScheme, Colo
     protected _id?: string;
     protected _preDefined?: boolean;
     protected _current?: boolean;
-    private readonly _service: ColorPickerService;
 
-    constructor(service: ColorPickerService, other?: ColorSchemeTypeOptional) {
+    constructor(other?: ColorSchemeTypeOptional) {
         super();
-        this._service = service;
         if (other) {
             this.update(other);
         }
@@ -290,7 +288,7 @@ export class ColorSchemeBuilder extends ColorSchemeLikeBuilder<ColorScheme, Colo
             colors: this._colors.build(),
             current: this._current,
             preDefined: this._preDefined,
-        }, this._service);
+        });
     }
 
     public id(id?: string): this {
