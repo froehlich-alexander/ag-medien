@@ -27,8 +27,8 @@ class NavbarActions extends Component<NavbarActionsProps, NavbarActionsState> {
                     <li key={"import"}>
                         <button type={"button"}
                                 className="dropdown-item"
-                                data-bs-toggle={"modal"}
-                                data-bs-target={"#color-scheme-import-dialog"}
+                                // data-bs-toggle={"modal"}
+                                // data-bs-target={"#color-scheme-import-dialog"}
                                 onClick={this.props.onImportClick}>
                             Import Color Schemes...
                         </button>

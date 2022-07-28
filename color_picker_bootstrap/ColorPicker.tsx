@@ -17,16 +17,20 @@ interface ColorPickerProps extends DefaultProps {
 }
 
 interface ColorPickerState {
-    selectedColorScheme: ColorScheme, // the color scheme which is selected by the user and on which actions like delete will apply
-    activeColorScheme: ColorScheme, // the color scheme which got activated via ColorSchemeService.activate()
-    newColorSchemeDialogVisibility: boolean,
+    // the color scheme which is selected by the user and on which actions like delete will apply
+    selectedColorScheme: ColorScheme,
+    // the color scheme which got activated via ColorSchemeService.activate()
+    activeColorScheme: ColorScheme,
+    newDialogVisibility: boolean,
+    importDialogVisibility: boolean,
     allColorSchemes: ColorScheme[],
-    colorSchemeMetadataUnsaved: boolean, // whether the color scheme metadata inputs hold unsaved data
+    // whether the color scheme metadata inputs hold unsaved data
+    colorSchemeMetadataUnsaved: boolean,
 }
 
 export class ColorPicker extends React.Component<ColorPickerProps, ColorPickerState> {
     // declare props: PropsType<Component> & { service: ColorPickerService };
-    private service: ColorPickerService;
+    private readonly service: ColorPickerService;
     private downloadAnchor: RefObject<HTMLAnchorElement> = createRef();
 
     constructor(props: ColorPickerProps) {
@@ -34,7 +38,8 @@ export class ColorPicker extends React.Component<ColorPickerProps, ColorPickerSt
         this.service = new ColorPickerService();
         this.state = {
             selectedColorScheme: this.service.getCurrent(),
-            newColorSchemeDialogVisibility: false, // = dialog hidden
+            newDialogVisibility: false, // = dialog hidden
+            importDialogVisibility: true,
             allColorSchemes: this.service.allList,
             activeColorScheme: this.service.getCurrent(),
             colorSchemeMetadataUnsaved: false,
@@ -53,18 +58,20 @@ export class ColorPicker extends React.Component<ColorPickerProps, ColorPickerSt
             <>
                 <NewColorSchemeDialog
                     allColorSchemes={this.state.allColorSchemes}
-                    hidden={!this.state.newColorSchemeDialogVisibility}
-                    onDialogVisibilityChange={(visibility) => this.setState({newColorSchemeDialogVisibility: visibility})}
+                    visibility={this.state.newDialogVisibility}
+                    onDialogVisibilityChange={(visibility) => this.setState({newDialogVisibility: visibility})}
                     defaultDesign={Designs.system}
                     selectedColorScheme={this.state.selectedColorScheme}
                     onNewColorScheme={this.handleNewColorScheme}/>
                 <ExportDialog downloadAnchor={this.downloadAnchor}
                               allColorSchemes={this.state.allColorSchemes}/>
                 <ImportDialog allColorSchemes={this.state.allColorSchemes}
-                              service={this.service}
+                              show={this.state.importDialogVisibility}
+                              onVisibilityChange={this.handleImportDialogVisibilityChange}
                               onColorSchemeImport={this.handleNewColorScheme}/>
                 <div className={concatClass("container p-5", this.props.className)}>
-                    <NavBar onClose={() => console.log("colorpicker closed")}></NavBar>
+                    <NavBar onClose={() => console.log("colorpicker closed")}
+                            onImportClick={() => this.handleImportDialogVisibilityChange(true)}></NavBar>
                     <div className="row">
                         <ColorSchemeDropdownMenu
                             selectedColorSchemes={(new Set<string>()).add(this.state.selectedColorScheme.id)}
@@ -125,9 +132,9 @@ export class ColorPicker extends React.Component<ColorPickerProps, ColorPickerSt
     }
 
     public componentDidMount(): void {
-        const modal = document.getElementById("color-scheme-import-dialog");
-        console.log(modal);
-        Modal.getOrCreateInstance(modal!)!.show();
+        // const modal = document.getElementById("color-scheme-import-dialog");
+        // console.log(modal);
+        // Modal.getOrCreateInstance(modal!)!.show();
     }
 
     private handleColorSchemeSelected = (selectedColorSchemes: Set<string>) => {
@@ -146,7 +153,8 @@ export class ColorPicker extends React.Component<ColorPickerProps, ColorPickerSt
             }
         }
         this.setState({
-            newColorSchemeDialogVisibility: false,
+            newDialogVisibility: false,
+            importDialogVisibility: false,
             allColorSchemes: this.service.allList,
         });
     };
@@ -197,6 +205,17 @@ export class ColorPicker extends React.Component<ColorPickerProps, ColorPickerSt
         //     }
         // }
 
+    };
+
+    private handleImportDialogVisibilityChange = (visibility: boolean) => {
+        this.setState({
+            importDialogVisibility: visibility,
+        });
+    };
+    private handleNewDialogVisibilityChange = (visibility: boolean) => {
+        this.setState({
+            newDialogVisibility: visibility,
+        });
     };
 }
 

@@ -8,6 +8,7 @@
     "i18next": "^21.8.14",
     "jquery": "^3.6.0",
     "react": "^18.2.0",
+    "react-bootstrap": "^2.4.0",
     "react-dom": "^18.2.0",
     "sass": "^1.50.1",
     "sass-loader": "^13.0.2",
@@ -21,6 +22,7 @@
     "@types/bootstrap": "^5.1.12",
     "@types/jquery": "^3.5.14",
     "@types/react": "^18.0.15",
+    "@types/react-bootstrap": "^0.32.30",
     "@types/react-dom": "^18.0.6"
   }
 }

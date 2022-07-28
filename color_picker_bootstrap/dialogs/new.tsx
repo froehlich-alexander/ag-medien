@@ -8,8 +8,9 @@ import {AuthorInput, ColorSchemeSelect, DescriptionInput, DesignInput, NameInput
 interface NewColorSchemeDialogProps extends DefaultProps {
     onNewColorScheme: (colorScheme: ColorSchemeFragmentType) => any,
     onDialogVisibilityChange: (visibility: boolean) => any,
-    hidden: boolean,
-    selectedColorScheme: ColorScheme, // used to get e.g. the colors for the new colorscheme
+    visibility: boolean,
+    // used to get e.g. the colors for the new colorscheme
+    selectedColorScheme: ColorScheme,
     defaultDesign: Design,
     allColorSchemes: ColorScheme[],
 }
@@ -73,7 +74,7 @@ export class NewColorSchemeDialog extends React.Component<NewColorSchemeDialogPr
                             <Form id="new-cs-form"
                                   action="javascript:void(0);"
                                   onSubmit={this.createNewColorScheme.bind(this)}
-                                  successfulSubmitted={this.props.hidden || undefined}>
+                                  successfulSubmitted={!this.props.visibility || undefined}>
 
                                 <ColorSchemeSelect value={this.props.selectedColorScheme.id}
                                                    text={"You can later manually edit the colors"}
@@ -119,11 +120,11 @@ export class NewColorSchemeDialog extends React.Component<NewColorSchemeDialogPr
     }
 
     public override componentDidUpdate(prevProps: Readonly<NewColorSchemeDialogProps>, prevState: Readonly<NewColorSchemeDialogState>, snapshot?: any): void {
-        if (prevProps.hidden != this.props.hidden) {
-            if (this.props.hidden) {
-                Modal.getInstance(this.modal.current!)!.hide();
-            } else {
+        if (prevProps.visibility != this.props.visibility) {
+            if (this.props.visibility) {
                 Modal.getInstance(this.modal.current!)!.show();
+            } else {
+                Modal.getInstance(this.modal.current!)!.hide();
             }
         }
     }
@@ -138,13 +139,13 @@ export class NewColorSchemeDialog extends React.Component<NewColorSchemeDialogPr
         this.modal.current!.removeEventListener("show.bs.modal", this.handleDialogShow);
     }
 
-    private handleDialogHide() {
+    private readonly handleDialogHide = () => {
         this.props.onDialogVisibilityChange(false);
-    }
+    };
 
-    private handleDialogShow() {
+    private readonly handleDialogShow = () => {
         this.props.onDialogVisibilityChange(true);
-    }
+    };
 
     private handleInputChange(event: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) {
         const target = event.target;
