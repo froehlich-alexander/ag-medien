@@ -1,4 +1,4 @@
-import {Modal as BSModal, Toast as BSToast} from "bootstrap";
+import bootstrap from "bootstrap";
 import classNames from "classnames";
 import React, {
     ChangeEvent,
@@ -61,7 +61,7 @@ interface MyToastProps extends HTMLProps<HTMLDivElement> {
     reopen?: number,
 }
 
-function MyToast(
+export function MyToast(
     {
         reopen,
         className,
@@ -74,13 +74,27 @@ function MyToast(
         delay,
         ...others
     }: MyToastProps) {
+    // Ref to the toast HTML element
     const element = useRef<HTMLDivElement>(null);
-    const toast = useRef<BSToast>();
+    // Ref to the bootstrap toast
+    const toast = useRef<bootstrap.Toast>(null);
+    // Ref to the timestamp when the toast was reopened the last time
     const lastReopen = useRef<number>(Date.now());
+    // Ref to get the real state of the toast
+    const toastIsShown = useRef(false);
+    // Ref to access real time reopen prop in hiddenToast
+    const reopenRef = useRef<number>(reopen);
+
+    const reopeningRunning = useRef(false);
+
+    useEffect(() => {
+        // update ref
+        reopenRef.current = reopen;
+    }, [reopen]);
 
     useEffect(() => {
         // create bs objects
-        toast.current = BSToast.getOrCreateInstance(element.current!);
+        toast.current = bootstrap.Toast.getOrCreateInstance(element.current!);
 
         function showToast() {
             onVisibilityChange?.(true);
@@ -90,34 +104,68 @@ function MyToast(
         function hideToast() {
             onVisibilityChange?.(false);
             onClose?.();
+            console.log("toast hiding");
+        }
+
+        function hiddenToast() {
+            toastIsShown.current = false;
+            console.log("hidden", reopenRef.current, lastReopen.current);
+            // show toast if reopen is newer than last reopen
+            if (reopenRef.current > lastReopen.current) {
+                reopeningRunning.current = false;
+                lastReopen.current = reopenRef.current;
+                toast.current.show();
+                console.log("hidden reopen > ");
+            }
+        }
+
+        function shownToast() {
+            toastIsShown.current = true;
         }
 
         // bind events
         element.current!.addEventListener("show.bs.toast", showToast);
+        element.current!.addEventListener("shown.bs.toast", shownToast);
         element.current!.addEventListener("hide.bs.toast", hideToast);
+        element.current!.addEventListener("hidden.bs.toast", hiddenToast);
 
         return () => {
             // remove event listener
             element.current!.removeEventListener("show.bs.toast", showToast);
+            element.current!.removeEventListener("shown.bs.toast", shownToast);
             element.current!.removeEventListener("hide.bs.toast", hideToast);
+            element.current!.removeEventListener("hidden.bs.toast", hiddenToast);
         };
     }, []);
 
     useEffect(() => {
         if (show) {
-            if (reopen != null && reopen > lastReopen.current) {
-                toast.current!.hide();
-                lastReopen.current = reopen;
+            if (reopen > lastReopen.current) {
+                if (toastIsShown.current) {
+                    if (!reopeningRunning.current) {
+                        reopeningRunning.current = true;
+                        // hide toast and show it in hidden callback
+                        toast.current.hide();
+                        console.log("hide reopen");
+                    }
+                } else {
+                    // show toast since it is already hidden
+                    toast.current.show();
+                    console.log("show reopen");
+                    lastReopen.current = reopen;
+                }
+            } else {
+                toast.current.show();
+                console.log("show");
             }
-            toast.current!.show();
         } else {
-            lastReopen.current = Date.now();
-            toast.current!.hide();
+            toast.current.hide();
+            console.log("hide");
         }
     }, [show, reopen]);
 
     return (
-        <div className={classNames(animation && "toast fade", className)}
+        <div className={classNames("toast", animation && "fade", className)}
              ref={element}
              data-bs-autohide={autohide}
              data-bs-delay={delay}
@@ -131,6 +179,7 @@ function MyToast(
 
 MyToast.defaultProps = {
     animation: true,
+    reopen: 0,
 } as MyToastProps;
 
 interface ImportDialogProps extends DefaultProps {

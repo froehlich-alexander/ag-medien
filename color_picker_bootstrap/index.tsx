@@ -5,6 +5,7 @@ import {Button, Toast, ToastContainer} from "react-bootstrap";
 import {createRoot} from "react-dom/client";
 import {Toast as BSToast} from "bootstrap";
 import ColorPicker from "./ColorPicker";
+import {MyToast} from "./dialogs/Import";
 
 //import bootstrap types
 // declare var bootstrap: any;
@@ -25,32 +26,37 @@ const root = createRoot(
 // root.render(<ColorPicker/>);
 function Example({}) {
     let [vis, setVis] = useState(false);
-    let toast = useRef<HTMLDivElement>(null);
-    useEffect(() => {
-        if (vis) {
-            BSToast.getOrCreateInstance(toast.current!).show();
-        } else {
-            BSToast.getOrCreateInstance(toast.current!).hide();
-        }
-    }, [vis]);
-
-    useEffect(() => {
-        toast.current!.addEventListener("hide.bs.toast", () => setVis(false));
-        // toast.current!.addEventListener("show.bs.toast", () => setVis(true));
-    }, []);
+    // let toast = useRef<HTMLDivElement>(null);
+    // useEffect(() => {
+    //     if (vis) {
+    //         BSToast.getOrCreateInstance(toast.current!).show();
+    //     } else {
+    //         BSToast.getOrCreateInstance(toast.current!).hide();
+    //     }
+    // }, [vis]);
+    //
+    // useEffect(() => {
+    //     toast.current!.addEventListener("hide.bs.toast", () => setVis(false));
+    //     // toast.current!.addEventListener("show.bs.toast", () => setVis(true));
+    // }, []);
+    const [lastClick, setLastClick]  = useState(0);
 
     return (
         <div>
-            <Button onClick={() => setVis(true)}>Hello</Button>
+            <Button onClick={() => {
+                console.log("b click");
+                setLastClick(Date.now());
+                setVis(true);
+            }}>Hello</Button>
             <ToastContainer position="bottom-start">
-                <div className="toast fade"
-                     ref={toast}
-                     data-bs-autohide={true}
-                     data-bs-delay={2000}>
-                    {/* show={vis}*/}
-                    {/*    onClose={() => setVis(false)}*/}
-                    {/*    autohide*/}
-                    {/*   delay={2000}>*/}
+                <MyToast
+                    // data-bs-autohide={true}
+                    //  data-bs-delay={2000}>
+                    show={vis}
+                    reopen={lastClick}
+                    onVisibilityChange={setVis}
+                    autohide
+                    delay={5000}>
                     <Toast.Header closeButton={true}>
                         <strong>Hello World</strong>
                     </Toast.Header>
@@ -58,12 +64,12 @@ function Example({}) {
                         Toast...<br/>
                         content...
                     </Toast.Body>
-                </div>
+                </MyToast>
             </ToastContainer>
         </div>
     );
 }
 
 root.render(
-    <ColorPicker/>,
+    <Example/>,
 );

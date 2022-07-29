@@ -62,5 +62,5 @@ module.exports = {
     resolve: {
         extensions: [".tsx", ".ts", ".js"]
     },
-    cache: true,
+    // cache: true,
 }
