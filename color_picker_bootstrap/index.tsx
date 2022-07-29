@@ -5,7 +5,7 @@ import {Button, Toast, ToastContainer} from "react-bootstrap";
 import {createRoot} from "react-dom/client";
 import {Toast as BSToast} from "bootstrap";
 import ColorPicker from "./ColorPicker";
-import {MyToast} from "./dialogs/Import";
+import {Toast} from "./Toast";
 
 //import bootstrap types
 // declare var bootstrap: any;
@@ -41,6 +41,7 @@ function Example({}) {
     // }, []);
     const [lastClick, setLastClick]  = useState(0);
 
+    // setTimeout(()=>setLastClick(prevState => prevState), 1000);
     return (
         <div>
             <Button onClick={() => {
@@ -49,14 +50,14 @@ function Example({}) {
                 setVis(true);
             }}>Hello</Button>
             <ToastContainer position="bottom-start">
-                <MyToast
+                <Toast
                     // data-bs-autohide={true}
                     //  data-bs-delay={2000}>
                     show={vis}
                     reopen={lastClick}
                     onVisibilityChange={setVis}
                     autohide
-                    delay={5000}>
+                    delay={Date.now()-lastClick+2000}>
                     <Toast.Header closeButton={true}>
                         <strong>Hello World</strong>
                     </Toast.Header>
@@ -64,12 +65,12 @@ function Example({}) {
                         Toast...<br/>
                         content...
                     </Toast.Body>
-                </MyToast>
+                </Toast>
             </ToastContainer>
         </div>
     );
 }
 
 root.render(
-    <Example/>,
+    <ColorPicker/>,
 );

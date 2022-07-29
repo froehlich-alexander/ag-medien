@@ -1,24 +1,11 @@
-import bootstrap from "bootstrap";
-import classNames from "classnames";
-import React, {
-    ChangeEvent,
-    ChangeEventHandler,
-    createRef,
-    HTMLProps,
-    useEffect,
-    useLayoutEffect,
-    useRef,
-    useState,
-} from "react";
-import {Component} from "react";
-import {Button, CloseButton, Modal, Toast, ToastContainer} from "react-bootstrap";
-import {FALSE} from "sass";
-import {ColorScheme, ColorSchemeData, ColorSchemeFragment} from "../color-base/colorpickerBackend";
-import ColorPickerService from "../color-base/ColorPickerService";
+import React, {ChangeEvent, createRef, useRef, useState} from "react";
+import {Button, CloseButton, Modal, ToastContainer} from "react-bootstrap";
+import {ColorScheme, ColorSchemeFragment} from "../color-base/colorpickerBackend";
 import ColorSchemeDropdownMenu from "../ColorSchemeDropdownMenu";
 import {ColorSchemeDuplicate} from "../Exceptions";
+import {Toast} from "../Toast";
 import {DefaultProps, Form} from "../utils";
-import ExportDialog, {ColorSchemesFile} from "./Export";
+import {ColorSchemesFile} from "./Export";
 
 export class ColorSchemeFileInfo {
     public readonly colorScheme: ColorScheme;
@@ -49,139 +36,6 @@ function hash(str: string, seed = 0): number {
     return 4294967296 * (2097151 & h2) + (h1 >>> 0);
 }
 
-interface MyToastProps extends HTMLProps<HTMLDivElement> {
-    show: boolean,
-    animation?: boolean,
-    onClose?: () => any,
-    onShow?: () => any,
-    onVisibilityChange?: (visibility: boolean) => any,
-    autohide?: boolean,
-    delay?: number,
-    // timestamp when the toast should (or has) hide and then reopen
-    reopen?: number,
-}
-
-export function MyToast(
-    {
-        reopen,
-        className,
-        animation,
-        show,
-        onShow,
-        onClose,
-        onVisibilityChange,
-        autohide,
-        delay,
-        ...others
-    }: MyToastProps) {
-    // Ref to the toast HTML element
-    const element = useRef<HTMLDivElement>(null);
-    // Ref to the bootstrap toast
-    const toast = useRef<bootstrap.Toast>(null);
-    // Ref to the timestamp when the toast was reopened the last time
-    const lastReopen = useRef<number>(Date.now());
-    // Ref to get the real state of the toast
-    const toastIsShown = useRef(false);
-    // Ref to access real time reopen prop in hiddenToast
-    const reopenRef = useRef<number>(reopen);
-
-    const reopeningRunning = useRef(false);
-
-    useEffect(() => {
-        // update ref
-        reopenRef.current = reopen;
-    }, [reopen]);
-
-    useEffect(() => {
-        // create bs objects
-        toast.current = bootstrap.Toast.getOrCreateInstance(element.current!);
-
-        function showToast() {
-            onVisibilityChange?.(true);
-            onShow?.();
-        }
-
-        function hideToast() {
-            onVisibilityChange?.(false);
-            onClose?.();
-            console.log("toast hiding");
-        }
-
-        function hiddenToast() {
-            toastIsShown.current = false;
-            console.log("hidden", reopenRef.current, lastReopen.current);
-            // show toast if reopen is newer than last reopen
-            if (reopenRef.current > lastReopen.current) {
-                reopeningRunning.current = false;
-                lastReopen.current = reopenRef.current;
-                toast.current.show();
-                console.log("hidden reopen > ");
-            }
-        }
-
-        function shownToast() {
-            toastIsShown.current = true;
-        }
-
-        // bind events
-        element.current!.addEventListener("show.bs.toast", showToast);
-        element.current!.addEventListener("shown.bs.toast", shownToast);
-        element.current!.addEventListener("hide.bs.toast", hideToast);
-        element.current!.addEventListener("hidden.bs.toast", hiddenToast);
-
-        return () => {
-            // remove event listener
-            element.current!.removeEventListener("show.bs.toast", showToast);
-            element.current!.removeEventListener("shown.bs.toast", shownToast);
-            element.current!.removeEventListener("hide.bs.toast", hideToast);
-            element.current!.removeEventListener("hidden.bs.toast", hiddenToast);
-        };
-    }, []);
-
-    useEffect(() => {
-        if (show) {
-            if (reopen > lastReopen.current) {
-                if (toastIsShown.current) {
-                    if (!reopeningRunning.current) {
-                        reopeningRunning.current = true;
-                        // hide toast and show it in hidden callback
-                        toast.current.hide();
-                        console.log("hide reopen");
-                    }
-                } else {
-                    // show toast since it is already hidden
-                    toast.current.show();
-                    console.log("show reopen");
-                    lastReopen.current = reopen;
-                }
-            } else {
-                toast.current.show();
-                console.log("show");
-            }
-        } else {
-            toast.current.hide();
-            console.log("hide");
-        }
-    }, [show, reopen]);
-
-    return (
-        <div className={classNames("toast", animation && "fade", className)}
-             ref={element}
-             data-bs-autohide={autohide}
-             data-bs-delay={delay}
-             role="alert"
-             aria-live="assertive"
-             aria-atomic="true"
-             {...others}>
-        </div>
-    );
-}
-
-MyToast.defaultProps = {
-    animation: true,
-    reopen: 0,
-} as MyToastProps;
-
 interface ImportDialogProps extends DefaultProps {
     allColorSchemes: ColorScheme[],
     onColorSchemeImport: (colorSchemes: ColorSchemeFragment[]) => any,
@@ -194,17 +48,17 @@ interface ImportDialogProps extends DefaultProps {
     toastWarningDuration?: number,
 }
 
-interface ImportDialogState {
-    // CSs which can be selected by the user
-    colorSchemesFromFile: ColorScheme[],
-    invalidColorSchemesFromFile: ColorSchemeFileInfo[],
-    // color schemes chosen by the user which will be imported
-    selectedColorSchemes: Set<string>,
-    badFilesNames: string[],
-    // the timestamp when the file input was last modified
-    // use this.filesUpdated() to get a boolean value
-    filesUpdated: boolean,
-}
+// interface ImportDialogState {
+//     // CSs which can be selected by the user
+//     colorSchemesFromFile: ColorScheme[],
+//     invalidColorSchemesFromFile: ColorSchemeFileInfo[],
+//     // color schemes chosen by the user which will be imported
+//     selectedColorSchemes: Set<string>,
+//     badFilesNames: string[],
+//     // the timestamp when the file input was last modified
+//     // use this.filesUpdated() to get a boolean value
+//     filesUpdated: boolean,
+// }
 
 function ImportDialog(props: ImportDialogProps) {
     const modal = createRef<HTMLDivElement>();
@@ -248,9 +102,9 @@ function ImportDialog(props: ImportDialogProps) {
                aria-hidden={true}
                show={props.show}
                id="color-scheme-import-dialog">
-            <Modal.Header>
+            <Modal.Header closeButton={true}>
                 <Modal.Title>Import Color schemes</Modal.Title>
-                <CloseButton onClick={handleClose} aria-label="Close"></CloseButton>
+                {/*<CloseButton onClick={handleClose} aria-label="Close"></CloseButton>*/}
             </Modal.Header>
             <Modal.Body>
                 <Form action="javascript:void(0)"
@@ -275,11 +129,11 @@ function ImportDialog(props: ImportDialogProps) {
                         <div className="invalid-feedback">You need to select at least one file</div>
                         <ToastContainer position="bottom-end" containerPosition="fixed">
                             {/*Bad Files Toast*/}
-                            <MyToast show={badFilesToastVisibility}
-                                     reopen={lastFilesUpdated}
-                                     autohide={true}
-                                     onVisibilityChange={setBadFilesToastVisibility}
-                                     ref={badFileToast}>
+                            <Toast show={badFilesToastVisibility}
+                                   reopen={lastFilesUpdated}
+                                   autohide={true}
+                                   onVisibilityChange={setBadFilesToastVisibility}
+                                   ref={badFileToast}>
                                 <Toast.Header closeButton={true} closeLabel="Close">
                                     <strong className="text-danger me-auto">File Error</strong>
                                     <small>now</small>
@@ -293,12 +147,12 @@ function ImportDialog(props: ImportDialogProps) {
                                         {badFilesNames.map(v => <li key={v}>{v}</li>)}
                                     </ul>
                                 </Toast.Body>
-                            </MyToast>
+                            </Toast>
                             {/*Invalid Color Schemes Toast*/}
-                            <MyToast reopen={lastFilesUpdated}
-                                     show={invalidColorSchemesToastVisibility}
-                                     onVisibilityChange={setInvalidColorSchemesToastVisibility}
-                                     ref={invalidColorSchemesToast}>
+                            <Toast reopen={lastFilesUpdated}
+                                   show={invalidColorSchemesToastVisibility}
+                                   onVisibilityChange={setInvalidColorSchemesToastVisibility}
+                                   ref={invalidColorSchemesToast}>
                                 <Toast.Header closeButton={true} closeLabel="Close Button">
                                     <strong className="text-warning me-auto">Color Schemes
                                         skipped</strong>
@@ -309,7 +163,7 @@ function ImportDialog(props: ImportDialogProps) {
                                         were skipped because an equal Color Scheme already exists. Maybe
                                         you have re-imported a file?</p>
                                 </Toast.Body>
-                            </MyToast>
+                            </Toast>
                         </ToastContainer>
                     </div>
                     <ColorSchemeDropdownMenu
