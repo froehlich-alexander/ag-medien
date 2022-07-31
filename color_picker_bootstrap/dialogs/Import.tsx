@@ -101,6 +101,7 @@ function ImportDialog(props: ImportDialogProps) {
                aria-label="Dialog to import color schemes"
                aria-hidden={true}
                show={props.show}
+               onHide={handleClose}
                id="color-scheme-import-dialog">
             <Modal.Header closeButton={true}>
                 <Modal.Title>Import Color schemes</Modal.Title>
@@ -133,7 +134,7 @@ function ImportDialog(props: ImportDialogProps) {
                                    reopen={lastFilesUpdated}
                                    autohide={true}
                                    onVisibilityChange={setBadFilesToastVisibility}
-                                   ref={badFileToast}>
+                                /*ref={badFileToast}*/>
                                 <Toast.Header closeButton={true} closeLabel="Close">
                                     <strong className="text-danger me-auto">File Error</strong>
                                     <small>now</small>
@@ -152,7 +153,7 @@ function ImportDialog(props: ImportDialogProps) {
                             <Toast reopen={lastFilesUpdated}
                                    show={invalidColorSchemesToastVisibility}
                                    onVisibilityChange={setInvalidColorSchemesToastVisibility}
-                                   ref={invalidColorSchemesToast}>
+                                /* ref={invalidColorSchemesToast}*/>
                                 <Toast.Header closeButton={true} closeLabel="Close Button">
                                     <strong className="text-warning me-auto">Color Schemes
                                         skipped</strong>

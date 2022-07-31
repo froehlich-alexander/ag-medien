@@ -1,7 +1,7 @@
 import bootstrap from "bootstrap";
 import classNames from "classnames";
-import {Toast as ReactToast} from "react-bootstrap";
-import React, {HTMLProps, useEffect, useRef} from "react";
+import {Button, CloseButton, Toast as ReactToast, ToastHeaderProps} from "react-bootstrap";
+import React, {createRef, HTMLProps, useEffect, useMemo, useRef} from "react";
 
 interface ToastProps extends HTMLProps<HTMLDivElement> {
     show: boolean,
@@ -41,7 +41,7 @@ export function Toast(
         ...others
     }: ToastDefaultProps) {
     // Ref to the toast HTML element
-    const element = useRef<HTMLDivElement>(null);
+    const element = createRef<HTMLDivElement>();
     // Ref to the bootstrap toast
     const toast = useRef<bootstrap.Toast>();
     // Ref to the timestamp when the toast was reopened the last time
@@ -108,14 +108,14 @@ export function Toast(
             toastIsChangingVis.current = true;
             onVisibilityChange?.(false);
             onClose?.();
-            console.log("toast hiding", event);
+            // console.log("toast hiding", event);
         }
 
         function handleHidden() {
             toastIsShown.current = false;
             hideScheduled.current = false;
             toastIsChangingVis.current = false;
-            console.log("hidden", reopenRef.current, lastReopen.current);
+            // console.log("hidden", reopenRef.current, lastReopen.current);
             // show toast if reopen is newer than last reopen
             // if (reopenRef.current > lastReopen.current) {
             //     lastReopen.current = reopenRef.current;
@@ -146,12 +146,15 @@ export function Toast(
         element.current!.addEventListener("hide.bs.toast", handleHide);
         element.current!.addEventListener("hidden.bs.toast", handleHidden);
 
+        const element1 = element.current!;
+
         return () => {
+            hideToast();
             // remove event listener
-            element.current!.removeEventListener("show.bs.toast", handleShow);
-            element.current!.removeEventListener("shown.bs.toast", handleShown);
-            element.current!.removeEventListener("hide.bs.toast", handleHide);
-            element.current!.removeEventListener("hidden.bs.toast", handleHidden);
+            element1.removeEventListener("show.bs.toast", handleShow);
+            element1.removeEventListener("shown.bs.toast", handleShown);
+            element1.removeEventListener("hide.bs.toast", handleHide);
+            element1.removeEventListener("hidden.bs.toast", handleHidden);
         };
     }, []);
 
@@ -178,11 +181,11 @@ export function Toast(
                 // }
             } else {
                 showToast();
-                console.log("show");
+                // console.log("show");
             }
         } else {
             hideToast();
-            console.log("hide");
+            // console.log("hide");
         }
     }, [show, reopen]);
 
@@ -198,12 +201,12 @@ export function Toast(
         hidingOk.current = false;
     }
 
-    //todo provide context for header close button
     return (
-        <div className={classNames("toast", animation && "fade", className)}
+        <div className={classNames("toast", className)}
              ref={element}
              data-bs-autohide={autohide}
              data-bs-delay={delay}
+             data-bs-animation={animation}
              role="alert"
              aria-live="assertive"
              aria-atomic="true"
@@ -217,6 +220,26 @@ Toast.defaultProps = {
     reopen: 0,
 } as ToastProps;
 
+function ToastHeader(
+    {
+        className,
+        closeLabel = "Close",
+        closeButton = true,
+        closeVariant,
+        children,
+        ...props
+    }: Omit<ToastHeaderProps, "bsPrefix">) {
+    return (
+        <div className={classNames("toast-header", className)}
+             {...props}>
+            {children}
+            {closeButton && <CloseButton variant={closeVariant}
+                                         aria-label={closeLabel}
+                                         data-bs-dismiss="toast"/>}
+        </div>
+    );
+}
+
 // copy static values so that you do not need to import Toast from react-bootstrap
-Toast.Header = ReactToast.Header;
+Toast.Header = ToastHeader;
 Toast.Body = ReactToast.Body;

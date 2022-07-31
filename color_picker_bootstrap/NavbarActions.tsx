@@ -1,51 +1,54 @@
 import classNames from "classnames";
-import React, {Component, MouseEventHandler} from "react";
+import React, {useCallback, useContext} from "react";
+import {Dropdown} from "react-bootstrap";
+import ColorPickerContext from "./ColorPickerContext";
 import {DefaultProps} from "./utils";
 
 interface NavbarActionsProps extends DefaultProps {
-    onImportClick?: ()=>any,
-    onExportClick?: ()=>any,
 }
 
-interface NavbarActionsState {
+function NavbarActions(props: NavbarActionsProps) {
+    const colorPickerContext = useContext(ColorPickerContext);
 
-}
+    const showNewDialog = useCallback(() => colorPickerContext.toggleNewDialogVisibility(true), [colorPickerContext.toggleNewDialogVisibility]);
+    const showImportDialog = useCallback(() => colorPickerContext.toggleImportDialogVisibility(true), [colorPickerContext.toggleImportDialogVisibility]);
+    const showExportDialog = useCallback(() => colorPickerContext.toggleExportDialogVisibility(true), [colorPickerContext.toggleExportDialogVisibility]);
 
-class NavbarActions extends Component<NavbarActionsProps, NavbarActionsState> {
-    public render(): React.ReactNode {
-        return (
-            <li className="dropdown nav-item" key={"navbar-actions"}>
-                <a className={classNames("dropdown-toggle nav-link", this.props.className)}
-                   data-bs-toggle="dropdown"
-                   href="#"
-                   role="button"
-                   id={"navbar-color-scheme-dropdown"}>
-                    Actions
-                </a>
-                <ul className="dropdown-menu"
-                    aria-labelledby="navbar-color-scheme-dropdown">
-                    <li key={"import"}>
-                        <button type={"button"}
-                                className="dropdown-item"
-                                // data-bs-toggle={"modal"}
-                                // data-bs-target={"#color-scheme-import-dialog"}
-                                onClick={this.props.onImportClick}>
-                            Import Color Schemes...
-                        </button>
-                    </li>
-                    <li key={"export"}>
-                        <button type={"button"}
-                                className="dropdown-item"
-                                data-bs-toggle={"modal"}
-                                data-bs-target={"#export-dialog"}
-                                onClick={this.props.onExportClick}>
-                            Export Color Schemes...
-                        </button>
-                    </li>
-                </ul>
-            </li>
-        );
-    }
+    return (
+        <li className="dropdown nav-item" key="navbar-actions">
+            <a className={classNames("dropdown-toggle nav-link", props.className)}
+               data-bs-toggle="dropdown"
+               href="#"
+               role="button"
+               id="navbar-color-scheme-dropdown">
+                Actions
+            </a>
+            <ul className="dropdown-menu"
+                aria-labelledby="navbar-color-scheme-dropdown">
+                <li key="new">
+                    <Dropdown.Item onClick={showNewDialog}>
+                        New Color Scheme
+                    </Dropdown.Item>
+                </li>
+                <li key="import">
+                    <Dropdown.Item
+                        // data-bs-toggle={"modal"}
+                        // data-bs-target={"#color-scheme-import-dialog"}
+                        onClick={showImportDialog}>
+                        Import Color Schemes...
+                    </Dropdown.Item>
+                </li>
+                <li key="export">
+                    <Dropdown.Item
+                        // data-bs-toggle={"modal"}
+                        // data-bs-target={"#export-dialog"}
+                        onClick={showExportDialog}>
+                        Export Color Schemes...
+                    </Dropdown.Item>
+                </li>
+            </ul>
+        </li>
+    );
 }
 
 export default NavbarActions;

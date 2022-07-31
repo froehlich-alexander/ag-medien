@@ -8,7 +8,6 @@ import {
     ColorSchemeTypeOptional, ColorsType,
     Design,
 } from "./colorpickerBackend";
-import ColorPickerService from "./ColorPickerService";
 
 abstract class Builder<T, TType = { [k in keyof T]: T[k] }> {
     declare public static readonly FIELDS: string[];
@@ -34,7 +33,7 @@ abstract class Builder<T, TType = { [k in keyof T]: T[k] }> {
      * @param value
      */
     public set(key: keyof TType, value: TType[typeof key]): this {
-        console.log("builder set", key, value);
+        // console.log("builder set", key, value);
         // @ts-ignore
         this[key](value);
         return this;
@@ -90,7 +89,7 @@ export class ColorsBuilder extends Builder<Colors, ColorsType> {
     }
 
     public set(colorId: keyof ColorsType, value: ColorsType[typeof colorId]): this {
-        console.log("colors builder set called", colorId, value);
+        // console.log("colors builder set called", colorId, value);
         this._colors[colorId] = value;
         if (!(colorId in this._colors)) {
             this._size++;
@@ -101,7 +100,7 @@ export class ColorsBuilder extends Builder<Colors, ColorsType> {
     public update(other?: ColorsType | Colors): this {
         if (other !== undefined) {
             Object.assign(this._colors, other instanceof Colors ? other.colors : other);
-            console.log("update colros builder", other, this._colors);
+            // console.log("update colros builder", other, this._colors);
             this._size = Object.keys(this._colors).length;
         }
         return this;
@@ -123,7 +122,7 @@ export class ColorsBuilder extends Builder<Colors, ColorsType> {
 
     public build(): Colors {
         let colors = new Colors(this._colors);
-        console.log("build colors", this._colors, colors);
+        // console.log("build colors", this._colors, colors);
         return colors;
     }
 

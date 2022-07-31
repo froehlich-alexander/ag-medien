@@ -83,6 +83,7 @@ class Form extends React.Component<FormProps, FormState> {
     }
 
     private handleSubmit(event: FormEvent<HTMLFormElement>) {
+        console.log("Form handle submit");
         this.setState({
             wasValidated: true,
         })
@@ -90,6 +91,7 @@ class Form extends React.Component<FormProps, FormState> {
         if (!this.formRef.current!.checkValidity()) {
             event.preventDefault();
             event.stopPropagation();
+            console.log("prevent");
         } else {
             this.props.onSubmit?.(event);
         }
