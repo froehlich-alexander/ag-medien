@@ -1,5 +1,6 @@
 import React, {useContext, useMemo, useState, createContext} from "react";
 import {Container} from "react-bootstrap";
+import {MyNavBar} from "./dist/MyNavBar";
 import ListView from "./ListView";
 import PageForm from "./PageForm";
 import TourContext, {TourContextType} from "./TourContext";
@@ -14,7 +15,8 @@ export default function CreateTool() {
 
     return (
         <TourContext.Provider value={context}>
-            <Container fluid>
+            <Container fluid className={"p-2"}>
+                <MyNavBar/>
                 <div className="row">
                     <ListView className="col-4"/>
                     <PageForm className="col"/>

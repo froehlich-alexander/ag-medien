@@ -1,8 +1,9 @@
 import React, { useContext } from "react";
-import {Col, Container, Row } from "react-bootstrap";
+import {Col, Container, ListGroup, Row} from "react-bootstrap";
 import TourContext from "./TourContext";
 import {DefaultProps} from "./utils";
 import classNames from "classnames";
+import bootstrap from "bootstrap";
 
 interface ListViewProps extends DefaultProps {
 
@@ -15,11 +16,11 @@ export default function ListView(
     const context = useContext(TourContext);
 
     return (
-        <div className={classNames("border", className)}>
-            <ul className={""}>
+        <div className={classNames("", className)}>
+            <ListGroup>
                 {context.pages.map(v=>
-                <li key={v.id}><PageItem page={v}/></li>)}
-            </ul>
+                <ListGroup.Item key={v.id}><PageItem page={v}/></ListGroup.Item>)}
+            </ListGroup>
         </div>
     );
 };
@@ -34,7 +35,7 @@ function PageItem(
     }: PageItemProps,
 ) {
     return (
-        <Container fluid>
+        <Container fluid className={"pb-1 pt-1"}>
             <Row>
                 <Col sm={12} className="d-flex align-items-center">
                     <h5><b>{page.id}</b></h5>
