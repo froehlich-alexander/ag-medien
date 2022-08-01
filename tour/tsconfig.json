@@ -10,9 +10,13 @@
       "ESNext",
       "DOM"
     ],
+    "types": [
+      "react",
+      "bootstrap"
+    ],
     "strict": true,
     "useDefineForClassFields": false,
     "allowSyntheticDefaultImports": true,
-    "jsx": "react"
+    "jsx": "react",
   }
 }

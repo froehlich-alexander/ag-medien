@@ -945,4 +945,4 @@ function init(pagesJsonPath: string) {
     //     );
 }
 
-init("pages.js");
+// init("pages.js");

@@ -46,8 +46,12 @@ module.exports = {
             //     ]
             // },
             {
-                test: /ColorPicker.scss$/,
+                test: /\.scss$/,
                 use: ["css-loader","sass-loader"],
+            },
+            {
+                test: /\.css$/,
+                use: ["css-loader"],
             }
         ],
     },

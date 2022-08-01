@@ -739,5 +739,5 @@ function init(pagesJsonPath) {
     //         }
     //     );
 }
-init("pages.js");
+// init("pages.js");
 //# sourceMappingURL=script.js.map
