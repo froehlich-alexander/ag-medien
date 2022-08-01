@@ -11,6 +11,8 @@
       "DOM"
     ],
     "strict": true,
-    "useDefineForClassFields": false
+    "useDefineForClassFields": false,
+    "allowSyntheticDefaultImports": true,
+    "jsx": "react"
   }
 }
