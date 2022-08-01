@@ -1,13 +1,8 @@
 import * as React from "react";
-import {AuthorInput, DescriptionInput, DesignInput, HTMLInputElements, NameInput} from "./inputs";
-import {
-    ColorScheme,
-    ColorSchemeFragment,
-    ColorSchemeInterface,
-    Designs,
-} from "../color-base/colorpickerBackend";
-import {Form} from "../utils";
 import {ChangeEventHandler, FormEventHandler, MouseEventHandler} from "react";
+import {ColorScheme, ColorSchemeFragment, ColorSchemeInterface, Designs} from "../color-base/colorpickerBackend";
+import {Form} from "../utils/Form";
+import {AuthorInput, DescriptionInput, DesignInput, HTMLInputElements, NameInput} from "./inputs";
 
 export type ColorSchemeMetadata = Omit<ColorSchemeInterface, "colors" | "id" | "current" | "preDefined">;
 
@@ -36,7 +31,7 @@ export class ColorPickerMetadata extends React.Component<ColorPickerMetadataProp
     public render(): React.ReactNode {
         const disabled = this.props.selectedColorScheme.preDefined;
         return (
-            <Form id="new-cs-form"
+            <Form id={this.inputId + "-form"}
                   action="javascript:void(0);"
                   onSubmit={this.handleSubmit}>
 

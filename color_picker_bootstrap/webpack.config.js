@@ -8,7 +8,7 @@ module.exports = {
         filename: "bundle.js",
     },
     // entry: "C:\\Users\\L254484\\Documents\\Konsti\\programmieren\\ag-medien\\color_picker_bootstrap\\index.js",
-    entry: "./color_picker_bootstrap/index.tsx",
+    entry: "./color_picker_bootstrap/index/index.tsx",
     module: {
         rules: [
             // {

@@ -1,4 +1,3 @@
-import {ColorScheme} from "./color-base/colorpickerBackend";
 import {ColorSchemeFileInfo} from "./dialogs/Import";
 
 export class ColorSchemeDuplicate extends Error {

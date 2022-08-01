@@ -1,7 +1,7 @@
 import bootstrap from "bootstrap";
 import classNames from "classnames";
-import {Button, CloseButton, Toast as ReactToast, ToastHeaderProps} from "react-bootstrap";
-import React, {createRef, HTMLProps, useEffect, useMemo, useRef} from "react";
+import React, {createRef, HTMLProps, useEffect, useRef} from "react";
+import {CloseButton, Toast as ReactToast, ToastHeaderProps} from "react-bootstrap";
 
 interface ToastProps extends HTMLProps<HTMLDivElement> {
     show: boolean,

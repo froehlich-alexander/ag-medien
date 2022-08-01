@@ -4,8 +4,8 @@ import {MouseEvent, useCallback, useContext, useMemo} from "react";
 import {Button} from "react-bootstrap";
 import {ColorScheme} from "./color-base/colorpickerBackend";
 import ColorPickerContext from "./ColorPickerContext";
-import {ComponentProps, concatClass, DefaultProps} from "./utils";
 import "./styles/ColorPicker.scss";
+import {DefaultProps} from "./utils/types";
 
 interface ColorSchemeDropdownMenuProps extends DefaultProps {
     colorSchemes: ColorScheme[], // all color schemes

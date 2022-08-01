@@ -1,11 +1,10 @@
 // <reference path="react.d.ts" />
-import {useEffect, useLayoutEffect, useRef, useState} from "react";
 import * as React from "react";
-import {Button, Toast, ToastContainer} from "react-bootstrap";
+import {useState} from "react";
+import {Button, ToastContainer, Card} from "react-bootstrap";
 import {createRoot} from "react-dom/client";
-import {Toast as BSToast} from "bootstrap";
-import ColorPicker from "./ColorPicker";
-import {Toast} from "./Toast";
+import ColorPicker from "../ColorPicker";
+import {Toast} from "../utils/Toast";
 
 //import bootstrap types
 // declare var bootstrap: any;
@@ -26,22 +25,8 @@ const root = createRoot(
 // root.render(<ColorPicker/>);
 function Example({}) {
     let [vis, setVis] = useState(false);
-    // let toast = useRef<HTMLDivElement>(null);
-    // useEffect(() => {
-    //     if (vis) {
-    //         BSToast.getOrCreateInstance(toast.current!).show();
-    //     } else {
-    //         BSToast.getOrCreateInstance(toast.current!).hide();
-    //     }
-    // }, [vis]);
-    //
-    // useEffect(() => {
-    //     toast.current!.addEventListener("hide.bs.toast", () => setVis(false));
-    //     // toast.current!.addEventListener("show.bs.toast", () => setVis(true));
-    // }, []);
     const [lastClick, setLastClick]  = useState(0);
 
-    // setTimeout(()=>setLastClick(prevState => prevState), 1000);
     return (
         <div>
             <Button onClick={() => {

@@ -1,9 +1,10 @@
 import * as React from "react";
-import {createContext, createRef, RefObject} from "react";
+import {createRef, RefObject} from "react";
 import {ColorScheme, ColorSchemeFragmentType, Designs} from "./color-base/colorpickerBackend";
 import ColorPickerService from "./color-base/ColorPickerService";
 import ColorPickerContext, {ColorPickerContextType} from "./ColorPickerContext";
 import ColorSchemeActions from "./ColorSchemeActions";
+import ColorSchemeCard from "./ColorSchemeCard";
 import ColorSchemeDropdownMenu from "./ColorSchemeDropdownMenu";
 import ExportDialog from "./dialogs/Export";
 import ImportDialog from "./dialogs/Import";
@@ -11,7 +12,8 @@ import {NewColorSchemeDialog} from "./dialogs/new";
 import {ColorPickerForm} from "./forms/colorPickerForm";
 import {ColorPickerMetadata} from "./forms/colorPickerMetadata";
 import NavBar from "./NavBar";
-import {concatClass, DefaultProps} from "./utils";
+import {concatClass} from "./utils/helperFunctions";
+import {DefaultProps} from "./utils/types";
 
 interface ColorPickerProps extends DefaultProps {
 }
@@ -33,14 +35,14 @@ export class ColorPicker extends React.Component<ColorPickerProps, ColorPickerSt
     // declare props: PropsType<Component> & { service: ColorPickerService };
     private readonly service: ColorPickerService;
     private downloadAnchor: RefObject<HTMLAnchorElement> = createRef();
-    private contextValue: ColorPickerContextType;
+    private readonly contextValue: ColorPickerContextType;
 
     constructor(props: ColorPickerProps) {
         super(props);
         this.service = new ColorPickerService();
         this.state = {
             selectedColorScheme: this.service.getCurrent(),
-            newDialogVisibility: true, // = dialog hidden
+            newDialogVisibility: false, // = dialog hidden
             importDialogVisibility: false,
             exportDialogVisibility: false,
             allColorSchemes: this.service.allList,
@@ -94,6 +96,7 @@ export class ColorPicker extends React.Component<ColorPickerProps, ColorPickerSt
                                             onDelete={this.handleDelete}
                                             className="col-5"/>
                     </div>
+                    <ColorSchemeCard colorScheme={this.state.selectedColorScheme}/>
                     <div className="accordion" id="color-picker-main-accordion">
                         <div className="accordion-item">
                             {/*Color Picker*/}

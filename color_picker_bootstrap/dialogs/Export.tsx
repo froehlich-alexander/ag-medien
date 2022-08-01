@@ -1,12 +1,10 @@
+import React, {ChangeEvent, RefObject, useCallback, useState} from "react";
 import {Button, Modal} from "react-bootstrap";
-import React, {
-    ChangeEvent,
-    RefObject, useCallback,
-    useState,
-} from "react";
 import {ColorScheme, ColorSchemeData} from "../color-base/colorpickerBackend";
 import ColorSchemeDropdownMenu from "../ColorSchemeDropdownMenu";
-import {DefaultProps, Form, saveToFile} from "../utils";
+import {Form} from "../utils/Form";
+import {saveToFile} from "../utils/helperFunctions";
+import {DefaultProps} from "../utils/types";
 
 interface ExportDialogProps extends DefaultProps {
     downloadAnchor: RefObject<HTMLAnchorElement>,

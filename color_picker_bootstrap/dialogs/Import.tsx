@@ -1,10 +1,11 @@
 import React, {ChangeEvent, createRef, useRef, useState} from "react";
-import {Button, CloseButton, Modal, ToastContainer} from "react-bootstrap";
+import {Button, Modal, ToastContainer} from "react-bootstrap";
 import {ColorScheme, ColorSchemeFragment} from "../color-base/colorpickerBackend";
 import ColorSchemeDropdownMenu from "../ColorSchemeDropdownMenu";
 import {ColorSchemeDuplicate} from "../Exceptions";
-import {Toast} from "../Toast";
-import {DefaultProps, Form} from "../utils";
+import {Form} from "../utils/Form";
+import {Toast} from "../utils/Toast";
+import {DefaultProps} from "../utils/types";
 import {ColorSchemesFile} from "./Export";
 
 export class ColorSchemeFileInfo {

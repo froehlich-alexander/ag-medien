@@ -1,9 +1,10 @@
-import {ColorScheme, ColorSchemeFragmentType, Design, Designs} from "../color-base/colorpickerBackend.js";
 import * as React from "react";
-import {ChangeEvent, createRef, FormEvent, RefObject} from "react";
+import {ChangeEvent} from "react";
 import {Modal} from "react-bootstrap";
-import {DefaultProps, Form} from "../utils.js";
+import {ColorScheme, ColorSchemeFragmentType, Design, Designs} from "../color-base/colorpickerBackend.js";
 import {AuthorInput, ColorSchemeSelect, DescriptionInput, DesignInput, NameInput} from "../forms/inputs.js";
+import {Form} from "../utils/Form";
+import {DefaultProps} from "../utils/types";
 
 interface NewColorSchemeDialogProps extends DefaultProps {
     onNewColorScheme: (colorScheme: ColorSchemeFragmentType) => any,

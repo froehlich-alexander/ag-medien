@@ -1,9 +1,9 @@
 import * as React from "react";
-import ColorPickerService from "../color-base/ColorPickerService";
-import {Form} from "../utils";
-import {Colors, ColorScheme} from "../color-base/colorpickerBackend";
-import {ColorInput} from "./inputs";
 import {ChangeEventHandler, FormEventHandler} from "react";
+import {Colors, ColorScheme} from "../color-base/colorpickerBackend";
+import ColorPickerService from "../color-base/ColorPickerService";
+import {Form} from "../utils/Form";
+import {ColorInput} from "./inputs";
 
 interface ColorPickerFormProps {
     selectedColorScheme: ColorScheme,

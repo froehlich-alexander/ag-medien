@@ -5,7 +5,8 @@ import {
     ColorSchemeFragment,
     ColorSchemeFragmentType,
     ColorSchemeInterface,
-    ColorSchemeTypeOptional, ColorsType,
+    ColorSchemeTypeOptional,
+    ColorsType,
     Design,
 } from "./colorpickerBackend";
 

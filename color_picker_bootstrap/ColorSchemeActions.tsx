@@ -2,7 +2,7 @@ import classNames from "classnames";
 import * as React from "react";
 import {MouseEventHandler} from "react";
 import {ColorScheme} from "./color-base/colorpickerBackend";
-import {DefaultProps} from "./utils";
+import {DefaultProps} from "./utils/types";
 
 interface ColorSchemeActionProps extends DefaultProps {
     selectedColorScheme: ColorScheme, // we need it to disable the right buttons, change their tooltips, etc.

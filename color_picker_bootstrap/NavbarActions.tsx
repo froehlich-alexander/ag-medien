@@ -2,7 +2,7 @@ import classNames from "classnames";
 import React, {useCallback, useContext} from "react";
 import {Dropdown} from "react-bootstrap";
 import ColorPickerContext from "./ColorPickerContext";
-import {DefaultProps} from "./utils";
+import {DefaultProps} from "./utils/types";
 
 interface NavbarActionsProps extends DefaultProps {
 }

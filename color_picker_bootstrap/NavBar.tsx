@@ -1,7 +1,8 @@
 import * as React from "react";
 import {MouseEvent} from "react";
 import NavbarActions from "./NavbarActions";
-import {concatClass, DefaultProps, FunctionComponent} from "./utils";
+import {concatClass} from "./utils/helperFunctions";
+import {DefaultProps, FunctionComponent} from "./utils/types";
 
 interface NavBarProps extends DefaultProps {
     onClose: (event: MouseEvent<HTMLButtonElement>) => any,

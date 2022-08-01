@@ -1,13 +1,7 @@
-import {Designs} from "../color-base/colorpickerBackend.js";
 import * as React from "react";
-import {
-    ChangeEventHandler,
-    DetailedReactHTMLElement,
-    HTMLProps,
-    ReactElement,
-    ReactHTMLElement,
-} from "react";
-import {concatClass, FunctionComponent} from "../utils.js";
+import {ChangeEventHandler, HTMLProps, ReactElement} from "react";
+import {concatClass} from "../utils/helperFunctions";
+import {FunctionComponent} from "../utils/types";
 
 export type HTMLInputElements = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
 
