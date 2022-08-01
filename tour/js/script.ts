@@ -1,5 +1,3 @@
-// import * as $ from 'jquery'
-
 var finished_last = true;
 let idPrefix = "tour_pg_";
 let imgFolder = "img1";
@@ -31,7 +29,8 @@ class Media<T extends HTMLImageElement | HTMLVideoElement | HTMLIFrameElement = 
 
     public static readonly imgFileEndings = ["png", "jpeg", "jpg", "gif", "svg", "webp", "apng", "avif"];
     public static readonly videoFileEndings = ["mp4", "webm", "ogg", "ogm", "ogv", "avi"];
-    public static readonly iframeUrlEndings = ["html", "htm", "com", "org", "edu", "net", "gov", "mil", "int", "de", "en", "eu", "us", "fr", "ch", "at", "au"]; //this list is not exhaustive
+    //this list is not exhaustive
+    public static readonly iframeUrlEndings = ["html", "htm", "com", "org", "edu", "net", "gov", "mil", "int", "de", "en", "eu", "us", "fr", "ch", "at", "au"];
 
     // constructor(src: string, type: MediaType | "auto", poster: string, autoplay: boolean, loop: boolean, muted: boolean) {
     //     this.src = src;
@@ -158,7 +157,7 @@ class Media<T extends HTMLImageElement | HTMLVideoElement | HTMLIFrameElement = 
     }
 
     public static formatSrc(src: string): string {
-        let regex = new RegExp('^(?:[a-z]+:)?//', 'i');
+        let regex = new RegExp("^(?:[a-z]+:)?//", "i");
         //if src is absolute (e.g. http://abc.xyz)
         //or src relative to document root (starts with '/') (the browser interprets that correctly)
         if (regex.test(src) || src.startsWith("/")) {
@@ -168,7 +167,7 @@ class Media<T extends HTMLImageElement | HTMLVideoElement | HTMLIFrameElement = 
             return src;
         }
         //add prefix
-        return imgFolder + "/" + src
+        return imgFolder + "/" + src;
     }
 
     public pause(): void {
@@ -179,7 +178,7 @@ class VideoMedia extends Media<HTMLVideoElement> {
     public readonly poster: string;
     public readonly autoplay: boolean;
     public readonly loop: boolean;
-    public readonly muted: boolean
+    public readonly muted: boolean;
     public readonly preload: VideoPreloadType;
 
     declare protected _html: JQuery<HTMLVideoElement>;
@@ -582,7 +581,7 @@ window.onresize = function () {
             $(this).addClass("fill-height");
     });
     adjust_clickables();
-}
+};
 
 window.onpopstate = function () {
     let pgs = $(".page");
@@ -591,7 +590,7 @@ window.onpopstate = function () {
         $("#" + idPrefix + window.location.hash.slice(1)).addClass("show");
     else
         pgs.eq(0).addClass("show");
-}
+};
 
 function goTo(pg: string | undefined, animationType: "backward"): void;
 function goTo(pg: string, animationType: PageAnimations): void;
@@ -726,7 +725,7 @@ function createHtml(json: JsonPage[]) {
             .addClass("bg")
             // .attr("initial_direction", page.initial_direction)
             .on(event, function () {
-                console.log(`Media Loaded: ${page.img.src}`)
+                console.log(`Media Loaded: ${page.img.src}`);
                 // let self = $(this);
                 let self = page.img.html;
 
@@ -766,7 +765,7 @@ function createHtml(json: JsonPage[]) {
                         // console.log("obsever")
                         let observer = new MutationObserver(onVisible);
                         observer.observe(page.html.get(0)!, {
-                            attributeFilter: ["style", "class"]
+                            attributeFilter: ["style", "class"],
                         });
                     }
 
@@ -784,30 +783,30 @@ function createHtml(json: JsonPage[]) {
                     self.addClass("fill-height");
             })
             .on("error", function () {
-                console.error("error")
-                console.warn("Error loading Media", page.img)
+                console.error("error");
+                console.warn("Error loading Media", page.img);
                 if (page.img.isImage())
                     page.img.html.attr("src", baustellenFotoUrl);
                 else if (page.img.isVideo()) {
                     page.img.html
                         .attr("poster", baustellenFotoUrl)
-                        .prop("controls", false)
+                        .prop("controls", false);
                     // .removeAttr("src")
                     // .removeAttr("preload")
                     // .removeAttr("type");
                 } else if (page.img.isIframe()) {
                     page.img.html
                         //the plain html text
-                        .attr("srcdoc", '<!DOCTYPE html>' +
-                            '<html lang="de">' +
-                            '<head>' +
-                            '    <meta charset="UTF-8">' +
-                            '    <title>Baustelle</title>' +
-                            '</head>' +
-                            '<body>' +
-                            '<img src="./img1/baustelle.png" alt="Baustelle :)" style="width: 100%;height: 100%;">' +
-                            '</body>' +
-                            '</html>')
+                        .attr("srcdoc", "<!DOCTYPE html>" +
+                            "<html lang=\"de\">" +
+                            "<head>" +
+                            "    <meta charset=\"UTF-8\">" +
+                            "    <title>Baustelle</title>" +
+                            "</head>" +
+                            "<body>" +
+                            "<img src=\"./img1/baustelle.png\" alt=\"Baustelle :)\" style=\"width: 100%;height: 100%;\">" +
+                            "</body>" +
+                            "</html>");
                 }
             });
         //add src last so that error and load events aren't triggered before we add the event handler
@@ -865,9 +864,9 @@ function createHtml(json: JsonPage[]) {
                 .map(v => v.html));
 
         if (page.is_360) {
-            console.log("is_360")
+            console.log("is_360");
             //add second clickables for second img in 360deg IMGs
-            page.addInlineObjects(...page.clickables.filter(v => v.position=="media"&&(!v.second)).map(v => v.clone()));
+            page.addInlineObjects(...page.clickables.filter(v => v.position == "media" && (!v.second)).map(v => v.clone()));
             page.secondaryImg = page.img.clone();
             //second img
             let bgContainer1 = $("<div></div>")

@@ -1,7 +1,9 @@
 import {createContext} from "react";
+import {PageData} from "./Data";
 
 export interface TourContextType {
-    pages: Page[],
+    pages: PageData[],
+    currentPage: PageData,
 }
 // @ts-ignore
 const TourContext = createContext<TourContextType>({});

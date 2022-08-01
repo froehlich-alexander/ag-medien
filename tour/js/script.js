@@ -1,5 +1,4 @@
 "use strict";
-// import * as $ from 'jquery'
 var finished_last = true;
 let idPrefix = "tour_pg_";
 let imgFolder = "img1";
@@ -126,7 +125,7 @@ class Media {
         return res;
     }
     static formatSrc(src) {
-        let regex = new RegExp('^(?:[a-z]+:)?//', 'i');
+        let regex = new RegExp("^(?:[a-z]+:)?//", "i");
         //if src is absolute (e.g. http://abc.xyz)
         //or src relative to document root (starts with '/') (the browser interprets that correctly)
         if (regex.test(src) || src.startsWith("/")) {
@@ -143,7 +142,8 @@ class Media {
 }
 Media.imgFileEndings = ["png", "jpeg", "jpg", "gif", "svg", "webp", "apng", "avif"];
 Media.videoFileEndings = ["mp4", "webm", "ogg", "ogm", "ogv", "avi"];
-Media.iframeUrlEndings = ["html", "htm", "com", "org", "edu", "net", "gov", "mil", "int", "de", "en", "eu", "us", "fr", "ch", "at", "au"]; //this list is not exhaustive
+//this list is not exhaustive
+Media.iframeUrlEndings = ["html", "htm", "com", "org", "edu", "net", "gov", "mil", "int", "de", "en", "eu", "us", "fr", "ch", "at", "au"];
 class VideoMedia extends Media {
     constructor(src, poster, autoplay, loop, muted, preload) {
         super(src, "video");
@@ -567,7 +567,7 @@ function createHtml(json) {
                     // console.log("obsever")
                     let observer = new MutationObserver(onVisible);
                     observer.observe(page.html.get(0), {
-                        attributeFilter: ["style", "class"]
+                        attributeFilter: ["style", "class"],
                     });
                 }
             }
@@ -602,16 +602,16 @@ function createHtml(json) {
             else if (page.img.isIframe()) {
                 page.img.html
                     //the plain html text
-                    .attr("srcdoc", '<!DOCTYPE html>' +
-                    '<html lang="de">' +
-                    '<head>' +
-                    '    <meta charset="UTF-8">' +
-                    '    <title>Baustelle</title>' +
-                    '</head>' +
-                    '<body>' +
-                    '<img src="./img1/baustelle.png" alt="Baustelle :)" style="width: 100%;height: 100%;">' +
-                    '</body>' +
-                    '</html>');
+                    .attr("srcdoc", "<!DOCTYPE html>" +
+                    "<html lang=\"de\">" +
+                    "<head>" +
+                    "    <meta charset=\"UTF-8\">" +
+                    "    <title>Baustelle</title>" +
+                    "</head>" +
+                    "<body>" +
+                    "<img src=\"./img1/baustelle.png\" alt=\"Baustelle :)\" style=\"width: 100%;height: 100%;\">" +
+                    "</body>" +
+                    "</html>");
             }
         });
         //add src last so that error and load events aren't triggered before we add the event handler

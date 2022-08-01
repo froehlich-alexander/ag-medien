@@ -12,7 +12,8 @@
     ],
     "types": [
       "react",
-      "bootstrap"
+      "bootstrap",
+      "jquery",
     ],
     "strict": true,
     "useDefineForClassFields": false,
