@@ -16,6 +16,9 @@ interface ColorSchemeActionsState {
     selection: typeof ColorSchemeActions.State[keyof typeof ColorSchemeActions.State],
 }
 
+/**
+ * @deprecated
+ */
 class ColorSchemeActions extends React.Component<ColorSchemeActionProps, ColorSchemeActionsState> {
     constructor(props: ColorSchemeActionProps) {
         super(props);

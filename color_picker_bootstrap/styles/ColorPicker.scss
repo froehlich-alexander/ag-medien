@@ -20,3 +20,19 @@
     }
   }
 }
+
+.ColorSchemeCard {
+  .Description {
+    font-family: "Source Serif Pro", serif;
+  }
+
+  .Author {
+    .Label {
+      font-weight: 600;
+      margin-inline-end: 0.5rem;
+    }
+    .Value {
+      font-style: italic;
+    }
+  }
+}

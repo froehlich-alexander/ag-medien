@@ -1,9 +1,9 @@
 import * as React from "react";
 import {createRef, RefObject} from "react";
+import {Tooltip} from "react-bootstrap";
 import {ColorScheme, ColorSchemeFragmentType, Designs} from "./color-base/colorpickerBackend";
 import ColorPickerService from "./color-base/ColorPickerService";
 import ColorPickerContext, {ColorPickerContextType} from "./ColorPickerContext";
-import ColorSchemeActions from "./ColorSchemeActions";
 import ColorSchemeCard from "./ColorSchemeCard";
 import ColorSchemeDropdownMenu from "./ColorSchemeDropdownMenu";
 import ExportDialog from "./dialogs/Export";
@@ -90,13 +90,15 @@ export class ColorPicker extends React.Component<ColorPickerProps, ColorPickerSt
                             colorSchemes={this.state.allColorSchemes}
                             onColorSchemeSelected={this.handleColorSchemeSelected}
                             className="col-5"/>
-                        <div className="col-2"></div>
-                        <ColorSchemeActions selectedColorScheme={this.state.selectedColorScheme}
-                                            onActivate={this.handleActivate}
-                                            onDelete={this.handleDelete}
-                                            className="col-5"/>
+                        {/*<div className="col-2"></div>*/}
+                        {/*<ColorSchemeActions selectedColorScheme={this.state.selectedColorScheme}*/}
+                        {/*                    onActivate={this.handleActivate}*/}
+                        {/*                    onDelete={this.handleDelete}*/}
+                        {/*                    className="col-5"/>*/}
                     </div>
-                    <ColorSchemeCard colorScheme={this.state.selectedColorScheme}/>
+                    <ColorSchemeCard colorScheme={this.state.selectedColorScheme}
+                    onActivate={this.handleActivate}
+                    onDelete={this.handleDelete}/>
                     <div className="accordion" id="color-picker-main-accordion">
                         <div className="accordion-item">
                             {/*Color Picker*/}
