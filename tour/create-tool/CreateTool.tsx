@@ -8,7 +8,7 @@ import TourContext, {TourContextType} from "./TourContext";
 
 export default function CreateTool() {
     // @ts-ignore
-    const [pages, setPages] = useState<PageData[]>(pagesJson);
+    const [pages, setPages] = useState<PageData[]>(pagesJson.map(PageData.fromJSON));
     const [currentPage, setCurrentPage] = useState<PageData>(pages[0]);
 
     const context: TourContextType = useMemo(() => ({
@@ -21,7 +21,7 @@ export default function CreateTool() {
             <Container fluid className={"p-2"}>
                 <MyNavBar/>
                 <div className="row">
-                    <ListView className="col-4"/>
+                    <ListView className="col-4" onSelect={setCurrentPage}/>
                     <PageForm className="col"/>
                 </div>
             </Container>

@@ -1,3 +1,6 @@
+type DataKeys<T> = Omit<{ [k in keyof T as T[k] extends Function ? never : k]: T[k] }, never>;
+type PageDataType = DataKeys<PageData>
+
 class PageData {
     public img: MediaData;
     public id: string;
@@ -6,7 +9,14 @@ class PageData {
     public initialDirection: number;
     public inlineObjects: InlineObjectData[];
 
-    constructor(img: MediaData, id: string, is360: boolean, isPanorama: boolean, initialDirection: number, inlineObjects: InlineObjectData[]) {
+    constructor({
+                    img,
+                    id,
+                    is360,
+                    isPanorama,
+                    initialDirection,
+                    inlineObjects,
+                }: PageDataType) {
         this.img = img;
         this.id = id;
         this.is360 = is360;
@@ -16,14 +26,14 @@ class PageData {
     }
 
     static fromJSON(page: JsonPage): PageData {
-        return new PageData(
-            MediaData.fromJSON(page.img),
-            page.id,
-            page.is_360 ?? false,
-            page.is_panorama ?? false,
-            page.initial_direction ?? 0,
-            page.inlineObjects?.map(InlineObjectData.fromJSON) ?? [],
-        );
+        return new PageData({
+            img: MediaData.fromJSON(page.img),
+            id: page.id,
+            is360: page.is_360 ?? false,
+            isPanorama: page.is_panorama ?? false,
+            initialDirection: page.initial_direction ?? 0,
+            inlineObjects: page.inlineObjects?.map(InlineObjectData.fromJSON) ?? [],
+        });
     }
 
     public equals(other: PageData): boolean {
@@ -36,6 +46,10 @@ class PageData {
             (this.inlineObjects.length === other.inlineObjects.length && this.inlineObjects.map(v => other.inlineObjects.find(value => value.equals(v)) !== undefined)
                 .reduce((prev, now) => prev && now, true))
         );
+    }
+
+    public withUpdate(other: Partial<PageData>): PageData {
+        return new PageData({...this, ...other});
     }
 }
 
@@ -165,4 +179,4 @@ class InlineObjectData {
     }
 }
 
-export {PageData, InlineObjectData, MediaData};
+export {PageData, InlineObjectData, MediaData, PageDataType};
