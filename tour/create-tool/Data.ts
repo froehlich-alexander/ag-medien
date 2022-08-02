@@ -1,5 +1,5 @@
-type DataKeys<T> = Omit<{ [k in keyof T as T[k] extends Function ? never : k]: T[k] }, never>;
-type PageDataType = DataKeys<PageData>
+type DataType<T> = Omit<{ [k in keyof T as T[k] extends Function ? never : k]: T[k] }, never>;
+type PageDataType = DataType<PageData>
 
 class PageData {
     public img: MediaData;
@@ -36,7 +36,7 @@ class PageData {
         });
     }
 
-    public equals(other: PageData): boolean {
+    public equals(other: DataType<PageData>): boolean {
         return this === other || (
             this.img.equals(other.img) &&
             this.id === other.id &&
@@ -54,9 +54,9 @@ class PageData {
 }
 
 class MediaData {
-    public readonly src?: string;
-    public readonly srcMin?: string;
-    public readonly srcMax?: string;
+    public readonly src?: SourceData;
+    public readonly srcMin?: SourceData;
+    public readonly srcMax?: SourceData;
     public readonly loading: LoadingType | "auto";
     public readonly type: MediaType;
     public readonly fetchPriority: FetchPriorityType;
@@ -71,7 +71,7 @@ class MediaData {
     //this list is not exhaustive
     public static readonly iframeUrlEndings = ["html", "htm", "com", "org", "edu", "net", "gov", "mil", "int", "de", "en", "eu", "us", "fr", "ch", "at", "au"];
 
-    constructor(src: string | undefined, srcMin: string | undefined, srcMax: string | undefined, loading: LoadingType | "auto", type: MediaType, fetchPriority: FetchPriorityType, poster: string | undefined, autoplay: boolean, muted: boolean, loop: boolean, preload: VideoPreloadType) {
+    constructor(src: SourceData | undefined, srcMin: SourceData | undefined, srcMax: SourceData | undefined, loading: LoadingType | "auto", type: MediaType, fetchPriority: FetchPriorityType, poster: string | undefined, autoplay: boolean, muted: boolean, loop: boolean, preload: VideoPreloadType) {
         this.src = src;
         this.srcMin = srcMin;
         this.srcMax = srcMax;
@@ -87,9 +87,9 @@ class MediaData {
 
     public static fromJSON(media: JsonMedia) {
         return new MediaData(
-            media.src,
-            media.srcMin,
-            media.srcMax,
+            media.src != null ? typeof media.src === "string" ? new SourceData({name: media.src}) : media.src : undefined,
+            media.srcMin != null ? typeof media.srcMin === "string" ? new SourceData({name: media.srcMin}) : media.srcMin : undefined,
+            media.srcMax != null ? typeof media.srcMax === "string" ? new SourceData({name: media.srcMax}) : media.srcMax : undefined,
             media.loading ?? "auto",
             MediaData.determineType(media.type ?? "auto", media.src ?? media.srcMin ?? media.srcMax as string),
             media.fetchPriority ?? "auto",
@@ -179,4 +179,121 @@ class InlineObjectData {
     }
 }
 
-export {PageData, InlineObjectData, MediaData, PageDataType};
+class SourceData {
+    readonly name: string;
+    // natural width
+    readonly width?: number;
+    // natural height
+    readonly height?: number;
+
+    // create tool only
+    readonly file?: FileData;
+
+    constructor({name, width, height, file}: DataType<SourceData>) {
+        this.name = name;
+        this.file = file;
+        this.width = width;
+        this.height = height;
+        // if (!width || !height) {
+        //     this.file?.computeWidthHeight()
+        //         .then(([w, h]) => {
+        //             console.log("w, h", w, h);
+        //             this.width = w;
+        //             this.height = h;
+        //         });
+        // }
+    }
+
+    public static async fromFile(file: File): Promise<SourceData> {
+        const fileData = FileData.fromFile(file);
+        const [width, height] = await fileData.computeWidthHeight();
+        return new SourceData({
+            name: file.name,
+            file: fileData,
+            width: width,
+            height: height,
+        });
+    }
+
+    public withUpdate(other: DataType<SourceData>): SourceData {
+        return new SourceData(other);
+    }
+}
+
+class FileData {
+    name: string;
+    size: number;
+    type: MediaType;
+    file: File;
+    private readonly img: HTMLImageElement;
+    private readonly video: HTMLVideoElement;
+
+    protected constructor({name, file, size, type}: DataType<FileData>) {
+        this.name = name;
+        this.size = size;
+        this.type = type;
+        this.file = file;
+        this.img = document.createElement("img");
+        // this.img.style.display = "none";
+        this.video = document.createElement("video");
+        this.video.style.display = "none";
+        this.video.preload = "metadata";
+        // document.body.append(this.img, this.video);
+    }
+
+    public static fromFile(file: File): FileData {
+        return new FileData({
+            name: file.name,
+            size: file.size,
+            file: file,
+            type: MediaData.determineType("auto", file.name),
+        });
+    }
+
+    public async computeWidthHeight(): Promise<[number, number]> {
+        if (!this.type) {
+            this.type = MediaData.determineType("auto", this.name);
+        }
+
+        let res: [number, number] | undefined;
+
+        const url = URL.createObjectURL(this.file);
+        console.log("media url:", url);
+
+        const cleanup = () => {
+            console.log(this.img.naturalWidth);
+            URL.revokeObjectURL(url);
+            this.video.src = "";
+            this.img.src = "";
+        };
+
+        return new Promise<[number, number]>((resolve, reject) => {
+            if (this.type === "img") {
+                this.img.onload = () => {
+                    resolve([this.img.naturalWidth, this.img.naturalHeight]);
+                    cleanup();
+                };
+                this.img.src = url;
+                // res = [this.img.naturalWidth, this.img.naturalHeight];
+            } else if (this.type === "video") {
+                this.video.onloadeddata = () => {
+                    resolve([this.video.videoWidth, this.video.videoHeight]);
+                    cleanup();
+                };
+                this.video.src = url;
+                // res = [this.video.videoWidth, this.video.videoHeight]
+            } else {
+                cleanup();
+                reject();
+            }
+        });
+        console.log("res", res);
+        // clean up
+        // this.img.src = "";
+        // this.video.src = "";
+        // URL.revokeObjectURL(url);
+        // return res;
+    }
+}
+
+export {PageData, InlineObjectData, MediaData, PageDataType, SourceData, FileData};

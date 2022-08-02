@@ -1,7 +1,7 @@
 import React, {useContext, useMemo, useState, createContext} from "react";
 import {Container} from "react-bootstrap";
 import {PageData} from "./Data";
-import {MyNavBar} from "./dist/MyNavBar";
+import {MyNavBar} from "./MyNavBar";
 import ListView from "./ListView";
 import PageForm from "./PageForm";
 import TourContext, {TourContextType} from "./TourContext";
