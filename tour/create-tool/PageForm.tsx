@@ -1,6 +1,6 @@
 import classNames from "classnames";
 import {valHooks} from "jquery";
-import React, {ChangeEvent, useContext, useState} from "react";
+import React, {ChangeEvent, useContext, useEffect, useState} from "react";
 import {Col, Form, FormControl, FormGroup, InputGroup, Row} from "react-bootstrap";
 import {PageData, PageDataType} from "./Data";
 import {MediaForm} from "./MediaForm";
@@ -8,7 +8,7 @@ import TourContext from "./TourContext";
 import {DefaultProps} from "./utils";
 
 interface PageFormProps extends DefaultProps {
-    hasChanged: (hasChanged: boolean)=>any,
+    hasChanged: (hasChanged: boolean) => any,
 }
 
 export default function PageForm(
@@ -22,14 +22,37 @@ export default function PageForm(
     const currentPage = context.currentPage;
     const [page, setPage] = useState(currentPage);
 
-    const [mediaHasChanged, setMediaHasChanged] = useState(false);
-    //todo hasChanged
-
     // inputs
     const [id, setId] = useState(currentPage.id);
     const [initialDirection, setInitialDirection] = useState(currentPage.initialDirection);
     const [is360, set360] = useState(currentPage.is360);
     const [isPanorama, setPanorama] = useState(currentPage.isPanorama);
+    const [media, setMedia] = useState(currentPage.media);
+    const [inlineObjects, setInlineObjects] = useState(currentPage.inlineObjects);
+
+    // reset on current page change
+    useEffect(() => {
+        setMedia(currentPage.media);
+        setInlineObjects(currentPage.inlineObjects);
+        setId(currentPage.id);
+        setInitialDirection(currentPage.initialDirection);
+        set360(currentPage.is360);
+        setPanorama(currentPage.isPanorama);
+    }, [currentPage]);
+
+    // set has changed
+    useEffect(() => {
+        hasChanged(
+            new PageData({
+                media: media,
+                inlineObjects: inlineObjects,
+                id: id,
+                initialDirection: initialDirection,
+                is360: is360,
+                isPanorama: isPanorama,
+            }).equals(currentPage)
+        );
+    }, [currentPage, media, inlineObjects, id, initialDirection, is360, isPanorama]);
 
     function handleChange(event: ChangeEvent<HTMLInputElement>) {
         const name = event.target.name as keyof PageDataType;
@@ -67,7 +90,7 @@ export default function PageForm(
 
     return (
         <div className={classNames("pt-4 pb-4", className)}>
-            <form className={"gy-3 gx-4 row"}>
+            <Form className={"gy-3 gx-4 row"}>
                 <InputGroup className={"col-12"}>
                     <InputGroup.Text as="label"
                                      htmlFor="i-id">Id</InputGroup.Text>
@@ -84,20 +107,24 @@ export default function PageForm(
                                 className={"col align-self-center"}
                                 value={initialDirection} onChange={handleInitialDirection}/>
                 </InputGroup>
-                <InputGroup className={"col-6"}>
-                    <InputGroup.Text as="label"
-                                     htmlFor="i-panorama">Panorama</InputGroup.Text>
-                    <Form.Switch id="i-panorama" checked={isPanorama} onChange={handlePanorama}/>
-                </InputGroup>
+                <Col sm={"auto"}>
+                    <InputGroup>
+                        <InputGroup.Text as="label"
+                                         htmlFor="i-panorama">Panorama</InputGroup.Text>
+                        <InputGroup.Checkbox id="i-panorama" checked={isPanorama} onChange={handlePanorama}/>
+                    </InputGroup>
+                </Col>
 
-                <InputGroup className={"col-6"}>
-                    <InputGroup.Text as="label"
-                                     htmlFor="i-360">360 Grad</InputGroup.Text>
-                    <Form.Switch id="i-360" checked={is360} onChange={handle360}/>
-                </InputGroup>
+                <Col sm={"auto"}>
+                    <InputGroup>
+                        <InputGroup.Text as="label"
+                                         htmlFor="i-360">360 Grad</InputGroup.Text>
+                        <InputGroup.Checkbox id="i-360" checked={is360} onChange={handle360}/>
+                    </InputGroup>
+                </Col>
 
-                <MediaForm media={currentPage.img} onMediaChange={} hasChanged={setMediaHasChanged}/>
-            </form>
+                <MediaForm media={media} onMediaChange={setMedia}/>
+            </Form>
         </div>
     );
 };

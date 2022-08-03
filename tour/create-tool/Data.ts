@@ -2,7 +2,7 @@ type DataType<T> = Omit<{ [k in keyof T as T[k] extends Function ? never : k]: T
 type PageDataType = DataType<PageData>
 
 class PageData {
-    public img: MediaData;
+    public media: MediaData;
     public id: string;
     public is360: boolean;
     public isPanorama: boolean;
@@ -10,14 +10,14 @@ class PageData {
     public inlineObjects: InlineObjectData[];
 
     constructor({
-                    img,
+                    media,
                     id,
                     is360,
                     isPanorama,
                     initialDirection,
                     inlineObjects,
                 }: PageDataType) {
-        this.img = img;
+        this.media = media;
         this.id = id;
         this.is360 = is360;
         this.isPanorama = isPanorama;
@@ -27,7 +27,7 @@ class PageData {
 
     static fromJSON(page: JsonPage): PageData {
         return new PageData({
-            img: MediaData.fromJSON(page.img),
+            media: MediaData.fromJSON(page.img),
             id: page.id,
             is360: page.is_360 ?? false,
             isPanorama: page.is_panorama ?? false,
@@ -38,7 +38,7 @@ class PageData {
 
     public equals(other: DataType<PageData>): boolean {
         return this === other || (
-            this.img.equals(other.img) &&
+            this.media.equals(other.media) &&
             this.id === other.id &&
             this.is360 === other.is360 &&
             this.initialDirection === other.initialDirection &&
@@ -50,6 +50,20 @@ class PageData {
 
     public withUpdate(other: Partial<PageData>): PageData {
         return new PageData({...this, ...other});
+    }
+
+    public async complete(): Promise<PageData> {
+        let media = await this.media.complete();
+        if (media !== this.media) {
+            return this.withUpdate({
+                media: media,
+            });
+        }
+        return this;
+    }
+
+    public isComplete(): boolean {
+        return this.media.isComplete();
     }
 }
 
@@ -71,34 +85,54 @@ class MediaData {
     //this list is not exhaustive
     public static readonly iframeUrlEndings = ["html", "htm", "com", "org", "edu", "net", "gov", "mil", "int", "de", "en", "eu", "us", "fr", "ch", "at", "au"];
 
-    constructor(src: SourceData | undefined, srcMin: SourceData | undefined, srcMax: SourceData | undefined, loading: LoadingType | "auto", type: MediaType, fetchPriority: FetchPriorityType, poster: string | undefined, autoplay: boolean, muted: boolean, loop: boolean, preload: VideoPreloadType) {
-        this.src = src;
-        this.srcMin = srcMin;
-        this.srcMax = srcMax;
-        this.loading = loading;
-        this.type = type;
-        this.fetchPriority = fetchPriority;
-        this.poster = poster;
-        this.autoplay = autoplay;
-        this.muted = muted;
-        this.loop = loop;
-        this.preload = preload;
+    constructor(
+        other: DataType<MediaData>,
+    ) {
+        this.src = other.src;
+        this.srcMin = other.srcMin;
+        this.srcMax = other.srcMax;
+        this.loading = other.loading;
+        this.type = other.type;
+        this.fetchPriority = other.fetchPriority;
+        this.poster = other.poster;
+        this.autoplay = other.autoplay;
+        this.muted = other.muted;
+        this.loop = other.loop;
+        this.preload = other.preload;
+    }
+
+    public async complete(): Promise<MediaData> {
+        const src = await this.src?.complete();
+        const srcMin = await this.srcMin?.complete();
+        const srcMax = await this.srcMax?.complete();
+        if (src !== this.src && srcMin !== this.srcMin && srcMax !== this.srcMax) {
+            return this.withUpdate({
+                src: src,
+                srcMin: srcMin,
+                srcMax: srcMax,
+            });
+        }
+        return this;
     }
 
     public static fromJSON(media: JsonMedia) {
-        return new MediaData(
-            media.src != null ? typeof media.src === "string" ? new SourceData({name: media.src}) : media.src : undefined,
-            media.srcMin != null ? typeof media.srcMin === "string" ? new SourceData({name: media.srcMin}) : media.srcMin : undefined,
-            media.srcMax != null ? typeof media.srcMax === "string" ? new SourceData({name: media.srcMax}) : media.srcMax : undefined,
-            media.loading ?? "auto",
-            MediaData.determineType(media.type ?? "auto", media.src ?? media.srcMin ?? media.srcMax as string),
-            media.fetchPriority ?? "auto",
-            media.poster,
-            media.autoplay ?? false,
-            media.muted ?? false,
-            media.loop ?? false,
-            media.preload ?? "auto",
-        );
+        let src = media.src != null ? SourceData.fromJSON(media.src) : undefined;
+        let srcMin = media.srcMin != null ? SourceData.fromJSON(media.srcMin) : undefined;
+        let srcMax = media.srcMax != null ? SourceData.fromJSON(media.srcMax) : undefined;
+
+        return new MediaData({
+            src: src,
+            srcMin: srcMin,
+            srcMax: srcMax,
+            loading: media.loading ?? "auto",
+            type: MediaData.determineType(media.type ?? "auto", (src ?? srcMin ?? srcMax)!.name),
+            fetchPriority: media.fetchPriority ?? "auto",
+            poster: media.poster,
+            autoplay: media.autoplay ?? false,
+            muted: media.muted ?? false,
+            loop: media.loop ?? false,
+            preload: media.preload ?? "auto",
+        });
     }
 
     public static determineType(value: MediaType | "auto", src: string): MediaType {
@@ -122,7 +156,7 @@ class MediaData {
         return res;
     }
 
-    public equals(other: MediaData): boolean {
+    public equals(other: DataType<MediaData>): boolean {
         return this === other || (
             this.src === other.src &&
             this.srcMax === other.srcMax &&
@@ -136,6 +170,16 @@ class MediaData {
             this.poster === other.poster &&
             this.type === other.type
         );
+    }
+
+    public withUpdate(other: Partial<DataType<MediaData>>): MediaData {
+        return new MediaData({...this, ...other});
+    }
+
+    public isComplete(): boolean {
+        return (this.src?.isComplete() ?? true) &&
+            (this.srcMin?.isComplete() ?? true )&&
+           (this.srcMax?.isComplete() ?? true);
     }
 }
 
@@ -167,7 +211,7 @@ class InlineObjectData {
         );
     }
 
-    public equals(other: InlineObjectData): boolean {
+    public equals(other: DataType<InlineObjectData>): boolean {
         return this == other || (
             this.x === other.x &&
             this.y === other.y &&
@@ -186,14 +230,19 @@ class SourceData {
     // natural height
     readonly height?: number;
 
+    readonly type: MediaType;
+
     // create tool only
     readonly file?: FileData;
 
-    constructor({name, width, height, file}: DataType<SourceData>) {
+    static readonly sourceUrl = "img1/";
+
+    constructor({name, width, height, file, type}: DataType<SourceData>) {
         this.name = name;
         this.file = file;
         this.width = width;
         this.height = height;
+        this.type = type;
         // if (!width || !height) {
         //     this.file?.computeWidthHeight()
         //         .then(([w, h]) => {
@@ -204,6 +253,41 @@ class SourceData {
         // }
     }
 
+    public async complete(): Promise<SourceData> {
+        if (this.file != null) {
+            if (this.height != null && this.width != null) {
+                return this;
+            }
+            return SourceData.fromFile(this.file.file);
+        }
+        return SourceData.fromFile(await SourceData.loadMedia(this.name));
+    }
+
+    public static fromJSON(other: JsonSource) {
+        let name = typeof other !== "string" ? other.name : other;
+        return new SourceData({
+            name: name,
+            // if typeof other == string -> other.width == undefined -> OK
+            // @ts-ignore
+            width: other?.width,
+            // @ts-ignore
+            height: other?.height,
+            // @ts-ignore
+            type: MediaData.determineType(other?.type ?? "auto", name),
+        });
+    }
+
+    public static async loadMedia(name: string): Promise<File> {
+        const url = SourceData.sourceUrl + name;
+        return fetch(url)
+            .then(value => value.blob())
+            .then(value => new File([value], name));
+        // const canvas = document.createElement("canvas")
+        // let ctx = canvas.getContext("2d");
+        // ctx.drawImage()
+        // document.body.append(objectElement);
+    }
+
     public static async fromFile(file: File): Promise<SourceData> {
         const fileData = FileData.fromFile(file);
         const [width, height] = await fileData.computeWidthHeight();
@@ -212,11 +296,18 @@ class SourceData {
             file: fileData,
             width: width,
             height: height,
+            type: MediaData.determineType("auto", file.name),
         });
     }
 
-    public withUpdate(other: DataType<SourceData>): SourceData {
-        return new SourceData(other);
+    public withUpdate(other: Partial<DataType<SourceData>>): SourceData {
+        return new SourceData({...this, ...other});
+    }
+
+    public isComplete(): boolean {
+        return this.width != null &&
+            this.height != null &&
+            this.file != null;
     }
 }
 
@@ -296,4 +387,4 @@ class FileData {
     }
 }
 
-export {PageData, InlineObjectData, MediaData, PageDataType, SourceData, FileData};
+export {DataType, PageData, InlineObjectData, MediaData, PageDataType, SourceData, FileData};

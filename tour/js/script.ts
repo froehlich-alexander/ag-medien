@@ -272,9 +272,9 @@ type JsonMedia = {
     they can be relative to document root (e.g. '/images/img.jpg' -> 'https://rheingau-gymnasium.de/images/img.jpg') OR
     they can be relative to img1 (e.g. 'test.jpg' -> 'img1/test.jpg' -> 'https://rheingau-gymnasium.de/current-path/img1/test.jpg').
     */
-    src?: string;
-    srcMin?: string;
-    srcMax?: string;
+    src?: JsonSource;
+    srcMin?: JsonSource;
+    srcMax?: JsonSource;
     type?: MediaType | "auto";
     loading?: LoadingType | "auto";     //works for img, iframe
     fetchPriority?: FetchPriorityType;  //works for img, iframe
@@ -287,6 +287,13 @@ type JsonMedia = {
     //iframe attributes
 
 };
+
+type JsonSource = string | {
+    name: string,
+    width?: number,
+    height?: number,
+    type?: MediaType,
+}
 
 type JsonInlineObject = {
     x: number | string;
