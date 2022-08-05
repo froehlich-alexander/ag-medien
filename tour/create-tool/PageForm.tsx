@@ -2,7 +2,7 @@ import classNames from "classnames";
 import {valHooks} from "jquery";
 import React, {ChangeEvent, useContext, useEffect, useState} from "react";
 import {Col, Form, FormControl, FormGroup, InputGroup, Row} from "react-bootstrap";
-import {PageData, PageDataType} from "./Data";
+import {PageData, PageDataType} from "../js/Data";
 import {MediaForm} from "./MediaForm";
 import TourContext from "./TourContext";
 import {DefaultProps} from "./utils";

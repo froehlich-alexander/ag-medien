@@ -1,29 +1,44 @@
+import type {
+    AnimationType,
+    CustomAnimations,
+    FetchPriorityType,
+    IconType,
+    InlineObjectPosition,
+    InlineObjectType,
+    JsonClickable,
+    JsonCustomObject,
+    JsonInlineObject,
+    JsonMedia,
+    JsonPage, JsonSchulTourConfigFile,
+    JsonTextField,
+    LoadingType,
+    MediaType,
+    PageAnimations,
+    TextAnimations,
+    VideoPreloadType,
+} from "./types";
+
+import {InlineObjectData, MediaData, PageData, SourceData} from "./Data.js";
+
 var finished_last = true;
 let idPrefix = "tour_pg_";
-let imgFolder = "img1";
+let imgFolder = "media";
 let baustellenFotoUrl = imgFolder + "/baustelle.png";
 let animationDuration = 500;
 let lastest = "";
 let pages: Page[] = [];
 let isDesktop = window.innerWidth > 768;
 
-type MediaType = "img" | "video" | "iframe";
-type IconType = "arrow_l" | "arrow_r" | "arrow_u" | "arrow_d";
-type VideoPreloadType = "metadata" | "auto"; //cannot use "none" because then we won't get the loadmetadata event
-type LoadingType = "eager" | "lazy";
-type FetchPriorityType = "high" | "low" | "auto";
-type InlineObjectType = "clickable" | "text" | "custom";
-type InlineObjectPosition = "media" | "page"; //  whether the object is moving together with the media (like clickables) or the page and whether it is positioned relative to the media or to the page (normally full screen)
-type PageAnimations = "forward" | "backward";
-type TextAnimations = undefined;
-type CustomAnimations = undefined;
-type AnimationType = PageAnimations | TextAnimations | CustomAnimations;
-
 /**
  * This class holds the media element for the page. This could be an image, a video, etc. (see {@link MediaType} for more options)<br>
  */
 class Media<T extends HTMLImageElement | HTMLVideoElement | HTMLIFrameElement = HTMLImageElement | HTMLVideoElement | HTMLIFrameElement> {
-    public src: string;
+    // the actual string which is used as src attr of the <img> <video>, etc. tag
+    public readonly srcString: string;
+    public src: SourceData;
+    public width?: number;
+    public height?: number;
+
     private _type!: MediaType;
     declare protected _html: JQuery<T>;
 
@@ -54,9 +69,49 @@ class Media<T extends HTMLImageElement | HTMLVideoElement | HTMLIFrameElement = 
     //     }
     // }
 
-    constructor(src: string, type: MediaType) {
-        this.src = Media.formatSrc(src);
-        this._type = type;
+    protected constructor(src: SourceData) {
+        this.src = src;
+        this.srcString = Media.formatSrc(src.name);
+        this._type = src.type;
+        this.width = src.width;
+        this.height = src.height;
+    }
+
+    public static from(data: MediaData): Media {
+        //higher / lower resolution and loading type depend on device (=connection bandwidth)
+        let src: SourceData;
+        let loading: LoadingType;
+        // if (window.innerWidth > 768) {
+        if (isDesktop) {
+            //desktop
+            src = data.srcMax ?? (data.src ?? data.srcMin)!;
+            loading = "eager";
+        } else {
+            //mobile
+            src = data.srcMin ?? (data.src ?? data.srcMax)!;
+            loading = "lazy";
+        }
+
+        switch (data.type) {
+            case "img":
+                return new ImageMedia({
+                    src: src,
+                    loading: loading,
+                    fetchPriority: data.fetchPriority,
+                });
+            case "video":
+                return new VideoMedia({
+                    ...data,
+                    src: src,
+                });
+            case "iframe":
+                return new IframeMedia({
+                    src: src,
+                    loading: loading,
+                    fetchPriority: data.fetchPriority,
+                });
+
+        }
     }
 
     public static fromJson(jsonMedia: JsonMedia): Media {
@@ -106,7 +161,7 @@ class Media<T extends HTMLImageElement | HTMLVideoElement | HTMLIFrameElement = 
 
     public clone(): Media {
         // let n = new Media(this.src, this.type, this.poster, this.autoplay, this.loop, this.muted);
-        let n = new Media(this.src, this.type);
+        let n = new Media(this.src);
         n._html = this._html.clone(true);
         return n;
     }
@@ -132,7 +187,7 @@ class Media<T extends HTMLImageElement | HTMLVideoElement | HTMLIFrameElement = 
     }
 
     set type(value: MediaType | "auto") {
-        this._type = Media.determineType(value, this.src);
+        this._type = Media.determineType(value, this.srcString);
     }
 
     public static determineType(value: MediaType | "auto", src: string): MediaType {
@@ -175,7 +230,7 @@ class Media<T extends HTMLImageElement | HTMLVideoElement | HTMLIFrameElement = 
 }
 
 class VideoMedia extends Media<HTMLVideoElement> {
-    public readonly poster: string;
+    public readonly poster?: string;
     public readonly autoplay: boolean;
     public readonly loop: boolean;
     public readonly muted: boolean;
@@ -183,8 +238,18 @@ class VideoMedia extends Media<HTMLVideoElement> {
 
     declare protected _html: JQuery<HTMLVideoElement>;
 
-    constructor(src: string, poster: string, autoplay: boolean, loop: boolean, muted: boolean, preload: VideoPreloadType) {
-        super(src, "video");
+    constructor(
+        {
+            src, autoplay, loop, muted, poster, preload,
+        }: {
+            src: SourceData,
+            poster?: string,
+            autoplay: boolean,
+            loop: boolean,
+            muted: boolean,
+            preload: VideoPreloadType,
+        }) {
+        super(src.withType("video"));
         this.poster = poster;
         this.autoplay = autoplay;
         this.loop = loop;
@@ -192,7 +257,7 @@ class VideoMedia extends Media<HTMLVideoElement> {
         this.preload = preload;
         this._html = $("<video></video>")
             .text("HTML Video is not supported")
-            .attr("poster", this.poster)
+            .attr("poster", this.poster ?? "")
             .prop("autoplay", this.autoplay)
             .prop("loop", this.loop)
             .prop("muted", this.muted)
@@ -200,7 +265,7 @@ class VideoMedia extends Media<HTMLVideoElement> {
     }
 
     public clone(): VideoMedia {
-        let n = new VideoMedia(this.src, this.poster, this.autoplay, this.loop, this.muted, this.preload);
+        let n = new VideoMedia(this);
         n._html = this.html.clone(true);
         return n;
     }
@@ -214,8 +279,9 @@ class ImageMedia extends Media<HTMLImageElement> {
     public readonly loading: LoadingType;
     public readonly fetchPriority: FetchPriorityType;
 
-    constructor(src: string, loading: LoadingType, fetchPriority: FetchPriorityType) {
-        super(src, "img");
+    constructor(
+        {src, loading, fetchPriority}: { src: SourceData, loading: LoadingType, fetchPriority: FetchPriorityType }) {
+        super(src.withType("img"));
         this.loading = loading;
         this.fetchPriority = fetchPriority;
         this._html = $("<img>")
@@ -234,102 +300,16 @@ class IframeMedia extends Media<HTMLIFrameElement> {
      * @param loading
      * @param fetchPriority
      */
-    constructor(src: string, loading: LoadingType, fetchPriority: FetchPriorityType) {
-        super(src, "iframe");
+    constructor({src, loading, fetchPriority}:
+                    { src: SourceData, loading: LoadingType, fetchPriority: FetchPriorityType }) {
+        super(src.withType("iframe"));
         this.loading = loading;
         this.fetchPriority = fetchPriority;
         this._html = $("<iframe></iframe>")
-            .attr("src", this.src)
+            .attr("src", this.srcString)
             .attr("loading", this.loading)
             .attr("fetchPriority", this.fetchPriority) as JQuery<HTMLIFrameElement>;
     }
-}
-
-/**
- * A type for all objects which can be addressed in any way
- */
-type JsonAdressableObject = {
-    id: string; //a UNIQUE id
-}
-
-/**
- * Type for the Page-Objects in pages.json (or pages.js)
- */
-type JsonPage = JsonAdressableObject & {
-    img: JsonMedia;
-    is_360?: boolean;
-    is_panorama?: boolean;
-    initial_direction?: number;
-    clickables?: JsonClickable[];
-    inlineObjects?: JsonInlineObject[];
-}
-
-type JsonMedia = {
-    //see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/video for video
-    //and https://developer.mozilla.org/en-US/docs/Web/HTML/Element/img for img
-    /*
-    normal src paths can be absolute OR
-    they can be relative to document root (e.g. '/images/img.jpg' -> 'https://rheingau-gymnasium.de/images/img.jpg') OR
-    they can be relative to img1 (e.g. 'test.jpg' -> 'img1/test.jpg' -> 'https://rheingau-gymnasium.de/current-path/img1/test.jpg').
-    */
-    src?: JsonSource;
-    srcMin?: JsonSource;
-    srcMax?: JsonSource;
-    type?: MediaType | "auto";
-    loading?: LoadingType | "auto";     //works for img, iframe
-    fetchPriority?: FetchPriorityType;  //works for img, iframe
-    //video attributes
-    poster?: string;
-    autoplay?: boolean;
-    loop?: boolean;
-    muted?: boolean
-    preload?: VideoPreloadType;
-    //iframe attributes
-
-};
-
-type JsonSource = string | {
-    name: string,
-    width?: number,
-    height?: number,
-    type?: MediaType,
-}
-
-type JsonInlineObject = {
-    x: number | string;
-    y: number | string;
-    position: InlineObjectPosition;
-    goto?: string;
-    animationType?: AnimationType;
-    type: InlineObjectType; //which kind of object this is (e.g. a clickable, text, etc.)
-}
-
-/**
- * A type which represents a clickable object in the pages json file (pages.json or pages.js)
- */
-type JsonClickable = JsonInlineObject & {
-    title: string;
-    goto: string;
-    icon?: IconType;
-    backward?: boolean; //depreciated use animationType instead
-    type?: "clickable";
-    animationType?: PageAnimations;
-    // targetType?: ClickableType; //on what kind of object this clickable points
-}
-
-type JsonCustomObject = JsonInlineObject & {
-    htmlId: string; //the id of the js object (the object must be created and appended to the DOM before this js is executed)
-    type?: "custom";
-    animationType?: CustomAnimations;
-}
-
-type JsonTextField = JsonInlineObject & JsonAdressableObject & {
-    content: string;
-    title?: string;
-    footer?: string;
-    cssClasses?: string[] | string; // ["class-a", "class-b"] OR "class-a class-b"
-    type?: "text";
-    animationType?: TextAnimations;
 }
 
 class Page {
@@ -342,13 +322,29 @@ class Page {
     public readonly inlineObjects: InlineObject[] = [];
     private readonly _html: JQuery<HTMLDivElement> = $("<div></div>");
 
-    constructor(id: string, img: Media, is_panorama: boolean, is_360: boolean, initial_direction: number, ...inlineObjects: InlineObject[]) {
+    constructor(
+        {
+            id, initial_direction,
+            img, inlineObjects,
+            is_360, is_panorama,
+        }: { id: string, img: Media, is_panorama: boolean, is_360: boolean, initial_direction: number, inlineObjects: InlineObject[] }) {
         this.id = id;
         this.img = img;
         this.is_360 = is_360;
         this.is_panorama = is_panorama;
         this.initial_direction = initial_direction;
         this.inlineObjects.push(...inlineObjects);
+    }
+
+    public static from(data: PageData): Page {
+        return new Page({
+            id: data.id,
+            is_panorama: data.isPanorama,
+            is_360: data.is360,
+            initial_direction: data.initialDirection,
+            img: Media.from(data.media),
+            inlineObjects: data.inlineObjects.map(InlineObject.from),
+        });
     }
 
     public static fromJson(jsonPage: JsonPage): Page {
@@ -396,7 +392,9 @@ class InlineObject {
     private _second: boolean;
     private _html: JQuery;
 
-    protected constructor(position: InlineObjectPosition, html: JQuery, type: InlineObjectType, animationType: AnimationType, x?: number, y?: number) {
+    protected constructor(
+        {type, animationType, position, x, y, html}:
+            { position: InlineObjectPosition, html: JQuery, type: InlineObjectType, animationType: AnimationType, x?: number, y?: number }) {
         this.position = position;
         this._html = html;
         this._second = false;
@@ -430,6 +428,12 @@ class InlineObject {
         return this._second;
     }
 
+    public static from(data: InlineObjectData): InlineObject {
+        switch (data.type) {
+
+        }
+    }
+
     public static fromJson(jsonInlineObject: JsonInlineObject): InlineObject {
         switch (jsonInlineObject.type) {
             case "clickable":
@@ -451,14 +455,29 @@ class CustomObject extends InlineObject {
     declare public readonly animationType: CustomAnimations;
     public readonly id: string;
 
-    constructor(id: string, position: InlineObjectPosition, x: number, y: number, animationType?: CustomAnimations) {
-        super(position, $("#" + id), "custom", animationType, x, y);
+    constructor(
+        {position, id, animationType, x, y}:
+            { id: string, position: InlineObjectPosition, x: number, y: number, animationType?: CustomAnimations }) {
+        super({
+            position: position,
+            html: $("#" + id),
+            type: "custom",
+            animationType: animationType,
+            x: x,
+            y: y,
+        });
         this.id = id;
     }
 
     public override clone(n?: CustomObject): CustomObject {
         if (n === undefined) {
-            n = new CustomObject(this.id, this.position, this.x, this.y, this.animationType);
+            n = new CustomObject({
+                id: this.id,
+                position: this.position,
+                x: this.x,
+                y: this.y,
+                animationType: this.animationType,
+            });
         }
         return super.clone(n) as CustomObject;
     }
@@ -472,7 +491,14 @@ class TextField extends InlineObject {
     declare public readonly animationType: TextAnimations;
 
     constructor(content: string, position?: InlineObjectPosition, title?: string, footer?: string, cssClasses?: string[], animationType?: TextAnimations, x?: number, y?: number) {
-        super(position ?? "page", $("<div/>"), "text", animationType ?? undefined, x, y);
+        super({
+            position: position ?? "page",
+            html: $("<div/>"),
+            type: "text",
+            animationType: animationType ?? undefined,
+            x: x,
+            y: y,
+        });
         this.content = content;
         this.title = title;
         this.footer = footer;
@@ -502,8 +528,16 @@ class Clickable extends InlineObject {
     // public readonly second: boolean; //360deg img
     public icon: IconType = "arrow_l";
 
-    constructor(title: string, x: number, y: number, goto: string, icon: IconType, animationType?: PageAnimations, position?: InlineObjectPosition) {
-        super(position ?? "media", $("<div></div>"), "clickable", animationType ?? "forward", x, y);
+    constructor({position, y, x, animationType, title, goto, icon}:
+                    { title: string, x: number, y: number, goto: string, icon: IconType, animationType?: PageAnimations, position?: InlineObjectPosition }) {
+        super({
+            position: position ?? "media",
+            html: $("<div></div>"),
+            type: "clickable",
+            animationType: animationType ?? "forward",
+            x: x,
+            y: y,
+        });
         this.title = title;
         // this.x = x;
         // this.y = y;
@@ -518,6 +552,18 @@ class Clickable extends InlineObject {
             .append($("<button></button>")
                 .addClass("icon")
                 .addClass(this.icon));
+    }
+
+    public static from(data: InlineObjectData): Clickable {
+        return new Clickable({
+            x: data.x,
+            y: data.y,
+            icon: data.icon,
+            title: data.title,
+            goto: data.goto,
+            animationType: data.animationType,
+            position: data.position,
+        });
     }
 
     /**
@@ -664,8 +710,8 @@ function createLastestClickable(clickables: Clickable[]) {
 function createHtml(json: JsonPage[]) {
     let scrollSensitivity = 20;
 
-    for (let jsonPage of json) {
-        let page = Page.fromJson(jsonPage);
+    for (let pageData of json.map(PageData.fromJSON)) {
+        let page = Page.from(pageData);
         // let page = new Page(jsonPage.id, Media.fromJson(jsonPage.img));
         //let page = new Page(jsonPage.id, new Image(jsonPage.img));
 
@@ -732,7 +778,7 @@ function createHtml(json: JsonPage[]) {
             .addClass("bg")
             // .attr("initial_direction", page.initial_direction)
             .on(event, function () {
-                console.log(`Media Loaded: ${page.img.src}`);
+                console.log(`Media Loaded: ${page.img.srcString}`);
                 // let self = $(this);
                 let self = page.img.html;
 
@@ -818,7 +864,7 @@ function createHtml(json: JsonPage[]) {
             });
         //add src last so that error and load events aren't triggered before we add the event handler
         if (page.img.isImage()) {
-            page.img.html.attr("src", page.img.src);
+            page.img.html.attr("src", page.img.srcString);
         } else if (page.img.isVideo()) {
             page.img.html
                 .prop("controls", true)
@@ -830,7 +876,7 @@ function createHtml(json: JsonPage[]) {
 
             //add src last so that we won't trigger error event too early
             page.img.html.find("source").last().attr("type", "video/mp4")
-                .attr("src", page.img.src);
+                .attr("src", page.img.srcString);
 
             //should be redundant
             if ((page.img.html.get(0) as HTMLVideoElement).readyState > 0) {
@@ -916,13 +962,15 @@ function createHtml(json: JsonPage[]) {
  */
 function init(pagesJsonPath: string) {
     //@ts-ignore
-    let json = pagesJson;
-    createHtml(json);
-    if (window.location.hash !== "") {
-        $("#" + idPrefix + window.location.hash.slice(1)).addClass("show");
-    } else {
-        $(".page").eq(0).addClass("show");
-    }
+    $.getJSON(pagesJsonPath, (json: JsonSchulTourConfigFile) => {
+        console.log("done", json);
+        createHtml(json.pages);
+        if (window.location.hash !== "") {
+            $("#" + idPrefix + window.location.hash.slice(1)).addClass("show");
+        } else {
+            $(".page").eq(0).addClass("show");
+        }
+    });
     // $.ajax(pagesJsonPath)
     //     .done(function (data) {
     //         //testing...
@@ -951,4 +999,17 @@ function init(pagesJsonPath: string) {
     //     );
 }
 
-// init("pages.js");
+const Tour = {
+    init: init,
+};
+
+Object.defineProperty(window, "Tour", {
+    writable: false,
+    configurable: false,
+    value: Tour,
+});
+
+export default Tour;
+export {init};
+
+// init("pages.json");

@@ -1,6 +1,6 @@
 import React, {useCallback, useContext} from "react";
 import {Col, Container, ListGroup, Row} from "react-bootstrap";
-import {PageData} from "./Data";
+import {PageData} from "../js/Data";
 import TourContext from "./TourContext";
 import {DefaultProps} from "./utils";
 import classNames from "classnames";

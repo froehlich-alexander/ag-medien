@@ -1,13 +1,37 @@
+import {css} from "jquery";
+import {
+    FetchPriorityType, IconType,
+    InlineObjectPosition,
+    InlineObjectType, JsonInlineObject, JsonMedia,
+    JsonPage, JsonSource,
+    LoadingType,
+    MediaType,
+    PageAnimations,
+    VideoPreloadType,
+} from "./types.js";
+
 type DataType<T> = Omit<{ [k in keyof T as T[k] extends Function ? never : k]: T[k] }, never>;
-type PageDataType = DataType<PageData>
+type PageDataType = DataType<PageData>;
+type Mutable<T> = { -readonly [k in keyof T]: T[k] };
+
+abstract class Data<T extends Data<T, JSONType>, JSONType> {
+    public abstract equals(other: DataType<T> | null | undefined): boolean;
+
+    public abstract toJSON(): JSONType;
+
+    public withUpdate(other: DataType<T>): T {
+        // @ts-ignore
+        return new (this.constructor as typeof T)({...this, ...other});
+    }
+}
 
 class PageData {
-    public media: MediaData;
-    public id: string;
-    public is360: boolean;
-    public isPanorama: boolean;
-    public initialDirection: number;
-    public inlineObjects: InlineObjectData[];
+    public readonly media: MediaData;
+    public readonly id: string;
+    public readonly is360: boolean;
+    public readonly isPanorama: boolean;
+    public readonly initialDirection: number;
+    public readonly inlineObjects: InlineObjectData[];
 
     constructor({
                     media,
@@ -36,8 +60,8 @@ class PageData {
         });
     }
 
-    public equals(other: DataType<PageData>): boolean {
-        return this === other || (
+    public equals(other: DataType<PageData> | null | undefined): boolean {
+        return other != null && (this === other || (
             this.media.equals(other.media) &&
             this.id === other.id &&
             this.is360 === other.is360 &&
@@ -45,7 +69,7 @@ class PageData {
             this.isPanorama === other.isPanorama &&
             (this.inlineObjects.length === other.inlineObjects.length && this.inlineObjects.map(v => other.inlineObjects.find(value => value.equals(v)) !== undefined)
                 .reduce((prev, now) => prev && now, true))
-        );
+        ));
     }
 
     public withUpdate(other: Partial<PageData>): PageData {
@@ -178,12 +202,14 @@ class MediaData {
 
     public isComplete(): boolean {
         return (this.src?.isComplete() ?? true) &&
-            (this.srcMin?.isComplete() ?? true )&&
-           (this.srcMax?.isComplete() ?? true);
+            (this.srcMin?.isComplete() ?? true) &&
+            (this.srcMax?.isComplete() ?? true);
     }
 }
 
-class InlineObjectData {
+
+class InlineObjectData extends Data<InlineObjectData, JsonInlineObject> {
+    // standard attributes
     public readonly x: number;
     public readonly y: number;
     public readonly type: InlineObjectType;
@@ -191,35 +217,112 @@ class InlineObjectData {
     public readonly position: InlineObjectPosition;
     public readonly animationType: PageAnimations;
 
-    constructor(x: number, y: number, type: InlineObjectType, goto: string | undefined, position: InlineObjectPosition, animationType: PageAnimations) {
+    // clickable attrs
+    public readonly title?: string;
+    public readonly icon?: IconType;
+
+    // test field
+    // public readonly title?: string;
+    public readonly content?: string;
+    public readonly footer?: string;
+    public readonly cssClasses?: string[] | string; // ["class-a", "class-b"] OR "class-a class-b"
+
+    // custom
+    public readonly htmlId?: string;
+
+    constructor(
+        {
+            x,
+            y,
+            animationType,
+            position,
+            type,
+            goto,
+            /* clickable */     title, icon,
+            /* text title */    content, footer, cssClasses,
+            /* custom */        htmlId,
+        }: DataType<InlineObjectData>,
+    ) {
+        super();
+        // standard
         this.x = x;
         this.y = y;
         this.type = type;
         this.goto = goto;
         this.position = position;
         this.animationType = animationType;
+        // clickable
+        this.title = title;
+        this.icon = icon;
+        //text
+        // this.title = title;
+        this.content = content;
+        this.footer = footer;
+        this.cssClasses = cssClasses;
+        // custom
+        this.htmlId = htmlId;
     }
 
-    static fromJSON(object: JsonInlineObject) {
-        return new InlineObjectData(
-            typeof object.x === "number" ? object.x : parseFloat(object.x),
-            typeof object.y === "number" ? object.y : parseFloat(object.y),
-            object.type,
-            object.goto,
-            object.position,
-            object.animationType ?? "forward",
-        );
+    static fromJSON(json: JsonInlineObject) {
+        let position = json.position;
+        const extras: Mutable<Partial<DataType<InlineObjectData>>> = {};
+        // apply default position depending on inline object type
+        switch (json.type) {
+            case "clickable":
+                position ??= "media";
+                extras.title = json.title;
+                extras.icon = json.icon ?? "arrow_l";
+                break;
+            case "text":
+                position ??= "media";
+                extras.cssClasses = json.cssClasses ?? "";
+                extras.title = json.title;
+                extras.content = json.content;
+                extras.footer = json.footer;
+                break;
+            case "custom":
+                position ??= "media";
+                extras.htmlId = json.htmlId;
+                break;
+        }
+
+        return new InlineObjectData({
+            ...extras,
+            x: typeof json.x === "number" ? json.x : parseFloat(json.x),
+            y: typeof json.y === "number" ? json.y : parseFloat(json.y),
+            type: json.type,
+            goto: json.goto,
+            position: position,
+            animationType: json.animationType ?? "forward",
+        });
     }
 
-    public equals(other: DataType<InlineObjectData>): boolean {
-        return this == other || (
+    public equals(other: DataType<InlineObjectData> | undefined | null): boolean {
+        return other != null && (this == other || (
             this.x === other.x &&
             this.y === other.y &&
             this.type === other.type &&
             this.position === other.position &&
             this.animationType === other.animationType &&
             this.goto === other.goto
-        );
+        ));
+    }
+
+    public toJSON(): JsonInlineObject {
+        return {
+            x: this.x,
+            y: this.y,
+            type: this.type,
+            goto: this.goto,
+            position: this.position,
+            animationType: this.animationType,
+            title: this.title,
+            icon: this.icon,
+            content: this.content,
+            footer: this.footer,
+            cssClasses: this.cssClasses,
+            htmlId: this.htmlId,
+        };
     }
 }
 
@@ -235,7 +338,7 @@ class SourceData {
     // create tool only
     readonly file?: FileData;
 
-    static readonly sourceUrl = "img1/";
+    static readonly sourceUrl = "media/";
 
     constructor({name, width, height, file, type}: DataType<SourceData>) {
         this.name = name;
@@ -300,14 +403,18 @@ class SourceData {
         });
     }
 
-    public withUpdate(other: Partial<DataType<SourceData>>): SourceData {
-        return new SourceData({...this, ...other});
-    }
-
     public isComplete(): boolean {
         return this.width != null &&
             this.height != null &&
             this.file != null;
+    }
+
+    public withUpdate(other: Partial<DataType<SourceData>>): SourceData {
+        return new SourceData({...this, ...other});
+    }
+
+    public withType(type: MediaType): SourceData {
+        return new SourceData({...this, type: type});
     }
 }
 

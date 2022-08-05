@@ -2,7 +2,7 @@
 import {ChangeEvent, useReducer, useState} from "react";
 import * as React from "react";
 import {Button, Col, Container, Form, InputGroup, Row, Table} from "react-bootstrap";
-import {DataType, MediaData, SourceData} from "./Data";
+import {DataType, MediaData, SourceData} from "../js/Data";
 import {DefaultProps} from "./utils";
 import "./CreateTool.scss";
 

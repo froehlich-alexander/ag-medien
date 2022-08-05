@@ -2,75 +2,60 @@
 import {ChangeEvent, useContext, useEffect, useState} from "react";
 import * as React from "react";
 import {Button, FormControl, Modal, Row, Table} from "react-bootstrap";
-import {PageData} from "./Data";
+import {PageData} from "../js/Data";
 import TourContext from "./TourContext";
 
-type Props = {};
+type Props = {
+    show: boolean,
+    onVisibilityChange: (visibility: boolean) => any,
+};
 
-export function ImportDialog(props: Props) {
+export function ImportDialog(
+    {
+        show,
+        onVisibilityChange,
+    }: Props) {
     const context = useContext(TourContext);
-    const [vis, setVis] = useState(false);
     const [pages, setPages] = useState<PageData[]>([]);
 
     function hide() {
-        setVis(false);
+        onVisibilityChange(false);
     }
 
     function reset() {
         setPages([]);
     }
 
-    // remove duplicates
-    useEffect(() => {
-        function removeDuplicates(pages: PageData[]) {
-            const res = [];
-            for (let page of pages) {
-                let items = pages.filter(v => v.id === page.id);
-                let i = 1;
-                for (let j of items.reverse()) {
-                    if (j.isComplete() || i === items.length) {
-                        res.push(j);
-                        break;
-                    }
-                    i++;
-                }
-            }
-            return res;
-        }
-        setPages(removeDuplicates)
-
-        // setPages(prevState => prevState.filter((v, i, a) => a.findIndex(v1 => v.id === v1.id) === i));
-    }, [pages]);
-
     return (
-        <Modal show={vis} onHide={hide}>
+        <Modal show={show} onHide={hide}>
             <Modal.Header closeButton={true}>
                 <Modal.Title>Import Tour Config</Modal.Title>
             </Modal.Header>
             <Modal.Body>
-                <Button as="label" htmlFor="json-files-i">Add</Button>
+                <Button as="label" className={"me-3"} htmlFor="json-files-i">Add</Button>
                 <FormControl id="json-files-i" type={"file"} multiple hidden={true} onChange={handleChange}/>
-                <Button variant={"danger"} onClick={reset}>Reset</Button>
+                <Button variant="danger" onClick={reset}>Reset</Button>
                 <Table>
                     <thead>
                     <tr>
                         <th>#</th>
                         <th>Page Id</th>
+                        <th>Actions</th>
                     </tr>
                     </thead>
                     <tbody>
                     {pages.map((v, i) => <tr>
-                        <td>{i}</td>
+                        <td>{i + 1}</td>
                         <td>{v.id}</td>
                     </tr>)}
                     </tbody>
                 </Table>
             </Modal.Body>
             <Modal.Footer>
-                <Row className={"gx-3"}>
+                {/*<Row className={"gx-3"}>*/}
                     <Button variant="secondary" onClick={hide}>Close</Button>
                     <Button onClick={importPages}>Import</Button>
-                </Row>
+                {/*</Row>*/}
             </Modal.Footer>
         </Modal>
     );
