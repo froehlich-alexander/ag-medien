@@ -39,9 +39,13 @@ class Media {
         this.width = src.width;
         this.height = src.height;
     }
+    /**
+     * Create a {@link Media} object from a {@link MediaData} object
+     * @param data
+     */
     static from(data) {
         var _a, _b, _c, _d;
-        //higher / lower resolution and loading type depend on device (=connection bandwidth)
+        // higher / lower resolution and loading type depend on device (=connection bandwidth)
         let src;
         let loading;
         // if (window.innerWidth > 768) {
@@ -72,46 +76,50 @@ class Media {
                 });
         }
     }
-    static fromJson(jsonMedia) {
-        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m;
-        //check for mistakes
-        if (jsonMedia == null)
-            throw `Media is ${jsonMedia}`;
-        if (!jsonMedia.src && !jsonMedia.srcMin && !jsonMedia.srcMax)
-            console.error(`Media source is not given in media object: `, jsonMedia);
-        //higher / lower resolution and loading type depend on device (=connection bandwidth)
-        let src;
-        let loading;
-        // if (window.innerWidth > 768) {
-        if (isDesktop) {
-            //desktop
-            src = (_a = jsonMedia.srcMax) !== null && _a !== void 0 ? _a : ((_b = jsonMedia.src) !== null && _b !== void 0 ? _b : jsonMedia.srcMin);
-            loading = "eager";
-        }
-        else {
-            //mobile
-            src = (_c = jsonMedia.srcMin) !== null && _c !== void 0 ? _c : ((_d = jsonMedia.src) !== null && _d !== void 0 ? _d : jsonMedia.srcMax);
-            loading = "lazy";
-        }
-        //loading
-        if (jsonMedia.loading !== "auto" && jsonMedia.loading !== undefined) {
-            loading = jsonMedia.loading;
-        }
-        //check src
-        if (src == null) {
-            console.error("src == ", src, "Json Media:", jsonMedia);
-        }
-        switch (this.determineType((_e = jsonMedia.type) !== null && _e !== void 0 ? _e : "auto", src)) {
-            case "img":
-                return new ImageMedia(src, loading, (_f = jsonMedia.fetchPriority) !== null && _f !== void 0 ? _f : "auto");
-            case "video":
-                return new VideoMedia(src, (_g = jsonMedia.poster) !== null && _g !== void 0 ? _g : "", (_h = jsonMedia.autoplay) !== null && _h !== void 0 ? _h : false, (_j = jsonMedia.loop) !== null && _j !== void 0 ? _j : false, (_k = jsonMedia.muted) !== null && _k !== void 0 ? _k : false, (_l = jsonMedia.preload) !== null && _l !== void 0 ? _l : "metadata");
-            case "iframe":
-                return new IframeMedia(src, loading, (_m = jsonMedia.fetchPriority) !== null && _m !== void 0 ? _m : "auto");
-        }
-        //default parameters on absence
-        // return new Media(src!, jsonMedia.type ?? "auto", jsonMedia.poster ?? "", jsonMedia.autoplay ?? false, jsonMedia.loop ?? false, jsonMedia.muted ?? false);
-    }
+    // public static fromJson(jsonMedia: JsonMedia): Media {
+    //     //check for mistakes
+    //     if (jsonMedia == null)
+    //         throw `Media is ${jsonMedia}`;
+    //     if (!jsonMedia.src && !jsonMedia.srcMin && !jsonMedia.srcMax)
+    //         console.error(`Media source is not given in media object: `, jsonMedia);
+    //
+    //     //higher / lower resolution and loading type depend on device (=connection bandwidth)
+    //     let src;
+    //     let loading: LoadingType;
+    //     // if (window.innerWidth > 768) {
+    //     if (isDesktop) {
+    //         //desktop
+    //         src = jsonMedia.srcMax ?? (jsonMedia.src ?? jsonMedia.srcMin);
+    //         loading = "eager";
+    //     } else {
+    //         //mobile
+    //         src = jsonMedia.srcMin ?? (jsonMedia.src ?? jsonMedia.srcMax);
+    //         loading = "lazy";
+    //     }
+    //
+    //     //loading
+    //     if (jsonMedia.loading !== "auto" && jsonMedia.loading !== undefined) {
+    //         loading = jsonMedia.loading;
+    //     }
+    //
+    //     //check src
+    //     if (src == null) {
+    //         console.error("src == ", src, "Json Media:", jsonMedia);
+    //     }
+    //
+    //     switch (this.determineType(jsonMedia.type ?? "auto", src!)) {
+    //         case "img":
+    //             return new ImageMedia(src!, loading, jsonMedia.fetchPriority ?? "auto");
+    //         case "video":
+    //             return new VideoMedia(src!, jsonMedia.poster ?? "", jsonMedia.autoplay ?? false,
+    //                 jsonMedia.loop ?? false, jsonMedia.muted ?? false, jsonMedia.preload ?? "metadata");
+    //         case "iframe":
+    //             return new IframeMedia(src!, loading, jsonMedia.fetchPriority ?? "auto");
+    //     }
+    //
+    //     //default parameters on absence
+    //     // return new Media(src!, jsonMedia.type ?? "auto", jsonMedia.poster ?? "", jsonMedia.autoplay ?? false, jsonMedia.loop ?? false, jsonMedia.muted ?? false);
+    // }
     clone() {
         // let n = new Media(this.src, this.type, this.poster, this.autoplay, this.loop, this.muted);
         let n = new Media(this.src);
@@ -237,14 +245,13 @@ class Page {
     constructor({ id, initial_direction, img, inlineObjects, is_360, is_panorama, }) {
         this.is_panorama = false;
         this.is_360 = false;
-        this.inlineObjects = [];
         this._html = $("<div></div>");
         this.id = id;
-        this.img = img;
+        this.media = img;
         this.is_360 = is_360;
         this.is_panorama = is_panorama;
         this.initial_direction = initial_direction;
-        this.inlineObjects.push(...inlineObjects);
+        this.inlineObjects = inlineObjects.slice();
     }
     static from(data) {
         return new Page({
@@ -256,19 +263,20 @@ class Page {
             inlineObjects: data.inlineObjects.map(InlineObject.from),
         });
     }
-    static fromJson(jsonPage) {
-        var _a, _b, _c, _d, _e, _f, _g;
-        //check if everything is well formatted / check for mistakes
-        if (typeof jsonPage.id !== "string" || jsonPage.id.length <= 0)
-            console.error(`Id wrong formatted in page object: `, jsonPage);
-        //default arguments
-        return new Page(jsonPage.id, Media.fromJson(jsonPage.img), (_a = jsonPage.is_panorama) !== null && _a !== void 0 ? _a : false, (_b = jsonPage.is_360) !== null && _b !== void 0 ? _b : false, (_c = jsonPage.initial_direction) !== null && _c !== void 0 ? _c : 0, ...(_e = (_d = jsonPage.inlineObjects) === null || _d === void 0 ? void 0 : _d.map(v => InlineObject.fromJson(v))) !== null && _e !== void 0 ? _e : [], ...(_g = (_f = jsonPage.clickables) === null || _f === void 0 ? void 0 : _f.map(v => Clickable.fromJson(v))) !== null && _g !== void 0 ? _g : []);
-    }
+    // public static fromJson(jsonPage: JsonPage): Page {
+    //     //check if everything is well formatted / check for mistakes
+    //     if (typeof jsonPage.id !== "string" || jsonPage.id.length <= 0)
+    //         console.error(`Id wrong formatted in page object: `, jsonPage);
+    //
+    //     //default arguments
+    //     return new Page(jsonPage.id, Media.fromJson(jsonPage.img), jsonPage.is_panorama ?? false,
+    //         jsonPage.is_360 ?? false, jsonPage.initial_direction ?? 0, ...jsonPage.inlineObjects?.map(v => InlineObject.fromJson(v)) ?? [], ...jsonPage.clickables?.map(v => Clickable.fromJson(v)) ?? []);
+    // }
     /**
      * In 360deg IMGs there exists always 2 similar clickables and all of them will be returned
      */
     get clickables() {
-        return this.inlineObjects.filter(v => v instanceof Clickable);
+        return this.inlineObjects.filter((v) => v.data.type === "clickable");
     }
     /**
      * Add {@link InlineObject}<br>
@@ -317,6 +325,24 @@ class InlineObject {
             // this._html = htmlTag as JQuery;
         }
     }
+    // protected clone(newObjectToClone?: InlineObject): InlineObject {
+    //     if (newObjectToClone === undefined) {
+    //         newObjectToClone = new InlineObject(this.position, this.html.clone(true), this.type, this.animationType, this.x, this.y);
+    //     }
+    //     newObjectToClone._html = this.html.clone(true);
+    //     newObjectToClone._second = true;
+    //     return newObjectToClone;
+    // }
+    clonee(constructor) {
+        return new constructor(this.data, this._html.clone(true));
+    }
+    /**
+     * Clones and returns this inline Object (also clones all its events)
+     */
+    clone() {
+        const constructor = this.constructor;
+        return new constructor(this.data, this._html.clone(true));
+    }
     get html() {
         return this._html;
     }
@@ -326,11 +352,11 @@ class InlineObject {
     static from(data) {
         switch (data.type) {
             case "clickable":
-                return new Clickable(data);
+                return Clickable.from(data);
             case "custom":
-                return new CustomObject(data);
+                return CustomObject.from(data);
             case "text":
-                return new TextField(data);
+                return TextField.from(data);
         }
     }
     static fromJson(jsonInlineObject) {
@@ -352,37 +378,16 @@ class CustomObject extends InlineObject {
     // declare public readonly y: number;
     // declare public readonly animationType: CustomAnimations;
     // public readonly id: string;
-    constructor(data) {
-        super(data, $("#" + data.htmlId));
-    }
-    // {position, id, animationType, x, y}:
-    //     { id: string, position: InlineObjectPosition, x: number, y: number, animationType?: CustomAnimations }) {
-    // super({
-    //     position: position,
-    //     html: $("#" + id),
-    //     type: "custom",
-    //     animationType: animationType,
-    //     x: x,
-    //     y: y,
-    // });
-    // this.id = id;
-    // }
-    // public override clone(n?: CustomObject): CustomObject {
-    //     if (n === undefined) {
-    //         n = new CustomObject({
-    //             id: this.id,
-    //             position: this.position,
-    //             x: this.x,
-    //             y: this.y,
-    //             animationType: this.animationType,
-    //         });
-    //     }
-    //     return super.clone(n) as CustomObject;
-    // }
-    clone() {
+    constructor(data, html) {
+        super(data, html !== null && html !== void 0 ? html : $("#" + data.htmlId), html !== undefined);
     }
 }
 class TextField extends InlineObject {
+    // public readonly content: string;
+    // public readonly title?: string;
+    // public readonly footer?: string;
+    // public readonly cssClasses?: string[];
+    // declare public readonly animationType: TextAnimations;
     // constructor(content: string, position?: InlineObjectPosition, title?: string, footer?: string, cssClasses?: string[], animationType?: TextAnimations, x?: number, y?: number) {
     //     super({
     //         position: position ?? "page",
@@ -397,19 +402,8 @@ class TextField extends InlineObject {
     //     this.footer = footer;
     //     this.cssClasses = cssClasses;
     // }
-    constructor(data) {
-        super(data, "div");
-    }
-    static fromJson(json) {
-        return new TextField(json.content, "page", json.title, json.footer, typeof json.cssClasses === "string" ? json.cssClasses.split(" ") : json.cssClasses, json.animationType, typeof json.x === "string" ? parseFloat(json.x) : json.x, typeof json.x === "string" ? parseFloat(json.x) : json.x);
-    }
-    // public override clone(n?: TextField): TextField {
-    //     if (n === undefined) {
-    //         n = new TextField(this.content, this.position, this.title, this.footer, this.cssClasses, this.animationType, this.x, this.y);
-    //     }
-    //     return super.clone(n) as TextField;
-    // }
-    clone() {
+    constructor(data, html) {
+        super(data, html !== null && html !== void 0 ? html : "div", html !== undefined);
     }
 }
 class Clickable extends InlineObject {
@@ -422,7 +416,7 @@ class Clickable extends InlineObject {
     // public icon: IconType = "arrow_l";
     // constructor({position, y, x, animationType, title, goto, icon}:
     //                 { title: string, x: number, y: number, goto: string, icon: IconType, animationType?: PageAnimations, position?: InlineObjectPosition }) {
-    constructor(data) {
+    constructor(data, html) {
         // super({
         //     position: position ?? "media",
         //     html: $("<div></div>"),
@@ -431,20 +425,22 @@ class Clickable extends InlineObject {
         //     x: x,
         //     y: y,
         // });
-        super(data, "div");
+        super(data, html !== null && html !== void 0 ? html : "div", html !== undefined);
         // this.title = title;
         // // this.x = x;
         // // this.y = y;
         // this.goto = goto;
         // this.icon = icon;
-        this.html.addClass("clickable")
-            .attr("goto", this.data.goto) //todo redundant
-            .append($("<div></div>")
-            .addClass("title")
-            .text(this.data.title))
-            .append($("<button></button>")
-            .addClass("icon")
-            .addClass(this.data.icon));
+        if (!this.second) {
+            this.html.addClass("clickable")
+                .attr("goto", this.data.goto) //todo redundant
+                .append($("<div></div>")
+                .addClass("title")
+                .text(this.data.title))
+                .append($("<button></button>")
+                .addClass("icon")
+                .addClass(this.data.icon));
+        }
     }
     static from(data) {
         return new Clickable(data);
@@ -457,59 +453,6 @@ class Clickable extends InlineObject {
         //     animationType: data.animationType,
         //     position: data.position,
         // });
-    }
-    /**
-     * Creates a {@link Clickable} object from an {@link JsonClickable} object
-     * @param jsonClickable
-     */
-    // public static fromJson(jsonClickable: JsonClickable): Clickable {
-    //     //check for mistakes
-    //     {
-    //         if (jsonClickable == null)
-    //             throw `Clickable is ${jsonClickable}`;
-    //
-    //         if (typeof jsonClickable.title !== "string" || jsonClickable.title.length <= 0)
-    //             console.error("Clickable id wrong formatted in json clickable: ", jsonClickable);
-    //         if (typeof jsonClickable.x !== "number") {
-    //             let error = true;
-    //             if (typeof jsonClickable.x === "string") {
-    //                 try {
-    //                     jsonClickable.x = Number.parseFloat(jsonClickable.x);
-    //                     error = false;
-    //                 } catch (e) {
-    //                 }
-    //             }
-    //             if (error)
-    //                 console.error("Clickable x wrong formatted in json clickable: ", jsonClickable);
-    //         }
-    //         if (typeof jsonClickable.y !== "number") {
-    //             let error = true;
-    //             if (typeof jsonClickable.y === "string") {
-    //                 try {
-    //                     jsonClickable.y = Number.parseFloat(jsonClickable.y);
-    //                     error = false;
-    //                 } catch (e) {
-    //                 }
-    //             }
-    //             if (error)
-    //                 console.error("Clickable y wrong formatted in json clickable: ", jsonClickable);
-    //         }
-    //     }
-    //
-    //     //default arguments
-    //     return new Clickable(jsonClickable.title, jsonClickable.x as number, jsonClickable.y as number,
-    //         jsonClickable.goto, jsonClickable.icon ?? "arrow_l", jsonClickable.animationType ?? (jsonClickable.backward ? "backward" : "forward"), jsonClickable.position);
-    // }
-    /**
-     * Clone this clickable and create all html objs new (with all event)
-     * @returns {Clickable}
-     */
-    clone(n) {
-        if (n === undefined) {
-            // n = new Clickable(this.title, this.x, this.y, this.goto, this.icon, this.animationType, this.position); //cloned clickables are considered as second clickables (relevant for 360deg img)
-            n = new Clickable(this.data);
-        }
-        return super.clone(n);
     }
 }
 window.onresize = function () {
@@ -540,7 +483,7 @@ function goTo(pg, animationType) {
         let next = pages.find(v => v.id === pg.substring(idPrefix.length));
         let prev = pages.find(v => v.id === $(".page.show").attr("id").substring(idPrefix.length));
         //pause video
-        prev.img.pause();
+        prev.media.pause();
         next.html.addClass("show");
         adjust_clickables();
         lastest = prev.id;
@@ -565,7 +508,7 @@ function goTo(pg, animationType) {
             }, animationDuration);
         }
         window.location.hash = next.id;
-        createLastestClickable(next.clickables.filter(v => v.goto === prev.id));
+        createLastestClickable(next.clickables.filter(v => v.data.goto === prev.id));
     }
 }
 function adjust_clickables() {
@@ -587,7 +530,7 @@ function adjust_clickables() {
 function createLastestClickable(clickables) {
     $(".clickable").removeClass("lastest-clickable");
     for (let i of clickables) {
-        console.log("lastest lclickable", i.goto, i.goto === lastest, i);
+        console.log("lastest lclickable", i.data.goto, i.data.goto === lastest, i);
         i === null || i === void 0 ? void 0 : i.html.addClass("lastest-clickable");
     }
 }
@@ -604,24 +547,25 @@ function createHtml(json) {
         //via user agent
         // if (/(iPhone|iPod|iPad|blackberry|android|Kindle|htc|lg|midp|mmp|mobile|nokia|opera mini|palm|pocket|psp|sgh|smartphone|symbian|treo mini|Playstation Portable|SonyEricsson|Samsung|MobileExplorer|PalmSource|Benq|Windows Phone|Windows Mobile|IEMobile|Windows CE|Nintendo Wii)/.test(navigator.userAgent))
         //or via screen size
-        if ((!isDesktop) && page.img.isImage()) {
+        if ((!isDesktop) && page.media.isImage()) {
             page.is_panorama = true;
         }
+        console.log("page", page);
         // for (let clickable of jsonPage.clickables.map(jsonClickable => new Clickable(jsonClickable.title,
         //     jsonClickable.x, jsonClickable.y, jsonClickable.goto, jsonClickable.icon, jsonClickable.backward))) {
         //     page.clickables.push(clickable);
         for (let clickable of page.clickables) {
-            let gotoExists = json.filter(value => value.id === clickable.goto).length > 0;
+            let gotoExists = json.filter(value => value.id === clickable.data.goto).length > 0;
             if (!gotoExists) {
-                console.log("Id '" + clickable.goto + "' does not exist");
+                console.log("Id '" + clickable.data.goto + "' does not exist");
             }
             console.log(clickable.data.title, clickable.data.goto);
             console.log(page.inlineObjects);
             clickable.html.find("button")
                 .on("click", gotoExists ? () => {
-                goTo(idPrefix + clickable.goto, clickable.animationType);
+                goTo(clickable.data.goto && (idPrefix + clickable.data.goto), clickable.data.animationType);
             } : () => {
-                console.error("Cannot go to next page because '" + clickable.goto + "' does not exist");
+                console.error("Cannot go to next page because '" + clickable.data.goto + "' does not exist");
             });
             // clickable.html
             //     .addClass("clickable")
@@ -642,26 +586,26 @@ function createHtml(json) {
             // .attr("data-backward", clickable.backward != null ? clickable.backward : null);
         }
         let event;
-        if (page.img.isImage() || page.img.isIframe())
+        if (page.media.isImage() || page.media.isIframe())
             event = "load";
-        else if (page.img.isVideo()) {
+        else if (page.media.isVideo()) {
             event = "loadedmetadata";
         }
         else {
             console.error("cannot determine event type because Media Type is not known (or not implemented)\nContinuing with 'load' as event type, but FIX THIS");
             event = "load";
         }
-        page.img.html
+        page.media.html
             .addClass("bg")
             // .attr("initial_direction", page.initial_direction)
             .on(event, function () {
-            console.log(`Media Loaded: ${page.img.srcString}`);
+            console.log(`Media Loaded: ${page.media.srcString}`);
             // let self = $(this);
-            let self = page.img.html;
+            let self = page.media.html;
             self.removeClass("fill-width");
             self.removeClass("fill-height");
             let imgRatio;
-            if (page.img.isImage(self)) {
+            if (page.media.isImage(self)) {
                 imgRatio = self.get(0).naturalWidth / self.get(0).naturalHeight;
                 //remove panorama if screen is big enough
                 if (page.is_panorama && self.get(0).naturalWidth <= window.innerWidth) {
@@ -697,14 +641,14 @@ function createHtml(json) {
                     });
                 }
             }
-            else if (page.img.isVideo(self)) {
+            else if (page.media.isVideo(self)) {
                 imgRatio = self.get(0).videoWidth / self.get(0).videoHeight;
             }
-            else if (page.img.isIframe()) {
+            else if (page.media.isIframe()) {
                 return; //all resizing has to be done by the iframe itself
             }
             else {
-                throw "Need to add handling for MediaType: " + page.img.type;
+                throw "Need to add handling for MediaType: " + page.media.type;
             }
             let screenRatio = window.innerWidth / window.innerHeight;
             if (imgRatio > screenRatio)
@@ -714,19 +658,19 @@ function createHtml(json) {
         })
             .on("error", function () {
             console.error("error");
-            console.warn("Error loading Media", page.img);
-            if (page.img.isImage())
-                page.img.html.attr("src", baustellenFotoUrl);
-            else if (page.img.isVideo()) {
-                page.img.html
+            console.warn("Error loading Media", page.media);
+            if (page.media.isImage())
+                page.media.html.attr("src", baustellenFotoUrl);
+            else if (page.media.isVideo()) {
+                page.media.html
                     .attr("poster", baustellenFotoUrl)
                     .prop("controls", false);
                 // .removeAttr("src")
                 // .removeAttr("preload")
                 // .removeAttr("type");
             }
-            else if (page.img.isIframe()) {
-                page.img.html
+            else if (page.media.isIframe()) {
+                page.media.html
                     //the plain html text
                     .attr("srcdoc", "<!DOCTYPE html>" +
                     "<html lang=\"de\">" +
@@ -741,22 +685,22 @@ function createHtml(json) {
             }
         });
         //add src last so that error and load events aren't triggered before we add the event handler
-        if (page.img.isImage()) {
-            page.img.html.attr("src", page.img.srcString);
+        if (page.media.isImage()) {
+            page.media.html.attr("src", page.media.srcString);
         }
-        else if (page.img.isVideo()) {
-            page.img.html
+        else if (page.media.isVideo()) {
+            page.media.html
                 .prop("controls", true)
                 .append($("<source>"));
             //firefox dispatches error events on last <source> tag, so we need to handle them there
-            page.img.html.find("source").last()
-                .on("error", e => page.img.html.trigger("error", e));
+            page.media.html.find("source").last()
+                .on("error", e => page.media.html.trigger("error", e));
             //add src last so that we won't trigger error event too early
-            page.img.html.find("source").last().attr("type", "video/mp4")
-                .attr("src", page.img.srcString);
+            page.media.html.find("source").last().attr("type", "video/mp4")
+                .attr("src", page.media.srcString);
             //should be redundant
-            if (page.img.html.get(0).readyState > 0) {
-                page.img.html.trigger(event);
+            if (page.media.html.get(0).readyState > 0) {
+                page.media.html.trigger(event);
             }
         }
         //iframes src is already added in constructor of IframeMedia obj
@@ -779,24 +723,24 @@ function createHtml(json) {
         page.html.children(".pg_wrapper")
             .append($("<div></div>")
             .addClass("bg_container")
-            .append(page.img.html)
+            .append(page.media.html)
             .append(page.inlineObjects
-            .filter(v => v.position == "media" && (!v.second))
+            .filter(v => v.data.position == "media" && (!v.second))
             .map(v => v.html)))
             .append(page.inlineObjects
-            .filter(v => v.position == "page")
+            .filter(v => v.data.position == "page")
             .map(v => v.html));
         if (page.is_360) {
             console.log("is_360");
             //add second clickables for second img in 360deg IMGs
-            page.addInlineObjects(...page.clickables.filter(v => v.position == "media" && (!v.second)).map(v => v.clone()));
-            page.secondaryImg = page.img.clone();
+            page.addInlineObjects(...page.clickables.filter(v => v.data.position == "media" && (!v.second)).map(v => v.clone()));
+            page.secondaryImg = page.media.clone();
             //second img
             let bgContainer1 = $("<div></div>")
                 .addClass("bg_container")
                 .append(page.secondaryImg.html)
                 .append(page.inlineObjects
-                .filter(v => v.position === "media" && v.second)
+                .filter(v => v.data.position === "media" && v.second)
                 .map(v => v.html));
             page.html.children(".pg_wrapper")
                 .append(bgContainer1);
@@ -804,17 +748,17 @@ function createHtml(json) {
                 let self = $(this);
                 if (this.scrollWidth - this.clientWidth - this.scrollLeft < scrollSensitivity) {
                     // if new scroll would trigger this event again
-                    if (this.scrollLeft - page.img.html.width() < scrollSensitivity) {
+                    if (this.scrollLeft - page.media.html.width() < scrollSensitivity) {
                         return;
                     }
-                    self.scrollLeft(this.scrollLeft - page.img.html.width());
+                    self.scrollLeft(this.scrollLeft - page.media.html.width());
                 }
                 else if (self.scrollLeft() < scrollSensitivity) {
                     // if new scroll would trigger this event again
-                    if (this.scrollWidth - this.clientWidth - (this.scrollLeft + page.img.html.width()) < scrollSensitivity) {
+                    if (this.scrollWidth - this.clientWidth - (this.scrollLeft + page.media.html.width()) < scrollSensitivity) {
                         return;
                     }
-                    self.scrollLeft(this.scrollLeft + page.img.html.width());
+                    self.scrollLeft(this.scrollLeft + page.media.html.width());
                 }
             });
         }

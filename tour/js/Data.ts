@@ -71,13 +71,15 @@ class PageData {
     }
 
     static fromJSON(page: JsonPage): PageData {
+        const inlineObjects = page.inlineObjects?.map(InlineObjectData.fromJSON) ?? [];
+        inlineObjects.push(...page.clickables?.map(ClickableData.fromJSON) ?? []);
         return new PageData({
             media: MediaData.fromJSON(page.img),
             id: page.id,
             is360: page.is_360 ?? false,
             isPanorama: page.is_panorama ?? false,
             initialDirection: page.initial_direction ?? 0,
-            inlineObjects: page.inlineObjects?.map(InlineObjectData.fromJSON) ?? [],
+            inlineObjects: inlineObjects,
         });
     }
 
@@ -359,12 +361,13 @@ const InlineObjectData = {
 
 type InlineObjectData = ClickableData | CustomObjectData | TextFieldData;
 
-class ClickableData extends AbstractInlineObjectData<ClickableData,JsonClickable> {
+class ClickableData extends AbstractInlineObjectData<ClickableData, JsonClickable> {
     public readonly title: string;
     public readonly icon: IconType;
 
     declare public readonly type: "clickable";
     declare public readonly animationType: PageAnimations;
+    declare public readonly goto: string;
 
     constructor(
         {title, icon, ...r}: DataType<ClickableData>,
@@ -402,7 +405,7 @@ class ClickableData extends AbstractInlineObjectData<ClickableData,JsonClickable
     }
 }
 
-class TextFieldData extends AbstractInlineObjectData<TextFieldData,JsonTextField> {
+class TextFieldData extends AbstractInlineObjectData<TextFieldData, JsonTextField> {
     public readonly title?: string;
     public readonly content: string;
     public readonly footer?: string;
@@ -461,7 +464,7 @@ class TextFieldData extends AbstractInlineObjectData<TextFieldData,JsonTextField
 }
 
 
-class CustomObjectData extends AbstractInlineObjectData<CustomObjectData,JsonCustomObject> {
+class CustomObjectData extends AbstractInlineObjectData<CustomObjectData, JsonCustomObject> {
     public readonly htmlId: string;
 
     declare public readonly type: "custom";
@@ -670,6 +673,7 @@ export {
     DataType,
     PageData,
     InlineObjectData,
+    AbstractInlineObjectData,
     ClickableData,
     CustomObjectData,
     TextFieldData,
