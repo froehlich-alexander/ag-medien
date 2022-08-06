@@ -61,7 +61,7 @@ export type JsonSource = string | {
     height?: number,
     type?: MediaType,
 }
-type AbstractJsonInlineObject = {
+interface AbstractJsonInlineObject {
     x: number | string;
     y: number | string;
     position?: InlineObjectPosition;
@@ -72,11 +72,13 @@ type AbstractJsonInlineObject = {
 /**
  * A type which represents a clickable object in the pages json file (pages.json or pages.json)
  */
-export type JsonClickable = AbstractJsonInlineObject & {
+export interface JsonClickable extends AbstractJsonInlineObject {
     title: string;
     goto: string;
     icon?: IconType;
-    //@depreciated
+    /**
+     * @depreciated
+     */
     backward?: boolean; //depreciated use animationType instead
     type: "clickable";
     animationType?: PageAnimations;

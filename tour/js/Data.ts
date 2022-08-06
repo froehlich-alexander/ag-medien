@@ -1,12 +1,14 @@
-import {css} from "jquery";
 import {
+    AbstractJsonInlineObject,
+    AnimationType,
+    CustomAnimations,
     FetchPriorityType, IconType,
     InlineObjectPosition,
-    InlineObjectType, JsonInlineObject, JsonMedia,
-    JsonPage, JsonSource,
+    InlineObjectType, JsonClickable, JsonCustomObject, JsonInlineObject, JsonMedia,
+    JsonPage, JsonSource, JsonTextField,
     LoadingType,
     MediaType,
-    PageAnimations,
+    PageAnimations, TextAnimations,
     VideoPreloadType,
 } from "./types.js";
 
@@ -14,12 +16,31 @@ type DataType<T> = Omit<{ [k in keyof T as T[k] extends Function ? never : k]: T
 type PageDataType = DataType<PageData>;
 type Mutable<T> = { -readonly [k in keyof T]: T[k] };
 
-abstract class Data<T extends Data<T, JSONType>, JSONType> {
-    public abstract equals(other: DataType<T> | null | undefined): boolean;
+function arrayEquals(array1: Array<any> | undefined, array2: Array<any> | undefined): array2 is typeof array1 {
+    if (array1 === array2) {
+        return true;
+    }
+    if (array1 === undefined || array2 === undefined) {
+        // s.o. they are not equal (and undefined === undefined is always true)
+        return false;
+    }
+    if (array1.length !== array2.length) {
+        return false;
+    }
+    for (let i = 0; i < array1.length; i++) {
+        if (array1[i] !== array2[i]) {
+            return false;
+        }
+    }
+    return true;
+}
 
-    public abstract toJSON(): JSONType;
+abstract class Data<T extends Data<T>> {
+    public abstract equals(other: any | null | undefined): boolean;
 
-    public withUpdate(other: DataType<T>): T {
+    public abstract toJSON(): any;
+
+    public withUpdate(other: Partial<DataType<T>>): T {
         // @ts-ignore
         return new (this.constructor as typeof T)({...this, ...other});
     }
@@ -207,30 +228,29 @@ class MediaData {
     }
 }
 
-
-class InlineObjectData extends Data<InlineObjectData, JsonInlineObject> {
+class AbstractInlineObjectData<T extends AbstractInlineObjectData<T, Json>, Json extends AbstractJsonInlineObject> extends Data<T> {
     // standard attributes
     public readonly x: number;
     public readonly y: number;
     public readonly type: InlineObjectType;
     public readonly goto?: string;
     public readonly position: InlineObjectPosition;
-    public readonly animationType: PageAnimations;
+    public readonly animationType: AnimationType;
 
-    // clickable attrs
-    public readonly title?: string;
-    public readonly icon?: IconType;
+    // // clickable attrs
+    // public readonly title?: string;
+    // public readonly icon?: IconType;
 
     // test field
     // public readonly title?: string;
-    public readonly content?: string;
-    public readonly footer?: string;
-    public readonly cssClasses?: string[] | string; // ["class-a", "class-b"] OR "class-a class-b"
+    // public readonly content?: string;
+    // public readonly footer?: string;
+    // public readonly cssClasses?: string[] | string; // ["class-a", "class-b"] OR "class-a class-b"
+    //
+    // // custom
+    // public readonly htmlId?: string;
 
-    // custom
-    public readonly htmlId?: string;
-
-    constructor(
+    protected constructor(
         {
             x,
             y,
@@ -238,10 +258,10 @@ class InlineObjectData extends Data<InlineObjectData, JsonInlineObject> {
             position,
             type,
             goto,
-            /* clickable */     title, icon,
-            /* text title */    content, footer, cssClasses,
-            /* custom */        htmlId,
-        }: DataType<InlineObjectData>,
+            // /* clickable */     title, icon,
+            // /* text title */    content, footer, cssClasses,
+            // /* custom */        htmlId,
+        }: DataType<AbstractInlineObjectData<T, Json>>,
     ) {
         super();
         // standard
@@ -251,54 +271,52 @@ class InlineObjectData extends Data<InlineObjectData, JsonInlineObject> {
         this.goto = goto;
         this.position = position;
         this.animationType = animationType;
-        // clickable
-        this.title = title;
-        this.icon = icon;
-        //text
+        // // clickable
         // this.title = title;
-        this.content = content;
-        this.footer = footer;
-        this.cssClasses = cssClasses;
-        // custom
-        this.htmlId = htmlId;
+        // this.icon = icon;
+        // //text
+        // // this.title = title;
+        // this.content = content;
+        // this.footer = footer;
+        // this.cssClasses = cssClasses;
+        // // custom
+        // this.htmlId = htmlId;
     }
 
-    static fromJSON(json: JsonInlineObject) {
-        let position = json.position;
-        const extras: Mutable<Partial<DataType<InlineObjectData>>> = {};
-        // apply default position depending on inline object type
-        switch (json.type) {
-            case "clickable":
-                position ??= "media";
-                extras.title = json.title;
-                extras.icon = json.icon ?? "arrow_l";
-                break;
-            case "text":
-                position ??= "media";
-                extras.cssClasses = json.cssClasses ?? "";
-                extras.title = json.title;
-                extras.content = json.content;
-                extras.footer = json.footer;
-                break;
-            case "custom":
-                position ??= "media";
-                extras.htmlId = json.htmlId;
-                break;
-        }
+    // let position = json.position;
+    // const extras: Mutable<Partial<DataType<InlineObjectData>>> = {};
+    // // apply default position depending on inline object type
+    // switch (json.type) {
+    //     case "clickable":
+    //         position ??= "media";
+    //         extras.title = json.title;
+    //         extras.icon = json.icon ?? "arrow_l";
+    //         break;
+    //     case "text":
+    //         position ??= "media";
+    //         extras.cssClasses = json.cssClasses ?? "";
+    //         extras.title = json.title;
+    //         extras.content = json.content;
+    //         extras.footer = json.footer;
+    //         break;
+    //     case "custom":
+    //         position ??= "media";
+    //         extras.htmlId = json.htmlId;
+    //         break;
+    // }
+    //
+    // return new InlineObjectData({
+    //     ...extras,
+    //     x: typeof json.x === "number" ? json.x : parseFloat(json.x),
+    //     y: typeof json.y === "number" ? json.y : parseFloat(json.y),
+    //     type: json.type,
+    //     goto: json.goto,
+    //     position: position,
+    //     animationType: json.animationType ?? "forward",
+    // });
 
-        return new InlineObjectData({
-            ...extras,
-            x: typeof json.x === "number" ? json.x : parseFloat(json.x),
-            y: typeof json.y === "number" ? json.y : parseFloat(json.y),
-            type: json.type,
-            goto: json.goto,
-            position: position,
-            animationType: json.animationType ?? "forward",
-        });
-    }
-
-    public equals(other: DataType<InlineObjectData> | undefined | null): boolean {
-        return other != null && (this == other || (
+    public equals(other: DataType<AbstractInlineObjectData<T, Json>> | undefined | null): other is DataType<AbstractInlineObjectData<T, Json>> {
+        return other != null && (this === other || (
             this.x === other.x &&
             this.y === other.y &&
             this.type === other.type &&
@@ -308,7 +326,7 @@ class InlineObjectData extends Data<InlineObjectData, JsonInlineObject> {
         ));
     }
 
-    public toJSON(): JsonInlineObject {
+    public toJSON(): { [k in keyof Pick<Json, keyof AbstractJsonInlineObject>]: Json[k] } {
         return {
             x: this.x,
             y: this.y,
@@ -316,11 +334,166 @@ class InlineObjectData extends Data<InlineObjectData, JsonInlineObject> {
             goto: this.goto,
             position: this.position,
             animationType: this.animationType,
+            // title: this.title,
+            // icon: this.icon,
+            // content: this.content,
+            // footer: this.footer,
+            // cssClasses: this.cssClasses,
+            // htmlId: this.htmlId,
+        };
+    }
+}
+
+const InlineObjectData = {
+    fromJSON: function (json: JsonInlineObject): InlineObjectData {
+        switch (json.type) {
+            case "clickable":
+                return ClickableData.fromJSON(json);
+            case "text":
+                return TextFieldData.fromJSON(json);
+            case "custom":
+                return CustomObjectData.fromJSON(json);
+        }
+    },
+};
+
+type InlineObjectData = ClickableData | CustomObjectData | TextFieldData;
+
+class ClickableData extends AbstractInlineObjectData<ClickableData,JsonClickable> {
+    public readonly title: string;
+    public readonly icon: IconType;
+
+    declare public readonly type: "clickable";
+    declare public readonly animationType: PageAnimations;
+
+    constructor(
+        {title, icon, ...r}: DataType<ClickableData>,
+    ) {
+        super(r);
+        this.title = title;
+        this.icon = icon;
+    }
+
+    public static fromJSON(json: Omit<JsonClickable, "type">): ClickableData {
+        return new ClickableData({
+            type: "clickable",
+            title: json.title,
+            icon: json.icon ?? "arrow_l",
+            x: typeof json.x === "number" ? json.x : parseFloat(json.x),
+            y: typeof json.y === "number" ? json.y : parseFloat(json.y),
+            goto: json.goto,
+            position: json.position ?? "media",
+            animationType: json.animationType ?? "forward",
+        });
+    }
+
+    public equals(other: DataType<ClickableData> | undefined | null): other is DataType<ClickableData> {
+        return super.equals(other) &&
+            this.title === other.title &&
+            this.icon === other.icon;
+    }
+
+    public toJSON(): JsonClickable {
+        return {
+            ...super.toJSON(),
             title: this.title,
             icon: this.icon,
+        };
+    }
+}
+
+class TextFieldData extends AbstractInlineObjectData<TextFieldData,JsonTextField> {
+    public readonly title?: string;
+    public readonly content: string;
+    public readonly footer?: string;
+    public readonly cssClasses: string[];
+    public readonly id: string;
+
+    declare public readonly type: "text";
+    declare public readonly animationType: TextAnimations;
+
+    constructor(
+        {title, content, footer, cssClasses, id, ...base}: DataType<TextFieldData>,
+    ) {
+        super(base);
+        this.title = title;
+        this.content = content;
+        this.footer = footer;
+        this.cssClasses = cssClasses;
+        this.id = id;
+    }
+
+    public static fromJSON(json: Omit<JsonTextField, "type">): TextFieldData {
+        return new TextFieldData({
+            type: "text",
+            title: json.title,
+            content: json.content,
+            cssClasses: typeof json.cssClasses === "string" ? json.cssClasses.split(" ") : json.cssClasses ?? [],
+            footer: json.footer,
+            id: json.id,
+            x: typeof json.x === "number" ? json.x : parseFloat(json.x),
+            y: typeof json.y === "number" ? json.y : parseFloat(json.y),
+            goto: json.goto,
+            position: json.position ?? "media",
+            animationType: json.animationType ?? undefined,
+        });
+    }
+
+    public equals(other: DataType<TextFieldData> | undefined | null): other is DataType<TextFieldData> {
+        return super.equals(other) &&
+            this.title === other.title &&
+            this.content === other.content &&
+            this.footer === other.footer &&
+            this.id === other.id &&
+            arrayEquals(this.cssClasses, other.cssClasses);
+    }
+
+    public toJSON(): JsonTextField {
+        return {
+            ...super.toJSON(),
+            title: this.title,
             content: this.content,
             footer: this.footer,
             cssClasses: this.cssClasses,
+            id: this.id,
+        };
+    }
+}
+
+
+class CustomObjectData extends AbstractInlineObjectData<CustomObjectData,JsonCustomObject> {
+    public readonly htmlId: string;
+
+    declare public readonly type: "custom";
+    declare public readonly animationType: CustomAnimations;
+
+    constructor(
+        {htmlId, ...base}: DataType<CustomObjectData>,
+    ) {
+        super(base);
+        this.htmlId = htmlId;
+    }
+
+    public static fromJSON(json: Omit<JsonCustomObject, "type">): CustomObjectData {
+        return new CustomObjectData({
+            type: "custom",
+            htmlId: json.htmlId,
+            x: typeof json.x === "number" ? json.x : parseFloat(json.x),
+            y: typeof json.y === "number" ? json.y : parseFloat(json.y),
+            goto: json.goto,
+            position: json.position ?? "media",
+            animationType: json.animationType ?? undefined,
+        });
+    }
+
+    public equals(other: DataType<CustomObjectData> | undefined | null): other is DataType<CustomObjectData> {
+        return super.equals(other) &&
+            this.htmlId === other.htmlId;
+    }
+
+    public toJSON(): JsonCustomObject {
+        return {
+            ...super.toJSON(),
             htmlId: this.htmlId,
         };
     }
@@ -485,7 +658,6 @@ class FileData {
                 reject();
             }
         });
-        console.log("res", res);
         // clean up
         // this.img.src = "";
         // this.video.src = "";
@@ -494,4 +666,15 @@ class FileData {
     }
 }
 
-export {DataType, PageData, InlineObjectData, MediaData, PageDataType, SourceData, FileData};
+export {
+    DataType,
+    PageData,
+    InlineObjectData,
+    ClickableData,
+    CustomObjectData,
+    TextFieldData,
+    MediaData,
+    PageDataType,
+    SourceData,
+    FileData,
+};

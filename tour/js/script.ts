@@ -18,7 +18,15 @@ import type {
     VideoPreloadType,
 } from "./types";
 
-import {InlineObjectData, MediaData, PageData, SourceData} from "./Data.js";
+import {
+    ClickableData,
+    CustomObjectData,
+    InlineObjectData,
+    MediaData,
+    PageData,
+    SourceData,
+    TextFieldData,
+} from "./Data.js";
 
 var finished_last = true;
 let idPrefix = "tour_pg_";
@@ -382,43 +390,57 @@ class Page {
  * An Interface for all objects which are placed in front of the main media of a page.
  * All classes which implement this interface (e.g. {@link Clickable}) are also such objects
  */
-class InlineObject {
-    public readonly x?: number;
-    public readonly y?: number;
-    public readonly position: InlineObjectPosition;
-    public readonly type: InlineObjectType;
-    public readonly animationType: AnimationType;
-    public readonly goto?: string;
-    private _second: boolean;
-    private _html: JQuery;
+abstract class InlineObject {
+    public readonly data: InlineObjectData;
+    // public readonly x?: number;
+    // public readonly y?: number;
+    // public readonly position: InlineObjectPosition;
+    // public readonly type: InlineObjectType;
+    // public readonly animationType: AnimationType;
+    // public readonly goto?: string;
+    private readonly _second: boolean;
+    private readonly _html: JQuery;
 
     protected constructor(
-        {type, animationType, position, x, y, html}:
-            { position: InlineObjectPosition, html: JQuery, type: InlineObjectType, animationType: AnimationType, x?: number, y?: number }) {
-        this.position = position;
-        this._html = html;
-        this._second = false;
-        this.type = type;
-        this.x = x;
-        this.y = y;
-        this.animationType = animationType;
-        // x and y coordinates
-        if (this.x !== undefined) {
-            this._html.css("left", this.x + "%");
-        }
-        if (this.y !== undefined) {
-            this._html.css("top", this.y + "%");
+        // {type, animationType, position, x, y, html}:
+        //     { position: InlineObjectPosition, html: JQuery, type: InlineObjectType, animationType: AnimationType, x?: number, y?: number }) {
+        data: InlineObjectData, htmlTag: keyof HTMLElementTagNameMap | JQuery, isClone = false) {
+        // this.position = position;
+        // this._html = html;
+        // this._second = false;
+        // this.type = type;
+        // this.x = x;
+        // this.y = y;
+        // this.animationType = animationType;
+        this.data = data;
+        this._second = isClone;
+        this._html = typeof htmlTag === "string"?$(`<${htmlTag}/>`):htmlTag;
+        if (!this._second) {
+            // console.assert(typeof htmlTag !== "string", "A string must be given when you are creating a new instance");
+            // this._html = $(`<${htmlTag}/>`);
+            // x and y coordinates
+            if (this.data.x !== undefined) {
+                this._html.css("left", this.data.x + "%");
+            }
+            if (this.data.y !== undefined) {
+                this._html.css("top", this.data.y + "%");
+            }
+        } else {
+            // console.assert(typeof htmlTag === "object", "A jquery object must be given when you clone a previously created instance");
+            // this._html = htmlTag as JQuery;
         }
     }
 
-    protected clone(newObjectToClone?: InlineObject): InlineObject {
-        if (newObjectToClone === undefined) {
-            newObjectToClone = new InlineObject(this.position, this.html.clone(true), this.type, this.animationType, this.x, this.y);
-        }
-        newObjectToClone._html = this.html.clone(true);
-        newObjectToClone._second = true;
-        return newObjectToClone;
-    }
+    // protected clone(newObjectToClone?: InlineObject): InlineObject {
+    //     if (newObjectToClone === undefined) {
+    //         newObjectToClone = new InlineObject(this.position, this.html.clone(true), this.type, this.animationType, this.x, this.y);
+    //     }
+    //     newObjectToClone._html = this.html.clone(true);
+    //     newObjectToClone._second = true;
+    //     return newObjectToClone;
+    // }
+
+    public abstract clone(): InlineObject;
 
     public get html(): JQuery {
         return this._html;
@@ -430,7 +452,12 @@ class InlineObject {
 
     public static from(data: InlineObjectData): InlineObject {
         switch (data.type) {
-
+            case "clickable":
+                return new Clickable(data);
+            case "custom":
+                return new CustomObject(data);
+            case "text":
+                return new TextField(data);
         }
     }
 
@@ -450,36 +477,43 @@ class InlineObject {
  * This can be any js Object
  */
 class CustomObject extends InlineObject {
-    declare public readonly x: number;
-    declare public readonly y: number;
-    declare public readonly animationType: CustomAnimations;
-    public readonly id: string;
+    declare public readonly data: CustomObjectData;
+    // declare public readonly x: number;
+    // declare public readonly y: number;
+    // declare public readonly animationType: CustomAnimations;
+    // public readonly id: string;
 
-    constructor(
-        {position, id, animationType, x, y}:
-            { id: string, position: InlineObjectPosition, x: number, y: number, animationType?: CustomAnimations }) {
-        super({
-            position: position,
-            html: $("#" + id),
-            type: "custom",
-            animationType: animationType,
-            x: x,
-            y: y,
-        });
-        this.id = id;
+    constructor(data: CustomObjectData) {
+        super(data, $("#" + data.htmlId));
     }
 
-    public override clone(n?: CustomObject): CustomObject {
-        if (n === undefined) {
-            n = new CustomObject({
-                id: this.id,
-                position: this.position,
-                x: this.x,
-                y: this.y,
-                animationType: this.animationType,
-            });
-        }
-        return super.clone(n) as CustomObject;
+    // {position, id, animationType, x, y}:
+    //     { id: string, position: InlineObjectPosition, x: number, y: number, animationType?: CustomAnimations }) {
+    // super({
+    //     position: position,
+    //     html: $("#" + id),
+    //     type: "custom",
+    //     animationType: animationType,
+    //     x: x,
+    //     y: y,
+    // });
+    // this.id = id;
+    // }
+
+    // public override clone(n?: CustomObject): CustomObject {
+    //     if (n === undefined) {
+    //         n = new CustomObject({
+    //             id: this.id,
+    //             position: this.position,
+    //             x: this.x,
+    //             y: this.y,
+    //             animationType: this.animationType,
+    //         });
+    //     }
+    //     return super.clone(n) as CustomObject;
+    // }
+    public override clone(): CustomObject {
+
     }
 }
 
@@ -490,19 +524,22 @@ class TextField extends InlineObject {
     public readonly cssClasses?: string[];
     declare public readonly animationType: TextAnimations;
 
-    constructor(content: string, position?: InlineObjectPosition, title?: string, footer?: string, cssClasses?: string[], animationType?: TextAnimations, x?: number, y?: number) {
-        super({
-            position: position ?? "page",
-            html: $("<div/>"),
-            type: "text",
-            animationType: animationType ?? undefined,
-            x: x,
-            y: y,
-        });
-        this.content = content;
-        this.title = title;
-        this.footer = footer;
-        this.cssClasses = cssClasses;
+    // constructor(content: string, position?: InlineObjectPosition, title?: string, footer?: string, cssClasses?: string[], animationType?: TextAnimations, x?: number, y?: number) {
+    //     super({
+    //         position: position ?? "page",
+    //         html: $("<div/>"),
+    //         type: "text",
+    //         animationType: animationType ?? undefined,
+    //         x: x,
+    //         y: y,
+    //     });
+    //     this.content = content;
+    //     this.title = title;
+    //     this.footer = footer;
+    //     this.cssClasses = cssClasses;
+    // }
+    constructor(data: TextFieldData) {
+        super(data, "div");
     }
 
     public static fromJson(json: JsonTextField): TextField {
@@ -511,103 +548,110 @@ class TextField extends InlineObject {
             typeof json.x === "string" ? parseFloat(json.x) : json.x, typeof json.x === "string" ? parseFloat(json.x) : json.x);
     }
 
-    public override clone(n?: TextField): TextField {
-        if (n === undefined) {
-            n = new TextField(this.content, this.position, this.title, this.footer, this.cssClasses, this.animationType, this.x, this.y);
-        }
-        return super.clone(n) as TextField;
+    // public override clone(n?: TextField): TextField {
+    //     if (n === undefined) {
+    //         n = new TextField(this.content, this.position, this.title, this.footer, this.cssClasses, this.animationType, this.x, this.y);
+    //     }
+    //     return super.clone(n) as TextField;
+    // }
+    public override clone(): TextField {
+
     }
 }
 
 class Clickable extends InlineObject {
-    public readonly title: string;
-    declare public readonly x: number;
-    declare public readonly y: number;
-    declare public readonly animationType: PageAnimations;
-    declare public readonly goto: string;
+    declare public readonly data: ClickableData;
+    // public readonly title: string;
+    // declare public readonly x: number;
+    // declare public readonly y: number;
+    // declare public readonly animationType: PageAnimations;
+    // declare public readonly goto: string;
     // public readonly second: boolean; //360deg img
-    public icon: IconType = "arrow_l";
+    // public icon: IconType = "arrow_l";
 
-    constructor({position, y, x, animationType, title, goto, icon}:
-                    { title: string, x: number, y: number, goto: string, icon: IconType, animationType?: PageAnimations, position?: InlineObjectPosition }) {
-        super({
-            position: position ?? "media",
-            html: $("<div></div>"),
-            type: "clickable",
-            animationType: animationType ?? "forward",
-            x: x,
-            y: y,
-        });
-        this.title = title;
-        // this.x = x;
-        // this.y = y;
-        this.goto = goto;
-        this.icon = icon;
+    // constructor({position, y, x, animationType, title, goto, icon}:
+    //                 { title: string, x: number, y: number, goto: string, icon: IconType, animationType?: PageAnimations, position?: InlineObjectPosition }) {
+    constructor(data: ClickableData) {
+        // super({
+        //     position: position ?? "media",
+        //     html: $("<div></div>"),
+        //     type: "clickable",
+        //     animationType: animationType ?? "forward",
+        //     x: x,
+        //     y: y,
+        // });
+        super(data, "div");
+        // this.title = title;
+        // // this.x = x;
+        // // this.y = y;
+        // this.goto = goto;
+        // this.icon = icon;
 
         this.html.addClass("clickable")
-            .attr("goto", this.goto!)//todo redundant
+            .attr("goto", this.data.goto!)//todo redundant
             .append($("<div></div>")
                 .addClass("title")
-                .text(this.title))
+                .text(this.data.title))
             .append($("<button></button>")
                 .addClass("icon")
-                .addClass(this.icon));
+                .addClass(this.data.icon));
     }
 
-    public static from(data: InlineObjectData): Clickable {
-        return new Clickable({
-            x: data.x,
-            y: data.y,
-            icon: data.icon,
-            title: data.title,
-            goto: data.goto,
-            animationType: data.animationType,
-            position: data.position,
-        });
+    public static from(data: ClickableData): Clickable {
+        return new Clickable(data);
+        // return new Clickable({
+        //     x: data.x,
+        //     y: data.y,
+        //     icon: data.icon,
+        //     title: data.title,
+        //     goto: data.goto,
+        //     animationType: data.animationType,
+        //     position: data.position,
+        // });
     }
 
     /**
      * Creates a {@link Clickable} object from an {@link JsonClickable} object
      * @param jsonClickable
      */
-    public static fromJson(jsonClickable: JsonClickable): Clickable {
-        //check for mistakes
-        {
-            if (jsonClickable == null)
-                throw `Clickable is ${jsonClickable}`;
-
-            if (typeof jsonClickable.title !== "string" || jsonClickable.title.length <= 0)
-                console.error("Clickable id wrong formatted in json clickable: ", jsonClickable);
-            if (typeof jsonClickable.x !== "number") {
-                let error = true;
-                if (typeof jsonClickable.x === "string") {
-                    try {
-                        jsonClickable.x = Number.parseFloat(jsonClickable.x);
-                        error = false;
-                    } catch (e) {
-                    }
-                }
-                if (error)
-                    console.error("Clickable x wrong formatted in json clickable: ", jsonClickable);
-            }
-            if (typeof jsonClickable.y !== "number") {
-                let error = true;
-                if (typeof jsonClickable.y === "string") {
-                    try {
-                        jsonClickable.y = Number.parseFloat(jsonClickable.y);
-                        error = false;
-                    } catch (e) {
-                    }
-                }
-                if (error)
-                    console.error("Clickable y wrong formatted in json clickable: ", jsonClickable);
-            }
-        }
-
-        //default arguments
-        return new Clickable(jsonClickable.title, jsonClickable.x as number, jsonClickable.y as number,
-            jsonClickable.goto, jsonClickable.icon ?? "arrow_l", jsonClickable.animationType ?? (jsonClickable.backward ? "backward" : "forward"), jsonClickable.position);
-    }
+    // public static fromJson(jsonClickable: JsonClickable): Clickable {
+    //     //check for mistakes
+    //     {
+    //         if (jsonClickable == null)
+    //             throw `Clickable is ${jsonClickable}`;
+    //
+    //         if (typeof jsonClickable.title !== "string" || jsonClickable.title.length <= 0)
+    //             console.error("Clickable id wrong formatted in json clickable: ", jsonClickable);
+    //         if (typeof jsonClickable.x !== "number") {
+    //             let error = true;
+    //             if (typeof jsonClickable.x === "string") {
+    //                 try {
+    //                     jsonClickable.x = Number.parseFloat(jsonClickable.x);
+    //                     error = false;
+    //                 } catch (e) {
+    //                 }
+    //             }
+    //             if (error)
+    //                 console.error("Clickable x wrong formatted in json clickable: ", jsonClickable);
+    //         }
+    //         if (typeof jsonClickable.y !== "number") {
+    //             let error = true;
+    //             if (typeof jsonClickable.y === "string") {
+    //                 try {
+    //                     jsonClickable.y = Number.parseFloat(jsonClickable.y);
+    //                     error = false;
+    //                 } catch (e) {
+    //                 }
+    //             }
+    //             if (error)
+    //                 console.error("Clickable y wrong formatted in json clickable: ", jsonClickable);
+    //         }
+    //     }
+    //
+    //     //default arguments
+    //     return new Clickable(jsonClickable.title, jsonClickable.x as number, jsonClickable.y as number,
+    //         jsonClickable.goto, jsonClickable.icon ?? "arrow_l", jsonClickable.animationType ?? (jsonClickable.backward ? "backward" : "forward"), jsonClickable.position);
+    // }
 
     /**
      * Clone this clickable and create all html objs new (with all event)
@@ -615,7 +659,8 @@ class Clickable extends InlineObject {
      */
     public override clone(n?: Clickable): Clickable {
         if (n === undefined) {
-            n = new Clickable(this.title, this.x, this.y, this.goto, this.icon, this.animationType, this.position); //cloned clickables are considered as second clickables (relevant for 360deg img)
+            // n = new Clickable(this.title, this.x, this.y, this.goto, this.icon, this.animationType, this.position); //cloned clickables are considered as second clickables (relevant for 360deg img)
+            n = new Clickable(this.data);
         }
         return super.clone(n) as Clickable;
     }
@@ -736,7 +781,7 @@ function createHtml(json: JsonPage[]) {
             if (!gotoExists) {
                 console.log("Id '" + clickable.goto + "' does not exist");
             }
-            console.log(clickable.title, clickable.goto);
+            console.log(clickable.data.title, clickable.data.goto);
             console.log(page.inlineObjects);
 
             clickable.html.find("button")
