@@ -782,7 +782,7 @@ function createHtml(json: JsonPage[]) {
         if ((!isDesktop) && page.media.isImage()) {
             page.is_panorama = true;
         }
-        console.log("page", page);
+        // console.log("page", page);
 
         // for (let clickable of jsonPage.clickables.map(jsonClickable => new Clickable(jsonClickable.title,
         //     jsonClickable.x, jsonClickable.y, jsonClickable.goto, jsonClickable.icon, jsonClickable.backward))) {
@@ -792,8 +792,8 @@ function createHtml(json: JsonPage[]) {
             if (!gotoExists) {
                 console.log("Id '" + clickable.data.goto + "' does not exist");
             }
-            console.log(clickable.data.title, clickable.data.goto);
-            console.log(page.inlineObjects);
+            // console.log(clickable.data.title, clickable.data.goto);
+            // console.log(page.inlineObjects);
 
             clickable.html.find("button")
                 .on("click", gotoExists ? () => {
@@ -856,9 +856,15 @@ function createHtml(json: JsonPage[]) {
                         if (self.is(":hidden")) {
                             return;
                         }
+                        console.log("onVisible");
                         //initial direction
                         if (page.is_panorama) {
                             let initialDirection = (page.initial_direction / 100) * self.width()!;
+                            console.log("init dir", initialDirection);
+                            if (page.is_360 && initialDirection === 0) {
+                                console.log("init dir ===", initialDirection, self.width());
+                                initialDirection = self.width()!;
+                            }
                             self.closest(".pg_wrapper").scrollLeft(initialDirection);
                         }
                         adjust_clickables();
@@ -989,6 +995,7 @@ function createHtml(json: JsonPage[]) {
                 .append(bgContainer1);
 
             page.html.find(".pg_wrapper").on("scroll", function () {
+                console.log("scroll", this.scrollLeft);
                 let self = $(this);
                 if (this.scrollWidth - this.clientWidth - this.scrollLeft < scrollSensitivity) {
                     // if new scroll would trigger this event again

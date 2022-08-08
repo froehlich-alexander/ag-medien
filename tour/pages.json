@@ -13,8 +13,7 @@
           "x": "39.8",
           "y": "80",
           "goto": "15_eingang",
-          "icon": "arrow_l",
-          "backward": false
+          "icon": "arrow_l"
         },
         {
           "title": "Zur Sporthalle",
