@@ -25,7 +25,7 @@ type JsonAdressableObject = {
  * Type for the Page-Objects in pages.json (or pages.json)
  */
 export type JsonPage = JsonAdressableObject & {
-    img: JsonMedia;
+    media: JsonMedia;
     is_360?: boolean;
     is_panorama?: boolean;
     initial_direction?: number;
@@ -43,6 +43,9 @@ export type JsonMedia = {
     src?: JsonSource;
     srcMin?: JsonSource;
     srcMax?: JsonSource;
+    /**
+     * The type of this media (overriden by {@link JsonSource})
+     */
     type?: MediaType | "auto";
     loading?: LoadingType | "auto";     //works for img, iframe
     fetchPriority?: FetchPriorityType;  //works for img, iframe
@@ -55,12 +58,25 @@ export type JsonMedia = {
     //iframe attributes
 
 };
+/**
+ * Can be a string containing the source url or an object with a few more additional options
+ */
 export type JsonSource = string | {
+    /**
+     * The url to the source url (relative to tour/media or absolut)
+     */
     name: string,
-    width?: number,
-    height?: number,
-    type?: MediaType,
-}
+    /**
+     * The type of the source object (overrides {@link JsonMedia.type})
+     */
+    type?: MediaType | 'auto',
+} & ({
+    /** width and height can be absent but if one is specified, the other one must be specified too */
+    width: number,
+    /** width and height can be absent but if one is specified, the other one must be specified too */
+    height: number,
+} | {});
+
 interface AbstractJsonInlineObject {
     x: number | string;
     y: number | string;
@@ -69,6 +85,7 @@ interface AbstractJsonInlineObject {
     animationType?: AnimationType;
     type: InlineObjectType; //which kind of object this is (e.g. a clickable, text, etc.)
 }
+
 /**
  * A type which represents a clickable object in the pages json file (pages.json or pages.json)
  */

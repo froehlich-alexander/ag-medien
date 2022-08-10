@@ -19,7 +19,8 @@ export default function PageForm(
 ) {
 
     const context = useContext(TourContext);
-    const currentPage = context.currentPage;
+
+    const currentPage = context.currentPage!;
     const [page, setPage] = useState(currentPage);
 
     // inputs

@@ -33,30 +33,37 @@ class Media {
     //     }
     // }
     constructor(src) {
-        this.src = src;
+        this._src = src;
         this.srcString = Media.formatSrc(src.name);
         this._type = src.type;
-        this.width = src.width;
-        this.height = src.height;
+        this.visibilityObserver = new IntersectionObserver(() => {
+            this.triggerResize();
+        }, {
+            root: null,
+            threshold: 0,
+        });
     }
+    static { this.imgFileEndings = ["png", "jpeg", "jpg", "gif", "svg", "webp", "apng", "avif"]; }
+    static { this.videoFileEndings = ["mp4", "webm", "ogg", "ogm", "ogv", "avi"]; }
+    //this list is not exhaustive
+    static { this.iframeUrlEndings = ["html", "htm", "com", "org", "edu", "net", "gov", "mil", "int", "de", "en", "eu", "us", "fr", "ch", "at", "au"]; }
     /**
      * Create a {@link Media} object from a {@link MediaData} object
      * @param data
      */
     static from(data) {
-        var _a, _b, _c, _d;
         // higher / lower resolution and loading type depend on device (=connection bandwidth)
         let src;
         let loading;
         // if (window.innerWidth > 768) {
         if (isDesktop) {
             //desktop
-            src = (_a = data.srcMax) !== null && _a !== void 0 ? _a : ((_b = data.src) !== null && _b !== void 0 ? _b : data.srcMin);
+            src = data.srcMax ?? (data.src ?? data.srcMin);
             loading = "eager";
         }
         else {
             //mobile
-            src = (_c = data.srcMin) !== null && _c !== void 0 ? _c : ((_d = data.src) !== null && _d !== void 0 ? _d : data.srcMax);
+            src = data.srcMin ?? (data.src ?? data.srcMax);
             loading = "lazy";
         }
         switch (data.type) {
@@ -67,7 +74,10 @@ class Media {
                     fetchPriority: data.fetchPriority,
                 });
             case "video":
-                return new VideoMedia(Object.assign(Object.assign({}, data), { src: src }));
+                return new VideoMedia({
+                    ...data,
+                    src: src,
+                });
             case "iframe":
                 return new IframeMedia({
                     src: src,
@@ -75,6 +85,24 @@ class Media {
                     fetchPriority: data.fetchPriority,
                 });
         }
+    }
+    /**
+     * Here we are doing actions regardless of the media type
+     * @private
+     */
+    prepareHTML() {
+        // Error logging
+        this.html.on("error", () => {
+            console.error("error");
+            console.warn("Error loading Media", this);
+        });
+        // add width and height from json
+        if (this.src.width && this.src.height) {
+            this.html.attr('width', this.src.width);
+            this.html.attr('height', this.src.height);
+        }
+        this.visibilityObserver.observe(this.html[0]);
+        this.html.addClass("bg");
     }
     // public static fromJson(jsonMedia: JsonMedia): Media {
     //     //check for mistakes
@@ -122,9 +150,52 @@ class Media {
     // }
     clone() {
         // let n = new Media(this.src, this.type, this.poster, this.autoplay, this.loop, this.muted);
-        let n = new Media(this.src);
+        let n = new Media(this._src);
         n._html = this._html.clone(true);
         return n;
+    }
+    // @ts-ignore
+    get page() {
+        return this._page;
+    }
+    set page(value) {
+        this._page = value;
+        this.onPageSet();
+    }
+    /**
+     * Override this method to do things when we know the natural intrinsic size of this media<br>
+     * This method is called each time the intrinsic size changes, that means
+     * 1. eventually at the construction (if width and height is specified in json file),
+     * and 2. when the file is fully loaded
+     * @protected
+     */
+    onSizeKnown() {
+        // remove eventually previously added width and height specified from json file, because that could be wrong
+        this.html.removeAttr('width')
+            .removeAttr('height');
+        this.triggerResize();
+    }
+    onPageSet() {
+        if (this.src.width && this.src.height) {
+            this.onSizeKnown();
+        }
+    }
+    /**
+     * This method gets called when the media gets visible the first time or when the page is resized or when the visibility changes<br>
+     * {@link SourceData.width} and {@link SourceData.height} will available here
+     * You can override this method
+     * @protected
+     */
+    onResize() {
+        console.log('on Resize', this.page?.id);
+        //todo call this when resized!!!
+        this.applyRatio();
+    }
+    triggerResize() {
+        // console.log('trigger resize', this.page?.id);
+        if (this.html.is(':visible') && this.page && this.src.width && this.src.height) {
+            this.onResize();
+        }
     }
     isImage(self = this.html) {
         return this._type === "img";
@@ -138,11 +209,30 @@ class Media {
     get html() {
         return this._html;
     }
+    get src() {
+        return this._src;
+    }
     get type() {
         return this._type;
     }
     set type(value) {
         this._type = Media.determineType(value, this.srcString);
+    }
+    /**
+     * Toggles classes depending on the ratio of this media and the ratio of the viewport (window)
+     * @private
+     */
+    applyRatio() {
+        const screenRatio = window.innerWidth / window.innerHeight;
+        let mediaRatio = this._src.width / this._src.height;
+        if (mediaRatio > screenRatio) {
+            this.html.addClass("fill-width")
+                .removeClass("fill-height");
+        }
+        else {
+            this.html.addClass("fill-height")
+                .removeClass("fill-width");
+        }
     }
     static determineType(value, src) {
         let res;
@@ -184,13 +274,8 @@ class Media {
     pause() {
     }
 }
-Media.imgFileEndings = ["png", "jpeg", "jpg", "gif", "svg", "webp", "apng", "avif"];
-Media.videoFileEndings = ["mp4", "webm", "ogg", "ogm", "ogv", "avi"];
-//this list is not exhaustive
-Media.iframeUrlEndings = ["html", "htm", "com", "org", "edu", "net", "gov", "mil", "int", "de", "en", "eu", "us", "fr", "ch", "at", "au"];
 class VideoMedia extends Media {
     constructor({ src, autoplay, loop, muted, poster, preload, }) {
-        var _a;
         super(src.withType("video"));
         this.poster = poster;
         this.autoplay = autoplay;
@@ -199,11 +284,41 @@ class VideoMedia extends Media {
         this.preload = preload;
         this._html = $("<video></video>")
             .text("HTML Video is not supported")
-            .attr("poster", (_a = this.poster) !== null && _a !== void 0 ? _a : "")
+            .attr("poster", this.poster ?? "")
             .prop("autoplay", this.autoplay)
             .prop("loop", this.loop)
             .prop("muted", this.muted)
             .prop("preload", this.preload);
+        this.prepareHTML();
+        // error handling
+        this.html.on("error", () => {
+            this.html.attr("poster", baustellenFotoUrl)
+                .prop("controls", false);
+            // .removeAttr("src")
+            // .removeAttr("preload")
+            // .removeAttr("type");
+        });
+        this.html.on('loadedmetadata', () => {
+            console.log('Video loaded', this);
+            this._src = this.src.withUpdate({
+                width: this.html[0].videoWidth,
+                height: this.html[0].videoHeight,
+            });
+            this.onSizeKnown();
+        });
+        this.html
+            .prop("controls", true)
+            .append($("<source>"));
+        //firefox dispatches error events on last <source> tag, so we need to handle them there
+        this.html.find("source").last()
+            .on("error", e => this.html.trigger("error", e));
+        //add src last so that we won't trigger error event too early
+        this.html.find("source").last().attr("type", "video/mp4")
+            .attr("src", this.srcString);
+        //should be redundant
+        if (this.html.get(0).readyState > 0) {
+            this.html.trigger('loadedmetadata');
+        }
     }
     clone() {
         let n = new VideoMedia(this);
@@ -223,7 +338,127 @@ class ImageMedia extends Media {
             .attr("alt", "Could not load Image :(")
             .attr("loading", this.loading)
             .attr("fetchPriority", this.fetchPriority);
+        this.prepareHTML();
+        // console.log('img w, h', this.src.name, this.html[0].naturalWidth, this.html[0].height);
+        // Error Handling
+        this.html.on("error", () => {
+            this.html.attr("src", baustellenFotoUrl);
+        });
+        this.html.on("load", () => {
+            console.log(`Media Loaded: ${this.srcString}`);
+            this._src = this.src.withUpdate({
+                width: this.html[0].naturalWidth,
+                height: this.html[0].naturalHeight,
+            });
+            this.onSizeKnown();
+            // this.applyRatio();
+            //
+            // //remove panorama if screen is big enough
+            // if (this.page!.is_panorama && this.src.width! <= window.innerWidth) {
+            //     this.page!.is_panorama = false;
+            //     this.page!.html.removeClass("pg_panorama");
+            // }
+            //
+            // // let onVisible = (pageElements?: MutationRecord[], observer?: MutationObserver) => {
+            // //     // console.log("st")
+            // //     // console.info("onVisible params", pageElements, "B:", observer);
+            // //
+            // //     if (this.html.is(":hidden")) {
+            // //         return;
+            // //     }
+            // //     console.log("onVisible", this.page!.id, this.page!.is_panorama, this.page!.is_360);
+            // //     //initial direction
+            // //     if (this.page!.is_panorama) {
+            // //         let initialDirection = (this.page!.initial_direction / 100) * this.html.width()!;
+            // //         console.log("init dir", this.page!.initial_direction, initialDirection);
+            // //         if (this.page!.is_360 && initialDirection === 0) {
+            // //             console.log("init dir ===", initialDirection, this.html.width());
+            // //             initialDirection = this.html.width()!;
+            // //         }
+            // //         this.html.closest(".pg_wrapper").scrollLeft(initialDirection);
+            // //     }
+            // //     adjust_clickables();
+            // //     //disconnect observer
+            // //     if (observer) {
+            // //         observer.disconnect();
+            // //         // console.info("disconnected observer");
+            // //     }
+            // // };
+            // if (this.html.is(":visible")) {
+            //     this.onVisible();
+            // } else {
+            //     // console.log("obsever")
+            //     let observer = new MutationObserver(this.onVisible);
+            //     observer.observe(this.page!.html.get(0)!, {
+            //         attributeFilter: ["style", "class"],
+            //     });
+            // }
+        });
+        this.html.attr('src', this.srcString);
     }
+    onSizeKnown() {
+        super.onSizeKnown();
+        // let onVisible = (pageElements?: MutationRecord[], observer?: MutationObserver) => {
+        //     // console.log("st")
+        //     // console.info("onVisible params", pageElements, "B:", observer);
+        //
+        //     if (this.html.is(":hidden")) {
+        //         return;
+        //     }
+        //     console.log("onVisible", this.page!.id, this.page!.is_panorama, this.page!.is_360);
+        //     //initial direction
+        //     if (this.page!.is_panorama) {
+        //         let initialDirection = (this.page!.initial_direction / 100) * this.html.width()!;
+        //         console.log("init dir", this.page!.initial_direction, initialDirection);
+        //         if (this.page!.is_360 && initialDirection === 0) {
+        //             console.log("init dir ===", initialDirection, this.html.width());
+        //             initialDirection = this.html.width()!;
+        //         }
+        //         this.html.closest(".pg_wrapper").scrollLeft(initialDirection);
+        //     }
+        //     adjust_clickables();
+        //     //disconnect observer
+        //     if (observer) {
+        //         observer.disconnect();
+        //         // console.info("disconnected observer");
+        //     }
+        // };
+        // if (this.html.is(":visible")) {
+        //     this.onVisible();
+        // } else {
+        //     // console.log("observer")
+        //     let observer = new MutationObserver(this.onVisible);
+        //     observer.observe(this.page!.html.get(0)!, {
+        //         attributeFilter: ["style", "class"],
+        //     });
+        // }
+    }
+    onResize(pageElements) {
+        super.onResize();
+        //remove panorama if screen is big enough
+        if (this.page.is_panorama && this.src.width <= window.innerWidth) {
+            this.page.is_panorama = false;
+            this.page.html.removeClass("pg_panorama");
+        }
+        // console.log("st")
+        // console.info("onVisible params", pageElements, "B:", observer);
+        // if (this.html.is(":hidden")) {
+        //     return;
+        // }
+        console.log("onVisible", this.page.id, this.page.is_panorama, this.page.is_360);
+        //initial direction
+        if (this.page.is_panorama) {
+            let initialDirection = (this.page.initial_direction / 100) * this.html.width();
+            console.log("init dir", this.page.initial_direction, initialDirection);
+            if (this.page.is_360 && initialDirection === 0) {
+                console.log("init dir ===", initialDirection, this.html.width());
+                initialDirection = this.html.width();
+            }
+            this.html.closest(".pg_wrapper").scrollLeft(initialDirection);
+        }
+        adjust_clickables();
+    }
+    ;
 }
 class IframeMedia extends Media {
     /**
@@ -236,18 +471,40 @@ class IframeMedia extends Media {
         this.loading = loading;
         this.fetchPriority = fetchPriority;
         this._html = $("<iframe></iframe>")
-            .attr("src", this.srcString)
+            .addClass('bg')
             .attr("loading", this.loading)
             .attr("fetchPriority", this.fetchPriority);
+        this.prepareHTML();
+        // Error Handling
+        this.html.on("error", () => {
+            //the plain html text
+            this.html.attr("srcdoc", "<!DOCTYPE html>" +
+                "<html lang=\"de\">" +
+                "<head>" +
+                "    <meta charset=\"UTF-8\">" +
+                "    <title>Baustelle</title>" +
+                "</head>" +
+                "<body>" +
+                "<img src=\"./img1/baustelle.png\" alt=\"Baustelle :)\" style=\"width: 100%;height: 100%;\">" +
+                "</body>" +
+                "</html>");
+        });
+        this.html.on('load', () => {
+            console.log('Iframe loaded', this);
+            0;
+        });
+        // Add src after adding events so that they can get triggered
+        this.html.attr("src", this.srcString);
     }
 }
 class Page {
-    constructor({ id, initial_direction, img, inlineObjects, is_360, is_panorama, }) {
+    constructor({ id, initial_direction, media, inlineObjects, is_360, is_panorama, }) {
         this.is_panorama = false;
         this.is_360 = false;
         this._html = $("<div></div>");
         this.id = id;
-        this.media = img;
+        this.media = media;
+        this.media.page = this;
         this.is_360 = is_360;
         this.is_panorama = is_panorama;
         this.initial_direction = initial_direction;
@@ -259,7 +516,7 @@ class Page {
             is_panorama: data.isPanorama,
             is_360: data.is360,
             initial_direction: data.initialDirection,
-            img: Media.from(data.media),
+            media: Media.from(data.media),
             inlineObjects: data.inlineObjects.map(InlineObject.from),
         });
     }
@@ -379,7 +636,7 @@ class CustomObject extends InlineObject {
     // declare public readonly animationType: CustomAnimations;
     // public readonly id: string;
     constructor(data, html) {
-        super(data, html !== null && html !== void 0 ? html : $("#" + data.htmlId), html !== undefined);
+        super(data, html ?? $("#" + data.htmlId), html !== undefined);
     }
 }
 class TextField extends InlineObject {
@@ -403,7 +660,7 @@ class TextField extends InlineObject {
     //     this.cssClasses = cssClasses;
     // }
     constructor(data, html) {
-        super(data, html !== null && html !== void 0 ? html : "div", html !== undefined);
+        super(data, html ?? "div", html !== undefined);
     }
 }
 class Clickable extends InlineObject {
@@ -425,7 +682,7 @@ class Clickable extends InlineObject {
         //     x: x,
         //     y: y,
         // });
-        super(data, html !== null && html !== void 0 ? html : "div", html !== undefined);
+        super(data, html ?? "div", html !== undefined);
         // this.title = title;
         // // this.x = x;
         // // this.y = y;
@@ -455,28 +712,33 @@ class Clickable extends InlineObject {
         // });
     }
 }
-window.onresize = function () {
+window.addEventListener('resize', function () {
     let bgImgs = $(".bg");
     bgImgs.removeClass("fill-width");
     bgImgs.removeClass("fill-height");
     bgImgs.each(function () {
         let imgRatio = this.naturalWidth / this.naturalHeight;
         let screenRatio = window.innerWidth / window.innerHeight;
-        if (imgRatio > screenRatio)
+        if (imgRatio > screenRatio) {
             $(this).addClass("fill-width");
-        else
+        }
+        else {
             $(this).addClass("fill-height");
+        }
     });
+    for (let i of pages) {
+        i.media.triggerResize();
+    }
     adjust_clickables();
-};
-window.onpopstate = function () {
+});
+window.addEventListener('popstate', function () {
     let pgs = $(".page");
     pgs.removeClass("show");
     if (window.location.hash !== "")
         $("#" + idPrefix + window.location.hash.slice(1)).addClass("show");
     else
         pgs.eq(0).addClass("show");
-};
+});
 function goTo(pg, animationType) {
     if (finished_last) {
         finished_last = false;
@@ -531,7 +793,7 @@ function createLastestClickable(clickables) {
     $(".clickable").removeClass("lastest-clickable");
     for (let i of clickables) {
         console.log("lastest lclickable", i.data.goto, i.data.goto === lastest, i);
-        i === null || i === void 0 ? void 0 : i.html.addClass("lastest-clickable");
+        i?.html.addClass("lastest-clickable");
     }
 }
 function createHtml(json) {
@@ -595,120 +857,122 @@ function createHtml(json) {
             console.error("cannot determine event type because Media Type is not known (or not implemented)\nContinuing with 'load' as event type, but FIX THIS");
             event = "load";
         }
-        page.media.html
-            .addClass("bg")
-            // .attr("initial_direction", page.initial_direction)
-            .on(event, function () {
-            console.log(`Media Loaded: ${page.media.srcString}`);
-            // let self = $(this);
-            let self = page.media.html;
-            self.removeClass("fill-width");
-            self.removeClass("fill-height");
-            let imgRatio;
-            if (page.media.isImage(self)) {
-                imgRatio = self.get(0).naturalWidth / self.get(0).naturalHeight;
-                //remove panorama if screen is big enough
-                if (page.is_panorama && self.get(0).naturalWidth <= window.innerWidth) {
-                    page.is_panorama = false;
-                    page.html.removeClass("pg_panorama");
-                }
-                let onVisible = (pageElements, observer) => {
-                    // console.log("st")
-                    // console.info("onVisible params", pageElements, "B:", observer);
-                    if (self.is(":hidden")) {
-                        return;
-                    }
-                    console.log("onVisible");
-                    //initial direction
-                    if (page.is_panorama) {
-                        let initialDirection = (page.initial_direction / 100) * self.width();
-                        console.log("init dir", initialDirection);
-                        if (page.is_360 && initialDirection === 0) {
-                            console.log("init dir ===", initialDirection, self.width());
-                            initialDirection = self.width();
-                        }
-                        self.closest(".pg_wrapper").scrollLeft(initialDirection);
-                    }
-                    adjust_clickables();
-                    //disconnect observer
-                    if (observer) {
-                        observer.disconnect();
-                        // console.info("disconnected observer");
-                    }
-                };
-                if (self.is(":visible")) {
-                    onVisible();
-                }
-                else {
-                    // console.log("obsever")
-                    let observer = new MutationObserver(onVisible);
-                    observer.observe(page.html.get(0), {
-                        attributeFilter: ["style", "class"],
-                    });
-                }
-            }
-            else if (page.media.isVideo(self)) {
-                imgRatio = self.get(0).videoWidth / self.get(0).videoHeight;
-            }
-            else if (page.media.isIframe()) {
-                return; //all resizing has to be done by the iframe itself
-            }
-            else {
-                throw "Need to add handling for MediaType: " + page.media.type;
-            }
-            let screenRatio = window.innerWidth / window.innerHeight;
-            if (imgRatio > screenRatio)
-                self.addClass("fill-width");
-            else
-                self.addClass("fill-height");
-        })
-            .on("error", function () {
-            console.error("error");
-            console.warn("Error loading Media", page.media);
-            if (page.media.isImage())
-                page.media.html.attr("src", baustellenFotoUrl);
-            else if (page.media.isVideo()) {
-                page.media.html
-                    .attr("poster", baustellenFotoUrl)
-                    .prop("controls", false);
-                // .removeAttr("src")
-                // .removeAttr("preload")
-                // .removeAttr("type");
-            }
-            else if (page.media.isIframe()) {
-                page.media.html
-                    //the plain html text
-                    .attr("srcdoc", "<!DOCTYPE html>" +
-                    "<html lang=\"de\">" +
-                    "<head>" +
-                    "    <meta charset=\"UTF-8\">" +
-                    "    <title>Baustelle</title>" +
-                    "</head>" +
-                    "<body>" +
-                    "<img src=\"./img1/baustelle.png\" alt=\"Baustelle :)\" style=\"width: 100%;height: 100%;\">" +
-                    "</body>" +
-                    "</html>");
-            }
-        });
+        // page.media.html
+        //     .addClass("bg")
+        //     // .attr("initial_direction", page.initial_direction)
+        //     .on(event, function () {
+        //         console.log(`Media Loaded: ${page.media.srcString}`);
+        //         // let self = $(this);
+        //         let self = page.media.html;
+        //
+        //         self.removeClass("fill-width");
+        //         self.removeClass("fill-height");
+        //         let imgRatio: number;
+        //         if (page.media.isImage(self)) {
+        //             imgRatio = self.get(0)!.naturalWidth / self.get(0)!.naturalHeight;
+        //             //remove panorama if screen is big enough
+        //             if (page.is_panorama && self.get(0)!.naturalWidth <= window.innerWidth) {
+        //                 page.is_panorama = false;
+        //                 page.html.removeClass("pg_panorama");
+        //             }
+        //
+        //             let onVisible = (pageElements?: MutationRecord[], observer?: MutationObserver) => {
+        //                 // console.log("st")
+        //                 // console.info("onVisible params", pageElements, "B:", observer);
+        //
+        //                 if (self.is(":hidden")) {
+        //                     return;
+        //                 }
+        //                 console.log("onVisible", page.id, page.is_panorama, page.is_360);
+        //                 //initial direction
+        //                 if (page.is_panorama) {
+        //                     let initialDirection = (page.initial_direction / 100) * self.width()!;
+        //                     console.log("init dir", page.initial_direction, initialDirection);
+        //                     if (page.is_360 && initialDirection === 0) {
+        //                         console.log("init dir ===", initialDirection, self.width());
+        //                         initialDirection = self.width()!;
+        //                     }
+        //                     self.closest(".pg_wrapper").scrollLeft(initialDirection);
+        //                 }
+        //                 adjust_clickables();
+        //                 //disconnect observer
+        //                 if (observer) {
+        //                     observer.disconnect();
+        //                     // console.info("disconnected observer");
+        //                 }
+        //             };
+        //             if (self.is(":visible")) {
+        //                 onVisible();
+        //             } else {
+        //                 // console.log("obsever")
+        //                 let observer = new MutationObserver(onVisible);
+        //                 observer.observe(page.html.get(0)!, {
+        //                     attributeFilter: ["style", "class"],
+        //                 });
+        //             }
+        //
+        //         } else if (page.media.isVideo(self)) {
+        //             imgRatio = self.get(0)!.videoWidth / self.get(0)!.videoHeight;
+        //         } else if (page.media.isIframe()) {
+        //             return; //all resizing has to be done by the iframe itself
+        //         } else {
+        //             console.error("Need to add handling for MediaType:", page.media.type);
+        //             return;
+        //         }
+        //         let screenRatio = window.innerWidth / window.innerHeight;
+        //         if (imgRatio > screenRatio)
+        //             self.addClass("fill-width");
+        //         else
+        //             self.addClass("fill-height");
+        //     })
+        // .on("error", function () {
+        //     console.error("error");
+        //     console.warn("Error loading Media", page.media);
+        //     if (page.media.isImage())
+        //         page.media.html.attr("src", baustellenFotoUrl);
+        //     else if (page.media.isVideo()) {
+        //         page.media.html
+        //             .attr("poster", baustellenFotoUrl)
+        //             .prop("controls", false);
+        //         // .removeAttr("src")
+        //         // .removeAttr("preload")
+        //         // .removeAttr("type");
+        //     } else if (page.media.isIframe()) {
+        //         page.media.html
+        //             //the plain html text
+        //             .attr("srcdoc", "<!DOCTYPE html>" +
+        //                 "<html lang=\"de\">" +
+        //                 "<head>" +
+        //                 "    <meta charset=\"UTF-8\">" +
+        //                 "    <title>Baustelle</title>" +
+        //                 "</head>" +
+        //                 "<body>" +
+        //                 "<img src=\"./img1/baustelle.png\" alt=\"Baustelle :)\" style=\"width: 100%;height: 100%;\">" +
+        //                 "</body>" +
+        //                 "</html>");
+        //     }
+        // });
         //add src last so that error and load events aren't triggered before we add the event handler
-        if (page.media.isImage()) {
-            page.media.html.attr("src", page.media.srcString);
-        }
-        else if (page.media.isVideo()) {
-            page.media.html
-                .prop("controls", true)
-                .append($("<source>"));
-            //firefox dispatches error events on last <source> tag, so we need to handle them there
-            page.media.html.find("source").last()
-                .on("error", e => page.media.html.trigger("error", e));
-            //add src last so that we won't trigger error event too early
-            page.media.html.find("source").last().attr("type", "video/mp4")
-                .attr("src", page.media.srcString);
-            //should be redundant
-            if (page.media.html.get(0).readyState > 0) {
-                page.media.html.trigger(event);
-            }
-        }
+        // if (page.media.isImage()) {
+        //     page.media.html.attr("src", page.media.srcString);
+        // } else if (page.media.isVideo()) {
+        //     page.media.html
+        //         .prop("controls", true)
+        //         .append($("<source>"));
+        //
+        //     //firefox dispatches error events on last <source> tag, so we need to handle them there
+        //     page.media.html.find("source").last()
+        //         .on("error", e => page.media.html.trigger("error", e));
+        //
+        //     //add src last so that we won't trigger error event too early
+        //     page.media.html.find("source").last().attr("type", "video/mp4")
+        //         .attr("src", page.media.srcString);
+        //
+        //     //should be redundant
+        //     if ((page.media.html.get(0) as HTMLVideoElement).readyState > 0) {
+        //         page.media.html.trigger(event);
+        //     }
+        // }
         //iframes src is already added in constructor of IframeMedia obj
         // .each(function () {
         //     if (page.img.isImage() && page.img.html[0].complete || page.img.isVideo() && page.img.html.wid) {

@@ -7,21 +7,19 @@ import classNames from "classnames";
 import bootstrap from "bootstrap";
 
 interface ListViewProps extends DefaultProps {
-    onSelect: (page: PageData) => any,
 }
 
 export default function ListView(
     {
         className,
-        onSelect,
     }: ListViewProps) {
     const context = useContext(TourContext);
 
     return (
-        <div className={classNames("", className)}>
+        <div className={classNames("ListView", className)}>
             <ListGroup>
                 {context.pages.map(v =>
-                    <ListGroup.Item key={v.id}><PageItem page={v} onClick={onSelect}/></ListGroup.Item>)}
+                    <ListGroup.Item key={v.id} className="p-0"><PageItem page={v}/></ListGroup.Item>)}
             </ListGroup>
         </div>
     );
@@ -29,27 +27,25 @@ export default function ListView(
 
 interface PageItemProps extends DefaultProps {
     page: PageData,
-    onClick: (page: PageData) => any,
 }
 
 function PageItem(
     {
         page,
-        onClick,
     }: PageItemProps,
 ) {
     const context = useContext(TourContext);
     const selectedPage = context.currentPage;
 
     const handleClick = useCallback(() => {
-        if (page.id !== selectedPage.id) {
-            onClick(page);
+        if (page.id !== selectedPage?.id) {
+            context.setCurrentPage(page.id);
         }
-    }, [page.id, selectedPage.id]);
+    }, [page.id, selectedPage]);
 
     return (
         <Container fluid
-                   className={classNames("pb-1 pt-1", selectedPage.id === page.id && "bg-opacity-25 bg-primary")}
+                   className={classNames("py-4 m-0 PageItem", selectedPage?.id === page.id && "bg-opacity-25 bg-primary")}
                    onClick={handleClick}>
             <Row>
                 <Col sm={12} className="d-flex align-items-center">

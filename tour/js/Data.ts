@@ -1,3 +1,4 @@
+import {reportTranspileErrors} from "ts-loader/dist/instances.js";
 import {
     AbstractJsonInlineObject,
     AnimationType,
@@ -5,17 +6,24 @@ import {
     FetchPriorityType, IconType,
     InlineObjectPosition,
     InlineObjectType, JsonClickable, JsonCustomObject, JsonInlineObject, JsonMedia,
-    JsonPage, JsonSource, JsonTextField,
+    JsonPage, JsonSchulTourConfigFile, JsonSource, JsonTextField,
     LoadingType,
     MediaType,
     PageAnimations, TextAnimations,
     VideoPreloadType,
 } from "./types.js";
 
+
 type DataType<T> = Omit<{ [k in keyof T as T[k] extends Function ? never : k]: T[k] }, never>;
 type PageDataType = DataType<PageData>;
 type Mutable<T> = { -readonly [k in keyof T]: T[k] };
 
+/**
+ * Checks if the arrays are equal<br>
+ * Ignores order of the items and if one item appears more often in one array than in the other
+ * @param array1
+ * @param array2
+ */
 function arrayEquals(array1: Array<any> | undefined, array2: Array<any> | undefined): array2 is typeof array1 {
     if (array1 === array2) {
         return true;
@@ -24,11 +32,13 @@ function arrayEquals(array1: Array<any> | undefined, array2: Array<any> | undefi
         // s.o. they are not equal (and undefined === undefined is always true)
         return false;
     }
-    if (array1.length !== array2.length) {
-        return false;
+    for (let item of array1) {
+        if (array2.some(value => value !== item && !value.equals?.(item))) {
+            return false;
+        }
     }
-    for (let i = 0; i < array1.length; i++) {
-        if (array1[i] !== array2[i]) {
+    for (let item of array2) {
+        if (array1.some(value => value !== item && !value.equals?.(item))) {
             return false;
         }
     }
@@ -44,6 +54,32 @@ abstract class Data<T extends Data<T>> {
         // @ts-ignore
         return new (this.constructor as typeof T)({...this, ...other});
     }
+}
+
+class SchulTourConfigFile extends Data<SchulTourConfigFile> {
+    public readonly pages: PageData[];
+
+    constructor(other: DataType<SchulTourConfigFile>) {
+        super();
+        this.pages = other.pages;
+    }
+
+    public equals(other: null | undefined | DataType<SchulTourConfigFile>): boolean {
+        return other != null && (this === other || arrayEquals(this.pages, other.pages));
+    }
+
+    public static fromJSON(json: JsonSchulTourConfigFile): SchulTourConfigFile {
+        return new SchulTourConfigFile({
+            pages: json.pages.map(PageData.fromJSON),
+        });
+    }
+
+    public toJSON(): JsonSchulTourConfigFile {
+        return {
+            pages: this.pages,
+        };
+    }
+
 }
 
 class PageData {
@@ -73,11 +109,12 @@ class PageData {
     static fromJSON(page: JsonPage): PageData {
         const inlineObjects = page.inlineObjects?.map(InlineObjectData.fromJSON) ?? [];
         inlineObjects.push(...page.clickables?.map(ClickableData.fromJSON) ?? []);
+        const is360 = page.is_360 ?? false;
         return new PageData({
-            media: MediaData.fromJSON(page.img),
+            media: MediaData.fromJSON(page.media),
             id: page.id,
-            is360: page.is_360 ?? false,
-            isPanorama: page.is_panorama ?? false,
+            is360: is360,
+            isPanorama: is360 || (page.is_panorama ?? false),
             initialDirection: page.initial_direction ?? 0,
             inlineObjects: inlineObjects,
         });
@@ -90,6 +127,7 @@ class PageData {
             this.is360 === other.is360 &&
             this.initialDirection === other.initialDirection &&
             this.isPanorama === other.isPanorama &&
+            //@ts-ignore
             (this.inlineObjects.length === other.inlineObjects.length && this.inlineObjects.map(v => other.inlineObjects.find(value => value.equals(v)) !== undefined)
                 .reduce((prev, now) => prev && now, true))
         ));
@@ -502,7 +540,7 @@ class CustomObjectData extends AbstractInlineObjectData<CustomObjectData, JsonCu
     }
 }
 
-class SourceData {
+class SourceData extends Data<SourceData> {
     readonly name: string;
     // natural width
     readonly width?: number;
@@ -517,6 +555,7 @@ class SourceData {
     static readonly sourceUrl = "media/";
 
     constructor({name, width, height, file, type}: DataType<SourceData>) {
+        super();
         this.name = name;
         this.file = file;
         this.width = width;
@@ -568,14 +607,18 @@ class SourceData {
     }
 
     public static async fromFile(file: File): Promise<SourceData> {
-        const fileData = FileData.fromFile(file);
+        const fileData = await FileData.fromFile(file);
+        return this.fromFileData(fileData);
+    }
+
+    public static async fromFileData(fileData: FileData): Promise<SourceData> {
         const [width, height] = await fileData.computeWidthHeight();
         return new SourceData({
-            name: file.name,
+            name: fileData.name,
             file: fileData,
             width: width,
             height: height,
-            type: MediaData.determineType("auto", file.name),
+            type: MediaData.determineType("auto", fileData.name),
         });
     }
 
@@ -585,51 +628,79 @@ class SourceData {
             this.file != null;
     }
 
-    public withUpdate(other: Partial<DataType<SourceData>>): SourceData {
-        return new SourceData({...this, ...other});
-    }
-
     public withType(type: MediaType): SourceData {
         return new SourceData({...this, type: type});
     }
+
+    public equals(other: undefined | null | DataType<SourceData>): other is DataType<SourceData> {
+        return other != null && (this === other || (
+            this.height === other.height &&
+            this.width === other.width &&
+            this.name === other.name &&
+            this.type === other.type &&
+            (this.file === other.file || (this.file?.equals(other.file) ?? false))
+        ));
+    }
+
+    public toJSON(): JsonSource {
+        return {
+            name: this.name,
+            type: this.type,
+            height: this.height,
+            width: this.width,
+        };
+    }
 }
 
-class FileData {
-    name: string;
-    size: number;
-    type: MediaType;
-    file: File;
+class FileData extends Data<FileData> {
+    readonly name: string;
+    readonly size: number;
+    readonly type: MediaType;
+    readonly file: File;
+    readonly base64: string;
+
     private readonly img: HTMLImageElement;
     private readonly video: HTMLVideoElement;
 
-    protected constructor({name, file, size, type}: DataType<FileData>) {
+    protected constructor({name, file, size, type, base64}: DataType<FileData>) {
+        super();
         this.name = name;
         this.size = size;
         this.type = type;
         this.file = file;
+        this.base64 = base64;
         this.img = document.createElement("img");
         // this.img.style.display = "none";
         this.video = document.createElement("video");
         this.video.style.display = "none";
         this.video.preload = "metadata";
         // document.body.append(this.img, this.video);
+        this.file.size;
     }
 
-    public static fromFile(file: File): FileData {
+    public static async fromFile(file: File): Promise<FileData> {
+        const stream = file.stream().getReader();
+        let binaryString = '';
+        while (true) {
+            const data = await stream.read();
+            if (data.done) {
+                break;
+            }
+            for (let i of data.value) {
+                binaryString += String.fromCharCode(i);
+            }
+        }
         return new FileData({
             name: file.name,
             size: file.size,
             file: file,
             type: MediaData.determineType("auto", file.name),
+            base64: btoa(binaryString),
         });
     }
 
     public async computeWidthHeight(): Promise<[number, number]> {
-        if (!this.type) {
-            this.type = MediaData.determineType("auto", this.name);
-        }
-
-        let res: [number, number] | undefined;
+        // let res: [number, number] | undefined;
 
         const url = URL.createObjectURL(this.file);
         console.log("media url:", url);
@@ -667,10 +738,46 @@ class FileData {
         // URL.revokeObjectURL(url);
         // return res;
     }
+
+    public equals(other: null | undefined | DataType<FileData>): boolean {
+        return other != null && (this === other || (
+            this.name === other.name &&
+            this.type === other.type &&
+            this.size === other.size
+            // TODO 10.08.22 add check for file content (via hashes)
+        ));
+    }
+
+    public static fromJSON(json: JsonFileData): FileData {
+        return new FileData({
+            name: json.name,
+            size: json.size,
+            base64: json.data,
+            file: new File([atob(json.data)], json.name),
+            type: MediaData.determineType('auto', json.name),
+        });
+    }
+
+    public toJSON(): JsonFileData {
+        return {
+            name: this.name,
+            size: this.file.size,
+            data: this.base64,
+        };
+    }
+}
+
+
+type JsonFileData = {
+    name: string,
+    size: number,
+    data: string,
 }
 
 export {
     DataType,
+    SchulTourConfigFile,
+    Mutable,
     PageData,
     InlineObjectData,
     AbstractInlineObjectData,

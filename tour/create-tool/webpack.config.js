@@ -3,12 +3,23 @@ const path = require("path");
 module.exports = {
     mode: "development",
     devtool: "source-map",
+    // devServer: {
+    //     static: {
+    //         directory: path.resolve("dist"),
+    //     },
+    //     watchFiles: "dist/**/*",
+    //     progress: true,
+    // },
     output: {
-        path: path.resolve(__dirname, "dist"),
-        filename: "bundle.js",
+        // path: path.resolve(__dirname, "dist"),
+        path: path.resolve("dist"),
+        filename: "[name].bundle.js",
     },
     // entry: "C:\\Users\\L254484\\Documents\\Konsti\\programmieren\\ag-medien\\color_picker_bootstrap\\index.js",
-    entry: "./tour/create-tool/index/index.tsx",
+    // entry: "./index/index.tsx",
+    entry: {
+        "dev-tool": "./tour/create-tool/index/index.tsx",
+    },
     module: {
         rules: [
             // {
@@ -66,5 +77,6 @@ module.exports = {
     resolve: {
         extensions: [".tsx", ".ts", ".js"]
     },
-    // cache: true,
+    cache: true,
+    watch: true,
 }

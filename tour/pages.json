@@ -2,8 +2,10 @@
   "pages": [
     {
       "id": "01_hof",
-      "img": {
-        "src": "01_hof.jpg"
+      "media": {
+        "src": {
+          "name": "01_hof.jpg"
+        }
       },
       "is_panorama": true,
       "initial_direction": 34,
@@ -26,7 +28,7 @@
     },
     {
       "id": "05_sporthalle",
-      "img": {
+      "media": {
         "src": "05_sporthalle.jpg"
       },
       "clickables": [
@@ -41,7 +43,7 @@
     },
     {
       "id": "15_eingang",
-      "img": {
+      "media": {
         "src": "15_eingang.jpg",
         "type": "img"
       },
@@ -64,7 +66,7 @@
     },
     {
       "id": "15_flur_eg",
-      "img": {
+      "media": {
         "src": "15_flur_eg.jpg",
         "type": "img"
       },
@@ -102,7 +104,7 @@
     },
     {
       "id": "15_glaskasten",
-      "img": {
+      "media": {
         "src": "15_glaskasten.jpg",
         "type": "img"
       },
@@ -118,7 +120,7 @@
     },
     {
       "id": "16_sekretariat",
-      "img": {
+      "media": {
         "src": "16_sekretariat.jpg",
         "type": "img"
       },
@@ -134,7 +136,7 @@
     },
     {
       "id": "20_foyer",
-      "img": {
+      "media": {
         "src": "20_foyer.jpg",
         "type": "img"
       },
@@ -166,7 +168,7 @@
     },
     {
       "id": "20_treppe_eg",
-      "img": {
+      "media": {
         "src": "20_treppe_eg.jpg",
         "type": "img"
       },
@@ -182,7 +184,7 @@
     },
     {
       "id": "25_lehrerzimmer",
-      "img": {
+      "media": {
         "src": "25_lehrerzimmer.jpg",
         "type": "img"
       },
@@ -198,7 +200,7 @@
     },
     {
       "id": "20_1stock_foyer",
-      "img": {
+      "media": {
         "src": "20_1stock_foyer.jpg",
         "type": "img"
       },
@@ -236,7 +238,7 @@
     },
     {
       "id": "30_vor_physik_raum",
-      "img": {
+      "media": {
         "src": "30_vor_physik_raum.jpg"
       },
       "clickables": [
@@ -258,14 +260,18 @@
     },
     {
       "id": "30_physik_raum",
-      "img": {
-        "srcMax": "fb_physik.webm",
+      "media": {
+        "srcMax": {
+          "name": "fb_physik.webm",
+          "width": 100,
+          "height": 100
+        },
         "srcMin": "fb_physik_s.webm",
         "type": "video"
       },
       "clickables": [
         {
-          "title": "Zurück sdkjffffffffffffffffffffffffffffffffffffffffffff",
+          "title": "Zurück",
           "goto": "30_vor_physik_raum",
           "animationType": "backward",
           "icon": "arrow_l",
@@ -277,7 +283,7 @@
     },
     {
       "id": "30_flur",
-      "img": {
+      "media": {
         "src": "30_aula_foyer_flur.jpg",
         "type": "img"
       },
@@ -293,7 +299,7 @@
     },
     {
       "id": "30_aula_foyer",
-      "img": {
+      "media": {
         "src": "vor_der_aula.jpg",
         "type": "img"
       },
@@ -310,7 +316,7 @@
     },
     {
       "id": "klassenraum_s",
-      "img": {
+      "media": {
         "src": "klassenraum_s.jpg",
         "type": "img"
       },
@@ -326,7 +332,7 @@
     },
     {
       "id": "30_Dachboden",
-      "img": {
+      "media": {
         "src": "Dachboden.jpg",
         "type": "img"
       },
@@ -349,7 +355,7 @@
     },
     {
       "id": "40_Turm",
-      "img": {
+      "media": {
         "src": "turm4.jpg",
         "type": "img"
       },
@@ -372,7 +378,7 @@
     },
     {
       "id": "60_turm",
-      "img": {
+      "media": {
         "src": "60_turm.jpg",
         "type": "img"
       },
@@ -395,7 +401,7 @@
     },
     {
       "id": "Hof_von_oben",
-      "img": {
+      "media": {
         "src": "schulhof_vom_turm.jpg",
         "type": "img"
       },
