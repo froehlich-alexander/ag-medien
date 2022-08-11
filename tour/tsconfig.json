@@ -4,20 +4,22 @@
     "sourceMap": true,
     "baseUrl": "./",
     "target": "ES2022",
-    "module": "ES2022",
+    "module": "ESNext",
     "moduleResolution": "Node",
     "lib": [
       "ESNext",
-      "DOM"
+      "DOM",
+      "ESNext.AsyncIterable"
     ],
     "types": [
       "react",
       "bootstrap",
       "jquery",
+      "wicg-file-system-access",
     ],
     "strict": true,
     "useDefineForClassFields": false,
     "allowSyntheticDefaultImports": true,
-    "jsx": "react",
-  }
+    "jsx": "react"
+  },
 }

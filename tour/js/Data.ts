@@ -150,6 +150,17 @@ class PageData {
     public isComplete(): boolean {
         return this.media.isComplete();
     }
+
+    public toJSON(): JsonPage {
+        return {
+            id: this.id,
+            media: this.media.toJSON(),
+            inlineObjects: this.inlineObjects.map(value => value.toJSON()),
+            is_panorama: this.isPanorama,
+            is_360: this.is360,
+            initial_direction: this.initialDirection,
+        }
+    }
 }
 
 class MediaData {
@@ -265,6 +276,22 @@ class MediaData {
         return (this.src?.isComplete() ?? true) &&
             (this.srcMin?.isComplete() ?? true) &&
             (this.srcMax?.isComplete() ?? true);
+    }
+
+    public toJSON(): JsonMedia {
+        return {
+            type: this.type,
+            src: this.src?.toJSON(),
+            srcMin: this.srcMin?.toJSON(),
+            srcMax: this.srcMax?.toJSON(),
+            fetchPriority: this.fetchPriority,
+            loading: this.loading,
+            loop: this.loop,
+            muted: this.muted,
+            preload: this.preload,
+            poster: this.poster,
+            autoplay: this.autoplay,
+        };
     }
 }
 
@@ -657,18 +684,18 @@ class FileData extends Data<FileData> {
     readonly size: number;
     readonly type: MediaType;
     readonly file: File;
-    readonly base64: string;
+    readonly base64?: string;
 
     private readonly img: HTMLImageElement;
     private readonly video: HTMLVideoElement;
 
-    protected constructor({name, file, size, type, base64}: DataType<FileData>) {
+    protected constructor({name, file, size, type}: DataType<FileData>) {
         super();
         this.name = name;
         this.size = size;
         this.type = type;
         this.file = file;
-        this.base64 = base64;
+        // this.base64 = base64;
         this.img = document.createElement("img");
         // this.img.style.display = "none";
         this.video = document.createElement("video");
@@ -679,23 +706,23 @@ class FileData extends Data<FileData> {
     }
 
     public static async fromFile(file: File): Promise<FileData> {
-        const stream = file.stream().getReader();
-        let binaryString = '';
-        while (true) {
-            const data = await stream.read();
-            if (data.done) {
-                break;
-            }
-            for (let i of data.value) {
-                binaryString += String.fromCharCode(i);
-            }
-        }
+        // const stream = file.stream().getReader();
+        // let binaryString = '';
+        // while (true) {
+        //     const data = await stream.read();
+        //     if (data.done) {
+        //         break;
+        //     }
+        //     for (let i of data.value) {
+        //         binaryString += String.fromCharCode(i);
+        //     }
+        // }
         return new FileData({
             name: file.name,
             size: file.size,
             file: file,
             type: MediaData.determineType("auto", file.name),
-            base64: btoa(binaryString),
+            // base64: btoa(binaryString),
         });
     }
 
@@ -752,23 +779,34 @@ class FileData extends Data<FileData> {
         return new FileData({
             name: json.name,
             size: json.size,
-            base64: json.data,
+            // base64: json.data,
             file: new File([atob(json.data)], json.name),
             type: MediaData.determineType('auto', json.name),
         });
     }
 
-    public toJSON(): JsonFileData {
+    public async toJSON(): Promise<JsonFileData> {
+        const stream = this.file.stream().getReader();
+        let binaryString = '';
+        while (true) {
+            const data = await stream.read();
+            if (data.done) {
+                break;
+            }
+            for (let i of data.value) {
+                binaryString += String.fromCharCode(i);
+            }
+        }
         return {
             name: this.name,
             size: this.file.size,
-            data: this.base64,
+            data: btoa(binaryString),
         };
     }
 }
 
 
-type JsonFileData = {
+export type JsonFileData = {
     name: string,
     size: number,
     data: string,

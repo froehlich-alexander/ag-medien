@@ -11,7 +11,7 @@ export interface TourContextType {
     addPages: (...pages: (PageData | PageData[])[]) => void,
     resetPages:(...pages: (PageData|PageData[])[])=> void;
 
-    mediaFiles: { readonly [k: string]: FileData },
+    mediaFiles: Readonly<FileData[]>,
     addMediaFiles: (...files: (FileData | FileData[])[]) => void,
     updateMediaFiles: (...files: (FileData | FileData[])[]) => void,
     removeMediaFiles: <T extends FileData | string>(...files: (T | T[])[]) => void,

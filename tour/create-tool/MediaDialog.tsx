@@ -20,7 +20,7 @@ function MediaDialog(
     }, [context.setMediaDialogVisibility]);
 
     return (
-        <Modal show={context.mediaDialogVisibility} onHide={hide} onShow={show}>
+        <Modal show={context.mediaDialogVisibility} onHide={hide} onShow={show} size="lg">
             <Modal.Header closeButton={true}>
                 <Modal.Title>Media</Modal.Title>
             </Modal.Header>
@@ -28,7 +28,7 @@ function MediaDialog(
                 <Form>
                     <ButtonGroup>
                         <Button variant="primary" as="label" htmlFor="add-files">Add Files</Button>
-                        <Button variant="danger">Remove all</Button>
+                        <Button variant="danger">Delete all</Button>
                     </ButtonGroup>
                     <FormControl type="file" id="add-files" hidden={true}></FormControl>
 
@@ -42,7 +42,7 @@ function MediaDialog(
                         </tr>
                         </thead>
                         <tbody>
-                        {Object.values(context.mediaFiles).map(value => {
+                        {context.mediaFiles.map(value => {
                             return (<tr>
                                 <td><code>{value.name}</code></td>
                                 <td>{value.type}</td>
