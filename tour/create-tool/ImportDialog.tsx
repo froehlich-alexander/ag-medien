@@ -80,10 +80,10 @@ export function ImportDialog(
                     </InputGroup>
 
                     <InputGroup>
-                        <InputGroup.Text as="label" htmlFor="import-new">Replace old</InputGroup.Text>
+                        <InputGroup.Text as="label" htmlFor="import-new">Remove old</InputGroup.Text>
                         <InputGroup.Checkbox id="import-new" selected={newImport} onChange={handleNewImportChange}/>
                         <Col sm={12}>
-                            <FormText>Whether you want to replace (and delete) the old content or keep it</FormText>
+                            <FormText>Whether you want to remove the old page, media, etc. or keep them</FormText>
                         </Col>
                     </InputGroup>
                 </Form>
@@ -166,8 +166,13 @@ export function ImportDialog(
         //todo loading icon
         Promise.all([pageConfigPromise, mediaPromise])
             .then(() => {
-                context.addMediaFiles(mediaFiles);
-                context.addPages(pageConfigs);
+                if (!newImport) {
+                    context.addMediaFiles(mediaFiles);
+                    context.addPages(pageConfigs);
+                } else {
+                    context.resetMediaFiles(mediaFiles);
+                    context.resetPages(pageConfigs);
+                }
             })
             .then(() => {
                 hide();

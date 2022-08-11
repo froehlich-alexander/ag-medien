@@ -1,4 +1,4 @@
-import React, {useContext, useMemo, useState, createContext, useEffect, useReducer} from "react";
+import React, {useContext, useMemo, useState, createContext, useEffect, useReducer, useCallback} from "react";
 import {Container} from "react-bootstrap";
 import {act, Simulate} from "react-dom/test-utils";
 import {a} from "../../widgets/declarations/SelectMenu.js";
@@ -14,7 +14,8 @@ import "./CreateTool.scss";
 import load = Simulate.load;
 
 export default function CreateTool() {
-    function pageReducer(state: PageData[], action: { type: "add" | "remove" | "update", pages: PageData[] } | { type: "reset", pages?: PageData[] }): PageData[] {
+    // --- reducer ---
+    const pageReducer = (state: PageData[], action: { type: "add" | "remove" | "update", pages: PageData[] } | { type: "reset", pages?: PageData[] }): PageData[] => {
         switch (action.type) {
             case "reset":
                 if (!action.pages?.length && !state.length) {
@@ -54,15 +55,16 @@ export default function CreateTool() {
                 }
             }
         }
-    }
+    };
 
-    type MediaFilesType = { readonly [k: string]: FileData }
 
-    function mediaFilesReducer(state: Readonly<MediaFilesType>, action:
+    type MediaFilesType = { readonly [k: string]: FileData };
+
+    const mediaFilesReducer = (state: Readonly<MediaFilesType>, action:
         { type: 'add' | 'update', media: FileData[] } |
         { type: 'remove', removeMedia: string[] } |
         { type: 'reset', newMedia?: FileData[] },
-    ) {
+    ) => {
         const keys = Object.keys(state);
         switch (action.type) {
             case "reset":
@@ -72,10 +74,10 @@ export default function CreateTool() {
                     return {...(action.newMedia ?? {})} as MediaFilesType;
                 }
             case "remove":
-                return Object.entries(state).filter(([k]) => !action.removeMedia.includes(k)).reduce((previousValue, [key, value]) => {
-                    previousValue[key] = value;
-                    return previousValue;
-                }, {} as Mutable<MediaFilesType>) as MediaFilesType;
+                return Object.entries(state).filter(([k]) => !action.removeMedia.includes(k))
+                    .reduce((previousValue, [key, value]) =>
+                        Object.defineProperty(previousValue, key, {value: value}),
+                        {} as Mutable<MediaFilesType>) as MediaFilesType;
             case "add":
             case "update":
                 if (action.media.length) {
@@ -87,13 +89,14 @@ export default function CreateTool() {
                 }
                 return state;
         }
-    }
+    };
+    // --- reducer end ---
 
     const [pages, dispatchPages] = useReducer(pageReducer, [] as PageData[]);
     const [mediaFiles, dispatchMediaFiles] = useReducer(mediaFilesReducer, {} as Readonly<MediaFilesType>);
     const [currentPage, setCurrentPage] = useState<PageData>();
     const [importDialogVisibility, setImportDialogVisibility] = useState(false);
-    const [mediaDialogVisibility, setMediaDialogVisibility] = useState(false);
+    const [mediaDialogVisibility, setMediaDialogVisibility] = useState(true);
 
     const [formHasChanged, setFormHasChanged] = useState(false);
 
@@ -104,69 +107,53 @@ export default function CreateTool() {
         console.log('media', mediaFiles);
     }, [mediaFiles]);
 
+    // --- context methods ---
+    const setCurrentPageById = useCallback((id: string) => {
+        setCurrentPage(pages.find(value => value.id === id));
+    }, []);
+
+    const addPages = useCallback((...newPages: (PageData | PageData[])[]) => {
+        dispatchPages({type: 'add', pages: newPages.flat()});
+    }, []);
+
+    const resetPages = useCallback((...pages: (PageData | PageData[])[]) => {
+        dispatchPages({type: 'reset', pages: pages.flat(1)});
+    }, []);
+
+    const addMediaFiles = useCallback((...files: (FileData | FileData[])[]) => {
+        dispatchMediaFiles({type: 'add', media: files.flat()});
+    }, []);
+
+    const removeMediaFiles = useCallback(<T extends FileData | string>(...files: (T | T[])[]) => {
+        dispatchMediaFiles({
+            type: 'remove',
+            removeMedia: files.flat().map(value => typeof value === "string" ? value : value.name),
+        });
+    }, []);
+
+    const resetMediaFiles = useCallback((...files: (FileData | FileData[])[]) => {
+        dispatchMediaFiles({type: 'reset', newMedia: files.flat()});
+    }, []);
+    // --- context methods end ---
+
     const context: TourContextType = useMemo(() => ({
         pages: pages,
         currentPage: currentPage,
+        mediaFiles: mediaFiles,
+        importDialogVisibility: importDialogVisibility,
+        mediaDialogVisibility: mediaDialogVisibility,
         setCurrentPage: setCurrentPageById,
         addPages: addPages,
-        mediaFiles: mediaFiles,
+        resetPages: resetPages,
+
         addMediaFiles: addMediaFiles,
         updateMediaFiles: addMediaFiles,
         removeMediaFiles: removeMediaFiles,
         resetMediaFiles: resetMediaFiles,
-        importDialogVisibility: importDialogVisibility,
+
         setImportDialogVisibility: setImportDialogVisibility,
-        mediaDialogVisibility: mediaDialogVisibility,
         setMediaDialogVisibility: setMediaDialogVisibility,
     }), [pages, currentPage, mediaFiles, importDialogVisibility, mediaDialogVisibility]);
-
-    function addPages(...newPages: (PageData | PageData[])[]) {
-        dispatchPages({type: 'add', pages: ([] as PageData[]).concat(...newPages)});
-        // dispatchPages(prevState => prevState.concat(...newPages));
-        // // complete pages async and add them on resolve
-        // Promise.all(([] as PageData[]).concat(...newPages).map(v => v.complete()))
-        //     .then(v => context.addPages(...v));
-    }
-
-    function setCurrentPageById(id: string) {
-        setCurrentPage(pages.find(value => value.id === id));
-    }
-
-    function addMediaFiles(...files: (FileData | FileData[])[]): void {
-        dispatchMediaFiles({type: 'add', media: ([] as FileData[]).concat(...files)});
-    }
-
-    function removeMediaFiles<T extends FileData | string>(...files: (T | T[])[]): void {
-        dispatchMediaFiles({
-            type: 'remove',
-            removeMedia: ([] as T[]).concat(...files).map(value => typeof value === "string" ? value : value.name),
-        });
-    }
-
-    function resetMediaFiles(...files: (FileData | FileData[])[]): void {
-        dispatchMediaFiles({type: 'reset', newMedia: ([] as FileData[]).concat(...files)});
-    }
-
-    // remove duplicates
-    // useEffect(() => {
-    //     function removeDuplicates(pages: PageData[]) {
-    //         const res = [];
-    //         for (let page of pages) {
-    //             let items = pages.filter(v => v.id === page.id);
-    //             let i = 1;
-    //             for (let j of items.reverse()) {
-    //                 if (j.isComplete() || i === items.length) {
-    //                     res.push(j);
-    //                     break;
-    //                 }
-    //                 i++;
-    //             }
-    //         }
-    //         return res;
-    //     }
-    //
-    //     dispatchPages(removeDuplicates);
-    // }, [pages]);
 
     return (
         <TourContext.Provider value={context}>
