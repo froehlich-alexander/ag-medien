@@ -43,10 +43,6 @@ class Media {
             threshold: 0,
         });
     }
-    static { this.imgFileEndings = ["png", "jpeg", "jpg", "gif", "svg", "webp", "apng", "avif"]; }
-    static { this.videoFileEndings = ["mp4", "webm", "ogg", "ogm", "ogv", "avi"]; }
-    //this list is not exhaustive
-    static { this.iframeUrlEndings = ["html", "htm", "com", "org", "edu", "net", "gov", "mil", "int", "de", "en", "eu", "us", "fr", "ch", "at", "au"]; }
     /**
      * Create a {@link Media} object from a {@link MediaData} object
      * @param data
@@ -274,6 +270,10 @@ class Media {
     pause() {
     }
 }
+Media.imgFileEndings = ["png", "jpeg", "jpg", "gif", "svg", "webp", "apng", "avif"];
+Media.videoFileEndings = ["mp4", "webm", "ogg", "ogm", "ogv", "avi"];
+//this list is not exhaustive
+Media.iframeUrlEndings = ["html", "htm", "com", "org", "edu", "net", "gov", "mil", "int", "de", "en", "eu", "us", "fr", "ch", "at", "au"];
 class VideoMedia extends Media {
     constructor({ src, autoplay, loop, muted, poster, preload, }) {
         super(src.withType("video"));

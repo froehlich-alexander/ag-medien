@@ -64,14 +64,20 @@ class SchulTourConfigFile extends Data<SchulTourConfigFile> {
         this.pages = other.pages;
     }
 
-    public equals(other: null | undefined | DataType<SchulTourConfigFile>): boolean {
-        return other != null && (this === other || arrayEquals(this.pages, other.pages));
+    public static default(): SchulTourConfigFile {
+        return new SchulTourConfigFile({
+            pages: [],
+        });
     }
 
     public static fromJSON(json: JsonSchulTourConfigFile): SchulTourConfigFile {
         return new SchulTourConfigFile({
             pages: json.pages.map(PageData.fromJSON),
         });
+    }
+
+    public equals(other: null | undefined | DataType<SchulTourConfigFile>): boolean {
+        return other != null && (this === other || arrayEquals(this.pages, other.pages));
     }
 
     public toJSON(): JsonSchulTourConfigFile {

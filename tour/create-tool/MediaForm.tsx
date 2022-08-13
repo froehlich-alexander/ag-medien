@@ -1,4 +1,4 @@
-// @flow
+
 import {ChangeEvent, useReducer, useState} from "react";
 import * as React from "react";
 import {Button, Col, Container, Form, InputGroup, Row, Table} from "react-bootstrap";

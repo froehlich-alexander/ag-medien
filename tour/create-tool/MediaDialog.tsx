@@ -43,7 +43,7 @@ function MediaDialog(
                         </thead>
                         <tbody>
                         {context.mediaFiles.map(value => {
-                            return (<tr>
+                            return (<tr key={value.name}>
                                 <td><code>{value.name}</code></td>
                                 <td>{value.type}</td>
                                 <td>{formatFileSize(value.size, true)}</td>

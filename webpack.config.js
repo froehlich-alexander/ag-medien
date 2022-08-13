@@ -1,8 +1,14 @@
 const path = require("path");
+const TerserPlugin = require("terser-webpack-plugin")
+const CopyPlugin = require('copy-webpack-plugin');
+// const ForkTsCheckerWebpackPlugin = require("fork-ts-checker-webpack-plugin");
 
 module.exports = {
     mode: "development",
     devtool: "source-map",
+    target: "web",
+    cache: true,
+    parallelism: 20,
     // devServer: {
     //     static: {
     //         directory: path.resolve("dist"),
@@ -10,16 +16,26 @@ module.exports = {
     //     watchFiles: "dist/**/*",
     //     progress: true,
     // },
+    optimization: {
+        // minimize: true,
+        minimizer: [
+            new TerserPlugin({
+                test: /\.js$/i,
+                exclude: /node_modules/i,
+                parallel: true,
+            }),
+        ],
+    },
     output: {
-        // path: path.resolve(__dirname, "dist"),
         path: path.resolve("dist"),
-        filename: "[name].bundle.js",
+        filename: "[name]/[name].bundle.js",
     },
-    // entry: "C:\\Users\\L254484\\Documents\\Konsti\\programmieren\\ag-medien\\color_picker_bootstrap\\index.js",
-    // entry: "./index/index.tsx",
     entry: {
-        "dev-tool": "./tour/create-tool/index/index.tsx",
+        "tour-dev-tool": "./tour/create-tool/index/index.tsx",
     },
+    plugins: [
+        // new ForkTsCheckerWebpackPlugin(),
+    ],
     module: {
         rules: [
             // {
@@ -29,7 +45,12 @@ module.exports = {
             // },
             {
                 test: /\.tsx?$/,
-                use: "ts-loader",
+                use: {
+                    loader: "ts-loader",
+                    options: {
+                        transpileOnly: true,
+                    },
+                },
                 exclude: /node_modules/,
             },
             // {
@@ -57,13 +78,19 @@ module.exports = {
             //     ]
             // },
             {
-                test: /\.scss$/,
-                use: ["css-loader","sass-loader"],
+                test: /\.s?[ca]ss$/,
+                use: [{
+                    loader: path.resolve("webpack-loaders/EmptyCSS.js"),
+                }]
             },
-            {
-                test: /\.css$/,
-                use: ["css-loader"],
-            }
+            // {
+            //     test: /\.scss$/,
+            //     use: ["css-loader", "sass-loader"],
+            // },
+            // {
+            //     test: /\.css$/,
+            //     use: ["css-loader"],
+            // }
         ],
     },
     externals: {
@@ -77,6 +104,5 @@ module.exports = {
     resolve: {
         extensions: [".tsx", ".ts", ".js"]
     },
-    cache: true,
     watch: true,
 }

@@ -1,5 +1,6 @@
 import {createContext} from "react";
 import {FileData, PageData} from "../js/Data";
+import {UnFlatArray} from "./utils";
 
 export interface TourContextType {
     pages: PageData[],
@@ -8,14 +9,16 @@ export interface TourContextType {
     mediaDialogVisibility: boolean,
 
     setCurrentPage: (page: string) => void,
-    addPages: (...pages: (PageData | PageData[])[]) => void,
-    resetPages:(...pages: (PageData|PageData[])[])=> void;
+    addPages: (...pages: UnFlatArray<PageData>) => void,
+    updatePages: (...pages: UnFlatArray<PageData>) => void,
+    removePages: (...pages: UnFlatArray<string | PageData>) => void,
+    resetPages: (...pages: UnFlatArray<PageData>) => void;
 
     mediaFiles: Readonly<FileData[]>,
-    addMediaFiles: (...files: (FileData | FileData[])[]) => void,
-    updateMediaFiles: (...files: (FileData | FileData[])[]) => void,
-    removeMediaFiles: <T extends FileData | string>(...files: (T | T[])[]) => void,
-    resetMediaFiles: (...files: (FileData | FileData[])[]) => void,
+    addMediaFiles: (...files: UnFlatArray<FileData>) => void,
+    updateMediaFiles: (...files: UnFlatArray<FileData>) => void,
+    removeMediaFiles: (...files: UnFlatArray<string | FileData>) => void,
+    resetMediaFiles: (...files: UnFlatArray<FileData>) => void,
 
     setImportDialogVisibility: (vis: boolean) => void,
     setMediaDialogVisibility: (vis: boolean) => void,
