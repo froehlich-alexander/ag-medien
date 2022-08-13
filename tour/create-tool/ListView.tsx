@@ -1,5 +1,5 @@
 import React, {useCallback, useContext, useState} from "react";
-import {Col, Container, Form, FormControl, ListGroup, Row} from "react-bootstrap";
+import {Button, ButtonGroup, Col, Container, Form, FormControl, ListGroup, Row} from "react-bootstrap";
 import {PageData} from "../js/Data";
 import useSet from "./custom-hooks/SetSate";
 import TourContext from "./TourContext";
@@ -20,6 +20,23 @@ export default function ListView(
 
     return (
         <div className={classNames("ListView", className)}>
+            <Col sm={12}>
+                <Container className="p-3 bg-white rounded-2 mb-2">
+                    <Row>
+                        <Col sm={"auto"}>
+                            <ButtonGroup>
+                                <Button>Select All</Button>
+                                <Button variant="secondary">Unselect All</Button>
+                            </ButtonGroup>
+                        </Col>
+                        <Col sm={"auto"}>
+                            <ButtonGroup>
+                                <Button variant="danger">Delete All Selected</Button>
+                            </ButtonGroup>
+                        </Col>
+                    </Row>
+                </Container>
+            </Col>
             <ListGroup>
                 <ListGroup.Item key={12} className="p-0">
                     {/* @ts-ignore */}
@@ -68,14 +85,14 @@ function PageItem(
         <Container fluid
                    className={classNames("px-4  py-2 m-0 PageItem", selectedPage?.id === page.id && "bg-opacity-25 bg-primary")}
                    onClick={handleClick}>
-            <Row>
+            <Row className="d-flex align-items-center">
                 <Col sm="auto">
                     <Form.Check checked={selected} onChange={handleCheckboxClick}/>
                 </Col>
-                <Col className="d-flex align-items-center">
-                    <h5><b>{page.id}</b></h5>
+                <Col>
+                    <b className="MainLabel">{page.id}</b>
                 </Col>
-                <Col sm="auto" className="d-flex align-items-center">
+                <Col sm="auto" className="d-flex">
                     <MaterialIcon icon="delete" onClick={handleDelete} color="danger"/>
                 </Col>
             </Row>
