@@ -199,7 +199,7 @@ export default function CreateTool() {
         mediaDialogVisibility: mediaDialogVisibility,
         setCurrentPage: setCurrentPageById,
         addPages: addPages,
-        updatePages: addPages,
+        updatePages: updatePages,
         removePages: removePages,
         resetPages: resetPages,
 

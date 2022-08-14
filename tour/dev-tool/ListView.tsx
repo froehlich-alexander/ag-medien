@@ -15,8 +15,20 @@ export default function ListView(
         className,
     }: ListViewProps) {
     const context = useContext(TourContext);
-    const [selectedPages, {toggle}] = useSet<string>();
+    const [selectedPages, {toggle, reset: resetSelectedPages}] = useSet<string>();
     console.log(selectedPages);
+
+    const selectAll = useCallback(() => {
+        resetSelectedPages(context.pages.map(value => value.id));
+    }, [resetSelectedPages]);
+
+    const unselectAll = useCallback(() => {
+        resetSelectedPages([]);
+    }, [resetSelectedPages]);
+
+    const deleteAllSelected = useCallback(() => {
+        context.removePages(Array.from(selectedPages));
+    }, [selectedPages, context.removePages]);
 
     return (
         <div className={classNames("ListView", className)}>
@@ -25,14 +37,12 @@ export default function ListView(
                     <Row>
                         <Col sm={"auto"}>
                             <ButtonGroup>
-                                <Button>Select All</Button>
-                                <Button variant="secondary">Unselect All</Button>
+                                <Button onClick={selectAll}>Select All</Button>
+                                <Button variant="secondary" onClick={unselectAll}>Unselect All</Button>
                             </ButtonGroup>
                         </Col>
                         <Col sm={"auto"}>
-                            <ButtonGroup>
-                                <Button variant="danger">Delete All Selected</Button>
-                            </ButtonGroup>
+                                <Button variant="danger" onClick={deleteAllSelected}>Delete All Selected</Button>
                         </Col>
                     </Row>
                 </Container>
@@ -71,11 +81,11 @@ function PageItem(
         if (page.id !== selectedPage?.id) {
             context.setCurrentPage(page.id);
         }
-    }, [page.id, selectedPage]);
+    }, [page.id, selectedPage, context.setCurrentPage]);
 
     const handleDelete = useCallback(() => {
         context.removePages(page.id);
-    }, [page.id]);
+    }, [page.id, context.removePages]);
 
     const handleCheckboxClick = useCallback(() => {
         onSelected(page.id, !selected);

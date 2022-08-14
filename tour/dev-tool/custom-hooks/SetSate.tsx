@@ -5,6 +5,7 @@ export default function useSet<T>(initial: Set<T> = new Set()): [Set<T>, {
     add: (value: T) => void,
     remove: (value: T) => void,
     has: (value: T) => boolean,
+    reset: (values: T[])=>void,
 }] {
     const [set, setSet] = useState<Set<T>>(initial);
 
@@ -42,6 +43,10 @@ export default function useSet<T>(initial: Set<T> = new Set()): [Set<T>, {
     const has = useMemo(() => (value: T) => {
         return set.has(value);
     }, [set]);
+    
+    const reset = useCallback((values:T[]) => {
+        setSet(new Set(values));
+    }, []);
 
     return [
         set,
@@ -50,6 +55,7 @@ export default function useSet<T>(initial: Set<T> = new Set()): [Set<T>, {
             add,
             remove,
             has,
+            reset,
         },
     ];
 };

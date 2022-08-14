@@ -6,6 +6,7 @@
     "i18next": "^21.8.14",
     "jquery": "^3.6.0",
     "material-icons": "^1.11.9",
+    "mini-css-extract-plugin": "^2.6.1",
     "react": "^18.2.0",
     "react-bootstrap": "^2.4.0",
     "react-dom": "^18.2.0"
@@ -20,6 +21,7 @@
     "@types/wicg-file-system-access": "^2020.9.5",
     "copy-webpack-plugin": "^11.0.0",
     "css-loader": "^6.7.1",
+    "css-minimizer-webpack-plugin": "^4.0.0",
     "fiber": "^1.0.4",
     "sass": "^1.50.1",
     "sass-loader": "^13.0.2",
@@ -30,7 +32,8 @@
     "ts-to-json": "^1.7.0",
     "typescript": "^4.8.1-rc",
     "webpack": "^5.74.0",
-    "webpack-cli": "^4.10.0"
+    "webpack-cli": "^4.10.0",
+    "webpack-dev-server": "^4.10.0"
   },
   "scripts": {
     "build": "npx webpack --config webpack.config.js"
