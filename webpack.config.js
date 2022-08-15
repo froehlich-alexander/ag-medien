@@ -6,7 +6,7 @@ const CssMinimizerPlugin = require("css-minimizer-webpack-plugin");
 // const ForkTsCheckerWebpackPlugin = require("fork-ts-checker-webpack-plugin");
 
 const config = {
-    mode: "production",
+    mode: "development",
     devtool: "source-map",
     target: "web",
     cache: true,
@@ -14,11 +14,18 @@ const config = {
     devServer: {
         static: {
             directory: path.resolve("dist"),
+            watch: true,
         },
         watchFiles: "dist/**/*",
+        liveReload: true,
         port: 9000,
         client: {
-            progress: true,
+            progress: false,
+            overlay: {
+                errors: true,
+                warnings: false,
+            },
+            logging: 'warn',
         },
         host: 'localhost',
         allowedHosts: [
@@ -156,92 +163,94 @@ const config = {
                 {
                     from: 'node_modules/jquery/dist/jquery.js',
                     to: 'lib/[name][ext]',
-                    info: { minimized: true},
+                    info: {minimized: true},
                 },
                 {
                     from: 'node_modules/jquery/dist/jquery.min.js',
                     to: 'lib/[name][ext]',
-                    info: { minimized: true },
+                    info: {minimized: true},
                 },
 
                 // bootstrap
                 {
                     from: "node_modules/bootstrap/dist/js/bootstrap.js",
                     to: 'lib/[name][ext]',
-                    info: { minimized: true },
+                    info: {minimized: true},
                 },
                 {
                     from: 'node_modules/bootstrap/dist/js/bootstrap.bundle.js',
                     to: 'lib/[name][ext]',
-                    info: { minimized: true },
+                    info: {minimized: true},
                 },
 
                 // react
                 {
                     from: 'node_modules/react/umd/react.development.js',
                     to: 'lib/[name][ext]',
-                    info: { minimized: true },
+                    info: {minimized: true},
                 },
                 {
                     from: 'node_modules/react/umd/react.production.min.js',
                     to: 'lib/[name][ext]',
-                    info: { minimized: true },
+                    info: {minimized: true},
                 },
 
                 //react-dom
                 {
                     from: 'node_modules/react-dom/umd/react-dom.development.js',
                     to: 'lib/[name][ext]',
-                    info: { minimized: true },
+                    info: {minimized: true},
                 },
                 {
                     from: 'node_modules/react-dom/umd/react-dom.production.min.js',
                     to: 'lib/[name][ext]',
-                    info: { minimized: true },
+                    info: {minimized: true},
                 },
 
                 // react-bootstrap
                 {
                     from: 'node_modules/react-bootstrap/dist/react-bootstrap.js',
                     to: 'lib/[name][ext]',
-                    info: { minimized: true },
+                    info: {minimized: true},
                 },
                 {
                     from: 'node_modules/react-bootstrap/dist/react-bootstrap.min.js',
                     to: 'lib/[name][ext]',
-                    info: { minimized: true },
+                    info: {minimized: true},
                 },
 
                 // i18next
                 {
                     from: 'node_modules/i18next/dist/umd/i18next.js',
                     to: 'lib/[name][ext]',
-                    info: { minimized: true },
+                    info: {minimized: true},
                 },
                 {
                     from: 'node_modules/i18next/dist/umd/i18next.min.js',
                     to: 'lib/[name][ext]',
-                    info: { minimized: true },
+                    info: {minimized: true},
                 },
 
                 // CSS
                 // bootstrap css
                 {
                     from: 'node_modules/bootstrap/dist/css/bootstrap.css',
-                    to: 'lib/[name][ext]',
-                    info: { minimized: true },
+                    to: 'lib/css/[name][ext]',
+                    info: {minimized: true},
                 },
                 {
                     from: 'node_modules/bootstrap/dist/css/bootstrap.min.css',
-                    to: 'lib/[name][ext]',
-                    info: { minimized: true },
+                    to: 'lib/css/[name][ext]',
+                    info: {minimized: true},
                 },
 
                 // material icons
                 {
-                    from: 'node_modules/material-icons/iconfont/material-icons.css',
-                    to: 'lib/[name][ext]',
-                    info: { minimized: true },
+                    from: 'node_modules/material-icons/iconfont',
+                    to: 'lib/css/material-icons',
+                    toType: "dir",
+                    filter: (filepath) => /\.(css)|(woff2?)$/.test(filepath),
+                    info: {minimized: true},
                 },
                 // {
                 //     from: path.resolve('node_modules/**/*'),

@@ -1,4 +1,5 @@
 import {reportTranspileErrors} from "ts-loader/dist/instances.js";
+import {hash} from "ts-to-json";
 import {
     AbstractJsonInlineObject,
     AnimationType,
@@ -165,7 +166,7 @@ class PageData {
             is_panorama: this.isPanorama,
             is_360: this.is360,
             initial_direction: this.initialDirection,
-        }
+        };
     }
 }
 
@@ -186,6 +187,8 @@ class MediaData {
     public static readonly videoFileEndings = ["mp4", "webm", "ogg", "ogm", "ogv", "avi"];
     //this list is not exhaustive
     public static readonly iframeUrlEndings = ["html", "htm", "com", "org", "edu", "net", "gov", "mil", "int", "de", "en", "eu", "us", "fr", "ch", "at", "au"];
+
+    public static readonly Types: Array<MediaType> = ["img", "video", "iframe"];
 
     constructor(
         other: DataType<MediaData>,
@@ -686,29 +689,33 @@ class SourceData extends Data<SourceData> {
 }
 
 class FileData extends Data<FileData> {
-    readonly name: string;
-    readonly size: number;
-    readonly type: MediaType;
-    readonly file: File;
-    readonly base64?: string;
+    public readonly name: string;
+    public readonly size: number;
+    public readonly type: MediaType;
+    public readonly file: File;
+    public readonly intrinsicWidth: number | null;
+    public readonly intrinsicHeight: number | null;
+    public readonly url: string;
+    public readonly hash: number;
+    public readonly base64?: string;
 
-    private readonly img: HTMLImageElement;
-    private readonly video: HTMLVideoElement;
+    // private readonly img: HTMLImageElement;
+    // private readonly video: HTMLVideoElement;
 
-    protected constructor({name, file, size, type}: DataType<FileData>) {
+    protected constructor({name, file, size, type, intrinsicWidth, intrinsicHeight, url}: Omit<DataType<FileData>, "hash">) {
         super();
         this.name = name;
         this.size = size;
         this.type = type;
         this.file = file;
+        this.intrinsicWidth = intrinsicWidth;
+        this.intrinsicHeight = intrinsicHeight;
+        this.url = url;
+        const data = url.split(",", 1);
+        this.hash =
         // this.base64 = base64;
-        this.img = document.createElement("img");
-        // this.img.style.display = "none";
-        this.video = document.createElement("video");
-        this.video.style.display = "none";
-        this.video.preload = "metadata";
         // document.body.append(this.img, this.video);
-        this.file.size;
+        // this.file.size;
     }
 
     public static async fromFile(file: File): Promise<FileData> {
@@ -723,45 +730,56 @@ class FileData extends Data<FileData> {
         //         binaryString += String.fromCharCode(i);
         //     }
         // }
+        const type = MediaData.determineType("auto", file.name);
+        const url = URL.createObjectURL(file);
+        const [width, height] = await FileData.computeWidthHeight(url, type)
         return new FileData({
             name: file.name,
             size: file.size,
             file: file,
-            type: MediaData.determineType("auto", file.name),
+            type: type,
+            intrinsicWidth: width,
+            intrinsicHeight: height,
+            url: url,
             // base64: btoa(binaryString),
         });
     }
 
-    public async computeWidthHeight(): Promise<[number, number]> {
+    public static async computeWidthHeight(url: string, type: MediaType): Promise<[number, number]> {
         // let res: [number, number] | undefined;
 
-        const url = URL.createObjectURL(this.file);
+        const img = document.createElement("img");
+        const video = document.createElement("video");
+        video.style.display = "none";
+        video.preload = "metadata";
+
+        // const url = URL.createObjectURL(file);
         console.log("media url:", url);
 
-        const cleanup = () => {
-            console.log(this.img.naturalWidth);
-            URL.revokeObjectURL(url);
-            this.video.src = "";
-            this.img.src = "";
-        };
+        // const cleanup = () => {
+        //     console.log(img.naturalWidth);
+        //     URL.revokeObjectURL(url);
+        //     video.src = "";
+        //     img.src = "";
+        // };
 
         return new Promise<[number, number]>((resolve, reject) => {
-            if (this.type === "img") {
-                this.img.onload = () => {
-                    resolve([this.img.naturalWidth, this.img.naturalHeight]);
-                    cleanup();
+            if (type === "img") {
+                img.onload = () => {
+                    resolve([img.naturalWidth, img.naturalHeight]);
+                    // cleanup();
                 };
-                this.img.src = url;
+                img.src = url;
                 // res = [this.img.naturalWidth, this.img.naturalHeight];
-            } else if (this.type === "video") {
-                this.video.onloadeddata = () => {
-                    resolve([this.video.videoWidth, this.video.videoHeight]);
-                    cleanup();
+            } else if (type === "video") {
+                video.onloadeddata = () => {
+                    resolve([video.videoWidth, video.videoHeight]);
+                    // cleanup();
                 };
-                this.video.src = url;
+                video.src = url;
                 // res = [this.video.videoWidth, this.video.videoHeight]
             } else {
-                cleanup();
+                // cleanup();
                 reject();
             }
         });
@@ -791,6 +809,10 @@ class FileData extends Data<FileData> {
         });
     }
 
+    public cleanup() {
+        URL.revokeObjectURL(this.url);
+    }
+
     public async toJSON(): Promise<JsonFileData> {
         const stream = this.file.stream().getReader();
         let binaryString = '';
@@ -807,6 +829,8 @@ class FileData extends Data<FileData> {
             name: this.name,
             size: this.file.size,
             data: btoa(binaryString),
+            intrinsicWidth: this.intrinsicWidth,
+            intrinsicHeight: this.intrinsicHeight,
         };
     }
 }
@@ -816,6 +840,8 @@ export type JsonFileData = {
     name: string,
     size: number,
     data: string,
+    intrinsicWidth: number | null,
+    intrinsicHeight: number | null,
 }
 
 export {

@@ -94,7 +94,7 @@ function useDataList<DataItem extends { equals(other: DataItem): boolean }, Data
                     return state;
                 }
         }
-    }, []);
+    }, [onItemsAdded, onItemsUpdated, onItemsRemoved]);
     const [dataList, dispatch] = useReducer(reducer, initialValue);
 
 

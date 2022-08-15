@@ -42,6 +42,9 @@ export function ImportDialog(
             <Modal.Body>
                 <Form className="row gy-3">
                     {/*<p className="me-3">Import A Tour Config </p>*/}
+                    <div className="text-info">All Changes will take effect after pressing
+                        the <code>Import</code> button
+                    </div>
                     <InputGroup>
                         <InputGroup.Text as="label" htmlFor="config-file">
                             <Spinner animation="border" className="me-2" variant="primary" hidden={!configInputLoading}
@@ -68,14 +71,17 @@ export function ImportDialog(
                         <FormControl id="media-files" type={'file'} accept={'image/*,video/*, text/html'} multiple
                                      onChange={handleMediaChange} disabled={mediaInputLoading || resettingMedia}/>
                         <Button className="input-group-text" as="button" onClick={resetMedia} variant="danger">
-                            <Spinner animation="border" as="span"  hidden={!resettingMedia}
+                            <Spinner animation="border" as="span" hidden={!resettingMedia}
                                      role="status" size="sm" className="me-2">
                                 <span className="visually-hidden">Resetting media input...</span>
                             </Spinner>
                             Reset
                         </Button>
                         <Col sm={12}>
-                            <FormText>The Images, Videos, etc. which are used in the tour</FormText>
+                            <FormText>
+                                The Images, Videos, etc. which are used in the tour.
+                                You can configure the media more precise in the <a onClick={context.showMediaDialog} href="#">Media Dialog</a>
+                            </FormText>
                         </Col>
                     </InputGroup>
 

@@ -1,6 +1,7 @@
 import classNames from "classnames";
 import {cssNumber} from "jquery";
 import React from "react";
+import "material-icons";
 
 type MAXIMUM_ALLOWED_BOUNDARY = 999
 type MAXIMUM_NUMBER_RANGE = NumberRangeArray<MAXIMUM_ALLOWED_BOUNDARY>[number] | MAXIMUM_ALLOWED_BOUNDARY;
@@ -38,7 +39,7 @@ export interface DefaultProps {
     className?: string,
 }
 
-export function arrayIsValid<T>(array: Array<T>|undefined): array is Array<T>&{length: Exclude<number, 0>} {
+export function arrayIsValid<T>(array: Array<T> | undefined): array is Array<T> & { length: Exclude<number, 0> } {
     return array !== undefined && array.length !== 0;
 }
 
@@ -72,7 +73,7 @@ export function formatFileSize(size: number, use1024: boolean = true): string {
         return fileSizeUnit(size / kilobyte ** 2, 'm', use1024);
     }
     if (size >= kilobyte) {
-        return fileSizeUnit(size, 'k', use1024);
+        return fileSizeUnit(size / kilobyte, 'k', use1024);
     }
     return size + ' Bytes';
 }
@@ -82,10 +83,25 @@ type MaterialIconProps = {
     round?: boolean,
     sharp?: boolean,
     twoTone?: boolean,
-    color?: "danger" | "primary" | "secondary" | "info" | "dark" | "black" | "light",
+    color?: "danger" | "primary" | "secondary" | "info" | "dark" | "black" | "light" | "success",
+    disabled?: boolean,
+    size?: 18 | 24 | 36 | 48,
 } & ({ children?: JSX.Element, icon: string } | { children: string, icon?: string }) & React.HTMLProps<HTMLSpanElement>;
 
-export function MaterialIcon({outlined, round, sharp, twoTone, icon, color, children, ...props}: MaterialIconProps) {
+export function MaterialIcon(
+    {
+        outlined,
+        round,
+        sharp,
+        twoTone,
+        icon,
+        color,
+        children,
+        disabled,
+        size,
+        className,
+        ...props
+    }: MaterialIconProps) {
     let style;
     if (outlined) {
         style = 'outlined';
@@ -96,8 +112,14 @@ export function MaterialIcon({outlined, round, sharp, twoTone, icon, color, chil
     } else if (twoTone) {
         style = 'two-tone';
     }
-    return <span className={classNames("material-icons" + (style ? ('-' + style) : ''), color && "text-" + color)}
-                 {...props}>
+    return <span
+        className={classNames("material-icons" + (style ? ('-' + style) : ''),
+            color && "text-" + color,
+            disabled && "disabled",
+            size && 'md-' + size,
+            className,
+        )}
+        {...props}>
         {icon}
         {children}
     </span>;

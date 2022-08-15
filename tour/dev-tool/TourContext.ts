@@ -21,7 +21,9 @@ export interface TourContextType {
     resetMediaFiles: (...files: UnFlatArray<FileData>) => void,
 
     setImportDialogVisibility: (vis: boolean) => void,
+    showImportDialog: () => void,
     setMediaDialogVisibility: (vis: boolean) => void,
+    showMediaDialog: () => void,
 }
 
 // @ts-ignore

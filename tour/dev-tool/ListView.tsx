@@ -1,4 +1,4 @@
-import React, {useCallback, useContext, useState} from "react";
+import React, {ChangeEvent, useCallback, useContext, useState, MouseEvent} from "react";
 import {Button, ButtonGroup, Col, Container, Form, FormControl, ListGroup, Row} from "react-bootstrap";
 import {PageData} from "../js/Data";
 import useSet from "./custom-hooks/SetSate";
@@ -83,12 +83,14 @@ function PageItem(
         }
     }, [page.id, selectedPage, context.setCurrentPage]);
 
-    const handleDelete = useCallback(() => {
+    const handleDelete = useCallback((event: MouseEvent) => {
         context.removePages(page.id);
+        event.stopPropagation();
     }, [page.id, context.removePages]);
 
-    const handleCheckboxClick = useCallback(() => {
+    const handleCheckboxClick = useCallback((event: ChangeEvent<HTMLInputElement>) => {
         onSelected(page.id, !selected);
+        event.stopPropagation();
     }, [selected, onSelected, page.id]);
 
     return (

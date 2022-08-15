@@ -129,6 +129,11 @@ export default function CreateTool() {
     const [startingAllowed, setStartingAllowed] = useState(false);
     const [loadingFromFS, setLoadingFromFS] = useState(false);
 
+    const [importDialogVisibility, setImportDialogVisibility] = useState(false);
+    const [mediaDialogVisibility, setMediaDialogVisibility] = useState(true);
+
+    const [formHasChanged, setFormHasChanged] = useState(false);
+
     const [currentPage, setCurrentPage] = useState<PageData>();
     // const [pages, dispatchPages] = useReducer(pageReducer, []);
     // const [mediaFiles, dispatchMediaFiles] = useReducer(mediaFilesReducer, [] as Readonly<MediaFilesType>);
@@ -146,10 +151,6 @@ export default function CreateTool() {
         update: updateMediaFiles,
     }] = useDataList<FileData, string>([], (file => typeof file === "string" ? file : file.name),
         undefined, writeMediaFiles, writeMediaFiles, deleteMediaFiles);
-    const [importDialogVisibility, setImportDialogVisibility] = useState(false);
-    const [mediaDialogVisibility, setMediaDialogVisibility] = useState(false);
-
-    const [formHasChanged, setFormHasChanged] = useState(false);
 
     useEffect(() => {
         console.log('pages', pages);
@@ -158,38 +159,18 @@ export default function CreateTool() {
         console.log('media', mediaFiles);
     }, [mediaFiles]);
 
-    // --- context methods ---
+
     const setCurrentPageById = useCallback((id: string | undefined | null) => {
         setCurrentPage(pages.find(value => value.id === id));
+    }, [pages]);
+
+    const showImportDialog = useCallback(() => {
+        setImportDialogVisibility(true);
     }, []);
 
-    // const addPages = useCallback((...newPages: (PageData | PageData[])[]) => {
-    //     dispatchPages({type: 'add', pages: newPages.flat()});
-    // }, []);
-    //
-    // const removePages = useCallback((...pages: UnFlatArray<string | PageData>) => {
-    //     dispatchPages({type: 'remove', pages: pages.flat()});
-    // }, []);
-    //
-    // const resetPages = useCallback((...pages: (PageData | PageData[])[]) => {
-    //     dispatchPages({type: 'reset', pages: pages.flat(1)});
-    // }, []);
-    //
-    // const addMediaFiles = useCallback((...files: (MediaFile | MediaFile[])[]) => {
-    //     dispatchMediaFiles({type: 'add', media: files.flat()});
-    // }, []);
-    //
-    // const removeMediaFiles = useCallback(<T extends MediaFile | string>(...files: (T | T[])[]) => {
-    //     dispatchMediaFiles({
-    //         type: 'remove',
-    //         removeMedia: files.flat().map(value => typeof value === "string" ? value : value.name),
-    //     });
-    // }, []);
-    //
-    // const resetMediaFiles = useCallback((...files: (MediaFile | MediaFile[])[]) => {
-    //     dispatchMediaFiles({type: 'reset', newMedia: files.flat()});
-    // }, []);
-    // --- context methods end ---
+    const showMediaDialog = useCallback(() => {
+        setMediaDialogVisibility(true);
+    }, []);
 
     const context: TourContextType = useMemo(() => ({
         pages: pages,
@@ -209,10 +190,13 @@ export default function CreateTool() {
         resetMediaFiles: resetMediaFiles,
 
         setImportDialogVisibility: setImportDialogVisibility,
+        showImportDialog: showImportDialog,
         setMediaDialogVisibility: setMediaDialogVisibility,
+        showMediaDialog: showMediaDialog,
     }), [pages, currentPage, mediaFiles, importDialogVisibility, mediaDialogVisibility]);
 
     async function writeMediaFiles(files: FileData[]) {
+        console.log('write media', files, mediaDirectory);
         if (!mediaDirectory) return;
 
         const proms: Array<Promise<void>> = [];
@@ -225,10 +209,10 @@ export default function CreateTool() {
             })());
         }
         return Promise.all(proms);
-
     }
 
     async function deleteMediaFiles(files: FileData[]) {
+        console.log('delete media', files, mediaDirectory);
         if (!mediaDirectory) return;
 
         const fileNames = files.map(value => value.name);
@@ -241,7 +225,6 @@ export default function CreateTool() {
             })());
         }
         return Promise.all(proms);
-
     }
 
     // read fs
@@ -270,7 +253,7 @@ export default function CreateTool() {
                     config = SchulTourConfigFile.default();
                 }
                 resetPages(config.pages ?? []);
-                setCurrentPageById((JSON.parse(window.localStorage.getItem("current_page") ?? "null") as string | null));
+                setCurrentPage(config.pages.find(page=>page.id===window.localStorage.getItem("current_page")));
 
                 setMediaDirectory(mediaDirectory);
                 setConfigFile(configFile);
@@ -300,12 +283,12 @@ export default function CreateTool() {
 
     }, [pages, configFile]);
 
-    // write fs media
-    useEffect(() => {
-        if (!mediaDirectory)
-            return;
-
-    }, [mediaFiles, mediaDirectory]);
+    // // write fs media
+    // useEffect(() => {
+    //     if (!mediaDirectory)
+    //         return;
+    //
+    // }, [mediaFiles, mediaDirectory]);
 
     // write current page to local storage
     useEffect(() => {
@@ -356,10 +339,10 @@ export default function CreateTool() {
     }, []);
 
     return (
-        !startingAllowed
+        startingAllowed
             ? <TourContext.Provider value={context}>
-                <ImportDialog show={importDialogVisibility} onVisibilityChange={setImportDialogVisibility}/>
                 <MediaDialog/>
+                <ImportDialog show={importDialogVisibility} onVisibilityChange={setImportDialogVisibility}/>
                 <Container fluid className={"p-2 CreateTool"}>
                     <MyNavBar className="mb-2"/>
                     <div className="row">

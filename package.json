@@ -36,6 +36,6 @@
     "webpack-dev-server": "^4.10.0"
   },
   "scripts": {
-    "build": "npx webpack --config webpack.config.js"
+    "build": "npx webpack server -c webpack.config.js & npx webpack -c webpack.config.js"
   }
 }
