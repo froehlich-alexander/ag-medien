@@ -18,13 +18,13 @@ export type AnimationType = PageAnimations | TextAnimations | CustomAnimations;
 /**
  * A type for all objects which can be addressed in any way
  */
-type JsonAdressableObject = {
+type JsonAddressableObject = {
     id: string; //a UNIQUE id
 }
 /**
  * Type for the Page-Objects in pages.json (or pages.json)
  */
-export type JsonPage = JsonAdressableObject & {
+export type JsonPage = JsonAddressableObject & {
     media: JsonMedia;
     is_360?: boolean;
     is_panorama?: boolean;
@@ -107,7 +107,7 @@ export type JsonCustomObject = AbstractJsonInlineObject & {
     type: "custom";
     animationType?: CustomAnimations;
 }
-export type JsonTextField = AbstractJsonInlineObject & JsonAdressableObject & {
+export type JsonTextField = AbstractJsonInlineObject & JsonAddressableObject & {
     content: string;
     title?: string;
     footer?: string;

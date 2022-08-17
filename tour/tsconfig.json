@@ -15,11 +15,12 @@
       "react",
       "bootstrap",
       "jquery",
-      "wicg-file-system-access",
+      "wicg-file-system-access"
     ],
     "strict": true,
     "useDefineForClassFields": false,
     "allowSyntheticDefaultImports": true,
-    "jsx": "react"
-  },
+    "jsx": "react",
+    "resolveJsonModule": true,
+  }
 }

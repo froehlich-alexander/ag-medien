@@ -17,7 +17,8 @@ const config = {
             watch: true,
         },
         watchFiles: "dist/**/*",
-        liveReload: true,
+        liveReload: false,
+        hot: false,
         port: 9000,
         client: {
             progress: false,
@@ -53,7 +54,7 @@ const config = {
     },
     entry: {
         "tour-dev-tool": {
-            import: "./tour/dev-tool/index/index.tsx",
+            import: "./tour/dev-tool/index.tsx",
             filename: "tour/dev-tool/[name].bundle.js",
             // dependOn: ['react', 'react-dom', 'react-bootstrap', 'bootstrap'],
         },
@@ -156,6 +157,15 @@ const config = {
                     to: "[path][name][ext]",
                     filter: (filepath) => !/(node_modules)|(dist)/.test(filepath),
                 },
+
+                // copy locales
+                {
+                    from: '**/locales/**/*.json',
+                    to: "[path][name][ext]",
+                    filter: (filepath) => !/(node_modules)|(dist)/.test(filepath),
+                },
+
+
                 // copy libs to dist
 
                 // JS

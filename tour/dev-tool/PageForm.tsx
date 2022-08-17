@@ -1,10 +1,12 @@
 import classNames from "classnames";
-import {valHooks} from "jquery";
-import React, {ChangeEvent, useContext, useEffect, useState} from "react";
-import {Col, Form, FormControl, FormGroup, InputGroup, Row} from "react-bootstrap";
-import {PageData, PageDataType} from "../js/Data";
+import React, {ChangeEvent, useCallback, useContext, useEffect, useMemo, useState} from "react";
+import {Col, Form, FormText, InputGroup, Row} from "react-bootstrap";
+import {MediaData, PageData, PageDataType} from "../js/Data";
+import {renameAddressableId} from "../js/refactor-data";
+import InlineObjectContainerForm from "./InlineObjectContainerForm";
+import InlineObjectForm from "./InlineObjectForm";
 import {MediaForm} from "./MediaForm";
-import TourContext from "./TourContext";
+import {PageContext} from "./TourContexts";
 import {DefaultProps} from "./utils";
 
 interface PageFormProps extends DefaultProps {
@@ -18,10 +20,11 @@ export default function PageForm(
     }: PageFormProps,
 ) {
 
-    const context = useContext(TourContext);
+    const pageContext = useContext(PageContext);
 
-    const currentPage = context.currentPage!;
+    const currentPage = pageContext.currentPage!;
     const [page, setPage] = useState(currentPage);
+    const [renamePageIdUsages, setRenamePageIdUsages] = useState(true);
 
     // inputs
     const [id, setId] = useState(currentPage.id);
@@ -51,7 +54,7 @@ export default function PageForm(
                 initialDirection: initialDirection,
                 is360: is360,
                 isPanorama: isPanorama,
-            }).equals(currentPage)
+            }).equals(currentPage),
         );
     }, [currentPage, media, inlineObjects, id, initialDirection, is360, isPanorama]);
 
@@ -61,9 +64,19 @@ export default function PageForm(
         setPage(page.withUpdate({[name]: value}));
     }
 
-    function handleId(event: ChangeEvent<HTMLInputElement>) {
-        setId(event.target.value);
-    }
+    const handleId = useCallback((event: ChangeEvent<HTMLInputElement>) => {
+        const newId = event.target.value;
+        if (id !== newId) {
+            setId(newId);
+            if (renamePageIdUsages) {
+                renameAddressableId(id, newId, pageContext.pages);
+            }
+        }
+    }, [setId, id]);
+
+    const handleRenamePageIdUsagesChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
+        setRenamePageIdUsages(event.target.checked);
+    }, []);
 
     function handleInitialDirection(event: ChangeEvent<HTMLInputElement>) {
         let value = parseFloat(event.target.value);
@@ -89,42 +102,73 @@ export default function PageForm(
         }
     }
 
+    const handleMediaChange = useCallback((media: MediaData) => {
+        setMedia(media);
+    }, []);
+
+    const disablePanorama: boolean = useMemo(() =>
+            !(media.allTypes().includes("img") || media.allTypes().includes('video')),
+        [media]);
+
+    useEffect(() => {
+        if (disablePanorama) {
+            setPanorama(false);
+            set360(false);
+        }
+    }, [disablePanorama]);
+
     return (
         <div className={classNames("pt-4 pb-4", className)}>
-            <Form className={"gy-3 gx-4 row"}>
-                <InputGroup className={"col-12"}>
+            <Form className={"gy-3 gx-4 row row-cols-12"}>
+                <h3 className="mx-auto">{id}</h3>
+                <InputGroup>
                     <InputGroup.Text as="label"
                                      htmlFor="i-id">Id</InputGroup.Text>
                     <Form.Control id="i-id" type="text" value={id} onChange={handleId}/>
+                    <InputGroup.Text>Rename usages</InputGroup.Text>
+                    <InputGroup.Checkbox checked={renamePageIdUsages} onChange={handleRenamePageIdUsagesChange}/>
                 </InputGroup>
-                <InputGroup className={"col-12"}>
-                    <InputGroup.Text as="label" className={""}
-                                     htmlFor="i-initial-direction">Initial Direction</InputGroup.Text>
-                    <Col sm={2} className={"me-2"}>
-                        <Form.Control id="i-initial-direction" min={0} max={100} type="number"
-                                      value={initialDirection} onChange={handleInitialDirection}/>
-                    </Col>
-                    <Form.Range id="i-initial-direction-range" min={0} max={100}
-                                className={"col align-self-center"}
-                                value={initialDirection} onChange={handleInitialDirection}/>
-                </InputGroup>
-                <Col sm={"auto"}>
+                <Col sm={12}>
+                    <Row>
+                        <Col sm={"auto"}>
+                            <InputGroup className="">
+                                <InputGroup.Text as="label"
+                                                 htmlFor="i-initial-direction">Initial Direction</InputGroup.Text>
+                                <Form.Control id="i-initial-direction" min={0} max={100}
+                                              type="number" disabled={!isPanorama}
+                                              value={initialDirection} onChange={handleInitialDirection}/>
+                            </InputGroup>
+                        </Col>
+                        <Col className="d-flex align-items-center">
+                            <Form.Range id="i-initial-direction-range" min={0} max={100}
+                                        className={"col align-self-center"} disabled={!isPanorama}
+                                        value={initialDirection} onChange={handleInitialDirection}/>
+                        </Col>
+                    </Row>
+                </Col>
+                <Col sm="auto">
                     <InputGroup>
                         <InputGroup.Text as="label"
                                          htmlFor="i-panorama">Panorama</InputGroup.Text>
-                        <InputGroup.Checkbox id="i-panorama" checked={isPanorama} onChange={handlePanorama}/>
+                        <InputGroup.Checkbox id="i-panorama" checked={isPanorama}
+                                             onChange={handlePanorama} disabled={disablePanorama}/>
                     </InputGroup>
                 </Col>
 
-                <Col sm={"auto"}>
+                <Col sm="auto">
                     <InputGroup>
                         <InputGroup.Text as="label"
                                          htmlFor="i-360">360 Grad</InputGroup.Text>
-                        <InputGroup.Checkbox id="i-360" checked={is360} onChange={handle360}/>
+                        <InputGroup.Checkbox id="i-360" checked={is360} onChange={handle360}
+                                             disabled={disablePanorama}/>
                     </InputGroup>
                 </Col>
+                <FormText hidden={!disablePanorama} className="text-info">
+                    Only Pages displaying an Image or a Video can be in panorama or 360 modus.
+                </FormText>
 
-                <MediaForm media={media} onMediaChange={setMedia}/>
+                <MediaForm media={media} onMediaChange={handleMediaChange}/>
+                <InlineObjectContainerForm inlineObjects={inlineObjects} onChange={setInlineObjects}/>
             </Form>
         </div>
     );

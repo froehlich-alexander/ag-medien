@@ -1,11 +1,10 @@
-import React, {ChangeEvent, useCallback, useContext, useState, MouseEvent} from "react";
-import {Button, ButtonGroup, Col, Container, Form, FormControl, ListGroup, Row} from "react-bootstrap";
+import classNames from "classnames";
+import React, {ChangeEvent, MouseEvent, useCallback, useContext} from "react";
+import {Button, ButtonGroup, Col, Container, Form, ListGroup, Row} from "react-bootstrap";
 import {PageData} from "../js/Data";
 import useSet from "./custom-hooks/SetSate";
-import TourContext from "./TourContext";
+import {PageContext} from "./TourContexts";
 import {DefaultProps, MaterialIcon} from "./utils";
-import classNames from "classnames";
-import bootstrap from "bootstrap";
 
 interface ListViewProps extends DefaultProps {
 }
@@ -14,12 +13,12 @@ export default function ListView(
     {
         className,
     }: ListViewProps) {
-    const context = useContext(TourContext);
+    const pageContext = useContext(PageContext);
     const [selectedPages, {toggle, reset: resetSelectedPages}] = useSet<string>();
-    console.log(selectedPages);
+    // console.log(selectedPages);
 
     const selectAll = useCallback(() => {
-        resetSelectedPages(context.pages.map(value => value.id));
+        resetSelectedPages(pageContext.pages.map(value => value.id));
     }, [resetSelectedPages]);
 
     const unselectAll = useCallback(() => {
@@ -27,8 +26,8 @@ export default function ListView(
     }, [resetSelectedPages]);
 
     const deleteAllSelected = useCallback(() => {
-        context.removePages(Array.from(selectedPages));
-    }, [selectedPages, context.removePages]);
+        pageContext.removePages(Array.from(selectedPages));
+    }, [selectedPages, pageContext.removePages]);
 
     return (
         <div className={classNames("ListView", className)}>
@@ -52,7 +51,7 @@ export default function ListView(
                     {/* @ts-ignore */}
                     <PageItem selected={selectedPages.has("hello test")} onSelected={toggle} page={{id: 'hello test'}}/>
                 </ListGroup.Item>
-                {context.pages.map(v =>
+                {pageContext.pages.map(v =>
                     <ListGroup.Item key={v.id} className="p-0">
                         <PageItem page={v} onSelected={toggle} selected={selectedPages.has(v.id)}/>
                     </ListGroup.Item>)}
@@ -74,19 +73,19 @@ function PageItem(
         onSelected,
     }: PageItemProps,
 ) {
-    const context = useContext(TourContext);
-    const selectedPage = context.currentPage;
+    const pageContext = useContext(PageContext);
+    const selectedPage = pageContext.currentPage;
 
     const handleClick = useCallback(() => {
         if (page.id !== selectedPage?.id) {
-            context.setCurrentPage(page.id);
+            pageContext.setCurrentPage(page.id);
         }
-    }, [page.id, selectedPage, context.setCurrentPage]);
+    }, [page.id, selectedPage, pageContext.setCurrentPage]);
 
     const handleDelete = useCallback((event: MouseEvent) => {
-        context.removePages(page.id);
+        pageContext.removePages(page.id);
         event.stopPropagation();
-    }, [page.id, context.removePages]);
+    }, [page.id, pageContext.removePages]);
 
     const handleCheckboxClick = useCallback((event: ChangeEvent<HTMLInputElement>) => {
         onSelected(page.id, !selected);

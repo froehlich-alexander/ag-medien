@@ -1,26 +1,4 @@
-import type {
-    AbstractJsonInlineObject,
-    AnimationType,
-    CustomAnimations,
-    FetchPriorityType,
-    IconType,
-    InlineObjectPosition,
-    InlineObjectType,
-    JsonClickable,
-    JsonCustomObject,
-    JsonInlineObject,
-    JsonMedia,
-    JsonPage, JsonSchulTourConfigFile,
-    JsonTextField,
-    LoadingType,
-    MediaType,
-    PageAnimations,
-    TextAnimations,
-    VideoPreloadType,
-} from "./types";
-
 import {
-    AbstractInlineObjectData,
     ClickableData,
     CustomObjectData,
     InlineObjectData,
@@ -29,6 +7,19 @@ import {
     SourceData,
     TextFieldData,
 } from "./Data.js";
+import type {
+    FetchPriorityType,
+    JsonClickable,
+    JsonCustomObject,
+    JsonInlineObject,
+    JsonPage,
+    JsonSchulTourConfigFile,
+    JsonTextField,
+    LoadingType,
+    MediaType,
+    PageAnimations,
+    VideoPreloadType,
+} from "./types";
 
 var finished_last = true;
 let idPrefix = "tour_pg_";

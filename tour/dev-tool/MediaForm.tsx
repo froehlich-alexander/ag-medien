@@ -1,11 +1,10 @@
-
-import {ChangeEvent, useCallback, useReducer, useState} from "react";
 import * as React from "react";
-import {Accordion, Button, Col, Container, Form, InputGroup, Row, Table} from "react-bootstrap";
+import {useCallback, useState} from "react";
+import {Accordion, Container} from "react-bootstrap";
 import {DataType, MediaData, SourceData} from "../js/Data";
+import "./CreateTool.scss";
 import SourceForm from "./SourceForm";
 import {DefaultProps} from "./utils";
-import "./CreateTool.scss";
 
 type Props = DefaultProps & {
     media: MediaData,
@@ -45,7 +44,7 @@ export function MediaForm(
         }));
     }, [media,onMediaChange]);
 
-    console.log("srcs", media.src, media.srcMin, media.srcMax);
+    // console.log("srcs", media.src, media.srcMin, media.srcMax);
 
     // async function handleFileInput(event: ChangeEvent<HTMLInputElement>) {
     //     const inputFiles = Array.from(event.target.files!);
@@ -80,7 +79,7 @@ export function MediaForm(
     // }
 
     return (
-        <Container fluid className={"MediaForm"}>
+        <Container fluid className={"MediaForm mt-3"}>
             <h4>Media</h4>
             <Accordion>
                 <Accordion.Item eventKey="src">

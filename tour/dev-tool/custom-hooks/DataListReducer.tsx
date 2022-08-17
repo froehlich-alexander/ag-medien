@@ -1,4 +1,3 @@
-import bootstrap from "bootstrap";
 import React, {useCallback, useReducer} from "react";
 import {arrayIsValid, UnFlatArray} from "../utils";
 
