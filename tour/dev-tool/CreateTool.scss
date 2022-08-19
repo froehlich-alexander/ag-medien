@@ -10,6 +10,15 @@ body {
     }
   }
 
+  .PageForm {
+    .InlineObjectContainerForm {
+      .InlineObjectForm {
+        border-color: var(--bs-accordion-border-color);
+        border-width: var(--bs-accordion-border-width);
+      }
+    }
+  }
+
   .ListView {
     .PageItem {
       cursor: pointer;

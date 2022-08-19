@@ -25,7 +25,7 @@ import {
 } from "./types.js";
 
 
-type DataType<T> = Omit<{ [k in keyof T as T[k] extends Function ? never : k]: T[k] }, never>;
+type DataType<T extends Data<any>> = Omit<{ [k in keyof T as T[k] extends Function ? never : k]: T[k] }, "excludeFromDataType" | T['excludeFromDataType']>;
 type PageDataType = DataType<PageData>;
 type Mutable<T> = { -readonly [k in keyof T]: T[k] };
 
@@ -57,6 +57,8 @@ function arrayEquals(array1: Array<any> | undefined, array2: Array<any> | undefi
 }
 
 abstract class Data<T extends Data<T>> {
+    declare abstract excludeFromDataType: keyof T;
+
     public abstract equals(other: any | null | undefined): boolean;
 
     public abstract toJSON(): any;
@@ -68,6 +70,8 @@ abstract class Data<T extends Data<T>> {
 }
 
 class SchulTourConfigFile extends Data<SchulTourConfigFile> {
+    public declare excludeFromDataType: 'excludeFromDataType';
+
     public readonly pages: PageData[];
 
     constructor(other: DataType<SchulTourConfigFile>) {
@@ -96,10 +100,11 @@ class SchulTourConfigFile extends Data<SchulTourConfigFile> {
             pages: this.pages,
         };
     }
-
 }
 
-class PageData {
+class PageData extends Data<PageData> {
+    public declare excludeFromDataType: 'excludeFromDataType';
+
     public readonly media: MediaData;
     public readonly id: string;
     public readonly is360: boolean;
@@ -114,7 +119,8 @@ class PageData {
                     isPanorama,
                     initialDirection,
                     inlineObjects,
-                }: PageDataType) {
+                }: DataType<PageData>) {
+        super();
         this.media = media;
         this.id = id;
         this.is360 = is360;
@@ -195,7 +201,7 @@ class PageData {
     }
 }
 
-class MediaData {
+class MediaData extends Data<MediaData> {
     public readonly src?: SourceData;
     public readonly srcMin?: SourceData;
     public readonly srcMax?: SourceData;
@@ -208,16 +214,21 @@ class MediaData {
     public readonly loop: boolean;
     public readonly preload: VideoPreloadType;
 
+    // dev tool only
+    public readonly fileDoesNotExist: boolean;
+
     public static readonly imgFileEndings = ["png", "jpeg", "jpg", "gif", "svg", "webp", "apng", "avif"];
     public static readonly videoFileEndings = ["mp4", "webm", "ogg", "ogm", "ogv", "avi"];
     //this list is not exhaustive
     public static readonly iframeUrlEndings = ["html", "htm", "com", "org", "edu", "net", "gov", "mil", "int", "de", "en", "eu", "us", "fr", "ch", "at", "au"];
-
     public static readonly Types: Array<MediaType> = ["img", "video", "iframe"];
+
+    declare excludeFromDataType: 'fileDoesNotExist';
 
     constructor(
         other: DataType<MediaData>,
     ) {
+        super();
         this.src = other.src;
         this.srcMin = other.srcMin;
         this.srcMax = other.srcMax;
@@ -229,6 +240,8 @@ class MediaData {
         this.muted = other.muted;
         this.loop = other.loop;
         this.preload = other.preload;
+
+        this.fileDoesNotExist = (this.src?.fileDoesNotExist || this.srcMin?.fileDoesNotExist || this.srcMax?.fileDoesNotExist) ?? true;
     }
 
     public async complete(mediaContext: MediaContextType): Promise<MediaData> {
@@ -334,6 +347,8 @@ class MediaData {
 }
 
 class AbstractInlineObjectData<T extends AbstractInlineObjectData<T, Json>, Json extends AbstractJsonInlineObject> extends Data<T> {
+    public declare excludeFromDataType: 'excludeFromDataType';
+
     // standard attributes
     public readonly x: number;
     public readonly y: number;
@@ -460,7 +475,7 @@ class AbstractInlineObjectData<T extends AbstractInlineObjectData<T, Json>, Json
         return this.type === "custom";
     }
 
-    public isAddressable(): this is AbstractAddressableInlineObjectData<T&AbstractAddressableInlineObjectData<any, any>, Json&JsonAddressableObject> {
+    public isAddressable(): this is AbstractAddressableInlineObjectData<T & AbstractAddressableInlineObjectData<any, any>, Json & JsonAddressableObject> {
         return this instanceof AbstractAddressableInlineObjectData;
     }
 
@@ -493,9 +508,11 @@ class AbstractInlineObjectData<T extends AbstractInlineObjectData<T, Json>, Json
 }
 
 class AbstractAddressableInlineObjectData<T extends AbstractAddressableInlineObjectData<T, Json>, Json extends AbstractJsonInlineObject & JsonAddressableObject> extends AbstractInlineObjectData<T, Json> {
+    public declare excludeFromDataType: 'excludeFromDataType';
+
     public readonly id: string;
 
-    constructor({id, ...base}: DataType<AbstractAddressableInlineObjectData<T, Json>>) {
+    protected constructor({id, ...base}: DataType<AbstractAddressableInlineObjectData<T, Json>>) {
         super(base);
         this.id = id;
     }
@@ -553,6 +570,8 @@ type InlineObjectData = ClickableData | CustomObjectData | TextFieldData;
 type InlineObjectDataConstructor = typeof ClickableData | typeof CustomObjectData | typeof TextFieldData;
 
 class ClickableData extends AbstractInlineObjectData<ClickableData, JsonClickable> {
+    public declare excludeFromDataType: 'excludeFromDataType';
+
     public readonly title: string;
     public readonly icon: IconType;
 
@@ -621,6 +640,8 @@ class ClickableData extends AbstractInlineObjectData<ClickableData, JsonClickabl
 }
 
 class TextFieldData extends AbstractAddressableInlineObjectData<TextFieldData, JsonTextField> {
+    public declare excludeFromDataType: 'excludeFromDataType';
+
     public readonly title?: string;
     public readonly content: string;
     public readonly footer?: string;
@@ -676,11 +697,11 @@ class TextFieldData extends AbstractAddressableInlineObjectData<TextFieldData, J
             // id: this.id,
         };
     }
-    
+
     public withTitle(title: string): TextFieldData {
         return new TextFieldData({...this, title: title});
     }
-    
+
     public withContent(content: string): TextFieldData {
         return new TextFieldData({...this, content: content});
     }
@@ -688,13 +709,15 @@ class TextFieldData extends AbstractAddressableInlineObjectData<TextFieldData, J
     public withCssClasses(cssClasses: string[]): TextFieldData {
         return new TextFieldData({...this, cssClasses: cssClasses});
     }
-    
-    public withFooter(footer: string|undefined): TextFieldData {
+
+    public withFooter(footer: string | undefined): TextFieldData {
         return new TextFieldData({...this, footer: footer});
     }
 }
 
 class CustomObjectData extends AbstractInlineObjectData<CustomObjectData, JsonCustomObject> {
+    public declare excludeFromDataType: 'excludeFromDataType';
+
     public readonly htmlId: string;
 
     declare public readonly type: "custom";
@@ -733,23 +756,28 @@ class CustomObjectData extends AbstractInlineObjectData<CustomObjectData, JsonCu
 }
 
 class SourceData extends Data<SourceData> {
-    readonly name: string;
-    // natural width
-    readonly width?: number;
-    // natural height
-    readonly height?: number;
+    public declare excludeFromDataType: 'excludeFromDataType';
 
-    readonly type: MediaType;
+    public readonly name: string;
+    // natural width
+    public readonly width?: number;
+    // natural height
+    public readonly height?: number;
+
+    public readonly type: MediaType;
 
     // create tool only
-    readonly file?: FileData;
+    public readonly file?: FileData;
+    public readonly fileDoesNotExist?: boolean;
 
     // static readonly sourceUrl = "media/";
 
-    constructor({name, width, height, file, type}: DataType<SourceData>) {
+    constructor({name, width, height, file, type, fileDoesNotExist}: DataType<SourceData>) {
         super();
         this.name = name;
         this.file = file;
+        this.fileDoesNotExist = fileDoesNotExist;
+        // const srcNotExistent: boolean = media.src != null && mediaContext.mediaFiles.find(v => v.name === media.src!.name) === undefined;
         this.width = width;
         this.height = height;
         this.type = type;
@@ -761,22 +789,6 @@ class SourceData extends Data<SourceData> {
         //             this.height = h;
         //         });
         // }
-    }
-
-    public async complete(mediaContext: MediaContextType): Promise<SourceData> {
-        if (this.isComplete()) {
-            // if (this.height != null && this.width != null) {
-            return this;
-            // }
-            // return SourceData.fromFile(this.file.file);
-        }
-        const media = mediaContext.mediaFiles.find(value => value.name === this.name);
-        if (media) {
-            return SourceData.fromFileData(media);
-        }
-        // media file not present
-        return this;
-        // return SourceData.fromFile(await SourceData.loadMedia(this.name));
     }
 
     public static fromJSON(other: JsonSource) {
@@ -793,17 +805,6 @@ class SourceData extends Data<SourceData> {
         });
     }
 
-    // public static async loadMedia(name: string): Promise<File> {
-    //     const url = SourceData.sourceUrl + name;
-    //     return fetch(url)
-    //         .then(value => value.blob())
-    //         .then(value => new File([value], name));
-    //     // const canvas = document.createElement("canvas")
-    //     // let ctx = canvas.getContext("2d");
-    //     // ctx.drawImage()
-    //     // document.body.append(objectElement);
-    // }
-
     public static async fromFile(file: File): Promise<SourceData> {
         const fileData = await FileData.fromFile(file);
         return this.fromFileData(fileData);
@@ -814,27 +815,33 @@ class SourceData extends Data<SourceData> {
         return new SourceData({
             name: fileData.name,
             file: fileData,
+            fileDoesNotExist: false,
             width: fileData.intrinsicWidth ?? undefined,
             height: fileData.intrinsicHeight ?? undefined,
             type: MediaData.determineType("auto", fileData.name),
         });
     }
 
+    public async complete(mediaContext: MediaContextType): Promise<SourceData> {
+        if (this.isComplete()) {
+            // if (this.height != null && this.width != null) {
+            return this;
+            // }
+            // return SourceData.fromFile(this.file.file);
+        }
+        const media = mediaContext.mediaFiles.find(value => value.name === this.name);
+        if (media) {
+            return SourceData.fromFileData(media);
+        }
+
+        // media file not present
+        return this.withFileDoesNotExist(true);
+        // return SourceData.fromFile(await SourceData.loadMedia(this.name));
+    }
+
     public isComplete(): this is { file: FileData & { outdated: false } } {
         return this.file != null
             && !this.file.outdated;
-    }
-
-    public withType(type: MediaType): SourceData {
-        return new SourceData({...this, type: type});
-    }
-
-    public withWidth(width: number | undefined): SourceData {
-        return new SourceData({...this, width: width});
-    }
-
-    public withHeight(height: number | undefined): SourceData {
-        return new SourceData({...this, height: height});
     }
 
     public equals(other: undefined | null | DataType<SourceData>): other is DataType<SourceData> {
@@ -855,9 +862,39 @@ class SourceData extends Data<SourceData> {
             width: this.width,
         };
     }
+
+    public withType(type: MediaType): SourceData {
+        if (this.type === type) {
+            return this;
+        }
+        return new SourceData({...this, type: type});
+    }
+
+    public withWidth(width: number | undefined): SourceData {
+        if (this.width === width) {
+            return this;
+        }
+        return new SourceData({...this, width: width});
+    }
+
+    public withHeight(height: number | undefined): SourceData {
+        if (this.height === height) {
+            return this;
+        }
+        return new SourceData({...this, height: height});
+    }
+
+    public withFileDoesNotExist(fileDoesNotExist: boolean): SourceData {
+        if (this.fileDoesNotExist === fileDoesNotExist) {
+            return this;
+        }
+        return new SourceData({...this, fileDoesNotExist: fileDoesNotExist});
+    }
 }
 
 class FileData extends Data<FileData> {
+    public declare excludeFromDataType: 'excludeFromDataType' | 'outdated';
+
     public readonly name: string;
     public readonly size: number;
     public readonly type: MediaType;
@@ -872,7 +909,7 @@ class FileData extends Data<FileData> {
 
     protected constructor({
                               name, file, size, type, intrinsicWidth, intrinsicHeight, url,
-                          }: Omit<DataType<FileData>, "hash" | "outdated">) {
+                          }: DataType<FileData>) {
         super();
         this.name = name;
         this.size = size;

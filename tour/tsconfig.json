@@ -22,5 +22,6 @@
     "allowSyntheticDefaultImports": true,
     "jsx": "react",
     "resolveJsonModule": true,
+    "incremental": true,
   }
 }

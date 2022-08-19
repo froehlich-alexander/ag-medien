@@ -1,5 +1,6 @@
 import React, {useCallback, useContext} from "react";
 import {Accordion, Button, Col, Container, Row} from "react-bootstrap";
+import {useTranslation} from "react-i18next";
 import {InlineObjectData} from "../js/Data";
 import InlineObjectForm from "./InlineObjectForm";
 import {TemplateContext} from "./TourContexts";
@@ -11,6 +12,7 @@ type InlineObjectContainerFormProps = {
 }
 export default function InlineObjectContainerForm({inlineObjects, onChange}: InlineObjectContainerFormProps) {
     const templateContext = useContext(TemplateContext);
+    const {t} = useTranslation("mainPage", {keyPrefix: 'pageForm.inlineObjectContainerForm'});
 
     const handleInlineObjectChange = useCallback((inlineObject: InlineObjectData, index: number) => {
         const newInlineObjects = inlineObjects.slice();
@@ -24,7 +26,7 @@ export default function InlineObjectContainerForm({inlineObjects, onChange}: Inl
 
     return (
         <Container fluid className="mt-3">
-            <h4>Inline Objects</h4>
+            <h4>{t('title')}</h4>
             <Accordion>
                 {inlineObjects.map((value, index) => {
                     let label: string;
@@ -45,9 +47,8 @@ export default function InlineObjectContainerForm({inlineObjects, onChange}: Inl
                     </Accordion.Item>;
                 })}
             </Accordion>
-            <Button className="d-flex align-items-center mt-3" variant="primary" onClick={handleAdd}>
-                <MaterialIcon icon="add"/>
-                Add
+            <Button className="d-flex align-items-center mt-2" variant="primary" onClick={handleAdd}>
+                <MaterialIcon icon="add"/> {t('addButton')}
             </Button>
         </Container>
     );

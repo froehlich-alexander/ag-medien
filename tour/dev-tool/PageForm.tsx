@@ -1,6 +1,7 @@
 import classNames from "classnames";
 import React, {ChangeEvent, useCallback, useContext, useEffect, useMemo, useState} from "react";
 import {Col, Form, FormText, InputGroup, Row} from "react-bootstrap";
+import {useTranslation} from "react-i18next";
 import {MediaData, PageData, PageDataType} from "../js/Data";
 import {renameAddressableId} from "../js/refactor-data";
 import InlineObjectContainerForm from "./InlineObjectContainerForm";
@@ -21,6 +22,7 @@ export default function PageForm(
 ) {
 
     const pageContext = useContext(PageContext);
+    const { t } = useTranslation("mainPage", { keyPrefix: 'pageForm'});
 
     const currentPage = pageContext.currentPage!;
     const [page, setPage] = useState(currentPage);
@@ -125,15 +127,15 @@ export default function PageForm(
                     <InputGroup.Text as="label"
                                      htmlFor="i-id">Id</InputGroup.Text>
                     <Form.Control id="i-id" type="text" value={id} onChange={handleId}/>
-                    <InputGroup.Text>Rename usages</InputGroup.Text>
+                    <InputGroup.Text>{t('renameUsages')}</InputGroup.Text>
                     <InputGroup.Checkbox checked={renamePageIdUsages} onChange={handleRenamePageIdUsagesChange}/>
                 </InputGroup>
                 <Col sm={12}>
                     <Row>
-                        <Col sm={"auto"}>
+                        <Col sm="auto">
                             <InputGroup className="">
                                 <InputGroup.Text as="label"
-                                                 htmlFor="i-initial-direction">Initial Direction</InputGroup.Text>
+                                                 htmlFor="i-initial-direction">{t("initialDirection")}</InputGroup.Text>
                                 <Form.Control id="i-initial-direction" min={0} max={100}
                                               type="number" disabled={!isPanorama}
                                               value={initialDirection} onChange={handleInitialDirection}/>
@@ -141,7 +143,7 @@ export default function PageForm(
                         </Col>
                         <Col className="d-flex align-items-center">
                             <Form.Range id="i-initial-direction-range" min={0} max={100}
-                                        className={"col align-self-center"} disabled={!isPanorama}
+                                        className="col align-self-center" disabled={!isPanorama}
                                         value={initialDirection} onChange={handleInitialDirection}/>
                         </Col>
                     </Row>
@@ -149,7 +151,7 @@ export default function PageForm(
                 <Col sm="auto">
                     <InputGroup>
                         <InputGroup.Text as="label"
-                                         htmlFor="i-panorama">Panorama</InputGroup.Text>
+                                         htmlFor="i-panorama">{t('panorama')}</InputGroup.Text>
                         <InputGroup.Checkbox id="i-panorama" checked={isPanorama}
                                              onChange={handlePanorama} disabled={disablePanorama}/>
                     </InputGroup>
@@ -158,14 +160,12 @@ export default function PageForm(
                 <Col sm="auto">
                     <InputGroup>
                         <InputGroup.Text as="label"
-                                         htmlFor="i-360">360 Grad</InputGroup.Text>
+                                         htmlFor="i-360">{t('360Deg.label')}</InputGroup.Text>
                         <InputGroup.Checkbox id="i-360" checked={is360} onChange={handle360}
                                              disabled={disablePanorama}/>
                     </InputGroup>
                 </Col>
-                <FormText hidden={!disablePanorama} className="text-info">
-                    Only Pages displaying an Image or a Video can be in panorama or 360 modus.
-                </FormText>
+                <FormText hidden={!disablePanorama} className="text-info">{t('360Deg.text')}</FormText>
 
                 <MediaForm media={media} onMediaChange={handleMediaChange}/>
                 <InlineObjectContainerForm inlineObjects={inlineObjects} onChange={setInlineObjects}/>

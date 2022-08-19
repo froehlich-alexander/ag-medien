@@ -9,6 +9,7 @@ import {
     InputGroup,
     Row,
 } from "react-bootstrap";
+import {Trans, useTranslation} from "react-i18next";
 import {MediaData, SourceData} from "../js/Data";
 import {MediaType} from "../js/types";
 import {DialogContext, MediaContext} from "./TourContexts";
@@ -16,11 +17,13 @@ import {DialogContext, MediaContext} from "./TourContexts";
 type SourceFormProps = {
     source: SourceData | undefined,
     onSourceChange: (source: SourceData | undefined) => void,
+    mediaNotExistent: boolean,
 }
 
-function SourceForm({source, onSourceChange}: SourceFormProps) {
+function SourceForm({source, onSourceChange, mediaNotExistent}: SourceFormProps) {
     const mediaContext = useContext(MediaContext);
     const dialogContext = useContext(DialogContext);
+    const {t} = useTranslation("mainPage", {keyPrefix: 'pageForm.mediaForm.sourceForm'});
 
     const handleNameChange = useCallback((event: ChangeEvent<HTMLSelectElement>) => {
         const eventValue = event.target.value;
@@ -46,13 +49,13 @@ function SourceForm({source, onSourceChange}: SourceFormProps) {
 
     const handleWidthChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
         onSourceChange(source!.withUpdate({
-            width: event.target.value ? parseInt(event.target.value) : undefined,
+            width: parseInt(event.target.value) || undefined,
         }));
     }, [source, onSourceChange]);
 
     const handleHeightChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
         onSourceChange(source!.withUpdate({
-            height: event.target.value ? parseInt(event.target.value) : undefined,
+            height: parseInt(event.target.value) || undefined,
         }));
     }, [source, onSourceChange]);
 
@@ -73,84 +76,96 @@ function SourceForm({source, onSourceChange}: SourceFormProps) {
         }
     }, [onSourceChange, source]);
 
-    const mediaNotExistent: boolean = source != null && mediaContext.mediaFiles.find(v => v.name === source.name) === undefined;
-
     return (
         <Container>
             <Row className="row-cols-12 gy-2 gx-3">
-                <InputGroup>
-                    <InputGroup.Text as="label" htmlFor="source-name">Name</InputGroup.Text>
-                    <FormSelect value={source?.name ?? 'undefined'} id="source-name" required
-                                onChange={handleNameChange}>
-                        <option value="undefined">--- Select a file ---</option>
-                        {mediaNotExistent && <option value={source!.name} disabled>{source!.name}</option>}
-                        {mediaContext.mediaFiles.map(value =>
-                            <option key={value.name} value={value.name}><code>{value.name}</code></option>)}
-                    </FormSelect>
-                </InputGroup>
-                <FormText className="text-danger" hidden={!mediaNotExistent}>
-                    Could not find this media file: <code>{source?.name}</code>.
-                    Please add it in the &ensp;
-                    <a className="link-primary" onClick={dialogContext.showMediaDialog} href="#">Media Dialog</a>
-                </FormText>
+                <Col sm={12}>
+                    <Col>
+                        <InputGroup>
+                            <InputGroup.Text as="label" htmlFor="source-name">{t('name.label')}</InputGroup.Text>
+                            <FormSelect value={source?.name ?? 'undefined'} id="source-name" required
+                                        onChange={handleNameChange}>
+                                <option value="undefined">--- Select a file ---</option>
+                                {mediaNotExistent && <option value={source!.name} disabled>{source!.name}</option>}
+                                {mediaContext.mediaFiles.map(value =>
+                                    <option key={value.name} value={value.name}>{value.name}</option>)}
+                            </FormSelect>
+                        </InputGroup>
+                    </Col>
+                    <FormText className="text-danger" hidden={!mediaNotExistent}>
+                        <Trans ns="mainPage" i18nKey={'pageForm.mediaForm.sourceForm.name.notFound'}>
+                            Could not find this media file: <code>{{file: source?.name}}</code>.
+                            Please add it in the &ensp;
+                            <a className="link-primary" onClick={dialogContext.showMediaDialog} href="#">Media Dialog</a>
+                        </Trans>
+                    </FormText>
 
-                <InputGroup>
-                    <InputGroup.Text as="label" htmlFor="source-type">Type</InputGroup.Text>
-                    <FormSelect value={source?.type ?? "undefined"} id="source-type" required
-                                onChange={handleTypeChange}
-                                disabled={!source}>
-                        <option disabled value="undefined">--- Select a media type ---</option>
-                        {MediaData.Types.map(name =>
-                            <option key={name} value={name}>{name}</option>,
-                        )}
-                    </FormSelect>
-                </InputGroup>
+                    <Col sm="auto">
+                        <InputGroup>
+                            <InputGroup.Text as="label" htmlFor="source-type">{t('type.label')}</InputGroup.Text>
+                            <FormSelect value={source?.type ?? "undefined"} id="source-type" required
+                                        onChange={handleTypeChange}
+                                        disabled={!source}>
+                                <option disabled value="undefined">--- {t('type.emptyOption')} ---</option>
+                                {MediaData.Types.map(name =>
+                                    <option key={name} value={name}>{name}</option>,
+                                )}
+                            </FormSelect>
+                        </InputGroup>
+                    </Col>
+                </Col>
 
-                <p className="text-info">
-                    If you set the size of the media here,
-                    the script will know the actual size of the media even before it's fully loaded.
-                    Then the user won't see any resizing when the media is loaded.<br/>
-                    The sizes you set here are intrinsic (natural) sizes and for images
-                    and videos it is recommended to leave them as they are,
-                    because this application automatically reads the sizes from the image- or video-file.
-                    That is not possible with media objects like iframes.
-                </p>
+                <div className="text-info mt-2">
+                    <Trans ns="mainPage" i18nKey={'pageForm.mediaForm.sourceForm.sizeInfo'}>
+                        If you set the size of the media here,
+                        the script will know the actual size of the media even before it's fully loaded.
+                        Then the user won't see any resizing when the media is loaded.<br/>
+                        The sizes you set here are intrinsic (natural) sizes and for images
+                        and videos it is recommended to leave them as they are,
+                        because this application automatically reads the sizes from the image- or video-file.
+                        That is not possible with media objects like iframes.
+                    </Trans>
+                </div>
 
                 <Col sm={6}>
                     <InputGroup>
-                        <InputGroup.Text as="label" htmlFor="source-width">Width</InputGroup.Text>
+                        <InputGroup.Text as="label" htmlFor="source-width">{t('width.label')}</InputGroup.Text>
                         <FormControl type="number" value={source?.width} id="source-width" placeholder="not set"
                                      onChange={handleWidthChange} disabled={!source}
                                      min={0} max={source?.file?.intrinsicWidth ?? undefined}/>
                         <Button variant="info" onClick={setOptimalWidth} disabled={!source?.file}>Optimal</Button>
-                        <FormControl.Feedback type="invalid">
-                            The Width cannot be higher than the intrinsic width of the media
-                        </FormControl.Feedback>
+                        <FormControl.Feedback type="invalid">{t('width.invalidFeedback')}</FormControl.Feedback>
                         {/*null == undefined == 0 is intended*/}
                         {source?.width != source?.file?.intrinsicWidth && <Col sm={12} className="text-warning">
-                            {source?.width} != the intrinsic width <var>{source?.file?.intrinsicWidth}</var>
+                            <Trans ns="mainPage"
+                                   i18nKey={"pageForm.mediaForm.sourceForm.width.notEqualsInitialWarning"}>
+                                <samp>{{width: source?.width}}</samp> != the intrinsic width
+                                <samp>{{intrinsicWidth: source?.file?.intrinsicWidth}}</samp>
+                            </Trans>
                         </Col>}
                     </InputGroup>
                 </Col>
 
                 <Col sm={6}>
                     <InputGroup>
-                        <InputGroup.Text as="label" htmlFor="source-height">Height</InputGroup.Text>
+                        <InputGroup.Text as="label" htmlFor="source-height">{t('height.label')}</InputGroup.Text>
                         <FormControl type="number" value={source?.height} id="source-height" placeholder="not set"
                                      onChange={handleHeightChange} disabled={!source}
                                      min={0} max={source?.file?.intrinsicWidth ?? undefined}/>
                         <Button variant="info" onClick={setOptimalHeight} disabled={!source?.file}>Optimal</Button>
+                        <FormControl.Feedback type="invalid">{t('height.invalidFeedback')}</FormControl.Feedback>
                         {/*null == undefined == 0 is intended*/}
-                        <FormControl.Feedback type="invalid">
-                            The Height cannot be higher than the intrinsic height of the media
-                        </FormControl.Feedback>
                         {source?.height != source?.file?.intrinsicHeight && <Col sm={12} className="text-warning">
-                            {source?.height} != the intrinsic height <var>{source?.file?.intrinsicHeight}</var>
+                            <Trans ns="mainPage"
+                                   i18nKey={"pageForm.mediaForm.sourceForm.height.notEqualsInitialWarning"}>
+                                <samp>{{height: source?.height}}</samp> != the intrinsic height
+                                <samp>{{intrinsicHeight: source?.file?.intrinsicHeight}}</samp>
+                            </Trans>
                         </Col>}
                     </InputGroup>
                 </Col>
                 <Col sm={"auto"}>
-                    <Button variant="danger" disabled={!source} onClick={handleDelete}>Delete</Button>
+                    <Button variant="danger" disabled={!source} onClick={handleDelete}>{t("deleteButton")}</Button>
                 </Col>
             </Row>
         </Container>

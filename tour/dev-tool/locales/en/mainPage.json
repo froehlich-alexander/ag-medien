@@ -1,0 +1,80 @@
+{
+  "navBar": {
+    "language": {
+      "label": "Language"
+    },
+    "importPages": "Import Pages",
+    "media": "Media"
+  },
+
+  "pageForm": {
+    "renameUsages": "Rename usages",
+    "initialDirection": "Initial Direction",
+    "panorama": "Panorama",
+    "360Deg": {
+      "label": "360 Degree",
+      "text": "Only Pages displaying an Image or a Video can be in panorama or 360 modus."
+    },
+    "mediaForm": {
+      "title": "Media",
+      "normalSource": "Normal Source",
+      "srcMin": "Low Resolution Source",
+      "srcMax": "High Resolution Source",
+      "sourceForm": {
+        "name": {
+          "label": "Name",
+          "notFound": " Could not find this media file: <1>{{file}}</1>. Please add it in the <3>Media Dialog</3>"
+        },
+        "type": {
+          "label": "Type",
+          "emptyOption": "Select a media type"
+        },
+        "sizeInfo": "If you set the size of the media here, the script will know the actual size of the media even before it's fully loaded. Then the user won't see any resizing when the media is loaded.<br/>The sizes you set here are intrinsic (natural) sizes and for images and videos it is recommended to leave them as they are, because this application automatically reads the sizes from the image- or video-file. That is not possible with media objects like iframes.",
+        "width": {
+          "label": "Width",
+          "invalidFeedback": "The Width must be between 0 and the intrinsic width of the media",
+          "notEqualsInitialWarning": "<0>{{width, number}}</0> != the intrinsic width <2>{{intrinsicWidth, number}}</2>"
+        },
+        "height": {
+          "label": "Height",
+          "invalidFeedback": "The Height must be between 0 and the intrinsic height of the media",
+          "notEqualsInitialWarning": "<0>{{height, number}}</0> != the intrinsic height <2>{{intrinsicHeight, number}}</2>"
+        },
+        "deleteButton": "Delete"
+      }
+    },
+    "inlineObjectContainerForm": {
+      "title": "Inline Objects",
+      "inlineObjectForm": {
+        "type": {
+          "label": "Type"
+        },
+        "position": {
+          "label": "Position"
+        },
+        "x": {
+          "label": "X Coordinate",
+          "invalidFeedback": "Must be between 0 and 100"
+        },
+        "y": {
+          "label": "Y Coordinate",
+          "invalidFeedback": "Must be between 0 and 100"
+        },
+        "sizeFormText": "The coordinates are relative to the media / page",
+        "title": {
+          "label": "Title"
+        },
+        "icon": {
+          "label": "Icon"
+        },
+        "goto": {
+          "label": "Goto / target id"
+        },
+        "animationType": {
+          "label": "Animation Type"
+        }
+      },
+      "addButton": "Add Inline Object"
+    }
+  }
+}

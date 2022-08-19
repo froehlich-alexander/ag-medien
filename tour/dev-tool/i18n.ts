@@ -3,7 +3,7 @@ import I18NextChainedBackend from "i18next-chained-backend";
 import I18nextBrowserLanguageDetector from "i18next-browser-languagedetector";
 import I18NextHttpBackend from "i18next-http-backend";
 import I18NextLocalStorageBackend from "i18next-localstorage-backend";
-import {initReactI18next} from "react-i18next";
+import {initReactI18next, CustomTypeOptions} from "react-i18next";
 
 i18next
     .use(I18NextChainedBackend)
@@ -13,8 +13,8 @@ i18next
         debug: true,
         fallbackLng: 'de',
         supportedLngs: ['de', 'en'],
-        ns: ['translation', 'dialog'],
-        lng: 'de',
+        ns: ['translation', 'dialog', 'mainPage', 'tourTypes'] as Array<keyof CustomTypeOptions['resources']>,
+        lng: 'en',
 
         backend: {
             backends: [

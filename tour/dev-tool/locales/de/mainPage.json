@@ -1,0 +1,80 @@
+{
+  "navBar": {
+    "language": {
+      "label": "Sprache"
+    },
+    "importPages": "Importiere Pages",
+    "media": "Medien"
+  },
+
+  "pageForm": {
+    "renameUsages": "Rename usages",
+    "initialDirection": "Initial Direction",
+    "panorama": "Panorama",
+    "360Deg": {
+      "label": "360 Grad",
+      "text": "Nur Bilder und Videos können als Panorama oder 360 Grad Medium dargestellt werden."
+    },
+    "mediaForm": {
+      "title": "Medien",
+      "normalSource": "Normal aufgelöste Datei",
+      "srcMin": "Schlecht aufgelöste Datei (Für Mobile)",
+      "srcMax": "Gut aufgelöste Datei (Für Desktop)",
+      "sourceForm": {
+        "name": {
+          "label": "Name",
+          "notFound": "Die Datei <1>{{file}}</1> konnte nicht gefunden werden. Bitte füge es im <3>medien Dialog</3> hinzu."
+        },
+        "type": {
+          "label": "Type",
+          "emptyOption": "Wähle einen Media Typ"
+        },
+        "sizeInfo": "Wenn du hier die Größe eines Mediums setzt, weiß das script später die Maße des Medium, BEVOR es vollständig geladen ist. Das kann die User Experience verbessern.",
+        "width": {
+          "label": "Breite",
+          "invalidFeedback": "Die Breite muss zwischen 0 und der natürlichen Breite des Bildes sein",
+          "notEqualsInitialWarning": "<0>{{width, number}}</0> ist ungleich der natürlichen Breite <2>{{intrinsicWidth, number}}</2>"
+        },
+        "height": {
+          "label": "Höhe",
+          "invalidFeedback": "Die Höhe muss zwischen 0 und der natürlichen Höhe des Bildes sein",
+          "notEqualsInitialWarning": "<0>{{height, number}}</0> ist ungleich der natürlichen Höhe <2>{{intrinsicHeight, number}}</2>"
+        },
+        "deleteButton": "Löschen"
+      }
+    },
+    "inlineObjectContainerForm": {
+      "title": "Inline Objects",
+      "inlineObjectForm": {
+        "type": {
+          "label": "Type"
+        },
+        "position": {
+          "label": "Position"
+        },
+        "x": {
+          "label": "X Koordinate",
+          "invalidFeedback": "Muss zwischen 0 und 100 sein"
+        },
+        "y": {
+          "label": "Y Koordinate",
+          "invalidFeedback": "Muss zwischen 0 und 100 sein"
+        },
+        "sizeFormText": "Die Koordinaten sind relativ zur Seite / Medium",
+        "title": {
+          "label": "Titel"
+        },
+        "icon": {
+          "label": "Pfeil"
+        },
+        "goto": {
+          "label": "Ziel"
+        },
+        "animationType": {
+          "label": "Animation Type"
+        }
+      },
+      "addButton": "Hinzufügen"
+    }
+  }
+}

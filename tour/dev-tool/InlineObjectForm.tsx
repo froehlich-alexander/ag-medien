@@ -1,5 +1,6 @@
 import React, {ChangeEvent, useCallback, useContext, useMemo} from "react";
 import {Col, Container, FormControl, FormSelect, FormText, InputGroup, Row} from "react-bootstrap";
+import {useTranslation, Translation} from "react-i18next";
 import {ClickableData, InlineObjectData, MediaData, TextFieldData} from "../js/Data";
 import {getAddressableIds} from "../js/refactor-data";
 import {AnimationType, IconType, InlineObjectPosition, InlineObjectType} from "../js/types";
@@ -13,6 +14,7 @@ type InlineObjectFormProps = {
 
 export default function InlineObjectForm({inlineObject, onChange: onChangeWithIndex, index}: InlineObjectFormProps) {
     const pageContext = useContext(PageContext);
+    const {t} = useTranslation("mainPage", {keyPrefix: 'pageForm.inlineObjectContainerForm.inlineObjectForm'});
 
     const targetIds: string[] = useMemo(() =>
             getAddressableIds(pageContext.pages),
@@ -73,7 +75,7 @@ export default function InlineObjectForm({inlineObject, onChange: onChangeWithIn
             <Row className="gy-3 gx-3">
                 <Col sm={6}>
                     <InputGroup>
-                        <InputGroup.Text as="label" htmlFor="object-type">Type</InputGroup.Text>
+                        <InputGroup.Text as="label" htmlFor="object-type">{t('type.label')}</InputGroup.Text>
                         <FormSelect value={inlineObject.type} id="object-type" required
                                     onChange={handleTypeChange}>
                             {InlineObjectData.Types.map(name =>
@@ -85,7 +87,7 @@ export default function InlineObjectForm({inlineObject, onChange: onChangeWithIn
 
                 <Col sm={6}>
                     <InputGroup>
-                        <InputGroup.Text as="label" htmlFor="object-position">Position</InputGroup.Text>
+                        <InputGroup.Text as="label" htmlFor="object-position">{t('position.label')}</InputGroup.Text>
                         <FormSelect value={inlineObject.position} id="object-position" required
                                     onChange={handlePositionChange}>
                             {InlineObjectData.Positions.map(pos =>
@@ -97,27 +99,27 @@ export default function InlineObjectForm({inlineObject, onChange: onChangeWithIn
 
                 <Col sm={6}>
                     <InputGroup>
-                        <InputGroup.Text as="label" htmlFor="object-x">X Coordinate</InputGroup.Text>
+                        <InputGroup.Text as="label" htmlFor="object-x">{t('x.label')}</InputGroup.Text>
                         <FormControl value={inlineObject.x} id="object-x" required type="number"
                                      onChange={handleXChange} min={0} max={100} step={0.01}/>
-                        <FormControl.Feedback type="invalid">Must be between 0 and 100</FormControl.Feedback>
+                        <FormControl.Feedback type="invalid">{t('x.invalidFeedback')}</FormControl.Feedback>
                     </InputGroup>
                 </Col>
 
                 <Col sm={6}>
                     <InputGroup>
-                        <InputGroup.Text as="label" htmlFor="object-y">Y Coordinate</InputGroup.Text>
+                        <InputGroup.Text as="label" htmlFor="object-y">{t('y.label')}</InputGroup.Text>
                         <FormControl value={inlineObject.y} id="object-y" required type="number"
                                      onChange={handleYChange} min={0} max={100} step={0.1}/>
-                        <FormControl.Feedback type="invalid">Must be between 0 and 100</FormControl.Feedback>
+                        <FormControl.Feedback type="invalid">{t('y.invalidFeedback')}</FormControl.Feedback>
                     </InputGroup>
                 </Col>
-                <FormText>The coordinates are relative to the media / page</FormText>
+                <FormText>{t('sizeFormText')}</FormText>
 
                 {inlineObject.isClickable() && <>
                     <Col sm={6}>
                         <InputGroup>
-                            <InputGroup.Text as="label" htmlFor="object-title">Title</InputGroup.Text>
+                            <InputGroup.Text as="label" htmlFor="object-title">{t('title.label')}</InputGroup.Text>
                             <FormControl value={inlineObject.title} id="object-title" required type="text"
                                          onChange={handleTitleChange}/>
                         </InputGroup>
@@ -125,11 +127,13 @@ export default function InlineObjectForm({inlineObject, onChange: onChangeWithIn
 
                     <Col sm={6}>
                         <InputGroup>
-                            <InputGroup.Text as="label" htmlFor="object-icon">Icon</InputGroup.Text>
+                            <InputGroup.Text as="label" htmlFor="object-icon">{t('icon.label')}</InputGroup.Text>
                             <FormSelect value={inlineObject.icon} id="object-icon" required
                                         onChange={handleIconChange}>
                                 {ClickableData.Icons.map(icon =>
-                                    <option key={icon} value={icon}>{icon}</option>,
+                                    <option key={icon} value={icon}>
+                                        {<Translation ns="tourTypes" keyPrefix={'IconType'}>{t1 => t1(icon)}</Translation>}
+                                    </option>,
                                 )}
                             </FormSelect>
                         </InputGroup>
@@ -138,7 +142,7 @@ export default function InlineObjectForm({inlineObject, onChange: onChangeWithIn
 
                 <Col>
                     <InputGroup>
-                        <InputGroup.Text as="label" htmlFor="object-goto">Goto / target id</InputGroup.Text>
+                        <InputGroup.Text as="label" htmlFor="object-goto">{t('goto.label')}</InputGroup.Text>
                         <FormControl value={inlineObject.goto} placeholder="Type to search a target..." id="object-goto"
                                      type="text" pattern={'^(' + targetIds.join(")|(") + ')$'}
                                      onChange={handleGotoChange} list="object-goto-datalist"/>
@@ -152,7 +156,8 @@ export default function InlineObjectForm({inlineObject, onChange: onChangeWithIn
 
                 <Col sm={"auto"}>
                     <InputGroup>
-                        <InputGroup.Text as="label" htmlFor="object-animation">Animation Type</InputGroup.Text>
+                        <InputGroup.Text as="label"
+                                         htmlFor="object-animation">{t('animationType.label')}</InputGroup.Text>
                         <FormSelect value={inlineObject.animationType ?? "forward"} id="object-animation" required
                                     onChange={handleAnimationTypeChange}>
                             {InlineObjectData.AnimationTypes.map(animationType =>
