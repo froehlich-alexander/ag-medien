@@ -1,7 +1,7 @@
 import React, {ChangeEvent, useCallback, useContext, useMemo} from "react";
 import {Col, Container, FormControl, FormSelect, FormText, InputGroup, Row} from "react-bootstrap";
-import {useTranslation, Translation} from "react-i18next";
-import {ClickableData, InlineObjectData, MediaData, TextFieldData} from "../js/Data";
+import {Translation, useTranslation} from "react-i18next";
+import {ClickableData, InlineObjectData, TextFieldData} from "../js/Data";
 import {getAddressableIds} from "../js/refactor-data";
 import {AnimationType, IconType, InlineObjectPosition, InlineObjectType} from "../js/types";
 import {PageContext} from "./TourContexts";
@@ -29,7 +29,7 @@ export default function InlineObjectForm({inlineObject, onChange: onChangeWithIn
     const handleTypeChange = useCallback((event: ChangeEvent<HTMLSelectElement>) => {
         const value = event.target.value;
         // @ts-ignore
-        onChange(new InlineObjectData.constructorFromType(value as InlineObjectType)(inlineObject.withType(value)));
+        onChange(new (InlineObjectData.constructorFromType(value as InlineObjectType))(inlineObject.withType(value)));
     }, [inlineObject, onChange]);
 
     const handleAnimationTypeChange = useCallback((event: ChangeEvent<HTMLSelectElement>) => {
@@ -44,12 +44,12 @@ export default function InlineObjectForm({inlineObject, onChange: onChangeWithIn
 
     const handleXChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
         const value = event.target.value;
-        onChange(inlineObject.withX(parseFloat(value) ?? 0));
+        onChange(inlineObject.withX(parseFloat(value) || 0));
     }, [inlineObject, onChange]);
 
     const handleYChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
         const value = event.target.value;
-        onChange(inlineObject.withY(parseFloat(value) ?? 0));
+        onChange(inlineObject.withY(parseFloat(value) || 0));
     }, [inlineObject, onChange]);
 
     const handleGotoChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
@@ -95,6 +95,7 @@ export default function InlineObjectForm({inlineObject, onChange: onChangeWithIn
                             )}
                         </FormSelect>
                     </InputGroup>
+                    <FormText>{t('position.text', {context: inlineObject.position})}</FormText>
                 </Col>
 
                 <Col sm={6}>
@@ -104,6 +105,7 @@ export default function InlineObjectForm({inlineObject, onChange: onChangeWithIn
                                      onChange={handleXChange} min={0} max={100} step={0.01}/>
                         <FormControl.Feedback type="invalid">{t('x.invalidFeedback')}</FormControl.Feedback>
                     </InputGroup>
+                    <FormText>{t('sizeFormText')}</FormText>
                 </Col>
 
                 <Col sm={6}>
@@ -114,7 +116,6 @@ export default function InlineObjectForm({inlineObject, onChange: onChangeWithIn
                         <FormControl.Feedback type="invalid">{t('y.invalidFeedback')}</FormControl.Feedback>
                     </InputGroup>
                 </Col>
-                <FormText>{t('sizeFormText')}</FormText>
 
                 {inlineObject.isClickable() && <>
                     <Col sm={6}>
@@ -151,6 +152,7 @@ export default function InlineObjectForm({inlineObject, onChange: onChangeWithIn
                                 <option key={id} value={id}>{id}</option>,
                             )}
                         </datalist>
+                        <FormControl.Feedback type="invalid">{t('goto.invalidFeedback')}</FormControl.Feedback>
                     </InputGroup>
                 </Col>
 

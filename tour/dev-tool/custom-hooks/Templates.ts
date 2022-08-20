@@ -1,28 +1,36 @@
 import {useEffect, useMemo, useState} from "react";
-import {DataType, InlineObjectData} from "../../js/Data";
+import {Data, DataType, InlineObjectData} from "../../js/Data";
 import {JsonInlineObject} from "../../js/types";
 import {TemplateContextType} from "../TourContexts";
 
 type JsonTemplate = {
     inlineObject: JsonInlineObject,
 }
-class Template {
+class Template extends Data<Template>{
     public readonly inlineObject: InlineObjectData;
+    declare excludeFromDataType: 'excludeFromDataType';
 
     constructor({inlineObject}: DataType<Template>) {
+        super();
         this.inlineObject = inlineObject;
-    }
-
-    public toJSON(): JsonTemplate {
-        return {
-            inlineObject: this.inlineObject,
-        }
     }
 
     public static fromJSON(json: JsonTemplate): Template {
         return new Template({
             inlineObject: InlineObjectData.fromJSON(json.inlineObject),
         })
+    }
+
+    public equals(other: any): boolean {
+        return other != null && (this === other || (
+            this.inlineObject.equals(other.inlineObject)
+        ));
+    }
+
+    public toJSON(): JsonTemplate {
+        return {
+            inlineObject: this.inlineObject,
+        }
     }
 }
 

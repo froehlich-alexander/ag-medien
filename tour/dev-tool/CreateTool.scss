@@ -20,6 +20,9 @@ body {
   }
 
   .ListView {
+    .SelectControls {
+      border-color: var(--bs-gray-500);
+    }
     .PageItem {
       cursor: pointer;
 
@@ -27,6 +30,9 @@ body {
         font-size: larger;
       }
     }
+  }
+
+  .UnsavedChangesAlert {
   }
 
   .MediaDialog {

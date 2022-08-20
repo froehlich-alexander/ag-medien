@@ -8,8 +8,12 @@
   },
 
   "pageForm": {
-    "renameUsages": "Rename usages",
-    "initialDirection": "Initial Direction",
+    "id": {
+      "label": "Id",
+      "invalidFeedback": "Die Id muss einzigartig sein und darf nur aus Buchstaben, Zahlen, Strichen und Unterstrichen bestehen.",
+      "renameUsages": "Verwendungen Umbenennen"
+    },
+    "initialDirection": "Scroll am Anfang",
     "panorama": "Panorama",
     "360Deg": {
       "label": "360 Grad",
@@ -50,7 +54,10 @@
           "label": "Type"
         },
         "position": {
-          "label": "Position"
+          "label": "Position",
+          "text": "Wie das $t(translation:inlineObject) positioniert ist.",
+          "text_media": "Das $t(translation:inlineObject) ist relativ zum Medium positioniert (bewegt sich beim scrollen mit)",
+          "text_page": "Das $t(translation:inlineObject) ist relativ zur Seite positioniert (Scrolling spiel keine Rolle)"
         },
         "x": {
           "label": "X Koordinate",
@@ -68,7 +75,8 @@
           "label": "Pfeil"
         },
         "goto": {
-          "label": "Ziel"
+          "label": "Ziel",
+          "invalidFeedback": "Bitte wähle eine id aus der Liste aus."
         },
         "animationType": {
           "label": "Animation Type"

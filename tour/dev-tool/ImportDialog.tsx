@@ -1,9 +1,9 @@
 import * as React from "react";
 import {ChangeEvent, useContext, useState} from "react";
 import {Button, Col, Form, FormControl, FormText, InputGroup, Modal, Spinner} from "react-bootstrap";
+import {Trans, useTranslation} from 'react-i18next';
 import {FileData, PageData, SchulTourConfigFile} from "../js/Data";
 import {DialogContext, MediaContext, PageContext} from "./TourContexts";
-import {Trans, useTranslation} from 'react-i18next';
 
 type Props = {
     show: boolean,

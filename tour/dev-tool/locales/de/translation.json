@@ -1,1 +1,8 @@
-{}
+{
+  "save": "Speichern",
+  "activate": "Aktivieren",
+  "cancel": "Abbrechen",
+  "reset": "Zurücksetzen",
+  "discard": "Verwerfen",
+  "notAvailable": "Nicht Verfügbar"
+}

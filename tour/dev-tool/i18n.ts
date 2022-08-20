@@ -1,9 +1,8 @@
 import i18next from "i18next";
-import I18NextChainedBackend from "i18next-chained-backend";
 import I18nextBrowserLanguageDetector from "i18next-browser-languagedetector";
+import I18NextChainedBackend from "i18next-chained-backend";
 import I18NextHttpBackend from "i18next-http-backend";
-import I18NextLocalStorageBackend from "i18next-localstorage-backend";
-import {initReactI18next, CustomTypeOptions} from "react-i18next";
+import {CustomTypeOptions, initReactI18next} from "react-i18next";
 
 i18next
     .use(I18NextChainedBackend)

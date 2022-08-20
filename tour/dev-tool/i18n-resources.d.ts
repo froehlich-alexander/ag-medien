@@ -1,13 +1,13 @@
 import 'react-i18next';
-import dialogEN from './locales/en/dialog.json';
-import translationEN from './locales/en/translation.json';
-import mainPageEN from './locales/en/mainPage.json';
-import tourTypesEN from './locales/en/tourTypes.json';
 
 import dialogDE from './locales/de/dialog.json';
-import translationDE from './locales/de/translation.json';
 import mainPageDE from './locales/de/mainPage.json';
 import tourTypesDE from './locales/de/tourTypes.json';
+import translationDE from './locales/de/translation.json';
+import dialogEN from './locales/en/dialog.json';
+import mainPageEN from './locales/en/mainPage.json';
+import tourTypesEN from './locales/en/tourTypes.json';
+import translationEN from './locales/en/translation.json';
 
 declare module 'react-i18next' {
     interface CustomTypeOptions {

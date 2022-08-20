@@ -4,7 +4,8 @@ import {DialogContextType} from "../TourContexts";
 export default function useDialog() {
 
     const [importDialogVisibility, setImportDialogVisibility] = useState(false);
-    const [mediaDialogVisibility, setMediaDialogVisibility] = useState(true);
+    const [mediaDialogVisibility, setMediaDialogVisibility] = useState(false);
+    const [unsavedChangesAlertVisibility, setUnsavedChangesAlertVisibility] = useState(false);
 
     const showImportDialog = useCallback(() => {
         setImportDialogVisibility(true);
@@ -14,6 +15,10 @@ export default function useDialog() {
         setMediaDialogVisibility(true);
     }, []);
     
+    const showUnsavedChangesAlert = useCallback(() => {
+        setUnsavedChangesAlertVisibility(true);
+    }, []);
+    
     const dialogContext: DialogContextType = useMemo(() => ({
         mediaDialogVisibility,
         setMediaDialogVisibility,
@@ -21,8 +26,12 @@ export default function useDialog() {
 
         importDialogVisibility,
         setImportDialogVisibility,
-        showImportDialog
-    }), [importDialogVisibility,mediaDialogVisibility]);
+        showImportDialog,
+
+        unsavedChangesAlertVisibility: unsavedChangesAlertVisibility,
+        setUnsavedChangesAlertVisibility: setUnsavedChangesAlertVisibility,
+        showUnsavedChangesAlert: showUnsavedChangesAlert,
+    }), [importDialogVisibility,mediaDialogVisibility, unsavedChangesAlertVisibility]);
 
     return {
         mediaDialogVisibility,
@@ -32,6 +41,10 @@ export default function useDialog() {
         importDialogVisibility,
         setImportDialogVisibility,
         showImportDialog,
+
+        unsavedChangesAlertVisibility,
+        setUnsavedChangesAlertVisibility,
+        showUnsavedChangesAlert,
 
         dialogContext,
     }

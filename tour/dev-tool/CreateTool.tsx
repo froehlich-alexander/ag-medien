@@ -1,9 +1,11 @@
 import React, {useCallback, useEffect, useState} from "react";
-import {Button, Container, Spinner} from "react-bootstrap";
+import {Button, Col, Container, Spinner} from "react-bootstrap";
 import {FileData, SchulTourConfigFile} from "../js/Data";
 import {JsonSchulTourConfigFile} from "../js/types";
 import "./CreateTool.scss";
 import useDialog from "./custom-hooks/Dialog";
+import useForms from "./custom-hooks/Forms";
+import useListView from "./custom-hooks/ListView";
 import useMedia from "./custom-hooks/Media";
 import usePages from "./custom-hooks/Pages";
 import useTemplates from "./custom-hooks/Templates";
@@ -12,7 +14,8 @@ import ListView from "./ListView";
 import MediaDialog from "./MediaDialog.js";
 import {MyNavBar} from "./MyNavBar";
 import PageForm from "./PageForm";
-import {DialogContext, MediaContext, PageContext, TemplateContext} from "./TourContexts";
+import {DialogContext, FormContext, ListViewContext, MediaContext, PageContext, TemplateContext} from "./TourContexts";
+import UnsavedChangesAlert from "./UnsavedChangesAlert";
 
 export default function CreateTool() {
     const [fileSystem, setFileSystem] = useState<FileSystemDirectoryHandle>();
@@ -23,37 +26,18 @@ export default function CreateTool() {
     const [startingAllowed, setStartingAllowed] = useState(false);
     const [loadingFromFS, setLoadingFromFS] = useState(false);
 
-    // const [importDialogVisibility, setImportDialogVisibility] = useState(false);
-    // const [mediaDialogVisibility, setMediaDialogVisibility] = useState(true);
-
     const [formHasChanged, setFormHasChanged] = useState(false);
 
-    // const [currentPage, setCurrentPage] = useState<PageData>();
-    // const [pages, dispatchPages] = useReducer(pageReducer, []);
-    // const [mediaFiles, dispatchMediaFiles] = useReducer(mediaFilesReducer, [] as Readonly<MediaFilesType>);
-    // const [pages, {
-    //     add: addPages,
-    //     update: updatePages,
-    //     remove: removePages,
-    //     reset: resetPages,
-    // }] = useDataList<PageData, string>([], (page => typeof page === "string" ? page : page.id),
-    //     undefined, handlePagesAddUpdate, handlePagesAddUpdate);
     const {dialogContext, importDialogVisibility, setImportDialogVisibility} = useDialog();
     const {mediaFiles, resetMediaFiles, mediaContext} = useMedia(mediaDirectory);
     const {
         pages, resetPages,
-        currentPage, setCurrentPage,
+        setCurrentPage,
         pageContext,
     } = usePages(mediaContext, configFile);
     const {templateContext} = useTemplates();
-
-    // const [mediaFiles, {
-    //     add: addMediaFiles,
-    //     remove: removeMediaFiles,
-    //     reset: resetMediaFiles,
-    //     update: updateMediaFiles,
-    // }] = useDataList<FileData, string>([], (file => typeof file === "string" ? file : file.name),
-    //     undefined, writeMediaFiles, writeMediaFiles, deleteMediaFiles);
+    const {formContext, setPage} = useForms(pageContext.currentPage, pageContext.updatePages);
+    const {listViewContext} = useListView(pageContext, formContext, dialogContext);
 
     useEffect(() => {
         console.log('pages', pages);
@@ -100,28 +84,6 @@ export default function CreateTool() {
         }
     }, [fileSystem, resetMediaFiles, resetPages]);
 
-    // // save to json
-    // useEffect(() => {
-    //     window.localStorage.setItem('pages', JSON.stringify(pages));
-    // }, [pages]);
-    // useEffect(() => {
-    //     window.localStorage.setItem('medias', JSON.stringify(Object.values(mediaFiles)));
-    // }, [mediaFiles]);
-    // useEffect(() => {
-    //     window.localStorage.setItem('currentPage', JSON.stringify(currentPage?.id ?? null));
-    // }, [currentPage]);
-    //
-    // // from json
-    // useEffect(() => {
-    //     const pages = (JSON.parse(window.localStorage.getItem('pages') ?? '[]') as Array<JsonPage>).map(PageData.fromJSON);
-    //     const currentPageId: string | null = JSON.parse(window.localStorage.getItem('currentPage') ?? 'null');
-    //     const mediaFiles = (JSON.parse(window.localStorage.getItem('medias') ?? '[]') as Array<JsonFileData>).map(FileData.fromJSON);
-    //
-    //     resetMediaFiles(mediaFiles);
-    //     resetPages(pages);
-    //     setCurrentPage(pages.find(value => value.id === currentPageId));
-    // }, []);
-
     const selectWorkingDirectory = useCallback(() => {
         showDirectoryPicker({
             mode: "readwrite",
@@ -147,22 +109,31 @@ export default function CreateTool() {
                 <PageContext.Provider value={pageContext}>
                     <DialogContext.Provider value={dialogContext}>
                         <TemplateContext.Provider value={templateContext}>
-                            <MediaDialog/>
-                            <ImportDialog show={importDialogVisibility} onVisibilityChange={setImportDialogVisibility}/>
-                            <Container fluid className={"p-2 CreateTool"}>
-                                <MyNavBar className="mb-2"/>
-                                <div className="row">
-                                    <ListView className="col-4"/>
-                                    {currentPage && <PageForm hasChanged={setFormHasChanged} className="col"/>}
-                                </div>
-                            </Container>
+                            <FormContext.Provider value={formContext}>
+                                <ListViewContext.Provider value={listViewContext}>
+                                    <MediaDialog/>
+                                    <ImportDialog show={importDialogVisibility} onVisibilityChange={setImportDialogVisibility}/>
+                                    <Container fluid className={"p-2 CreateTool"}>
+                                        <MyNavBar className="mb-2"/>
+                                        <div className="row">
+                                            <Col sm={4}>
+                                                <UnsavedChangesAlert/>
+                                                <ListView/>
+                                            </Col>
+                                            <Col>
+                                                {formContext.page && <PageForm onChange={setPage}/>}
+                                            </Col>
+                                        </div>
+                                    </Container>
+                                </ListViewContext.Provider>
+                            </FormContext.Provider>
                         </TemplateContext.Provider>
                     </DialogContext.Provider>
                 </PageContext.Provider>
             </MediaContext.Provider>
             : <Container className="p-5">
                 <p className={selectWorkingDirectoryAborted ? 'text-danger' : 'text-info'}>
-                    You need to select a working directory to get started
+                    You need to select a project directory to get started
                 </p>
                 <p>
                     Typically this folder contains the config file (e.g. <code>pages.json</code>),

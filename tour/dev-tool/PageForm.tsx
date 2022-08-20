@@ -1,134 +1,103 @@
 import classNames from "classnames";
 import React, {ChangeEvent, useCallback, useContext, useEffect, useMemo, useState} from "react";
-import {Col, Form, FormText, InputGroup, Row} from "react-bootstrap";
+import {Button, ButtonGroup, Col, Form, FormControl, FormText, InputGroup, Row} from "react-bootstrap";
 import {useTranslation} from "react-i18next";
-import {MediaData, PageData, PageDataType} from "../js/Data";
+import {InlineObjectData, MediaData, PageData} from "../js/Data";
 import {renameAddressableId} from "../js/refactor-data";
 import InlineObjectContainerForm from "./InlineObjectContainerForm";
-import InlineObjectForm from "./InlineObjectForm";
 import {MediaForm} from "./MediaForm";
-import {PageContext} from "./TourContexts";
+import {FormContext, PageContext} from "./TourContexts";
 import {DefaultProps} from "./utils";
 
 interface PageFormProps extends DefaultProps {
-    hasChanged: (hasChanged: boolean) => any,
+    onChange: (page: PageData) => void,
 }
 
 export default function PageForm(
     {
         className,
-        hasChanged,
+        onChange,
     }: PageFormProps,
 ) {
 
     const pageContext = useContext(PageContext);
-    const { t } = useTranslation("mainPage", { keyPrefix: 'pageForm'});
+    const formContext = useContext(FormContext);
+    const {t} = useTranslation("mainPage", {keyPrefix: 'pageForm'});
+    const {t: tGlob} = useTranslation("translation");
 
-    const currentPage = pageContext.currentPage!;
-    const [page, setPage] = useState(currentPage);
     const [renamePageIdUsages, setRenamePageIdUsages] = useState(true);
-
-    // inputs
-    const [id, setId] = useState(currentPage.id);
-    const [initialDirection, setInitialDirection] = useState(currentPage.initialDirection);
-    const [is360, set360] = useState(currentPage.is360);
-    const [isPanorama, setPanorama] = useState(currentPage.isPanorama);
-    const [media, setMedia] = useState(currentPage.media);
-    const [inlineObjects, setInlineObjects] = useState(currentPage.inlineObjects);
-
-    // reset on current page change
-    useEffect(() => {
-        setMedia(currentPage.media);
-        setInlineObjects(currentPage.inlineObjects);
-        setId(currentPage.id);
-        setInitialDirection(currentPage.initialDirection);
-        set360(currentPage.is360);
-        setPanorama(currentPage.isPanorama);
-    }, [currentPage]);
-
-    // set has changed
-    useEffect(() => {
-        hasChanged(
-            new PageData({
-                media: media,
-                inlineObjects: inlineObjects,
-                id: id,
-                initialDirection: initialDirection,
-                is360: is360,
-                isPanorama: isPanorama,
-            }).equals(currentPage),
-        );
-    }, [currentPage, media, inlineObjects, id, initialDirection, is360, isPanorama]);
-
-    function handleChange(event: ChangeEvent<HTMLInputElement>) {
-        const name = event.target.name as keyof PageDataType;
-        const value = event.target.value as PageDataType[typeof name];
-        setPage(page.withUpdate({[name]: value}));
-    }
+    const page = formContext.page!;
 
     const handleId = useCallback((event: ChangeEvent<HTMLInputElement>) => {
         const newId = event.target.value;
-        if (id !== newId) {
-            setId(newId);
+        if (page.id !== newId) {
+            onChange(page.withId(newId));
             if (renamePageIdUsages) {
-                renameAddressableId(id, newId, pageContext.pages);
+                renameAddressableId(page.id, newId, pageContext.pages);
             }
         }
-    }, [setId, id]);
+    }, [page, onChange, pageContext.pages]);
 
     const handleRenamePageIdUsagesChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
         setRenamePageIdUsages(event.target.checked);
     }, []);
 
-    function handleInitialDirection(event: ChangeEvent<HTMLInputElement>) {
+    const handleInitialDirection = useCallback((event: ChangeEvent<HTMLInputElement>) => {
         let value = parseFloat(event.target.value);
         if (Number.isNaN(value)) {
             value = 0;
         }
-        setInitialDirection(Math.max(0, Math.min(value, 100)));
-    }
+        onChange(page.withInitialDirection(Math.max(0, Math.min(value, 100))));
+    }, [page, onChange]);
 
-    function handle360(event: ChangeEvent<HTMLInputElement>) {
+    const handle360 = useCallback((event: ChangeEvent<HTMLInputElement>) => {
         const value = event.target.checked;
-        set360(value);
-        if (value) {
-            setPanorama(true);
-        }
-    }
+        onChange(page.withIs360(value));
+    }, [page, onChange]);
 
     function handlePanorama(event: ChangeEvent<HTMLInputElement>) {
         const value = event.target.checked;
-        setPanorama(value);
-        if (!value) {
-            set360(false);
-        }
+        onChange(page.withIsPanorama(value));
     }
 
     const handleMediaChange = useCallback((media: MediaData) => {
-        setMedia(media);
-    }, []);
+        onChange(page.withMedia(media));
+    }, [page, onChange]);
+
+    const handleInlineObjectsChange = useCallback((inlineObjects: InlineObjectData[]) => {
+        onChange(page.withInlineObjects(inlineObjects));
+    }, [page, onChange]);
 
     const disablePanorama: boolean = useMemo(() =>
-            !(media.allTypes().includes("img") || media.allTypes().includes('video')),
-        [media]);
+            !(page.media.allTypes().includes("img") || page.media.allTypes().includes('video')),
+        [page.media]);
 
     useEffect(() => {
         if (disablePanorama) {
-            setPanorama(false);
-            set360(false);
+            onChange(page.withIsPanorama(false));
         }
-    }, [disablePanorama]);
+    }, [disablePanorama, page, onChange]);
+
+    const idPattern: string = useMemo(() => {
+        // https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes/pattern --- implicit surrounded by ^(?:PATTERN)$
+        // must be different from other id except own id
+        // only a-zA-Z0-9-_ are allowed
+        // ^(?!(xxx|xx)$) return false if tested with xxx or xx , BUT it does not match anything. That's because we need the [a-z...]* at the end
+        return `^${pageContext.currentPage?.id ?? ''}$|^(?!(${pageContext.pages.map(v => v.id).join('|')})$)[a-zA-Y0-9-_]*`;
+    }, [pageContext.pages, pageContext.currentPage?.id]);
 
     return (
         <div className={classNames("pt-4 pb-4", className)}>
-            <Form className={"gy-3 gx-4 row row-cols-12"}>
-                <h3 className="mx-auto">{id}</h3>
+            <Form className={"gy-3 gx-4 row row-cols-12"} validated={true} onSubmit={formContext.save}
+                  action="js:void(0)">
+                <h3 className="mx-auto">{page.id}</h3>
                 <InputGroup>
                     <InputGroup.Text as="label"
-                                     htmlFor="i-id">Id</InputGroup.Text>
-                    <Form.Control id="i-id" type="text" value={id} onChange={handleId}/>
-                    <InputGroup.Text>{t('renameUsages')}</InputGroup.Text>
+                                     htmlFor="i-id">{t('id.label')}</InputGroup.Text>
+                    <Form.Control id="i-id" type="text" value={page.id} onChange={handleId} pattern={idPattern}/>
+                    <InputGroup.Text>{t('id.renameUsages')}</InputGroup.Text>
                     <InputGroup.Checkbox checked={renamePageIdUsages} onChange={handleRenamePageIdUsagesChange}/>
+                    <FormControl.Feedback type="invalid">{t('id.invalidFeedback')}</FormControl.Feedback>
                 </InputGroup>
                 <Col sm={12}>
                     <Row>
@@ -137,14 +106,14 @@ export default function PageForm(
                                 <InputGroup.Text as="label"
                                                  htmlFor="i-initial-direction">{t("initialDirection")}</InputGroup.Text>
                                 <Form.Control id="i-initial-direction" min={0} max={100}
-                                              type="number" disabled={!isPanorama}
-                                              value={initialDirection} onChange={handleInitialDirection}/>
+                                              type="number" disabled={!page.isPanorama}
+                                              value={page.initialDirection} onChange={handleInitialDirection}/>
                             </InputGroup>
                         </Col>
                         <Col className="d-flex align-items-center">
                             <Form.Range id="i-initial-direction-range" min={0} max={100}
-                                        className="col align-self-center" disabled={!isPanorama}
-                                        value={initialDirection} onChange={handleInitialDirection}/>
+                                        className="col align-self-center" disabled={!page.isPanorama}
+                                        value={page.initialDirection} onChange={handleInitialDirection}/>
                         </Col>
                     </Row>
                 </Col>
@@ -152,7 +121,7 @@ export default function PageForm(
                     <InputGroup>
                         <InputGroup.Text as="label"
                                          htmlFor="i-panorama">{t('panorama')}</InputGroup.Text>
-                        <InputGroup.Checkbox id="i-panorama" checked={isPanorama}
+                        <InputGroup.Checkbox id="i-panorama" checked={page.isPanorama}
                                              onChange={handlePanorama} disabled={disablePanorama}/>
                     </InputGroup>
                 </Col>
@@ -161,14 +130,18 @@ export default function PageForm(
                     <InputGroup>
                         <InputGroup.Text as="label"
                                          htmlFor="i-360">{t('360Deg.label')}</InputGroup.Text>
-                        <InputGroup.Checkbox id="i-360" checked={is360} onChange={handle360}
+                        <InputGroup.Checkbox id="i-360" checked={page.is360} onChange={handle360}
                                              disabled={disablePanorama}/>
                     </InputGroup>
                 </Col>
                 <FormText hidden={!disablePanorama} className="text-info">{t('360Deg.text')}</FormText>
 
-                <MediaForm media={media} onMediaChange={handleMediaChange}/>
-                <InlineObjectContainerForm inlineObjects={inlineObjects} onChange={setInlineObjects}/>
+                <MediaForm media={page.media} onMediaChange={handleMediaChange}/>
+                <InlineObjectContainerForm inlineObjects={page.inlineObjects} onChange={handleInlineObjectsChange}/>
+                <ButtonGroup>
+                    <Button type="submit" variant="primary">{tGlob('save')}</Button>
+                    <Button variant="secondary" onClick={formContext.reset}>{tGlob('cancel')}</Button>
+                </ButtonGroup>
             </Form>
         </div>
     );

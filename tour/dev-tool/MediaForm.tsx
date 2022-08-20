@@ -1,11 +1,10 @@
 import * as React from "react";
-import {useCallback, useContext, useState} from "react";
-import {Accordion, Badge, Container} from "react-bootstrap";
+import {useCallback} from "react";
+import {Accordion, Col, Container} from "react-bootstrap";
 import {useTranslation} from "react-i18next";
-import {DataType, MediaData, SourceData} from "../js/Data";
+import {MediaData, SourceData} from "../js/Data";
 import "./CreateTool.scss";
 import SourceForm from "./SourceForm";
-import {MediaContext} from "./TourContexts";
 import {DefaultProps, MaterialIcon} from "./utils";
 
 type Props = DefaultProps & {
@@ -13,29 +12,26 @@ type Props = DefaultProps & {
     onMediaChange: (media: MediaData) => void,
 };
 
-export function MediaForm({onMediaChange, media,}: Props) {
-    const { t } = useTranslation("mainPage", { keyPrefix: 'pageForm.mediaForm'});
-    const mediaContext = useContext(MediaContext);
-    
-    const setSrc = useCallback((src: SourceData|undefined) => {
+export function MediaForm({onMediaChange, media}: Props) {
+    const {t} = useTranslation("mainPage", {keyPrefix: 'pageForm.mediaForm'});
+
+    const setSrc = useCallback((src: SourceData | undefined) => {
         onMediaChange(media.withUpdate({
             src: src,
         }));
-    }, [media,onMediaChange]);
+    }, [media, onMediaChange]);
 
-    const setMinSrc = useCallback((srcMin: SourceData|undefined) => {
+    const setMinSrc = useCallback((srcMin: SourceData | undefined) => {
         onMediaChange(media.withUpdate({
             srcMin: srcMin,
         }));
-    }, [media,onMediaChange]);
+    }, [media, onMediaChange]);
 
-    const setMaxSrc = useCallback((srcMax: SourceData|undefined) => {
+    const setMaxSrc = useCallback((srcMax: SourceData | undefined) => {
         onMediaChange(media.withUpdate({
             srcMax: srcMax,
         }));
-    }, [media,onMediaChange]);
-
-    // console.log("srcs", media.src, media.srcMin, media.srcMax);
+    }, [media, onMediaChange]);
 
     // async function handleFileInput(event: ChangeEvent<HTMLInputElement>) {
     //     const inputFiles = Array.from(event.target.files!);
@@ -78,29 +74,38 @@ export function MediaForm({onMediaChange, media,}: Props) {
             <Accordion>
                 <Accordion.Item eventKey="src">
                     <Accordion.Header>
-                        {t('normalSource')}
-                        <MaterialIcon icon="warning" color="danger" className="ms-2" hidden={!media.src?.fileDoesNotExist}/>
+                        <Col sm={2}>{t('normalSource')}</Col>
+                        <MaterialIcon icon="warning" color="danger" className="ms-2"
+                                      hidden={media.src?.isComplete() !== false}/>
+                        {media.src && media.src?.name}
                     </Accordion.Header>
                     <Accordion.Body>
-                        <SourceForm source={media.src} onSourceChange={setSrc} mediaNotExistent={srcNotExistent}/>
+                        <SourceForm source={media.src} onSourceChange={setSrc}
+                                    mediaNotExistent={media.src?.isComplete() === false}/>
                     </Accordion.Body>
                 </Accordion.Item>
                 <Accordion.Item eventKey="srcMin">
                     <Accordion.Header>
-                        {t('srcMin')}
-                        <MaterialIcon icon="warning" color="danger" className="ms-2" hidden={!srcMinNotExistent}/>
+                        <Col sm={2}>{t('srcMin')}</Col>
+                        <MaterialIcon icon="warning" color="danger" className="ms-2"
+                                      hidden={media.srcMin?.isComplete() !== false}/>
+                        {media.srcMin && media.srcMin?.name}
                     </Accordion.Header>
                     <Accordion.Body>
-                        <SourceForm source={media.srcMin} onSourceChange={setMinSrc} mediaNotExistent={srcMinNotExistent}/>
+                        <SourceForm source={media.srcMin} onSourceChange={setMinSrc}
+                                    mediaNotExistent={media.srcMin?.isComplete() === false}/>
                     </Accordion.Body>
                 </Accordion.Item>
                 <Accordion.Item eventKey="srcMax">
                     <Accordion.Header>
-                        {t('srcMax')}
-                        <MaterialIcon icon="warning" color="danger" className="ms-2" hidden={!srcMaxNotExistent}/>
+                        <Col sm={2}>{t('srcMax')}</Col>
+                        <MaterialIcon icon="warning" color="danger" className="ms-2"
+                                      hidden={media.srcMax?.isComplete() !== false}/>
+                        {media.srcMax && media.srcMax?.name}
                     </Accordion.Header>
                     <Accordion.Body>
-                        <SourceForm source={media.srcMax} onSourceChange={setMaxSrc} mediaNotExistent={srcMaxNotExistent}/>
+                        <SourceForm source={media.srcMax} onSourceChange={setMaxSrc}
+                                    mediaNotExistent={media.srcMax?.isComplete() === false}/>
                     </Accordion.Body>
                 </Accordion.Item>
             </Accordion>
@@ -113,7 +118,7 @@ export function MediaForm({onMediaChange, media,}: Props) {
             {/*                      onChange={handleFileInput}/>*/}
             {/*        <Col sm={12}>*/}
             {/*            <Form.Text>*/}
-            {/*                You can add up to 3 different sources and they are automatically ordered*/}
+            {/*                You can add up to 3 different sources, and they are automatically ordered*/}
             {/*                according to their size*/}
             {/*            </Form.Text>*/}
             {/*        </Col>*/}

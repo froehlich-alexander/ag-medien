@@ -22,13 +22,13 @@ function useDataList<DataItem extends { equals(other: DataItem): boolean }, Data
     type DataItemKeyList = Array<DataItemKey>;
 
     const reducer = useCallback((state: DataItemList, action:
-        { type: 'add' | 'update', media: DataItemList }
-        | { type: 'remove', media: DataItemList | DataItemKeyList }
-        | { type: 'reset', media?: DataItemList },
+        { type: 'add' | 'update', items: DataItemList }
+        | { type: 'remove', items: DataItemList | DataItemKeyList }
+        | { type: 'reset', items?: DataItemList },
     ): DataItemList => {
         switch (action.type) {
             case "reset":
-                const media = action.media;
+                const media = action.items;
                 if (!arrayIsValid(media)) {
                     if (!state.length) {
                         return state;
@@ -44,12 +44,12 @@ function useDataList<DataItem extends { equals(other: DataItem): boolean }, Data
                     return media;
                 }
             case "remove":
-                if (!action.media.length || !state.length) {
+                if (!action.items.length || !state.length) {
                     return state;
                 }
                 const newState = [];
                 const removedItems = [];
-                const mediaKeys = action.media.map(getKey);
+                const mediaKeys = action.items.map(getKey);
                 for (let i of state) {
                     if (mediaKeys.includes(getKey(i))) {
                         removedItems.push(i);
@@ -65,29 +65,35 @@ function useDataList<DataItem extends { equals(other: DataItem): boolean }, Data
             //         {} as Mutable<MediaFilesType>) as MediaFilesType;
             case "add":
             case "update":
-                if (action.media.length === 0) {
+                if (action.items.length === 0) {
                     return state;
                 }
-                const itemsToDelete: DataItemList = [];
-                const filesToUpdate: DataItemList = [];
-                const filesToAdd: DataItemList = [];
+                const itemsToDelete: number[] = [];
+                const itemsToUpdate: DataItemList = [];
+                const itemToAdd: DataItemList = [];
 
-                for (let item of action.media) {
-                    const old = state.find(value => compareItems(item, value));
-                    if (old === undefined) {
-                        filesToAdd.push(item);
-                    } else if (!item.equals(old)) {
-                        filesToUpdate.push(item);
-                        itemsToDelete.push(old);
+                for (let item of action.items) {
+                    const oldIndex = state.findIndex(value => compareItems(item, value));
+                    if (oldIndex === -1) {
+                        itemToAdd.push(item);
+                    } else if (!item.equals(state[oldIndex])) {
+                        itemsToUpdate.push(item);
+                        itemsToDelete.push(oldIndex);
                     }
                 }
 
                 // if we change anything
-                if (filesToAdd.length || filesToUpdate.length) {
-                    const res = state.filter(v => !itemsToDelete.includes(v));
-                    res.push(...filesToAdd, ...filesToUpdate);
-                    onItemsAdded?.(filesToAdd);
-                    onItemsUpdated?.(filesToUpdate);
+                if (itemToAdd.length || itemsToUpdate.length) {
+                    const res = state.slice();
+                    // .filter(v => !itemsToDelete.includes(v));
+                    let i = 0;
+                    for (let index of itemsToDelete) {
+                        res[index] = itemsToUpdate[i];
+                        i++;
+                    }
+                    res.push(...itemToAdd);
+                    onItemsAdded?.(itemToAdd);
+                    onItemsUpdated?.(itemsToUpdate);
                     return res;
                 } else {
                     return state;
@@ -98,19 +104,19 @@ function useDataList<DataItem extends { equals(other: DataItem): boolean }, Data
 
 
     const add = useCallback((...items: UnFlatArray<DataItem>) => {
-        dispatch({type: 'add', media: items.flat(1) as DataItemList});
+        dispatch({type: 'add', items: items.flat(1) as DataItemList});
     }, []);
 
     const update = useCallback((...items: UnFlatArray<DataItem>) => {
-        dispatch({type: 'update', media: items.flat(1) as DataItemList});
+        dispatch({type: 'update', items: items.flat(1) as DataItemList});
     }, []);
 
     const remove = useCallback((...items: UnFlatArray<DataItem | DataItemKey>) => {
-        dispatch({type: 'remove', media: items.flat() as DataItemList | DataItemKeyList});
+        dispatch({type: 'remove', items: items.flat() as DataItemList | DataItemKeyList});
     }, []);
 
     const reset = useCallback((...items: UnFlatArray<DataItem>) => {
-        dispatch({type: 'reset', media: items.flat() as DataItemList});
+        dispatch({type: 'reset', items: items.flat() as DataItemList});
     }, []);
 
     return [

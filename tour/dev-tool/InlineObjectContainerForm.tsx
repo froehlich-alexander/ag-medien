@@ -1,5 +1,5 @@
 import React, {useCallback, useContext} from "react";
-import {Accordion, Button, Col, Container, Row} from "react-bootstrap";
+import {Accordion, Button, Container} from "react-bootstrap";
 import {useTranslation} from "react-i18next";
 import {InlineObjectData} from "../js/Data";
 import InlineObjectForm from "./InlineObjectForm";

@@ -621,7 +621,7 @@ class Page {
         }: { id: string, media: Media, is_panorama: boolean, is_360: boolean, initial_direction: number, inlineObjects: InlineObject[] }) {
         this.id = id;
         this.media = media;
-        this.media.page = this;
+        this.items.page = this;
         this.is_360 = is_360;
         this.is_panorama = is_panorama;
         this.initial_direction = initial_direction;
@@ -634,7 +634,7 @@ class Page {
             is_panorama: data.isPanorama,
             is_360: data.is360,
             initial_direction: data.initialDirection,
-            media: Media.from(data.media),
+            items: Media.from(data.items),
             inlineObjects: data.inlineObjects.map(InlineObject.from),
         });
     }
@@ -968,7 +968,7 @@ window.addEventListener('resize', function () {
         }
     });
     for (let i of pages) {
-        i.media.triggerResize();
+        i.items.triggerResize();
     }
     adjust_clickables();
 });
@@ -991,7 +991,7 @@ function goTo(pg: string | undefined, animationType: PageAnimations) {
         let next = pages.find(v => v.id === pg!.substring(idPrefix.length))!;
         let prev = pages.find(v => v.id === $(".page.show").attr("id")!.substring(idPrefix.length))!;
         //pause video
-        prev.media.pause();
+        prev.items.pause();
         next.html.addClass("show");
         adjust_clickables();
         lastest = prev.id;
@@ -1061,7 +1061,7 @@ function createHtml(json: JsonPage[]) {
         //via user agent
         // if (/(iPhone|iPod|iPad|blackberry|android|Kindle|htc|lg|midp|mmp|mobile|nokia|opera mini|palm|pocket|psp|sgh|smartphone|symbian|treo mini|Playstation Portable|SonyEricsson|Samsung|MobileExplorer|PalmSource|Benq|Windows Phone|Windows Mobile|IEMobile|Windows CE|Nintendo Wii)/.test(navigator.userAgent))
         //or via screen size
-        if ((!isDesktop) && page.media.isImage()) {
+        if ((!isDesktop) && page.items.isImage()) {
             page.is_panorama = true;
         }
         // console.log("page", page);
@@ -1104,9 +1104,9 @@ function createHtml(json: JsonPage[]) {
         }
 
         let event;
-        if (page.media.isImage() || page.media.isIframe())
+        if (page.items.isImage() || page.items.isIframe())
             event = "load";
-        else if (page.media.isVideo()) {
+        else if (page.items.isVideo()) {
             event = "loadedmetadata";
         } else {
             console.error("cannot determine event type because Media Type is not known (or not implemented)\nContinuing with 'load' as event type, but FIX THIS");
@@ -1253,7 +1253,7 @@ function createHtml(json: JsonPage[]) {
         page.html.children(".pg_wrapper")
             .append($("<div></div>")
                 .addClass("bg_container")
-                .append(page.media.html)
+                .append(page.items.html)
                 .append(page.inlineObjects
                     .filter(v => v.data.position == "media" && (!v.second))
                     .map(v => v.html)))
@@ -1265,7 +1265,7 @@ function createHtml(json: JsonPage[]) {
             console.log("is_360");
             //add second clickables for second img in 360deg IMGs
             page.addInlineObjects(...page.clickables.filter(v => v.data.position == "media" && (!v.second)).map(v => v.clone()));
-            page.secondaryImg = page.media.clone();
+            page.secondaryImg = page.items.clone();
             //second img
             let bgContainer1 = $("<div></div>")
                 .addClass("bg_container")
@@ -1282,16 +1282,16 @@ function createHtml(json: JsonPage[]) {
                 let self = $(this);
                 if (this.scrollWidth - this.clientWidth - this.scrollLeft < scrollSensitivity) {
                     // if new scroll would trigger this event again
-                    if (this.scrollLeft - page.media.html.width()! < scrollSensitivity) {
+                    if (this.scrollLeft - page.items.html.width()! < scrollSensitivity) {
                         return;
                     }
-                    self.scrollLeft(this.scrollLeft - page.media.html.width()!);
+                    self.scrollLeft(this.scrollLeft - page.items.html.width()!);
                 } else if (self.scrollLeft()! < scrollSensitivity) {
                     // if new scroll would trigger this event again
-                    if (this.scrollWidth - this.clientWidth - (this.scrollLeft + page.media.html.width()!) < scrollSensitivity) {
+                    if (this.scrollWidth - this.clientWidth - (this.scrollLeft + page.items.html.width()!) < scrollSensitivity) {
                         return;
                     }
-                    self.scrollLeft(this.scrollLeft + page.media.html.width()!);
+                    self.scrollLeft(this.scrollLeft + page.items.html.width()!);
                 }
             });
         }

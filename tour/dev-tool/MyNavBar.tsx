@@ -1,7 +1,7 @@
 import classNames from "classnames";
 import * as React from "react";
 import {ChangeEvent, useCallback, useContext, useMemo} from "react";
-import {CloseButton, Col, Container, FormSelect, InputGroup, Nav, Navbar} from "react-bootstrap";
+import {CloseButton, Col, Container, FormSelect, Nav, Navbar} from "react-bootstrap";
 import {useTranslation} from "react-i18next";
 import {DialogContext} from "./TourContexts";
 import {DefaultProps} from "./utils";
@@ -52,8 +52,11 @@ export function MyNavBar({className}: Props) {
                 </Navbar.Collapse>
                 <Col sm="auto" className="me-2">
                     <FormSelect value={i18n.language} onChange={handleLanguageChange} size="sm">
-                        {(i18n.options.supportedLngs as string[]).map(value => value.slice(-2)).map(value =>
-                            <option value={value}>{langs[value as keyof typeof langs] ?? value}</option>)}
+                        {(i18n.options.supportedLngs as string[]).map(value => value.slice(-2))
+                            .filter((value, index, array) => array.indexOf(value) === index)
+                            .map(value => <option key={value} value={value}>
+                                {langs[value as keyof typeof langs] ?? value}
+                            </option>)}
                     </FormSelect>
                     <label htmlFor="language-select" className="visually-hidden">{t('language.label')}</label>
                 </Col>

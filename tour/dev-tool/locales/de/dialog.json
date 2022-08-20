@@ -47,5 +47,8 @@
       "actions": "Aktionen"
     },
     "closeButton": "Schließen"
+  },
+  "unsavedChangesAlert": {
+    "text": "Die Seite <1>{{pageName}}</1> wurde verändert. Willst du die Änderungen <3>$t(translation:save)</3> oder <5>$t(translation:discard)</5>"
   }
 }

@@ -47,5 +47,9 @@
       "actions": "Actions"
     },
     "closeButton": "Close"
+  },
+
+  "unsavedChangesAlert": {
+    "text": "You have modified <1>{{pageName}}</1>. Do you want to <3>$t(translation:save)</3> or <5>$t(translation:discard)</5> the changes?"
   }
 }

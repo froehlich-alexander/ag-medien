@@ -8,7 +8,11 @@
   },
 
   "pageForm": {
-    "renameUsages": "Rename usages",
+    "id": {
+      "label": "Id",
+      "invalidFeedback": "The Id must be unique and only contain letters, numbers dashes or underscore.",
+      "renameUsages": "Rename usages"
+    },
     "initialDirection": "Initial Direction",
     "panorama": "Panorama",
     "360Deg": {
@@ -50,7 +54,10 @@
           "label": "Type"
         },
         "position": {
-          "label": "Position"
+          "label": "Position",
+          "text": "How the $t(translation:inlineObject) is positioned",
+          "text_media": "The $t(translation:inlineObject) is positioned relative to the media (moves while scrolling)",
+          "text_page": "The $t(translation:inlineObject) is positioned relative to the page (does not move while scrolling)"
         },
         "x": {
           "label": "X Coordinate",
@@ -68,7 +75,8 @@
           "label": "Icon"
         },
         "goto": {
-          "label": "Goto / target id"
+          "label": "Goto / target id",
+          "invalidFeedback": "Please select a target id from the list"
         },
         "animationType": {
           "label": "Animation Type"

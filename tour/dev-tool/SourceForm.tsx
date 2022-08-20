@@ -1,14 +1,5 @@
 import React, {ChangeEvent, useCallback, useContext} from 'react';
-import {
-    Button,
-    Col,
-    Container,
-    FormControl,
-    FormSelect,
-    FormText,
-    InputGroup,
-    Row,
-} from "react-bootstrap";
+import {Button, Col, Container, FormControl, FormSelect, FormText, InputGroup, Row} from "react-bootstrap";
 import {Trans, useTranslation} from "react-i18next";
 import {MediaData, SourceData} from "../js/Data";
 import {MediaType} from "../js/types";
@@ -32,16 +23,14 @@ function SourceForm({source, onSourceChange, mediaNotExistent}: SourceFormProps)
             return;
         }
         const media = mediaContext.mediaFiles.find(value => value.name === eventValue)!;
-        (async () => {
-            onSourceChange(await SourceData.fromFileData(media));
-        })();
+        onSourceChange(SourceData.fromFileData(media));
         // onSourceChange(source!.withUpdate({
         //     name: media.name,
         //     type: media.type,
         //     width: media.intrinsicWidth,
         //     height: media.intrinsicHeight,
         // }));
-    }, [source, onSourceChange, mediaContext.mediaFiles]);
+    }, [onSourceChange, mediaContext.mediaFiles]);
 
     const handleTypeChange = useCallback((event: ChangeEvent<HTMLSelectElement>) => {
         onSourceChange(source!.withType(event.target.value as MediaType));
@@ -79,26 +68,26 @@ function SourceForm({source, onSourceChange, mediaNotExistent}: SourceFormProps)
     return (
         <Container>
             <Row className="row-cols-12 gy-2 gx-3">
-                <Col sm={12}>
+                <Col sm={12} className="row">
                     <Col>
                         <InputGroup>
                             <InputGroup.Text as="label" htmlFor="source-name">{t('name.label')}</InputGroup.Text>
                             <FormSelect value={source?.name ?? 'undefined'} id="source-name" required
-                                        onChange={handleNameChange}>
+                                        onChange={handleNameChange} isInvalid={mediaNotExistent}>
                                 <option value="undefined">--- Select a file ---</option>
                                 {mediaNotExistent && <option value={source!.name} disabled>{source!.name}</option>}
                                 {mediaContext.mediaFiles.map(value =>
                                     <option key={value.name} value={value.name}>{value.name}</option>)}
                             </FormSelect>
+                            <FormControl.Feedback type="invalid">{/*hidden={!mediaNotExistent}>*/}
+                                <Trans ns="mainPage" i18nKey={'pageForm.mediaForm.sourceForm.name.notFound'}>
+                                    Could not find this media file: <code>{{file: source?.name}}</code>.
+                                    Please add it in the &ensp;
+                                    <a className="link-primary" onClick={dialogContext.showMediaDialog} href="#">Media Dialog</a>
+                                </Trans>
+                            </FormControl.Feedback>
                         </InputGroup>
                     </Col>
-                    <FormText className="text-danger" hidden={!mediaNotExistent}>
-                        <Trans ns="mainPage" i18nKey={'pageForm.mediaForm.sourceForm.name.notFound'}>
-                            Could not find this media file: <code>{{file: source?.name}}</code>.
-                            Please add it in the &ensp;
-                            <a className="link-primary" onClick={dialogContext.showMediaDialog} href="#">Media Dialog</a>
-                        </Trans>
-                    </FormText>
 
                     <Col sm="auto">
                         <InputGroup>

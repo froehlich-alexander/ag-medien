@@ -199,6 +199,34 @@ class PageData extends Data<PageData> {
     public withInlineObjects(...inlineObjects: UnFlatArray<InlineObjectData>): PageData {
         return new PageData({...this, inlineObjects: inlineObjects.flat()});
     }
+
+    public withInitialDirection(initialDirection: number): PageData {
+        if (this.initialDirection === initialDirection) {
+            return this;
+        }
+        return new PageData({...this, initialDirection: initialDirection});
+    }
+
+    public withMedia(media: MediaData): PageData {
+        if (this.media === media) {
+            return this;
+        }
+        return new PageData({...this, media: media});
+    }
+
+    public withIs360(is360: boolean): PageData {
+        if (this.is360 === is360) {
+            return this;
+        }
+        return new PageData({...this, is360: is360, isPanorama: is360 || this.isPanorama});
+    }
+
+    public withIsPanorama(isPanorama: boolean): PageData {
+        if (this.isPanorama === isPanorama) {
+            return this;
+        }
+        return new PageData({...this, isPanorama: isPanorama, is360: isPanorama&&this.is360});
+    }
 }
 
 class MediaData extends Data<MediaData> {
@@ -567,7 +595,7 @@ const InlineObjectData = {
 };
 
 type InlineObjectData = ClickableData | CustomObjectData | TextFieldData;
-type InlineObjectDataConstructor = typeof ClickableData | typeof CustomObjectData | typeof TextFieldData;
+export type InlineObjectDataConstructor = typeof ClickableData | typeof CustomObjectData | typeof TextFieldData;
 
 class ClickableData extends AbstractInlineObjectData<ClickableData, JsonClickable> {
     public declare excludeFromDataType: 'excludeFromDataType';
@@ -810,8 +838,7 @@ class SourceData extends Data<SourceData> {
         return this.fromFileData(fileData);
     }
 
-    public static async fromFileData(fileData: FileData): Promise<SourceData> {
-        // const [width, height] = await fileData.computeWidthHeight();
+    public static fromFileData(fileData: FileData): SourceData {
         return new SourceData({
             name: fileData.name,
             file: fileData,
@@ -822,7 +849,7 @@ class SourceData extends Data<SourceData> {
         });
     }
 
-    public async complete(mediaContext: MediaContextType): Promise<SourceData> {
+    public complete(mediaContext: MediaContextType): SourceData {
         if (this.isComplete()) {
             // if (this.height != null && this.width != null) {
             return this;
@@ -1068,6 +1095,7 @@ export type JsonFileData = {
 }
 
 export {
+    Data,
     DataType,
     SchulTourConfigFile,
     Mutable,

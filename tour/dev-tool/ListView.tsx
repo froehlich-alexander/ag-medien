@@ -3,7 +3,7 @@ import React, {ChangeEvent, MouseEvent, useCallback, useContext} from "react";
 import {Button, ButtonGroup, Col, Container, Form, ListGroup, Row} from "react-bootstrap";
 import {PageData} from "../js/Data";
 import useSet from "./custom-hooks/SetSate";
-import {PageContext} from "./TourContexts";
+import {ListViewContext, PageContext} from "./TourContexts";
 import {DefaultProps, MaterialIcon} from "./utils";
 
 interface ListViewProps extends DefaultProps {
@@ -31,25 +31,19 @@ export default function ListView(
 
     return (
         <div className={classNames("ListView", className)}>
-            <Col sm={12}>
-                <Container className="p-3 bg-white rounded-2 mb-2">
-                    <Row>
-                        <Col sm={"auto"}>
+            <ListGroup>
+                <ListGroup.Item>
+                    <Row className="row-cols-auto py-2">
+                        <Col>
                             <ButtonGroup>
                                 <Button onClick={selectAll}>Select All</Button>
                                 <Button variant="secondary" onClick={unselectAll}>Unselect All</Button>
                             </ButtonGroup>
                         </Col>
-                        <Col sm={"auto"}>
-                                <Button variant="danger" onClick={deleteAllSelected}>Delete All Selected</Button>
+                        <Col>
+                            <Button variant="danger" onClick={deleteAllSelected}>Delete All Selected</Button>
                         </Col>
                     </Row>
-                </Container>
-            </Col>
-            <ListGroup>
-                <ListGroup.Item key={12} className="p-0">
-                    {/* @ts-ignore */}
-                    <PageItem selected={selectedPages.has("hello test")} onSelected={toggle} page={{id: 'hello test'}}/>
                 </ListGroup.Item>
                 {pageContext.pages.map(v =>
                     <ListGroup.Item key={v.id} className="p-0">
@@ -75,12 +69,11 @@ function PageItem(
 ) {
     const pageContext = useContext(PageContext);
     const selectedPage = pageContext.currentPage;
+    const listViewContext = useContext(ListViewContext);
 
     const handleClick = useCallback(() => {
-        if (page.id !== selectedPage?.id) {
-            pageContext.setCurrentPage(page.id);
-        }
-    }, [page.id, selectedPage, pageContext.setCurrentPage]);
+        listViewContext.requestSetCurrentPage(page.id);
+    }, [page.id, listViewContext]);
 
     const handleDelete = useCallback((event: MouseEvent) => {
         pageContext.removePages(page.id);
