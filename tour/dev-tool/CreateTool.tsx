@@ -11,7 +11,7 @@ import usePages from "./custom-hooks/Pages";
 import useTemplates from "./custom-hooks/Templates";
 import {ImportDialog} from "./ImportDialog";
 import ListView from "./ListView";
-import MediaDialog from "./MediaDialog.js";
+import MediaDialog from "./MediaDialog";
 import {MyNavBar} from "./MyNavBar";
 import PageForm from "./PageForm";
 import {DialogContext, FormContext, ListViewContext, MediaContext, PageContext, TemplateContext} from "./TourContexts";
