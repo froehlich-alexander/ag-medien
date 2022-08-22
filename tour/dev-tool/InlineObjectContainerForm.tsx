@@ -1,5 +1,5 @@
 import React, {useCallback, useContext} from "react";
-import {Accordion, Button, Container} from "react-bootstrap";
+import {Accordion, Button, Col, Container, Row} from "react-bootstrap";
 import {useTranslation} from "react-i18next";
 import {InlineObjectData} from "../js/Data";
 import InlineObjectForm from "./InlineObjectForm";
@@ -39,7 +39,11 @@ export default function InlineObjectContainerForm({inlineObjects, onChange}: Inl
                     }
 
                     return <Accordion.Item eventKey={index.toString()} key={index}>
-                        <Accordion.Header>{value.type + " - " + label}</Accordion.Header>
+                        <Accordion.Header>
+                            <Row>
+                                <Col sm={2}>{value.type}</Col>{label}
+                            </Row>
+                        </Accordion.Header>
                         <Accordion.Body>
                             <InlineObjectForm inlineObject={value} onChange={handleInlineObjectChange}
                                               index={index}/>

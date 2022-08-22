@@ -3,7 +3,7 @@ import React, {ChangeEvent, useCallback, useContext, useEffect, useMemo, useStat
 import {Button, ButtonGroup, Col, Form, FormControl, FormText, InputGroup, Row} from "react-bootstrap";
 import {useTranslation} from "react-i18next";
 import {InlineObjectData, MediaData, PageData} from "../js/Data";
-import {renameAddressableId} from "../js/refactor-data";
+import {renameAddressableId} from "./refactor-data";
 import InlineObjectContainerForm from "./InlineObjectContainerForm";
 import {MediaForm} from "./MediaForm";
 import {FormContext, PageContext} from "./TourContexts";

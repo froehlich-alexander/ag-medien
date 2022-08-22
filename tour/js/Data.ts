@@ -1,6 +1,6 @@
-import {MediaContextType} from "../dev-tool/TourContexts";
-import {hashString, UnFlatArray} from "../dev-tool/utils";
-import {
+import type {MediaContextType} from "../dev-tool/TourContexts";
+import type {UnFlatArray} from "../dev-tool/utils";
+import type {
     AbstractJsonInlineObject,
     AnimationType,
     CustomAnimations,
@@ -919,6 +919,7 @@ class SourceData extends Data<SourceData> {
     }
 }
 
+
 class FileData extends Data<FileData> {
     public declare excludeFromDataType: 'excludeFromDataType' | 'outdated';
 
@@ -1084,7 +1085,6 @@ class FileData extends Data<FileData> {
     }
 }
 
-
 export type JsonFileData = {
     name: string,
     size: number,
@@ -1092,6 +1092,19 @@ export type JsonFileData = {
     hash: number,
     intrinsicWidth: number | null,
     intrinsicHeight: number | null,
+}
+
+function hashString(str: string, seed = 0): number {
+    // source https://github.com/bryc/code/blob/master/jshash/experimental/cyrb53.js
+    let h1 = 0xdeadbeef ^ seed, h2 = 0x41c6ce57 ^ seed;
+    for (let i = 0, ch; i < str.length; i++) {
+        ch = str.charCodeAt(i);
+        h1 = Math.imul(h1 ^ ch, 2654435761);
+        h2 = Math.imul(h2 ^ ch, 1597334677);
+    }
+    h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+    h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+    return 4294967296 * (2097151 & h2) + (h1 >>> 0);
 }
 
 export {
@@ -1109,4 +1122,5 @@ export {
     PageDataType,
     SourceData,
     FileData,
+    hashString,
 };

@@ -2,7 +2,7 @@ import React, {ChangeEvent, useCallback, useContext, useMemo} from "react";
 import {Col, Container, FormControl, FormSelect, FormText, InputGroup, Row} from "react-bootstrap";
 import {Translation, useTranslation} from "react-i18next";
 import {ClickableData, InlineObjectData, TextFieldData} from "../js/Data";
-import {getAddressableIds} from "../js/refactor-data";
+import {getAddressableIds} from "./refactor-data";
 import {AnimationType, IconType, InlineObjectPosition, InlineObjectType} from "../js/types";
 import {PageContext} from "./TourContexts";
 
