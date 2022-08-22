@@ -2,7 +2,7 @@ import classNames from "classnames";
 import React, {ChangeEvent, useCallback, useContext, useEffect, useMemo, useState} from "react";
 import {Button, ButtonGroup, Col, Form, FormControl, FormText, InputGroup, Row} from "react-bootstrap";
 import {useTranslation} from "react-i18next";
-import {InlineObjectData, MediaData, PageData} from "../js/Data";
+import {InlineObjectData, MediaData, PageData} from "../Data";
 import {renameAddressableId} from "./refactor-data";
 import InlineObjectContainerForm from "./InlineObjectContainerForm";
 import {MediaForm} from "./MediaForm";

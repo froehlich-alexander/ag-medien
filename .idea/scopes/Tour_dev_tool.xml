@@ -1,0 +1,3 @@
+<component name="DependencyValidationManager">
+  <scope name="Tour dev tool" pattern="file:tour/dev-tool//*" />
+</component>

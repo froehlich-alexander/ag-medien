@@ -1,7 +1,7 @@
 import React, {useCallback, useContext} from "react";
 import {Accordion, Button, Col, Container, Row} from "react-bootstrap";
 import {useTranslation} from "react-i18next";
-import {InlineObjectData} from "../js/Data";
+import {InlineObjectData} from "../Data";
 import InlineObjectForm from "./InlineObjectForm";
 import {TemplateContext} from "./TourContexts";
 import {MaterialIcon} from "./utils";

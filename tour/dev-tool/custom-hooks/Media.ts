@@ -1,5 +1,5 @@
 import {useCallback, useMemo} from "react";
-import {FileData} from "../../js/Data";
+import {FileData} from "../../Data";
 import {MediaContextType} from "../TourContexts";
 import useDataList from "./DataListReducer";
 

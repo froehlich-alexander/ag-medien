@@ -1,4 +1,4 @@
-import {PageData} from "../js/Data";
+import {PageData} from "../Data";
 
 function renameAddressableId(oldId: string, newId: string, pages: PageData[]) {
     const updated = [];

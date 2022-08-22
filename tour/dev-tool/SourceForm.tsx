@@ -1,8 +1,8 @@
 import React, {ChangeEvent, useCallback, useContext} from 'react';
 import {Button, Col, Container, FormControl, FormSelect, FormText, InputGroup, Row} from "react-bootstrap";
 import {Trans, useTranslation} from "react-i18next";
-import {MediaData, SourceData} from "../js/Data";
-import {MediaType} from "../js/types";
+import {MediaData, SourceData} from "../Data";
+import {MediaType} from "../types";
 import {DialogContext, MediaContext} from "./TourContexts";
 
 type SourceFormProps = {

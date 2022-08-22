@@ -1,4 +1,5 @@
-import { PageData, } from "./Data.js";
+import * as $ from 'jquery';
+import { PageData, } from "./Data";
 var finished_last = true;
 let idPrefix = "tour_pg_";
 let imgFolder = "media";
@@ -1093,4 +1094,4 @@ Object.defineProperty(window, "Tour", {
 export default Tour;
 export { init };
 // init("pages.json");
-//# sourceMappingURL=script.js.map
+//# sourceMappingURL=tour.js.map

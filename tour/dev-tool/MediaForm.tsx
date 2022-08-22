@@ -2,8 +2,7 @@ import * as React from "react";
 import {useCallback} from "react";
 import {Accordion, Col, Container} from "react-bootstrap";
 import {useTranslation} from "react-i18next";
-import {MediaData, SourceData} from "../js/Data";
-import "./CreateTool.scss";
+import {MediaData, SourceData} from "../Data";
 import SourceForm from "./SourceForm";
 import {DefaultProps, MaterialIcon} from "./utils";
 

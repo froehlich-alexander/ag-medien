@@ -1,6 +1,6 @@
 import {useEffect, useMemo, useState} from "react";
-import {Data, DataType, InlineObjectData} from "../../js/Data";
-import {JsonInlineObject} from "../../js/types";
+import {Data, DataType, InlineObjectData} from "../../Data";
+import {JsonInlineObject} from "../../types";
 import {TemplateContextType} from "../TourContexts";
 
 type JsonTemplate = {

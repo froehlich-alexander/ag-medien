@@ -1,5 +1,5 @@
-import type {MediaContextType} from "../dev-tool/TourContexts";
-import type {UnFlatArray} from "../dev-tool/utils";
+import type {MediaContextType} from "./dev-tool/TourContexts";
+import type {UnFlatArray} from "./dev-tool/utils";
 import type {
     AbstractJsonInlineObject,
     AnimationType,
@@ -22,7 +22,7 @@ import type {
     PageAnimations,
     TextAnimations,
     VideoPreloadType,
-} from "./types.js";
+} from "./types";
 
 
 type DataType<T extends Data<any>> = Omit<{ [k in keyof T as T[k] extends Function ? never : k]: T[k] }, "excludeFromDataType" | T['excludeFromDataType']>;

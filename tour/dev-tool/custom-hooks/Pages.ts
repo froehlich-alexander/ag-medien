@@ -1,5 +1,5 @@
 import {useCallback, useEffect, useMemo, useState} from "react";
-import {PageData, SchulTourConfigFile} from "../../js/Data";
+import {PageData, SchulTourConfigFile} from "../../Data";
 import {MediaContextType, PageContextType} from "../TourContexts";
 import useDataList from "./DataListReducer";
 

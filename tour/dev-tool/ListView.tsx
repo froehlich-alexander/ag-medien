@@ -1,7 +1,7 @@
 import classNames from "classnames";
 import React, {ChangeEvent, MouseEvent, useCallback, useContext} from "react";
 import {Button, ButtonGroup, Col, Container, Form, ListGroup, Row} from "react-bootstrap";
-import {PageData} from "../js/Data";
+import {PageData} from "../Data";
 import useSet from "./custom-hooks/SetSate";
 import {ListViewContext, PageContext} from "./TourContexts";
 import {DefaultProps, MaterialIcon} from "./utils";

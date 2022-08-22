@@ -1,8 +1,7 @@
 import React, {useCallback, useEffect, useState} from "react";
 import {Button, Col, Container, Spinner} from "react-bootstrap";
-import {FileData, SchulTourConfigFile} from "../js/Data";
-import {JsonSchulTourConfigFile} from "../js/types";
-import "./CreateTool.scss";
+import {FileData, SchulTourConfigFile} from "../Data";
+import {JsonSchulTourConfigFile} from "../types";
 import useDialog from "./custom-hooks/Dialog";
 import useForms from "./custom-hooks/Forms";
 import useListView from "./custom-hooks/ListView";

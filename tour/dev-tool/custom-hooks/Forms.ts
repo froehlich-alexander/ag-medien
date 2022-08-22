@@ -1,5 +1,5 @@
 import {useCallback, useEffect, useMemo, useState} from "react";
-import {PageData} from "../../js/Data";
+import {PageData} from "../../Data";
 import {FormContextType} from "../TourContexts";
 
 export default function useForms(currentPage: PageData | undefined, updatePages: (page: PageData) => void) {

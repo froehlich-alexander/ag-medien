@@ -1,0 +1,3 @@
+<component name="DependencyValidationManager">
+  <scope name="colorpicker bootstrap" pattern="file:color_picker_bootstrap//*" />
+</component>

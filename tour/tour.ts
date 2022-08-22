@@ -1,3 +1,5 @@
+import * as $ from 'jquery';
+
 import {
     ClickableData,
     CustomObjectData,
@@ -6,7 +8,7 @@ import {
     PageData,
     SourceData,
     TextFieldData,
-} from "./Data.js";
+} from "./Data";
 import type {
     FetchPriorityType,
     JsonClickable,

@@ -4,6 +4,9 @@ const CopyPlugin = require('copy-webpack-plugin');
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const CssMinimizerPlugin = require("css-minimizer-webpack-plugin");
 // const ForkTsCheckerWebpackPlugin = require("fork-ts-checker-webpack-plugin");
+const FileManagerWebpackPlugin = require("filemanager-webpack-plugin");
+
+const NODE_MODULES = "node_modules";
 
 const config = {
     mode: "development",
@@ -34,7 +37,6 @@ const config = {
         ],
     },
     optimization: {
-        // minimize: true,
         minimizer: [
             new TerserPlugin({
                 test: /\.js$/i,
@@ -50,14 +52,29 @@ const config = {
     },
     output: {
         path: path.resolve("dist"),
-        // filename: "[path]/[name].bundle.js",
+        clean: true,
     },
     entry: {
+        //tour dev tool
         "tour-dev-tool": {
-            import: "./tour/dev-tool/index.tsx",
-            filename: "tour/dev-tool/[name].bundle.js",
+            import: ["./tour/dev-tool/index.tsx", "./tour/dev-tool/CreateTool.scss"],
+            filename: "tour/dev-tool/[name].js",
             // dependOn: ['react', 'react-dom', 'react-bootstrap', 'bootstrap'],
         },
+        // "tour-dev-tool-css": {
+        //     import: "./tour/dev-tool/CreateTool.scss",
+        //     filename: "tour/dev-tool/tour-dev-tool.bundle.css",
+        // },
+
+        // normal tour
+        tour: {
+            import: ["./tour/tour.ts", "./tour/tour.css"],
+            filename: "tour/[name].js",
+        },
+        // "tour-css": {
+        //     import: "./tour/css/tour.css",
+        //     filename: "tour/tour.bundle.css"
+        // }
         // "jquery": {
         //     import: 'jquery',
         //     filename: "lib/[name].js",
@@ -100,32 +117,20 @@ const config = {
             {
                 test: /\.s?[ac]ss$/,
                 exclude: /node_modules/i,
-                use: [MiniCssExtractPlugin.loader, "css-loader", 'sass-loader'],
+                use: [
+                    {
+                        loader: MiniCssExtractPlugin.loader,
+                    },
+                    {
+                        loader: "css-loader",
+                        options: {
+                            url: false,
+                            sourceMap: true,
+                        }
+                    },
+                    'sass-loader'
+                ],
             },
-            // {
-            //     test: /\.css$/,
-            //     use: [
-            //         "style-loader",
-            //         "css-loader",
-            //     ],
-            // },
-            // {
-            //     test: /\.s[ac]ss$/,
-            //     exclude: /ColorPicker.scss$/,
-            //     use: [
-            //         "style-loader",
-            //         "css-loader",
-            //         {
-            //             loader: "sass-loader",
-            //             options: {
-            //                 implementation: require("sass"),
-            //                 sassOptions: {
-            //                     fiber: require("fiber"),
-            //                 }
-            //             }
-            //         }
-            //     ]
-            // },
             {
                 test: /\.s?[ca]ss$/,
                 include: /node_modules/i,
@@ -133,13 +138,18 @@ const config = {
                     loader: path.resolve("webpack-loaders/EmptyCSS.js"),
                 }]
             },
+            {
+                test: /\.(png|jpe?g|gif|svg|webm|webp)$/i,
+                loader: 'file-loader',
+                options: {
+                    name: '[path][name].[ext]',
+                },
+            },
             // {
-            //     test: /\.scss$/,
-            //     use: ["css-loader", "sass-loader"],
-            // },
-            // {
-            //     test: /\.css$/,
-            //     use: ["css-loader"],
+            //     test: /\.(svg|webm|webp|png|jpg)$/,
+            //     use: {
+            //         loader: path.resolve("webpack-loaders/EmptyCSS.js"),
+            //     }
             // }
         ],
     },
@@ -151,18 +161,24 @@ const config = {
                 concurrency: 100,
             },
             patterns: [
-                // copy html files to dist
-                {
-                    from: '**/*.html',
-                    to: "[path][name][ext]",
-                    filter: (filepath) => !/(node_modules)|(dist)/.test(filepath),
-                },
-
                 // copy locales
                 {
                     from: '**/locales/**/*.json',
                     to: "[path][name][ext]",
                     filter: (filepath) => !/(node_modules)|(dist)/.test(filepath),
+                },
+
+                // copy html imgs, etc
+                {
+                    from: '**/*.(html|svg|webm|webp|jpg|png)',
+                    to: '[path][name][ext]',
+                    filter: (filepath) => !/(node_modules|dist|test-environement)/.test(filepath)
+                },
+
+                // copy pages.json in tour
+                {
+                    from: "tour/pages.json",
+                    to: "tour/[name][ext]",
                 },
 
 
@@ -171,72 +187,72 @@ const config = {
                 // JS
                 // jquery
                 {
-                    from: 'node_modules/jquery/dist/jquery.js',
+                    from: NODE_MODULES + '/jquery/dist/jquery.js',
                     to: 'lib/[name][ext]',
                     info: {minimized: true},
                 },
                 {
-                    from: 'node_modules/jquery/dist/jquery.min.js',
+                    from: NODE_MODULES + '/jquery/dist/jquery.min.js',
                     to: 'lib/[name][ext]',
                     info: {minimized: true},
                 },
 
                 // bootstrap
                 {
-                    from: "node_modules/bootstrap/dist/js/bootstrap.js",
+                    from: NODE_MODULES + "/bootstrap/dist/js/bootstrap.js",
                     to: 'lib/[name][ext]',
                     info: {minimized: true},
                 },
                 {
-                    from: 'node_modules/bootstrap/dist/js/bootstrap.bundle.js',
+                    from: NODE_MODULES + '/bootstrap/dist/js/bootstrap.bundle.js',
                     to: 'lib/[name][ext]',
                     info: {minimized: true},
                 },
 
                 // react
                 {
-                    from: 'node_modules/react/umd/react.development.js',
+                    from: NODE_MODULES + '/react/umd/react.development.js',
                     to: 'lib/[name][ext]',
                     info: {minimized: true},
                 },
                 {
-                    from: 'node_modules/react/umd/react.production.min.js',
+                    from: NODE_MODULES + '/react/umd/react.production.min.js',
                     to: 'lib/[name][ext]',
                     info: {minimized: true},
                 },
 
                 //react-dom
                 {
-                    from: 'node_modules/react-dom/umd/react-dom.development.js',
+                    from: NODE_MODULES + '/react-dom/umd/react-dom.development.js',
                     to: 'lib/[name][ext]',
                     info: {minimized: true},
                 },
                 {
-                    from: 'node_modules/react-dom/umd/react-dom.production.min.js',
+                    from: NODE_MODULES + '/react-dom/umd/react-dom.production.min.js',
                     to: 'lib/[name][ext]',
                     info: {minimized: true},
                 },
 
                 // react-bootstrap
                 {
-                    from: 'node_modules/react-bootstrap/dist/react-bootstrap.js',
+                    from: NODE_MODULES + '/react-bootstrap/dist/react-bootstrap.js',
                     to: 'lib/[name][ext]',
                     info: {minimized: true},
                 },
                 {
-                    from: 'node_modules/react-bootstrap/dist/react-bootstrap.min.js',
+                    from: NODE_MODULES + '/react-bootstrap/dist/react-bootstrap.min.js',
                     to: 'lib/[name][ext]',
                     info: {minimized: true},
                 },
 
                 // i18next
                 {
-                    from: 'node_modules/i18next/dist/umd/i18next.js',
+                    from: NODE_MODULES + '/i18next/dist/umd/i18next.js',
                     to: 'lib/[name][ext]',
                     info: {minimized: true},
                 },
                 {
-                    from: 'node_modules/i18next/dist/umd/i18next.min.js',
+                    from: NODE_MODULES + '/i18next/dist/umd/i18next.min.js',
                     to: 'lib/[name][ext]',
                     info: {minimized: true},
                 },
@@ -244,19 +260,19 @@ const config = {
                 // CSS
                 // bootstrap css
                 {
-                    from: 'node_modules/bootstrap/dist/css/bootstrap.css',
+                    from: NODE_MODULES + '/bootstrap/dist/css/bootstrap.css',
                     to: 'lib/css/[name][ext]',
                     info: {minimized: true},
                 },
                 {
-                    from: 'node_modules/bootstrap/dist/css/bootstrap.min.css',
+                    from: NODE_MODULES + '/bootstrap/dist/css/bootstrap.min.css',
                     to: 'lib/css/[name][ext]',
                     info: {minimized: true},
                 },
 
                 // material icons
                 {
-                    from: 'node_modules/material-icons/iconfont',
+                    from: NODE_MODULES + '/material-icons/iconfont',
                     to: 'lib/css/material-icons',
                     toType: "dir",
                     filter: (filepath) => /\.(css)|(woff2?)$/.test(filepath),
@@ -273,6 +289,18 @@ const config = {
                 //     },
                 // }
             ]
+        }),
+        new FileManagerWebpackPlugin({
+            events: {
+                onEnd: {
+                    move: [
+                        {source: "dist/tour.css", destination: "dist/tour/tour.css"},
+                        {source: "dist/tour.css.map", destination: "dist/tour/tour.css.map"},
+                        {source: "dist/tour-dev-tool.css", destination: "dist/tour/dev-tool/tour-dev-tool.css"},
+                        {source: "dist/tour-dev-tool.css.map", destination: "dist/tour/dev-tool/tour-dev-tool.css.map"}
+                    ]
+                }
+            }
         }),
     ],
     externals: {

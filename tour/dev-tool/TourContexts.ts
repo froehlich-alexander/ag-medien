@@ -1,5 +1,5 @@
 import {createContext} from "react";
-import {FileData, InlineObjectData, PageData} from "../js/Data";
+import {FileData, InlineObjectData, PageData} from "../Data";
 import {UnFlatArray} from "./utils";
 
 export interface PageContextType {

@@ -1,0 +1,464 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$ref": "#/definitions/JsonSchulTourConfigFile",
+  "definitions": {
+    "JsonSchulTourConfigFile": {
+      "type": "object",
+      "properties": {
+        "pages": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/JsonPage"
+          }
+        }
+      },
+      "required": [
+        "pages"
+      ],
+      "additionalProperties": false
+    },
+    "JsonPage": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "media": {
+          "$ref": "#/definitions/JsonMedia"
+        },
+        "is_360": {
+          "type": "boolean"
+        },
+        "is_panorama": {
+          "type": "boolean"
+        },
+        "initial_direction": {
+          "type": "number"
+        },
+        "clickables": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "title": {
+                "type": "string"
+              },
+              "goto": {
+                "type": "string"
+              },
+              "icon": {
+                "$ref": "#/definitions/IconType"
+              },
+              "backward": {
+                "type": "boolean"
+              },
+              "animationType": {
+                "$ref": "#/definitions/PageAnimations"
+              },
+              "x": {
+                "type": [
+                  "number",
+                  "string"
+                ]
+              },
+              "y": {
+                "type": [
+                  "number",
+                  "string"
+                ]
+              },
+              "position": {
+                "$ref": "#/definitions/InlineObjectPosition"
+              }
+            },
+            "required": [
+              "title",
+              "goto",
+              "x",
+              "y"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "inlineObjects": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/JsonInlineObject"
+          }
+        },
+        "id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "media"
+      ],
+      "description": "Type for the Page-Objects in pages.json (or pages.json)"
+    },
+    "JsonMedia": {
+      "type": "object",
+      "properties": {
+        "src": {
+          "$ref": "#/definitions/JsonSource"
+        },
+        "srcMin": {
+          "$ref": "#/definitions/JsonSource"
+        },
+        "srcMax": {
+          "$ref": "#/definitions/JsonSource"
+        },
+        "type": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/MediaType"
+            },
+            {
+              "type": "string",
+              "const": "auto"
+            }
+          ],
+          "description": "The type of this media (overriden by  {@link  JsonSource } )"
+        },
+        "loading": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/LoadingType"
+            },
+            {
+              "type": "string",
+              "const": "auto"
+            }
+          ]
+        },
+        "fetchPriority": {
+          "$ref": "#/definitions/FetchPriorityType"
+        },
+        "poster": {
+          "type": "string"
+        },
+        "autoplay": {
+          "type": "boolean"
+        },
+        "loop": {
+          "type": "boolean"
+        },
+        "muted": {
+          "type": "boolean"
+        },
+        "preload": {
+          "$ref": "#/definitions/VideoPreloadType"
+        }
+      },
+      "additionalProperties": false
+    },
+    "JsonSource": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "width": {
+              "type": "number",
+              "description": "width and height can be absent but if one is specified, the other one must be specified too"
+            },
+            "height": {
+              "type": "number",
+              "description": "width and height can be absent but if one is specified, the other one must be specified too"
+            },
+            "name": {
+              "type": "string",
+              "description": "The url to the source url (relative to tour/media or absolut)"
+            },
+            "type": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/MediaType"
+                },
+                {
+                  "type": "string",
+                  "const": "auto"
+                }
+              ],
+              "description": "The type of the source object (overrides  {@link  JsonMedia.type } )"
+            }
+          },
+          "required": [
+            "height",
+            "name",
+            "width"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "The url to the source url (relative to tour/media or absolut)"
+            },
+            "type": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/MediaType"
+                },
+                {
+                  "type": "string",
+                  "const": "auto"
+                }
+              ],
+              "description": "The type of the source object (overrides  {@link  JsonMedia.type } )"
+            }
+          },
+          "required": [
+            "name"
+          ]
+        }
+      ],
+      "description": "Can be a string containing the source url or an object with a few more additional options"
+    },
+    "MediaType": {
+      "type": "string",
+      "enum": [
+        "img",
+        "video",
+        "iframe"
+      ]
+    },
+    "LoadingType": {
+      "type": "string",
+      "enum": [
+        "eager",
+        "lazy"
+      ]
+    },
+    "FetchPriorityType": {
+      "type": "string",
+      "enum": [
+        "high",
+        "low",
+        "auto"
+      ]
+    },
+    "VideoPreloadType": {
+      "type": "string",
+      "enum": [
+        "metadata",
+        "auto"
+      ]
+    },
+    "IconType": {
+      "type": "string",
+      "enum": [
+        "arrow_l",
+        "arrow_r",
+        "arrow_u",
+        "arrow_d"
+      ]
+    },
+    "PageAnimations": {
+      "type": "string",
+      "enum": [
+        "forward",
+        "backward"
+      ]
+    },
+    "InlineObjectPosition": {
+      "type": "string",
+      "enum": [
+        "media",
+        "page"
+      ]
+    },
+    "JsonInlineObject": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/JsonCustomObject"
+        },
+        {
+          "$ref": "#/definitions/JsonTextField"
+        },
+        {
+          "$ref": "#/definitions/JsonClickable"
+        }
+      ]
+    },
+    "JsonCustomObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "htmlId": {
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/definitions/InlineObjectType"
+        },
+        "animationType": {
+          "$ref": "#/definitions/AnimationType"
+        },
+        "x": {
+          "type": [
+            "number",
+            "string"
+          ]
+        },
+        "y": {
+          "type": [
+            "number",
+            "string"
+          ]
+        },
+        "position": {
+          "$ref": "#/definitions/InlineObjectPosition"
+        },
+        "goto": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "htmlId",
+        "type",
+        "x",
+        "y"
+      ]
+    },
+    "InlineObjectType": {
+      "type": "string",
+      "enum": [
+        "clickable",
+        "text",
+        "custom"
+      ]
+    },
+    "AnimationType": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/PageAnimations"
+        },
+        {
+          "$ref": "#/definitions/TextAnimations"
+        },
+        {
+          "$ref": "#/definitions/CustomAnimations"
+        }
+      ]
+    },
+    "TextAnimations": {
+      "not": {}
+    },
+    "CustomAnimations": {
+      "not": {}
+    },
+    "JsonTextField": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "content": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "footer": {
+          "type": "string"
+        },
+        "cssClasses": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
+        "type": {
+          "$ref": "#/definitions/InlineObjectType"
+        },
+        "animationType": {
+          "$ref": "#/definitions/AnimationType"
+        },
+        "id": {
+          "type": "string"
+        },
+        "x": {
+          "type": [
+            "number",
+            "string"
+          ]
+        },
+        "y": {
+          "type": [
+            "number",
+            "string"
+          ]
+        },
+        "position": {
+          "$ref": "#/definitions/InlineObjectPosition"
+        },
+        "goto": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "content",
+        "id",
+        "type",
+        "x",
+        "y"
+      ]
+    },
+    "JsonClickable": {
+      "type": "object",
+      "properties": {
+        "x": {
+          "type": [
+            "number",
+            "string"
+          ]
+        },
+        "y": {
+          "type": [
+            "number",
+            "string"
+          ]
+        },
+        "position": {
+          "$ref": "#/definitions/InlineObjectPosition"
+        },
+        "goto": {
+          "type": "string"
+        },
+        "animationType": {
+          "$ref": "#/definitions/PageAnimations"
+        },
+        "type": {
+          "type": "string",
+          "const": "clickable"
+        },
+        "title": {
+          "type": "string"
+        },
+        "icon": {
+          "$ref": "#/definitions/IconType"
+        },
+        "backward": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "goto",
+        "title",
+        "type",
+        "x",
+        "y"
+      ],
+      "additionalProperties": false,
+      "description": "A type which represents a clickable object in the pages json file (pages.json or pages.json)"
+    }
+  }
+}

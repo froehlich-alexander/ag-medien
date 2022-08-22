@@ -1,7 +1,7 @@
 import React, {ChangeEvent, useCallback, useContext, useState} from 'react';
 import {Button, ButtonGroup, Col, Container, Form, FormControl, Modal, Row, Spinner, Table} from "react-bootstrap";
 import {useTranslation} from "react-i18next";
-import {FileData} from "../js/Data";
+import {FileData} from "../Data";
 import useSet from "./custom-hooks/SetSate";
 import {DialogContext, MediaContext} from "./TourContexts";
 import {formatFileSize, MaterialIcon} from "./utils";
