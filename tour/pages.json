@@ -9,6 +9,18 @@
       },
       "is_panorama": true,
       "initial_direction": 34,
+      "inlineObjects": [
+        {
+          "type": "text",
+          "title": "Title TTT",
+          "content": "hello test kjsdbfkjsdbvkjbsd jskdbvkjsdbvjksdb jdsvbksdjbvjksbd kjsdbvkjsdbvkjbsdvbncyx",
+          "footer": "FOTTER hmm",
+          "animationType": "backward",
+          "id": "text-test",
+          "x": 50,
+          "y": 50
+        }
+      ],
       "clickables": [
         {
           "title": "Zum Eingang",

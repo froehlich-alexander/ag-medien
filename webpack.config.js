@@ -32,9 +32,8 @@ const config = {
             logging: 'warn',
         },
         host: 'localhost',
-        allowedHosts: [
-            "localhost",
-        ],
+        allowedHosts: "all"
+        ,
     },
     optimization: {
         minimizer: [
@@ -68,11 +67,11 @@ const config = {
 
         // normal tour
         tour: {
-            import: ["./tour/tour.ts", "./tour/tour.css"],
+            import: ["./tour/tour.ts", "./tour/tour.scss"],
             filename: "tour/[name].js",
         },
         // "tour-css": {
-        //     import: "./tour/css/tour.css",
+        //     import: "./tour/css/tour.scss",
         //     filename: "tour/tour.bundle.css"
         // }
         // "jquery": {
@@ -294,8 +293,8 @@ const config = {
             events: {
                 onEnd: {
                     move: [
-                        {source: "dist/tour.css", destination: "dist/tour/tour.css"},
-                        {source: "dist/tour.css.map", destination: "dist/tour/tour.css.map"},
+                        {source: "dist/tour.scss", destination: "dist/tour/tour.scss"},
+                        {source: "dist/tour.scss.map", destination: "dist/tour/tour.scss.map"},
                         {source: "dist/tour-dev-tool.css", destination: "dist/tour/dev-tool/tour-dev-tool.css"},
                         {source: "dist/tour-dev-tool.css.map", destination: "dist/tour/dev-tool/tour-dev-tool.css.map"}
                     ]

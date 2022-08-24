@@ -662,6 +662,27 @@ class TextField extends InlineObject {
     // }
     constructor(data, html) {
         super(data, html ?? "div", html !== undefined);
+        const title = $("<h6>")
+            .addClass("text-field-title")
+            .text(data.title ?? "");
+        const content = $("<p>")
+            .addClass("text-field");
+        this.html.addClass("text-field")
+            .append(title, content);
+    }
+    // public static fromJson(json: JsonTextField): TextField {
+    //     return new TextField(json.content, "page", json.title, json.footer,
+    //         typeof json.cssClasses === "string" ? json.cssClasses.split(" ") : json.cssClasses, json.animationType,
+    //         typeof json.x === "string" ? parseFloat(json.x) : json.x, typeof json.x === "string" ? parseFloat(json.x) : json.x);
+    // }
+    // public override clone(n?: TextField): TextField {
+    //     if (n === undefined) {
+    //         n = new TextField(this.content, this.position, this.title, this.footer, this.cssClasses, this.animationType, this.x, this.y);
+    //     }
+    //     return super.clone(n) as TextField;
+    // }
+    static from(data) {
+        return new TextField(data);
     }
 }
 class Clickable extends InlineObject {

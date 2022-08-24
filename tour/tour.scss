@@ -102,6 +102,18 @@ body {
     background-image: url('svg/arrow_down.svg');
 }
 
+.page {
+    .text-field {
+        position: absolute;
+        .text-field-title {
+
+        }
+        .text-field-content {
+
+        }
+    }
+}
+
 .bg.fill-width {
     width: 100vw;
 }

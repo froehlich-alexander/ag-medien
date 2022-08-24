@@ -443,7 +443,7 @@ class ImageMedia extends Media<HTMLImageElement> {
                 width: this.html[0].naturalWidth,
                 height: this.html[0].naturalHeight,
             });
-            this.onSizeKnown()
+            this.onSizeKnown();
             // this.applyRatio();
             //
             // //remove panorama if screen is big enough
@@ -839,6 +839,16 @@ class TextField extends InlineObject {
     // }
     constructor(data: TextFieldData, html?: JQuery<HTMLElement>) {
         super(data, html ?? "div", html !== undefined);
+
+        const title = $("<h6>")
+            .addClass("text-field-title")
+            .text(data.title ?? "");
+
+        const content = $("<p>")
+            .addClass("text-field");
+
+        this.html.addClass("text-field")
+            .append(title, content);
     }
 
     // public static fromJson(json: JsonTextField): TextField {
@@ -853,6 +863,10 @@ class TextField extends InlineObject {
     //     }
     //     return super.clone(n) as TextField;
     // }
+
+    public static from(data: TextFieldData): TextField {
+        return new TextField(data);
+    }
 }
 
 class Clickable extends InlineObject {
