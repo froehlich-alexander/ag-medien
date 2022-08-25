@@ -1,5 +1,5 @@
-import type {MediaContextType} from "./dev-tool/TourContexts";
-import type {UnFlatArray} from "./dev-tool/utils";
+import type {MediaContextType} from "./tour-dev-tool/TourContexts";
+import type {Complete, UnFlatArray} from "./tour-dev-tool/utils";
 import type {
     AbstractJsonInlineObject,
     AnimationType,
@@ -20,14 +20,12 @@ import type {
     LoadingType,
     MediaType,
     PageAnimations,
-    TextAnimations,
+    TextAnimations, TextFieldSize,
     VideoPreloadType,
 } from "./types";
 
 
 type DataType<T extends Data<any>> = Omit<{ [k in keyof T as T[k] extends Function ? never : k]: T[k] }, "excludeFromDataType" | T['excludeFromDataType']>;
-type PageDataType = DataType<PageData>;
-type Mutable<T> = { -readonly [k in keyof T]: T[k] };
 
 /**
  * Checks if the arrays are equal<br>
@@ -225,7 +223,7 @@ class PageData extends Data<PageData> {
         if (this.isPanorama === isPanorama) {
             return this;
         }
-        return new PageData({...this, isPanorama: isPanorama, is360: isPanorama&&this.is360});
+        return new PageData({...this, isPanorama: isPanorama, is360: isPanorama && this.is360});
     }
 }
 
@@ -381,9 +379,9 @@ class AbstractInlineObjectData<T extends AbstractInlineObjectData<T, Json>, Json
     public readonly x: number;
     public readonly y: number;
     public readonly type: InlineObjectType;
-    public readonly goto?: string;
     public readonly position: InlineObjectPosition;
     public readonly animationType: AnimationType;
+    public readonly hidden: boolean;
 
     // // clickable attrs
     // public readonly title?: string;
@@ -405,10 +403,7 @@ class AbstractInlineObjectData<T extends AbstractInlineObjectData<T, Json>, Json
             animationType,
             position,
             type,
-            goto,
-            // /* clickable */     title, icon,
-            // /* text title */    content, footer, cssClasses,
-            // /* custom */        htmlId,
+            hidden,
         }: DataType<AbstractInlineObjectData<T, Json>>,
     ) {
         super();
@@ -416,9 +411,9 @@ class AbstractInlineObjectData<T extends AbstractInlineObjectData<T, Json>, Json
         this.x = x;
         this.y = y;
         this.type = type;
-        this.goto = goto;
         this.position = position;
         this.animationType = animationType;
+        this.hidden = hidden;
         // // clickable
         // this.title = title;
         // this.icon = icon;
@@ -470,7 +465,7 @@ class AbstractInlineObjectData<T extends AbstractInlineObjectData<T, Json>, Json
             this.type === other.type &&
             this.position === other.position &&
             this.animationType === other.animationType &&
-            this.goto === other.goto
+            this.hidden === other.hidden
         ));
     }
 
@@ -479,9 +474,9 @@ class AbstractInlineObjectData<T extends AbstractInlineObjectData<T, Json>, Json
             x: this.x,
             y: this.y,
             type: this.type,
-            goto: this.goto,
             position: this.position,
             animationType: this.animationType,
+            hidden: this.hidden,
             // title: this.title,
             // icon: this.icon,
             // content: this.content,
@@ -533,6 +528,13 @@ class AbstractInlineObjectData<T extends AbstractInlineObjectData<T, Json>, Json
     public withGoto(goto: string): this {
         return new (this.constructor as typeof AbstractInlineObjectData)({...this, goto: goto}) as this;
     }
+
+    public withHidden(hidden: boolean): this {
+        if (this.hidden === hidden) {
+            return this;
+        }
+        return new (this.constructor as typeof AbstractInlineObjectData)({...this, hidden: hidden}) as this;
+    }
 }
 
 class AbstractAddressableInlineObjectData<T extends AbstractAddressableInlineObjectData<T, Json>, Json extends AbstractJsonInlineObject & JsonAddressableObject> extends AbstractInlineObjectData<T, Json> {
@@ -547,7 +549,8 @@ class AbstractAddressableInlineObjectData<T extends AbstractAddressableInlineObj
 
     public equals(other: DataType<AbstractAddressableInlineObjectData<T, Json>> | undefined | null): other is DataType<AbstractAddressableInlineObjectData<T, Json>> {
         return super.equals(other)
-            && this.id === other.id;
+            && this.id === other.id
+            && this.hidden === other.hidden;
     }
 
     public toJSON(): { [k in keyof Pick<Json, keyof (AbstractJsonInlineObject & JsonAddressableObject)>]: Json[k] } {
@@ -590,7 +593,7 @@ const InlineObjectData = {
     },
 
     default(): InlineObjectData {
-        return ClickableData.default();
+        return ClickableData.default;
     },
 };
 
@@ -605,7 +608,7 @@ class ClickableData extends AbstractInlineObjectData<ClickableData, JsonClickabl
 
     declare public readonly type: "clickable";
     declare public readonly animationType: PageAnimations;
-    declare public readonly goto: string;
+    declare public readonly goto?: string;
 
 
     public static readonly Icons: Array<IconType> = ['arrow_l', "arrow_u", "arrow_r", "arrow_d"];
@@ -618,23 +621,37 @@ class ClickableData extends AbstractInlineObjectData<ClickableData, JsonClickabl
         this.icon = icon;
     }
 
+    public static default: ClickableData = new ClickableData({
+        icon: "arrow_l",
+        title: '',
+        animationType: "forward",
+        goto: '',
+        x: 0,
+        y: 0,
+        type: 'clickable',
+        position: "media",
+        hidden: false,
+    });
+
     public static fromJSON(json: Omit<JsonClickable, "type">): ClickableData {
         return new ClickableData({
             type: "clickable",
             title: json.title,
-            icon: json.icon ?? "arrow_l",
+            icon: json.icon ?? ClickableData.default.icon,
             x: typeof json.x === "number" ? json.x : parseFloat(json.x),
             y: typeof json.y === "number" ? json.y : parseFloat(json.y),
             goto: json.goto,
-            position: json.position ?? "media",
-            animationType: json.animationType ?? "forward",
+            position: json.position ?? ClickableData.default.position,
+            animationType: json.animationType ?? ClickableData.default.animationType,
+            hidden: json.hidden ?? ClickableData.default.hidden,
         });
     }
 
     public equals(other: DataType<ClickableData> | undefined | null): other is DataType<ClickableData> {
-        return super.equals(other) &&
-            this.title === other.title &&
-            this.icon === other.icon;
+        return super.equals(other)
+            && this.title === other.title
+            && this.icon === other.icon
+            && this.goto === other.goto;
     }
 
     public toJSON(): JsonClickable {
@@ -642,6 +659,7 @@ class ClickableData extends AbstractInlineObjectData<ClickableData, JsonClickabl
             ...super.toJSON(),
             title: this.title,
             icon: this.icon,
+            goto: this.goto,
         };
     }
 
@@ -652,19 +670,6 @@ class ClickableData extends AbstractInlineObjectData<ClickableData, JsonClickabl
     public withTitle(title: string): ClickableData {
         return new ClickableData({...this, title: title});
     }
-
-    public static default(): ClickableData {
-        return new ClickableData({
-            icon: "arrow_l",
-            title: '',
-            animationType: "forward",
-            goto: '',
-            x: 0,
-            y: 0,
-            type: 'clickable',
-            position: "media",
-        });
-    }
 }
 
 class TextFieldData extends AbstractAddressableInlineObjectData<TextFieldData, JsonTextField> {
@@ -672,23 +677,37 @@ class TextFieldData extends AbstractAddressableInlineObjectData<TextFieldData, J
 
     public readonly title?: string;
     public readonly content: string;
-    public readonly footer?: string;
     public readonly cssClasses: string[];
+    public readonly size: TextFieldSize;
     // public readonly id: string;
 
     declare public readonly type: "text";
     declare public readonly animationType: TextAnimations;
 
     constructor(
-        {title, content, footer, cssClasses, ...base}: DataType<TextFieldData>,
+        {title, content, cssClasses, size, ...base}: DataType<TextFieldData>,
     ) {
         super({...base, type: "text"});
         this.title = title;
         this.content = content;
-        this.footer = footer;
         this.cssClasses = cssClasses;
+        this.size = size;
         // this.id = id;
     }
+
+    public static default: Complete<JsonTextField> = {
+        type: "text",
+        title: "",
+        position: "media",
+        content: "",
+        cssClasses: [],
+        size: "normal",
+        animationType: "fade",
+        id: "",
+        x: 0,
+        y: 0,
+        hidden: false,
+    };
 
     public static fromJSON(json: Omit<JsonTextField, "type">): TextFieldData {
         return new TextFieldData({
@@ -696,13 +715,13 @@ class TextFieldData extends AbstractAddressableInlineObjectData<TextFieldData, J
             title: json.title,
             content: json.content,
             cssClasses: typeof json.cssClasses === "string" ? json.cssClasses.split(" ") : json.cssClasses ?? [],
-            footer: json.footer,
+            size: json.size ?? TextFieldData.default.size,
             id: json.id,
+            hidden: json.hidden ?? TextFieldData.default.hidden,
             x: typeof json.x === "number" ? json.x : parseFloat(json.x),
             y: typeof json.y === "number" ? json.y : parseFloat(json.y),
-            goto: json.goto,
-            position: json.position ?? "media",
-            animationType: json.animationType ?? undefined,
+            position: json.position ?? TextFieldData.default.position,
+            animationType: json.animationType ?? TextFieldData.default.animationType,
         });
     }
 
@@ -710,7 +729,7 @@ class TextFieldData extends AbstractAddressableInlineObjectData<TextFieldData, J
         return super.equals(other) &&
             this.title === other.title &&
             this.content === other.content &&
-            this.footer === other.footer &&
+            this.size === other.size &&
             // this.id === other.id &&
             arrayEquals(this.cssClasses, other.cssClasses);
     }
@@ -720,9 +739,8 @@ class TextFieldData extends AbstractAddressableInlineObjectData<TextFieldData, J
             ...super.toJSON(),
             title: this.title,
             content: this.content,
-            footer: this.footer,
             cssClasses: this.cssClasses,
-            // id: this.id,
+            size: this.size,
         };
     }
 
@@ -758,15 +776,25 @@ class CustomObjectData extends AbstractInlineObjectData<CustomObjectData, JsonCu
         this.htmlId = htmlId;
     }
 
+    public static default: Complete<JsonCustomObject> = {
+        type: "custom",
+        hidden: false,
+        x: 0,
+        y: 0,
+        animationType: 'fade',
+        position: "media",
+        htmlId: '',
+    };
+
     public static fromJSON(json: Omit<JsonCustomObject, "type">): CustomObjectData {
         return new CustomObjectData({
             type: "custom",
             htmlId: json.htmlId,
             x: typeof json.x === "number" ? json.x : parseFloat(json.x),
             y: typeof json.y === "number" ? json.y : parseFloat(json.y),
-            goto: json.goto,
-            position: json.position ?? "media",
-            animationType: json.animationType ?? undefined,
+            position: json.position ?? CustomObjectData.default.position,
+            animationType: json.animationType ?? CustomObjectData.default.animationType,
+            hidden: json.hidden ?? CustomObjectData.default.hidden,
         });
     }
 
@@ -1111,7 +1139,6 @@ export {
     Data,
     DataType,
     SchulTourConfigFile,
-    Mutable,
     PageData,
     InlineObjectData,
     AbstractInlineObjectData,
@@ -1119,7 +1146,6 @@ export {
     CustomObjectData,
     TextFieldData,
     MediaData,
-    PageDataType,
     SourceData,
     FileData,
     hashString,

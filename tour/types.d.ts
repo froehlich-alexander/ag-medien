@@ -10,15 +10,16 @@ export type LoadingType = "eager" | "lazy";
 export type FetchPriorityType = "high" | "low" | "auto";
 export type InlineObjectType = "clickable" | "text" | "custom";
 export type InlineObjectPosition = "media" | "page"; //  whether the object is moving together with the media (like clickables) or the page and whether it is positioned relative to the media or to the page (normally full screen)
+export type TextFieldSize = "normal" | "small" | "large" | "x-large" | "xx-large";
 export type PageAnimations = "forward" | "backward";
-export type TextAnimations = undefined;
-export type CustomAnimations = undefined;
+export type TextAnimations = "fade";
+export type CustomAnimations = TextAnimations;
 export type AnimationType = PageAnimations | TextAnimations | CustomAnimations;
 
 /**
  * A type for all objects which can be addressed in any way
  */
-type JsonAddressableObject = {
+interface JsonAddressableObject  {
     id: string; //a UNIQUE id
 }
 /**
@@ -81,9 +82,11 @@ interface AbstractJsonInlineObject {
     x: number | string;
     y: number | string;
     position?: InlineObjectPosition;
-    goto?: string;
     animationType?: AnimationType;
-    type: InlineObjectType; //which kind of object this is (e.g. a clickable, text, etc.)
+    // which kind of object this is (e.g. a clickable, text, etc.)
+    type: InlineObjectType;
+    // whether it is initially hidden (clickables will always be hidden, but e.g. text-fields can still be shown if there is something to trigger it)
+    hidden?: boolean,
 }
 
 /**
@@ -91,7 +94,7 @@ interface AbstractJsonInlineObject {
  */
 export interface JsonClickable extends AbstractJsonInlineObject {
     title: string;
-    goto: string;
+    goto?: string;
     icon?: IconType;
     /**
      * @depreciated
@@ -107,13 +110,13 @@ export type JsonCustomObject = AbstractJsonInlineObject & {
     type: "custom";
     animationType?: CustomAnimations;
 }
-export type JsonTextField = AbstractJsonInlineObject & JsonAddressableObject & {
+export interface JsonTextField extends AbstractJsonInlineObject, JsonAddressableObject {
     content: string;
     title?: string;
-    footer?: string;
     cssClasses?: string[] | string; // ["class-a", "class-b"] OR "class-a class-b"
     type: "text";
     animationType?: TextAnimations;
+    size?: TextFieldSize;
 }
 
 export type JsonInlineObject = JsonCustomObject | JsonTextField | JsonClickable;

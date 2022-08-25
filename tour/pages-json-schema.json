@@ -67,11 +67,13 @@
               },
               "position": {
                 "$ref": "#/definitions/InlineObjectPosition"
+              },
+              "hidden": {
+                "type": "boolean"
               }
             },
             "required": [
               "title",
-              "goto",
               "x",
               "y"
             ],
@@ -312,8 +314,8 @@
         "position": {
           "$ref": "#/definitions/InlineObjectPosition"
         },
-        "goto": {
-          "type": "string"
+        "hidden": {
+          "type": "boolean"
         }
       },
       "required": [
@@ -345,43 +347,15 @@
       ]
     },
     "TextAnimations": {
-      "not": {}
+      "type": "string",
+      "const": "fade"
     },
     "CustomAnimations": {
-      "not": {}
+      "$ref": "#/definitions/TextAnimations"
     },
     "JsonTextField": {
       "type": "object",
-      "additionalProperties": false,
       "properties": {
-        "content": {
-          "type": "string"
-        },
-        "title": {
-          "type": "string"
-        },
-        "footer": {
-          "type": "string"
-        },
-        "cssClasses": {
-          "anyOf": [
-            {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            },
-            {
-              "type": "string"
-            }
-          ]
-        },
-        "type": {
-          "$ref": "#/definitions/InlineObjectType"
-        },
-        "animationType": {
-          "$ref": "#/definitions/AnimationType"
-        },
         "id": {
           "type": "string"
         },
@@ -400,8 +374,37 @@
         "position": {
           "$ref": "#/definitions/InlineObjectPosition"
         },
-        "goto": {
+        "animationType": {
+          "$ref": "#/definitions/TextAnimations"
+        },
+        "type": {
+          "type": "string",
+          "const": "text"
+        },
+        "hidden": {
+          "type": "boolean"
+        },
+        "content": {
           "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "cssClasses": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
+        "size": {
+          "$ref": "#/definitions/TextFieldSize"
         }
       },
       "required": [
@@ -410,6 +413,17 @@
         "type",
         "x",
         "y"
+      ],
+      "additionalProperties": false
+    },
+    "TextFieldSize": {
+      "type": "string",
+      "enum": [
+        "normal",
+        "small",
+        "large",
+        "x-large",
+        "xx-large"
       ]
     },
     "JsonClickable": {
@@ -430,9 +444,6 @@
         "position": {
           "$ref": "#/definitions/InlineObjectPosition"
         },
-        "goto": {
-          "type": "string"
-        },
         "animationType": {
           "$ref": "#/definitions/PageAnimations"
         },
@@ -440,7 +451,13 @@
           "type": "string",
           "const": "clickable"
         },
+        "hidden": {
+          "type": "boolean"
+        },
         "title": {
+          "type": "string"
+        },
+        "goto": {
           "type": "string"
         },
         "icon": {
@@ -451,7 +468,6 @@
         }
       },
       "required": [
-        "goto",
         "title",
         "type",
         "x",

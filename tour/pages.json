@@ -13,9 +13,10 @@
         {
           "type": "text",
           "title": "Title TTT",
-          "content": "hello test kjsdbfkjsdbvkjbsd jskdbvkjsdbvjksdb jdsvbksdjbvjksbd kjsdbvkjsdbvkjbsdvbncyx",
-          "footer": "FOTTER hmm",
-          "animationType": "backward",
+          "position": "page",
+          "content": "hello test kjsdbfkjsdbv kjbsd jskdbvk jsdbvjksdb jdsvb ksdjbvjksbd kjsdbvkjsd bvkjbsdvb jkdsfh sjkdfb jksdfh g skdjhf  sdhf ksdfkjs fks dkjhg skjhdgf khjsdg fkhjgsfgsd khfgsdghgf ncyx",
+          "animationType": "fade",
+          "hidden": false,
           "id": "text-test",
           "x": 50,
           "y": 50

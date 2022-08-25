@@ -7,19 +7,32 @@ const CssMinimizerPlugin = require("css-minimizer-webpack-plugin");
 const FileManagerWebpackPlugin = require("filemanager-webpack-plugin");
 
 const NODE_MODULES = "node_modules";
+const TOUR = 'tour';
+const TOUR_DEV_TOOL = 'tour-dev-tool';
 
 const config = {
     mode: "development",
     devtool: "source-map",
     target: "web",
-    cache: true,
+    cache: false,
     parallelism: 40,
     devServer: {
         static: {
             directory: path.resolve("dist"),
             watch: true,
         },
-        watchFiles: "dist/**/*",
+        watchFiles: {
+            paths: "dist/**/*",
+            options: {
+                usePolling: true,
+                ignore: [
+                    `dist/${TOUR}/${TOUR}.css`,
+                    `dist/${TOUR}/${TOUR}.css.map`,
+                    `dist/${TOUR}/${TOUR_DEV_TOOL}/${TOUR_DEV_TOOL}.css`,
+                    `dist/${TOUR}/${TOUR_DEV_TOOL}/${TOUR_DEV_TOOL}.css.map`,
+                ],
+            }
+        },
         liveReload: false,
         hot: false,
         port: 9000,
@@ -32,8 +45,7 @@ const config = {
             logging: 'warn',
         },
         host: 'localhost',
-        allowedHosts: "all"
-        ,
+        // allowedHosts: "all",
     },
     optimization: {
         minimizer: [
@@ -55,20 +67,20 @@ const config = {
     },
     entry: {
         //tour dev tool
-        "tour-dev-tool": {
-            import: ["./tour/dev-tool/index.tsx", "./tour/dev-tool/CreateTool.scss"],
-            filename: "tour/dev-tool/[name].js",
+        [TOUR_DEV_TOOL]: {
+            import: [`./${TOUR}/${TOUR_DEV_TOOL}/index.tsx`, `./${TOUR}/${TOUR_DEV_TOOL}/CreateTool.scss`],
+            filename: `${TOUR}/${TOUR_DEV_TOOL}/[name].js`,
             // dependOn: ['react', 'react-dom', 'react-bootstrap', 'bootstrap'],
         },
-        // "tour-dev-tool-css": {
-        //     import: "./tour/dev-tool/CreateTool.scss",
-        //     filename: "tour/dev-tool/tour-dev-tool.bundle.css",
+        // "tour-tour-dev-tool-css": {
+        //     import: "./tour/tour-dev-tool/CreateTool.scss",
+        //     filename: "tour/tour-dev-tool/tour-tour-dev-tool.bundle.css",
         // },
 
         // normal tour
-        tour: {
-            import: ["./tour/tour.ts", "./tour/tour.scss"],
-            filename: "tour/[name].js",
+        [TOUR]: {
+            import: [`./${TOUR}/${TOUR}.ts`, `./${TOUR}/${TOUR}.scss`],
+            filename: `./${TOUR}/[name].js`,
         },
         // "tour-css": {
         //     import: "./tour/css/tour.scss",
@@ -176,8 +188,8 @@ const config = {
 
                 // copy pages.json in tour
                 {
-                    from: "tour/pages.json",
-                    to: "tour/[name][ext]",
+                    from: `${TOUR}/pages.json`,
+                    to: `${TOUR}/[name][ext]`,
                 },
 
 
@@ -255,6 +267,61 @@ const config = {
                     to: 'lib/[name][ext]',
                     info: {minimized: true},
                 },
+                // i18next browser language detector
+                {
+                    from: NODE_MODULES + '/i18next-browser-languagedetector/dist/umd/i18nextBrowserLanguageDetector.js',
+                    to: 'lib/[name][ext]',
+                    info: {minimized: true},
+                },
+                {
+                    from: NODE_MODULES + '/i18next-browser-languagedetector/dist/umd/i18nextBrowserLanguageDetector.min.js',
+                    to: 'lib/[name][ext]',
+                    info: {minimized: true},
+                },
+                // i18next-chained-backend
+                {
+                    from: NODE_MODULES + '/i18next-chained-backend/dist/umd/i18nextChainedBackend.js',
+                    to: 'lib/[name][ext]',
+                    info: {minimized: true},
+                },
+                {
+                    from: NODE_MODULES + '/i18next-chained-backend/dist/umd/i18nextChainedBackend.min.js',
+                    to: 'lib/[name][ext]',
+                    info: {minimized: true},
+                },
+                // i18next-http-backend
+                {
+                    from: NODE_MODULES + '/i18next-http-backend/i18nextHttpBackend.js',
+                    to: 'lib/[name][ext]',
+                    info: {minimized: true},
+                },
+                {
+                    from: NODE_MODULES + '/i18next-http-backend/i18nextHttpBackend.min.js',
+                    to: 'lib/[name][ext]',
+                    info: {minimized: true},
+                },
+                // i18next-localstorage-backend
+                {
+                    from: NODE_MODULES + '/i18next-localstorage-backend/dist/umd/i18nextLocalStorageBackend.js',
+                    to: 'lib/[name][ext]',
+                    info: {minimized: true},
+                },
+                {
+                    from: NODE_MODULES + '/i18next-localstorage-backend/dist/umd/i18nextLocalStorageBackend.min.js',
+                    to: 'lib/[name][ext]',
+                    info: {minimized: true},
+                },
+                // react-i18next
+                {
+                    from: NODE_MODULES + '/react-i18next/dist/umd/react-i18next.js',
+                    to: 'lib/[name][ext]',
+                    info: {minimized: true},
+                },
+                {
+                    from: NODE_MODULES + '/react-i18next/dist/umd/react-i18next.min.js',
+                    to: 'lib/[name][ext]',
+                    info: {minimized: true},
+                },
 
                 // CSS
                 // bootstrap css
@@ -290,15 +357,43 @@ const config = {
             ]
         }),
         new FileManagerWebpackPlugin({
+            // for some reason this does not work IDK why
             events: {
-                onEnd: {
-                    move: [
-                        {source: "dist/tour.scss", destination: "dist/tour/tour.scss"},
-                        {source: "dist/tour.scss.map", destination: "dist/tour/tour.scss.map"},
-                        {source: "dist/tour-dev-tool.css", destination: "dist/tour/dev-tool/tour-dev-tool.css"},
-                        {source: "dist/tour-dev-tool.css.map", destination: "dist/tour/dev-tool/tour-dev-tool.css.map"}
-                    ]
-                }
+                // onStart: {
+                //     // delete moved css on start
+                //     delete: [
+                //         {source: `dist/${TOUR}/${TOUR}.css`},
+                //         {source: `dist/${TOUR}/${TOUR}.css.map`},
+                //         {source: `dist/${TOUR}/${TOUR_DEV_TOOL}/${TOUR_DEV_TOOL}.css`},
+                //         {source: `dist/${TOUR}/${TOUR_DEV_TOOL}/${TOUR_DEV_TOOL}.css.map`},
+                //     ]
+                // },
+                // onEnd: [
+                //     // move css from dist to sub folder
+                //     {
+                //         copy: [
+                //             {source: `dist/${TOUR}.css`, destination: `dist/${TOUR}/${TOUR}.css`},
+                //             {source: `dist/${TOUR}.css.map`, destination: `dist/${TOUR}/${TOUR}.css.map`},
+                //             {
+                //                 source: `dist/${TOUR_DEV_TOOL}.css`,
+                //                 destination: `dist/${TOUR}/${TOUR_DEV_TOOL}/${TOUR_DEV_TOOL}.css`
+                //             },
+                //             {
+                //                 source: `dist/${TOUR_DEV_TOOL}.css.map`,
+                //                 destination: `dist/${TOUR}/${TOUR_DEV_TOOL}/${TOUR_DEV_TOOL}.css.map`
+                //             }
+                //         ],
+                //     },
+                    // delete after moved
+                    // {
+                    //     delete: [
+                    //         {source: `dist/${TOUR}.css`},
+                    //         {source: `dist/${TOUR}.css.map`},
+                    //         {source: `dist/${TOUR_DEV_TOOL}.css`},
+                    //         {source: `dist/${TOUR_DEV_TOOL}.css.map`}
+                    //     ]
+                    // },
+                // ],
             }
         }),
     ],
@@ -309,6 +404,11 @@ const config = {
         "bootstrap": "bootstrap",
         "react-bootstrap": "ReactBootstrap",
         "i18next": "i18next",
+        "i18next-browser-languagedetector":"i18nextBrowserLanguageDetector",
+        "i18next-chained-backend": "i18nextChainedBackend",
+        "i18next-localstorage-backend": "i18nextLocalStorageBackend",
+        "i18next-http-backend": "i18nextHttpBackend",
+        "react-i18next": "ReactI18next",
     },
     resolve: {
         extensions: [".tsx", ".ts", ".js"]

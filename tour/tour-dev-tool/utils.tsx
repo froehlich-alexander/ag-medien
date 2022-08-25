@@ -34,6 +34,9 @@ type UnFlatArrayRecursive<LastT, Depth extends MAXIMUM_NUMBER_RANGE, DepthArray 
 export type UnFlatArray<T, Depth extends MAXIMUM_NUMBER_RANGE = 2, ExcludeMainType extends boolean = true> =
     UnFlatArrayRecursive<T, Depth, [(ExcludeMainType extends true ? never : T)]>;
 
+export type Mutable<T> = { -readonly [k in keyof T]: T[k] };
+export type Complete<T> = { [k in keyof T]-?: NonNullable<T[k]> };
+
 export interface DefaultProps {
     className?: string,
 }

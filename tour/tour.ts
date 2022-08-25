@@ -1,4 +1,5 @@
 import * as $ from 'jquery';
+import "./tour.scss";
 
 import {
     ClickableData,
@@ -702,8 +703,14 @@ abstract class InlineObject {
         this._second = isClone;
         this._html = typeof htmlTag === "string" ? $(`<${htmlTag}/>`) : htmlTag;
         if (!this._second) {
-            // console.assert(typeof htmlTag !== "string", "A string must be given when you are creating a new instance");
             // this._html = $(`<${htmlTag}/>`);
+            this.html.addClass('inlineObject');
+
+            // by default everything is hidden via display none
+            if (!data.hidden) {
+                this.html.addClass("show");
+            }
+
             // x and y coordinates
             if (this.data.x !== undefined) {
                 this._html.css("left", this.data.x + "%");
@@ -715,19 +722,6 @@ abstract class InlineObject {
             // console.assert(typeof htmlTag === "object", "A jquery object must be given when you clone a previously created instance");
             // this._html = htmlTag as JQuery;
         }
-    }
-
-    // protected clone(newObjectToClone?: InlineObject): InlineObject {
-    //     if (newObjectToClone === undefined) {
-    //         newObjectToClone = new InlineObject(this.position, this.html.clone(true), this.type, this.animationType, this.x, this.y);
-    //     }
-    //     newObjectToClone._html = this.html.clone(true);
-    //     newObjectToClone._second = true;
-    //     return newObjectToClone;
-    // }
-
-    protected clonee<T extends { new(data: TData, html?: JQuery<HTMLElement>): TRet }, TData extends InlineObjectData, TRet extends InlineObject>(constructor: T): TRet {
-        return new constructor(this.data as TData, this._html.clone(true));
     }
 
     /**
@@ -782,6 +776,7 @@ class CustomObject extends InlineObject {
 
     constructor(data: CustomObjectData, html?: JQuery<HTMLElement>) {
         super(data, html ?? $("#" + data.htmlId), html !== undefined);
+        this.html.attr("data-animation", data.animationType);
     }
 
     // {position, id, animationType, x, y}:
@@ -840,15 +835,27 @@ class TextField extends InlineObject {
     constructor(data: TextFieldData, html?: JQuery<HTMLElement>) {
         super(data, html ?? "div", html !== undefined);
 
-        const title = $("<h6>")
-            .addClass("text-field-title")
-            .text(data.title ?? "");
+        this.html.attr("data-animation", data.animationType);
 
-        const content = $("<p>")
-            .addClass("text-field");
+        let title: string | JQuery = '';
+        if (data.title) {
+            title = $("<div>")
+                .addClass("text-field-title")
+                .text(data.title);
+        }
+
+        const content = $("<div>")
+            .addClass("text-field-content")
+            .text(data.content);
 
         this.html.addClass("text-field")
+            .addClass(data.size)
             .append(title, content);
+
+        // add css classes
+        for (let i of data.cssClasses) {
+            this.html.addClass(i);
+        }
     }
 
     // public static fromJson(json: JsonTextField): TextField {
@@ -1004,14 +1011,20 @@ function goTo(pg: string | undefined, animationType: PageAnimations) {
     if (finished_last) {
         finished_last = false;
 
-        let next = pages.find(v => v.id === pg!.substring(idPrefix.length))!;
         let prev = pages.find(v => v.id === $(".page.show").attr("id")!.substring(idPrefix.length))!;
+        let next: Page;
+        // next === lastest if animationType === backward
+        if (animationType === "backward") {
+            next = pages.find(v => v.id === lastest)!;
+        } else {
+            next = pages.find(v => v.id === pg!.substring(idPrefix.length))!;
+        }
         //pause video
         prev.media.pause();
         next.html.addClass("show");
         adjust_clickables();
         lastest = prev.id;
-        if (animationType == "forward") {
+        if (animationType === "forward") {
             prev.html.addClass("walk_in_out");
             next.html.addClass("walk_in_in");
             setTimeout(function () {
@@ -1020,7 +1033,7 @@ function goTo(pg: string | undefined, animationType: PageAnimations) {
                     .removeClass("walk_in_out");
                 finished_last = true;
             }, animationDuration);
-        } else if (animationType == "backward") {
+        } else if (animationType === "backward") {
             prev.html.addClass("walk_out_out");
             next.html.addClass("walk_out_in");
             setTimeout(function () {
@@ -1095,7 +1108,7 @@ function createHtml(json: JsonPage[]) {
 
             clickable.html.find("button")
                 .on("click", gotoExists ? () => {
-                    goTo(clickable.data.goto && (idPrefix + clickable.data.goto), clickable.data.animationType);
+                    goTo(clickable.data.goto && (idPrefix + clickable.data.goto), clickable.data.animationType as "backward");
                 } : () => {
                     console.error("Cannot go to next page because '" + clickable.data.goto + "' does not exist");
                 });

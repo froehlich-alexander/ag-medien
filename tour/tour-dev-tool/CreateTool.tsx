@@ -86,7 +86,7 @@ export default function CreateTool() {
     const selectWorkingDirectory = useCallback(() => {
         showDirectoryPicker({
             mode: "readwrite",
-            id: 'tour-tour-dev-tool',
+            id: 'tour-tour-tour-dev-tool',
             startIn: "documents",
         })
             .then(v => {
