@@ -1,4 +1,4 @@
-import * as $ from 'jquery';
+import * as $ from "jquery";
 import "./tour.scss";
 
 import {
@@ -141,8 +141,8 @@ class Media<T extends HTMLImageElement | HTMLVideoElement | HTMLIFrameElement = 
 
         // add width and height from json
         if (this.src.width && this.src.height) {
-            this.html.attr('width', this.src.width);
-            this.html.attr('height', this.src.height);
+            this.html.attr("width", this.src.width);
+            this.html.attr("height", this.src.height);
         }
 
         this.visibilityObserver.observe(this.html[0]);
@@ -221,8 +221,8 @@ class Media<T extends HTMLImageElement | HTMLVideoElement | HTMLIFrameElement = 
      */
     protected onSizeKnown() {
         // remove eventually previously added width and height specified from json file, because that could be wrong
-        this.html.removeAttr('width')
-            .removeAttr('height');
+        this.html.removeAttr("width")
+            .removeAttr("height");
         this.triggerResize();
     }
 
@@ -239,14 +239,14 @@ class Media<T extends HTMLImageElement | HTMLVideoElement | HTMLIFrameElement = 
      * @protected
      */
     protected onResize(): void {
-        console.log('on Resize', this.page?.id);
+        console.log("on Resize", this.page?.id);
         //todo call this when resized!!!
         this.applyRatio();
     }
 
     public triggerResize() {
         // console.log('trigger resize', this.page?.id);
-        if (this.html.is(':visible') && this.page && this.src.width && this.src.height) {
+        if (this.html.is(":visible") && this.page && this.src.width && this.src.height) {
             this.onResize();
         }
     }
@@ -378,8 +378,8 @@ class VideoMedia extends Media<HTMLVideoElement> {
             // .removeAttr("type");
         });
 
-        this.html.on('loadedmetadata', () => {
-            console.log('Video loaded', this);
+        this.html.on("loadedmetadata", () => {
+            console.log("Video loaded", this);
             this._src = this.src.withUpdate({
                 width: this.html[0].videoWidth,
                 height: this.html[0].videoHeight,
@@ -401,7 +401,7 @@ class VideoMedia extends Media<HTMLVideoElement> {
 
         //should be redundant
         if ((this.html.get(0) as HTMLVideoElement).readyState > 0) {
-            this.html.trigger('loadedmetadata');
+            this.html.trigger("loadedmetadata");
         }
     }
 
@@ -489,7 +489,7 @@ class ImageMedia extends Media<HTMLImageElement> {
             // }
         });
 
-        this.html.attr('src', this.srcString);
+        this.html.attr("src", this.srcString);
     }
 
     protected override onSizeKnown() {
@@ -575,7 +575,7 @@ class IframeMedia extends Media<HTMLIFrameElement> {
         this.loading = loading;
         this.fetchPriority = fetchPriority;
         this._html = $("<iframe></iframe>")
-            .addClass('bg')
+            .addClass("bg")
             .attr("loading", this.loading)
             .attr("fetchPriority", this.fetchPriority) as JQuery<HTMLIFrameElement>;
 
@@ -596,9 +596,8 @@ class IframeMedia extends Media<HTMLIFrameElement> {
                 "</html>");
         });
 
-        this.html.on('load', () => {
-            console.log('Iframe loaded', this);
-            0;
+        this.html.on("load", () => {
+            console.log("Iframe loaded", this);
         });
 
         // Add src after adding events so that they can get triggered
@@ -642,16 +641,6 @@ class Page {
         });
     }
 
-    // public static fromJson(jsonPage: JsonPage): Page {
-    //     //check if everything is well formatted / check for mistakes
-    //     if (typeof jsonPage.id !== "string" || jsonPage.id.length <= 0)
-    //         console.error(`Id wrong formatted in page object: `, jsonPage);
-    //
-    //     //default arguments
-    //     return new Page(jsonPage.id, Media.fromJson(jsonPage.img), jsonPage.is_panorama ?? false,
-    //         jsonPage.is_360 ?? false, jsonPage.initial_direction ?? 0, ...jsonPage.inlineObjects?.map(v => InlineObject.fromJson(v)) ?? [], ...jsonPage.clickables?.map(v => Clickable.fromJson(v)) ?? []);
-    // }
-
     /**
      * In 360deg IMGs there exists always 2 similar clickables and all of them will be returned
      */
@@ -673,38 +662,49 @@ class Page {
     }
 }
 
+function AddressableObject<T extends { new(...args: any[]): {} }>(baseClass?: T) {
+    return class AddressableObject extends ((baseClass ?? class {
+    }) as T) {
+        protected activated: boolean = false;
+
+        public activate(): void {
+            this.activated = true;
+        }
+
+        public deactivate(): void {
+            this.activated = false;
+        }
+
+        public toggle(value?: boolean) {
+            value ??= !this.activated;
+            if (value !== this.activated) {
+                if (value) {
+                    this.activate();
+                } else {
+                    this.deactivate();
+                }
+            }
+        }
+    };
+}
+
 /**
  * An Interface for all objects which are placed in front of the main media of a page.
  * All classes which implement this interface (e.g. {@link Clickable}) are also such objects
  */
-abstract class InlineObject {
+class InlineObject {
     public readonly data: InlineObjectData;
-    // public readonly x?: number;
-    // public readonly y?: number;
-    // public readonly position: InlineObjectPosition;
-    // public readonly type: InlineObjectType;
-    // public readonly animationType: AnimationType;
-    // public readonly goto?: string;
+
     private readonly _second: boolean;
     private readonly _html: JQuery;
 
-    protected constructor(
-        // {type, animationType, position, x, y, html}:
-        //     { position: InlineObjectPosition, html: JQuery, type: InlineObjectType, animationType: AnimationType, x?: number, y?: number }) {
-        data: InlineObjectData, htmlTag: keyof HTMLElementTagNameMap | JQuery, isClone = false) {
-        // this.position = position;
-        // this._html = html;
-        // this._second = false;
-        // this.type = type;
-        // this.x = x;
-        // this.y = y;
-        // this.animationType = animationType;
+    constructor(data: InlineObjectData, htmlTag: keyof HTMLElementTagNameMap | JQuery, isClone = false) {
         this.data = data;
         this._second = isClone;
         this._html = typeof htmlTag === "string" ? $(`<${htmlTag}/>`) : htmlTag;
         if (!this._second) {
             // this._html = $(`<${htmlTag}/>`);
-            this.html.addClass('inlineObject');
+            this.html.addClass("inlineObject");
 
             // by default everything is hidden via display none
             if (!data.hidden) {
@@ -778,66 +778,18 @@ class CustomObject extends InlineObject {
         super(data, html ?? $("#" + data.htmlId), html !== undefined);
         this.html.attr("data-animation", data.animationType);
     }
-
-    // {position, id, animationType, x, y}:
-    //     { id: string, position: InlineObjectPosition, x: number, y: number, animationType?: CustomAnimations }) {
-    // super({
-    //     position: position,
-    //     html: $("#" + id),
-    //     type: "custom",
-    //     animationType: animationType,
-    //     x: x,
-    //     y: y,
-    // });
-    // this.id = id;
-    // }
-
-    // public override clone(n?: CustomObject): CustomObject {
-    //     if (n === undefined) {
-    //         n = new CustomObject({
-    //             id: this.id,
-    //             position: this.position,
-    //             x: this.x,
-    //             y: this.y,
-    //             animationType: this.animationType,
-    //         });
-    //     }
-    //     return super.clone(n) as CustomObject;
-    // }
-    // public override clone(): CustomObject {
-    //     // return super.clone<CustomObject, CustomObjectData, CustomObject>(CustomObject) as CustomObject;
-    //     return super.clone();
-    // }
 }
 
-class TextField extends InlineObject {
+class TextField extends AddressableObject(InlineObject) {
     declare public readonly data: TextFieldData;
-    // public readonly content: string;
-    // public readonly title?: string;
-    // public readonly footer?: string;
-    // public readonly cssClasses?: string[];
-    // declare public readonly animationType: TextAnimations;
 
-    // constructor(content: string, position?: InlineObjectPosition, title?: string, footer?: string, cssClasses?: string[], animationType?: TextAnimations, x?: number, y?: number) {
-    //     super({
-    //         position: position ?? "page",
-    //         html: $("<div/>"),
-    //         type: "text",
-    //         animationType: animationType ?? undefined,
-    //         x: x,
-    //         y: y,
-    //     });
-    //     this.content = content;
-    //     this.title = title;
-    //     this.footer = footer;
-    //     this.cssClasses = cssClasses;
-    // }
     constructor(data: TextFieldData, html?: JQuery<HTMLElement>) {
         super(data, html ?? "div", html !== undefined);
 
+        this.activated = !data.hidden;
         this.html.attr("data-animation", data.animationType);
 
-        let title: string | JQuery = '';
+        let title: string | JQuery = "";
         if (data.title) {
             title = $("<div>")
                 .addClass("text-field-title")
@@ -858,12 +810,6 @@ class TextField extends InlineObject {
         }
     }
 
-    // public static fromJson(json: JsonTextField): TextField {
-    //     return new TextField(json.content, "page", json.title, json.footer,
-    //         typeof json.cssClasses === "string" ? json.cssClasses.split(" ") : json.cssClasses, json.animationType,
-    //         typeof json.x === "string" ? parseFloat(json.x) : json.x, typeof json.x === "string" ? parseFloat(json.x) : json.x);
-    // }
-
     // public override clone(n?: TextField): TextField {
     //     if (n === undefined) {
     //         n = new TextField(this.content, this.position, this.title, this.footer, this.cssClasses, this.animationType, this.x, this.y);
@@ -874,35 +820,23 @@ class TextField extends InlineObject {
     public static from(data: TextFieldData): TextField {
         return new TextField(data);
     }
+
+    public override activate() {
+        super.activate();
+        this.html.addClass("show");
+    }
+
+    public deactivate(): void {
+        super.deactivate();
+        this.html.removeClass("show");
+    }
 }
 
 class Clickable extends InlineObject {
     declare public readonly data: ClickableData;
-    // public readonly title: string;
-    // declare public readonly x: number;
-    // declare public readonly y: number;
-    // declare public readonly animationType: PageAnimations;
-    // declare public readonly goto: string;
-    // public readonly second: boolean; //360deg img
-    // public icon: IconType = "arrow_l";
 
-    // constructor({position, y, x, animationType, title, goto, icon}:
-    //                 { title: string, x: number, y: number, goto: string, icon: IconType, animationType?: PageAnimations, position?: InlineObjectPosition }) {
     constructor(data: ClickableData, html?: JQuery<HTMLElement>) {
-        // super({
-        //     position: position ?? "media",
-        //     html: $("<div></div>"),
-        //     type: "clickable",
-        //     animationType: animationType ?? "forward",
-        //     x: x,
-        //     y: y,
-        // });
         super(data, html ?? "div", html !== undefined);
-        // this.title = title;
-        // // this.x = x;
-        // // this.y = y;
-        // this.goto = goto;
-        // this.icon = icon;
 
         if (!this.second) {
             this.html.addClass("clickable")
@@ -912,72 +846,38 @@ class Clickable extends InlineObject {
                     .text(this.data.title))
                 .append($("<button></button>")
                     .addClass("icon")
+                    .on("click", this.handleClick)
                     .addClass(this.data.icon));
         }
     }
 
     public static from(data: ClickableData): Clickable {
         return new Clickable(data);
-        // return new Clickable({
-        //     x: data.x,
-        //     y: data.y,
-        //     icon: data.icon,
-        //     title: data.title,
-        //     goto: data.goto,
-        //     animationType: data.animationType,
-        //     position: data.position,
-        // });
     }
 
-    /**
-     * Creates a {@link Clickable} object from an {@link JsonClickable} object
-     * @param jsonClickable
-     */
-    // public static fromJson(jsonClickable: JsonClickable): Clickable {
-    //     //check for mistakes
-    //     {
-    //         if (jsonClickable == null)
-    //             throw `Clickable is ${jsonClickable}`;
-    //
-    //         if (typeof jsonClickable.title !== "string" || jsonClickable.title.length <= 0)
-    //             console.error("Clickable id wrong formatted in json clickable: ", jsonClickable);
-    //         if (typeof jsonClickable.x !== "number") {
-    //             let error = true;
-    //             if (typeof jsonClickable.x === "string") {
-    //                 try {
-    //                     jsonClickable.x = Number.parseFloat(jsonClickable.x);
-    //                     error = false;
-    //                 } catch (e) {
-    //                 }
-    //             }
-    //             if (error)
-    //                 console.error("Clickable x wrong formatted in json clickable: ", jsonClickable);
-    //         }
-    //         if (typeof jsonClickable.y !== "number") {
-    //             let error = true;
-    //             if (typeof jsonClickable.y === "string") {
-    //                 try {
-    //                     jsonClickable.y = Number.parseFloat(jsonClickable.y);
-    //                     error = false;
-    //                 } catch (e) {
-    //                 }
-    //             }
-    //             if (error)
-    //                 console.error("Clickable y wrong formatted in json clickable: ", jsonClickable);
-    //         }
-    //     }
-    //
-    //     //default arguments
-    //     return new Clickable(jsonClickable.title, jsonClickable.x as number, jsonClickable.y as number,
-    //         jsonClickable.goto, jsonClickable.icon ?? "arrow_l", jsonClickable.animationType ?? (jsonClickable.backward ? "backward" : "forward"), jsonClickable.position);
-    // }
+    private handleClick = () => {
+        switch (this.data.targetType) {
+            case "text-field":
+                this.activateText();
+                break;
+            case "page":
+                goTo(this.data.goto, this.data.animationType as "backward");
+                break;
+        }
+    };
 
-    // public override clone(): Clickable {
-    //     return super.clone(Clickable) as Clickable;
-    // }
+    private activateText() {
+        for (let page of pages) {
+            for (let iObject of page.inlineObjects) {
+                if (iObject.data.isTextField() && iObject.data.id === this.data.goto) {
+                    (iObject as TextField).activate();
+                }
+            }
+        }
+    }
 }
 
-window.addEventListener('resize', function () {
+window.addEventListener("resize", function () {
     let bgImgs: JQuery<HTMLImageElement> = $(".bg");
     bgImgs.removeClass("fill-width");
     bgImgs.removeClass("fill-height");
@@ -996,7 +896,7 @@ window.addEventListener('resize', function () {
     adjust_clickables();
 });
 
-window.addEventListener('popstate', function () {
+window.addEventListener("popstate", function () {
     let pgs = $(".page");
     pgs.removeClass("show");
     if (window.location.hash !== "")
@@ -1012,12 +912,17 @@ function goTo(pg: string | undefined, animationType: PageAnimations) {
         finished_last = false;
 
         let prev = pages.find(v => v.id === $(".page.show").attr("id")!.substring(idPrefix.length))!;
-        let next: Page;
+        let next: Page | undefined;
         // next === lastest if animationType === backward
         if (animationType === "backward") {
-            next = pages.find(v => v.id === lastest)!;
+            next = pages.find(v => v.id === lastest);
         } else {
-            next = pages.find(v => v.id === pg!.substring(idPrefix.length))!;
+            next = pages.find(v => v.id === pg!);
+        }
+
+        if (next === undefined) {
+            console.error("Cannot find target:", pg, "Animation:", animationType);
+            return;
         }
         //pause video
         prev.media.pause();
@@ -1106,30 +1011,12 @@ function createHtml(json: JsonPage[]) {
             // console.log(clickable.data.title, clickable.data.goto);
             // console.log(page.inlineObjects);
 
-            clickable.html.find("button")
-                .on("click", gotoExists ? () => {
-                    goTo(clickable.data.goto && (idPrefix + clickable.data.goto), clickable.data.animationType as "backward");
-                } : () => {
-                    console.error("Cannot go to next page because '" + clickable.data.goto + "' does not exist");
-                });
-
-            // clickable.html
-            //     .addClass("clickable")
-            //     .attr("goto", clickable.goto!)//todo redundant
-            //     .append($("<div></div>")
-            //         .addClass("title")
-            //         .text(clickable.title))
-            //     .append($("<button></button>")
-            //         .addClass("icon")
-            //         .addClass(clickable.icon)
-            //         .on("click", gotoExists ? () => {
-            //             goTo(idPrefix + clickable.goto, clickable.backward);
-            //         } : () => {
-            //             console.error("Cannot go to next page because '" + clickable.goto + "' does not exist");
-            //         }))
-            //     .css("left", clickable.x + "%")
-            //     .css("top", clickable.y + "%");
-            // .attr("data-backward", clickable.backward != null ? clickable.backward : null);
+            // clickable.html.find("button")
+            //     .on("click", gotoExists ? () => {
+            //         goTo(clickable.data.goto, clickable.data.animationType as "backward");
+            //     } : () => {
+            //         console.error("Cannot go to next page because '" + clickable.data.goto + "' does not exist");
+            //     });
         }
 
         let event;

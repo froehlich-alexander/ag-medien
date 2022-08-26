@@ -15,13 +15,15 @@ export type PageAnimations = "forward" | "backward";
 export type TextAnimations = "fade";
 export type CustomAnimations = TextAnimations;
 export type AnimationType = PageAnimations | TextAnimations | CustomAnimations;
+export type AddressableObjects = "page" | "text-field";
 
 /**
  * A type for all objects which can be addressed in any way
  */
-interface JsonAddressableObject  {
+interface JsonAddressableObject {
     id: string; //a UNIQUE id
 }
+
 /**
  * Type for the Page-Objects in pages.json (or pages.json)
  */
@@ -70,7 +72,7 @@ export type JsonSource = string | {
     /**
      * The type of the source object (overrides {@link JsonMedia.type})
      */
-    type?: MediaType | 'auto',
+    type?: MediaType | "auto",
 } & ({
     /** width and height can be absent but if one is specified, the other one must be specified too */
     width: number,
@@ -90,18 +92,34 @@ interface AbstractJsonInlineObject {
 }
 
 /**
+ * A type that is used by everything that can target and activate (or disable) a JsonAddressableObject (like a page, a text-field, etc.)
+ */
+export type JsonActivating = {
+    // the id of the target (JsonAddressableObject)
+    goto?: string;
+} & ({
+    // The Type of the target
+    targetType?: "page",
+    animationType?: PageAnimations,
+} | {
+    // The Type of the target
+    targetType?: "text-field",
+    animationType?: TextAnimations,
+})
+
+/**
  * A type which represents a clickable object in the pages json file (pages.json or pages.json)
  */
-export interface JsonClickable extends AbstractJsonInlineObject {
+export type JsonClickable = AbstractJsonInlineObject & JsonActivating & {
     title: string;
-    goto?: string;
+    // goto?: string;
     icon?: IconType;
     /**
      * @depreciated
      */
     backward?: boolean; //depreciated use animationType instead
     type: "clickable";
-    animationType?: PageAnimations;
+    // animationType?: PageAnimations;
     // targetType?: ClickableType; //on what kind of object this clickable points
 }
 
@@ -110,6 +128,7 @@ export type JsonCustomObject = AbstractJsonInlineObject & {
     type: "custom";
     animationType?: CustomAnimations;
 }
+
 export interface JsonTextField extends AbstractJsonInlineObject, JsonAddressableObject {
     content: string;
     title?: string;

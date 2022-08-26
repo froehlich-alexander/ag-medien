@@ -38,21 +38,6 @@
           "items": {
             "type": "object",
             "properties": {
-              "title": {
-                "type": "string"
-              },
-              "goto": {
-                "type": "string"
-              },
-              "icon": {
-                "$ref": "#/definitions/IconType"
-              },
-              "backward": {
-                "type": "boolean"
-              },
-              "animationType": {
-                "$ref": "#/definitions/PageAnimations"
-              },
               "x": {
                 "type": [
                   "number",
@@ -68,14 +53,84 @@
               "position": {
                 "$ref": "#/definitions/InlineObjectPosition"
               },
+              "animationType": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "const": "forward"
+                  },
+                  {
+                    "type": "object",
+                    "properties": {}
+                  },
+                  {
+                    "type": "object",
+                    "properties": {}
+                  },
+                  {
+                    "type": "string",
+                    "const": "backward"
+                  },
+                  {
+                    "type": "object",
+                    "properties": {}
+                  },
+                  {
+                    "type": "object",
+                    "properties": {}
+                  },
+                  {
+                    "type": "object",
+                    "properties": {}
+                  },
+                  {
+                    "type": "object",
+                    "properties": {}
+                  },
+                  {
+                    "type": "object",
+                    "properties": {}
+                  },
+                  {
+                    "type": "object",
+                    "properties": {}
+                  },
+                  {
+                    "$ref": "#/definitions/TextAnimations"
+                  },
+                  {
+                    "type": "object",
+                    "properties": {}
+                  }
+                ]
+              },
               "hidden": {
+                "type": "boolean"
+              },
+              "goto": {
+                "type": "string"
+              },
+              "targetType": {
+                "type": "string",
+                "enum": [
+                  "page",
+                  "text-field"
+                ]
+              },
+              "title": {
+                "type": "string"
+              },
+              "icon": {
+                "$ref": "#/definitions/IconType"
+              },
+              "backward": {
                 "type": "boolean"
               }
             },
             "required": [
-              "title",
               "x",
-              "y"
+              "y",
+              "title"
             ],
             "additionalProperties": false
           }
@@ -250,6 +305,17 @@
         "auto"
       ]
     },
+    "InlineObjectPosition": {
+      "type": "string",
+      "enum": [
+        "media",
+        "page"
+      ]
+    },
+    "TextAnimations": {
+      "type": "string",
+      "const": "fade"
+    },
     "IconType": {
       "type": "string",
       "enum": [
@@ -257,20 +323,6 @@
         "arrow_r",
         "arrow_u",
         "arrow_d"
-      ]
-    },
-    "PageAnimations": {
-      "type": "string",
-      "enum": [
-        "forward",
-        "backward"
-      ]
-    },
-    "InlineObjectPosition": {
-      "type": "string",
-      "enum": [
-        "media",
-        "page"
       ]
     },
     "JsonInlineObject": {
@@ -346,9 +398,12 @@
         }
       ]
     },
-    "TextAnimations": {
+    "PageAnimations": {
       "type": "string",
-      "const": "fade"
+      "enum": [
+        "forward",
+        "backward"
+      ]
     },
     "CustomAnimations": {
       "$ref": "#/definitions/TextAnimations"
@@ -427,53 +482,112 @@
       ]
     },
     "JsonClickable": {
-      "type": "object",
-      "properties": {
-        "x": {
-          "type": [
-            "number",
-            "string"
+      "anyOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "title": {
+              "type": "string"
+            },
+            "icon": {
+              "$ref": "#/definitions/IconType"
+            },
+            "backward": {
+              "type": "boolean"
+            },
+            "type": {
+              "$ref": "#/definitions/InlineObjectType"
+            },
+            "targetType": {
+              "type": "string",
+              "const": "page"
+            },
+            "animationType": {
+              "$ref": "#/definitions/AnimationType"
+            },
+            "goto": {
+              "type": "string"
+            },
+            "x": {
+              "type": [
+                "number",
+                "string"
+              ]
+            },
+            "y": {
+              "type": [
+                "number",
+                "string"
+              ]
+            },
+            "position": {
+              "$ref": "#/definitions/InlineObjectPosition"
+            },
+            "hidden": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "title",
+            "type",
+            "x",
+            "y"
           ]
         },
-        "y": {
-          "type": [
-            "number",
-            "string"
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "title": {
+              "type": "string"
+            },
+            "icon": {
+              "$ref": "#/definitions/IconType"
+            },
+            "backward": {
+              "type": "boolean"
+            },
+            "type": {
+              "$ref": "#/definitions/InlineObjectType"
+            },
+            "targetType": {
+              "type": "string",
+              "const": "text-field"
+            },
+            "animationType": {
+              "$ref": "#/definitions/AnimationType"
+            },
+            "goto": {
+              "type": "string"
+            },
+            "x": {
+              "type": [
+                "number",
+                "string"
+              ]
+            },
+            "y": {
+              "type": [
+                "number",
+                "string"
+              ]
+            },
+            "position": {
+              "$ref": "#/definitions/InlineObjectPosition"
+            },
+            "hidden": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "title",
+            "type",
+            "x",
+            "y"
           ]
-        },
-        "position": {
-          "$ref": "#/definitions/InlineObjectPosition"
-        },
-        "animationType": {
-          "$ref": "#/definitions/PageAnimations"
-        },
-        "type": {
-          "type": "string",
-          "const": "clickable"
-        },
-        "hidden": {
-          "type": "boolean"
-        },
-        "title": {
-          "type": "string"
-        },
-        "goto": {
-          "type": "string"
-        },
-        "icon": {
-          "$ref": "#/definitions/IconType"
-        },
-        "backward": {
-          "type": "boolean"
         }
-      },
-      "required": [
-        "title",
-        "type",
-        "x",
-        "y"
       ],
-      "additionalProperties": false,
       "description": "A type which represents a clickable object in the pages json file (pages.json or pages.json)"
     }
   }

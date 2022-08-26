@@ -1,4 +1,4 @@
-import * as $ from 'jquery';
+import * as $ from "jquery";
 import "./tour.scss";
 import { PageData, } from "./Data";
 var finished_last = true;
@@ -96,8 +96,8 @@ class Media {
         });
         // add width and height from json
         if (this.src.width && this.src.height) {
-            this.html.attr('width', this.src.width);
-            this.html.attr('height', this.src.height);
+            this.html.attr("width", this.src.width);
+            this.html.attr("height", this.src.height);
         }
         this.visibilityObserver.observe(this.html[0]);
         this.html.addClass("bg");
@@ -169,8 +169,8 @@ class Media {
      */
     onSizeKnown() {
         // remove eventually previously added width and height specified from json file, because that could be wrong
-        this.html.removeAttr('width')
-            .removeAttr('height');
+        this.html.removeAttr("width")
+            .removeAttr("height");
         this.triggerResize();
     }
     onPageSet() {
@@ -185,13 +185,13 @@ class Media {
      * @protected
      */
     onResize() {
-        console.log('on Resize', this.page?.id);
+        console.log("on Resize", this.page?.id);
         //todo call this when resized!!!
         this.applyRatio();
     }
     triggerResize() {
         // console.log('trigger resize', this.page?.id);
-        if (this.html.is(':visible') && this.page && this.src.width && this.src.height) {
+        if (this.html.is(":visible") && this.page && this.src.width && this.src.height) {
             this.onResize();
         }
     }
@@ -300,8 +300,8 @@ class VideoMedia extends Media {
             // .removeAttr("preload")
             // .removeAttr("type");
         });
-        this.html.on('loadedmetadata', () => {
-            console.log('Video loaded', this);
+        this.html.on("loadedmetadata", () => {
+            console.log("Video loaded", this);
             this._src = this.src.withUpdate({
                 width: this.html[0].videoWidth,
                 height: this.html[0].videoHeight,
@@ -319,7 +319,7 @@ class VideoMedia extends Media {
             .attr("src", this.srcString);
         //should be redundant
         if (this.html.get(0).readyState > 0) {
-            this.html.trigger('loadedmetadata');
+            this.html.trigger("loadedmetadata");
         }
     }
     clone() {
@@ -396,7 +396,7 @@ class ImageMedia extends Media {
             //     });
             // }
         });
-        this.html.attr('src', this.srcString);
+        this.html.attr("src", this.srcString);
     }
     onSizeKnown() {
         super.onSizeKnown();
@@ -473,7 +473,7 @@ class IframeMedia extends Media {
         this.loading = loading;
         this.fetchPriority = fetchPriority;
         this._html = $("<iframe></iframe>")
-            .addClass('bg')
+            .addClass("bg")
             .attr("loading", this.loading)
             .attr("fetchPriority", this.fetchPriority);
         this.prepareHTML();
@@ -491,9 +491,8 @@ class IframeMedia extends Media {
                 "</body>" +
                 "</html>");
         });
-        this.html.on('load', () => {
-            console.log('Iframe loaded', this);
-            0;
+        this.html.on("load", () => {
+            console.log("Iframe loaded", this);
         });
         // Add src after adding events so that they can get triggered
         this.html.attr("src", this.srcString);
@@ -522,15 +521,6 @@ class Page {
             inlineObjects: data.inlineObjects.map(InlineObject.from),
         });
     }
-    // public static fromJson(jsonPage: JsonPage): Page {
-    //     //check if everything is well formatted / check for mistakes
-    //     if (typeof jsonPage.id !== "string" || jsonPage.id.length <= 0)
-    //         console.error(`Id wrong formatted in page object: `, jsonPage);
-    //
-    //     //default arguments
-    //     return new Page(jsonPage.id, Media.fromJson(jsonPage.img), jsonPage.is_panorama ?? false,
-    //         jsonPage.is_360 ?? false, jsonPage.initial_direction ?? 0, ...jsonPage.inlineObjects?.map(v => InlineObject.fromJson(v)) ?? [], ...jsonPage.clickables?.map(v => Clickable.fromJson(v)) ?? []);
-    // }
     /**
      * In 360deg IMGs there exists always 2 similar clickables and all of them will be returned
      */
@@ -549,28 +539,44 @@ class Page {
         return this._html;
     }
 }
+function AddressableObject(baseClass) {
+    return class AddressableObject extends (baseClass ?? class {
+    }) {
+        constructor() {
+            super(...arguments);
+            this.activated = false;
+        }
+        activate() {
+            this.activated = true;
+        }
+        deactivate() {
+            this.activated = false;
+        }
+        toggle(value) {
+            value ??= !this.activated;
+            if (value !== this.activated) {
+                if (value) {
+                    this.activate();
+                }
+                else {
+                    this.deactivate();
+                }
+            }
+        }
+    };
+}
 /**
  * An Interface for all objects which are placed in front of the main media of a page.
  * All classes which implement this interface (e.g. {@link Clickable}) are also such objects
  */
 class InlineObject {
-    constructor(
-    // {type, animationType, position, x, y, html}:
-    //     { position: InlineObjectPosition, html: JQuery, type: InlineObjectType, animationType: AnimationType, x?: number, y?: number }) {
-    data, htmlTag, isClone = false) {
-        // this.position = position;
-        // this._html = html;
-        // this._second = false;
-        // this.type = type;
-        // this.x = x;
-        // this.y = y;
-        // this.animationType = animationType;
+    constructor(data, htmlTag, isClone = false) {
         this.data = data;
         this._second = isClone;
         this._html = typeof htmlTag === "string" ? $(`<${htmlTag}/>`) : htmlTag;
         if (!this._second) {
             // this._html = $(`<${htmlTag}/>`);
-            this.html.addClass('inlineObject');
+            this.html.addClass("inlineObject");
             // by default everything is hidden via display none
             if (!data.hidden) {
                 this.html.addClass("show");
@@ -635,30 +641,12 @@ class CustomObject extends InlineObject {
         this.html.attr("data-animation", data.animationType);
     }
 }
-class TextField extends InlineObject {
-    // public readonly content: string;
-    // public readonly title?: string;
-    // public readonly footer?: string;
-    // public readonly cssClasses?: string[];
-    // declare public readonly animationType: TextAnimations;
-    // constructor(content: string, position?: InlineObjectPosition, title?: string, footer?: string, cssClasses?: string[], animationType?: TextAnimations, x?: number, y?: number) {
-    //     super({
-    //         position: position ?? "page",
-    //         html: $("<div/>"),
-    //         type: "text",
-    //         animationType: animationType ?? undefined,
-    //         x: x,
-    //         y: y,
-    //     });
-    //     this.content = content;
-    //     this.title = title;
-    //     this.footer = footer;
-    //     this.cssClasses = cssClasses;
-    // }
+class TextField extends AddressableObject(InlineObject) {
     constructor(data, html) {
         super(data, html ?? "div", html !== undefined);
+        this.activated = !data.hidden;
         this.html.attr("data-animation", data.animationType);
-        let title = '';
+        let title = "";
         if (data.title) {
             title = $("<div>")
                 .addClass("text-field-title")
@@ -675,11 +663,6 @@ class TextField extends InlineObject {
             this.html.addClass(i);
         }
     }
-    // public static fromJson(json: JsonTextField): TextField {
-    //     return new TextField(json.content, "page", json.title, json.footer,
-    //         typeof json.cssClasses === "string" ? json.cssClasses.split(" ") : json.cssClasses, json.animationType,
-    //         typeof json.x === "string" ? parseFloat(json.x) : json.x, typeof json.x === "string" ? parseFloat(json.x) : json.x);
-    // }
     // public override clone(n?: TextField): TextField {
     //     if (n === undefined) {
     //         n = new TextField(this.content, this.position, this.title, this.footer, this.cssClasses, this.animationType, this.x, this.y);
@@ -689,32 +672,28 @@ class TextField extends InlineObject {
     static from(data) {
         return new TextField(data);
     }
+    activate() {
+        super.activate();
+        this.html.addClass("show");
+    }
+    deactivate() {
+        super.deactivate();
+        this.html.removeClass("show");
+    }
 }
 class Clickable extends InlineObject {
-    // public readonly title: string;
-    // declare public readonly x: number;
-    // declare public readonly y: number;
-    // declare public readonly animationType: PageAnimations;
-    // declare public readonly goto: string;
-    // public readonly second: boolean; //360deg img
-    // public icon: IconType = "arrow_l";
-    // constructor({position, y, x, animationType, title, goto, icon}:
-    //                 { title: string, x: number, y: number, goto: string, icon: IconType, animationType?: PageAnimations, position?: InlineObjectPosition }) {
     constructor(data, html) {
-        // super({
-        //     position: position ?? "media",
-        //     html: $("<div></div>"),
-        //     type: "clickable",
-        //     animationType: animationType ?? "forward",
-        //     x: x,
-        //     y: y,
-        // });
         super(data, html ?? "div", html !== undefined);
-        // this.title = title;
-        // // this.x = x;
-        // // this.y = y;
-        // this.goto = goto;
-        // this.icon = icon;
+        this.handleClick = () => {
+            switch (this.data.targetType) {
+                case "text-field":
+                    this.activateText();
+                    break;
+                case "page":
+                    goTo(this.data.goto, this.data.animationType);
+                    break;
+            }
+        };
         if (!this.second) {
             this.html.addClass("clickable")
                 .attr("goto", this.data.goto) //todo redundant
@@ -723,23 +702,24 @@ class Clickable extends InlineObject {
                 .text(this.data.title))
                 .append($("<button></button>")
                 .addClass("icon")
+                .on("click", this.handleClick)
                 .addClass(this.data.icon));
         }
     }
     static from(data) {
         return new Clickable(data);
-        // return new Clickable({
-        //     x: data.x,
-        //     y: data.y,
-        //     icon: data.icon,
-        //     title: data.title,
-        //     goto: data.goto,
-        //     animationType: data.animationType,
-        //     position: data.position,
-        // });
+    }
+    activateText() {
+        for (let page of pages) {
+            for (let iObject of page.inlineObjects) {
+                if (iObject.data.isTextField() && iObject.data.id === this.data.goto) {
+                    iObject.activate();
+                }
+            }
+        }
     }
 }
-window.addEventListener('resize', function () {
+window.addEventListener("resize", function () {
     let bgImgs = $(".bg");
     bgImgs.removeClass("fill-width");
     bgImgs.removeClass("fill-height");
@@ -758,7 +738,7 @@ window.addEventListener('resize', function () {
     }
     adjust_clickables();
 });
-window.addEventListener('popstate', function () {
+window.addEventListener("popstate", function () {
     let pgs = $(".page");
     pgs.removeClass("show");
     if (window.location.hash !== "")
@@ -776,7 +756,11 @@ function goTo(pg, animationType) {
             next = pages.find(v => v.id === lastest);
         }
         else {
-            next = pages.find(v => v.id === pg.substring(idPrefix.length));
+            next = pages.find(v => v.id === pg);
+        }
+        if (next === undefined) {
+            console.error("Cannot find target:", pg, "Animation:", animationType);
+            return;
         }
         //pause video
         prev.media.pause();
@@ -857,29 +841,12 @@ function createHtml(json) {
             }
             // console.log(clickable.data.title, clickable.data.goto);
             // console.log(page.inlineObjects);
-            clickable.html.find("button")
-                .on("click", gotoExists ? () => {
-                goTo(clickable.data.goto && (idPrefix + clickable.data.goto), clickable.data.animationType);
-            } : () => {
-                console.error("Cannot go to next page because '" + clickable.data.goto + "' does not exist");
-            });
-            // clickable.html
-            //     .addClass("clickable")
-            //     .attr("goto", clickable.goto!)//todo redundant
-            //     .append($("<div></div>")
-            //         .addClass("title")
-            //         .text(clickable.title))
-            //     .append($("<button></button>")
-            //         .addClass("icon")
-            //         .addClass(clickable.icon)
-            //         .on("click", gotoExists ? () => {
-            //             goTo(idPrefix + clickable.goto, clickable.backward);
-            //         } : () => {
-            //             console.error("Cannot go to next page because '" + clickable.goto + "' does not exist");
-            //         }))
-            //     .css("left", clickable.x + "%")
-            //     .css("top", clickable.y + "%");
-            // .attr("data-backward", clickable.backward != null ? clickable.backward : null);
+            // clickable.html.find("button")
+            //     .on("click", gotoExists ? () => {
+            //         goTo(clickable.data.goto, clickable.data.animationType as "backward");
+            //     } : () => {
+            //         console.error("Cannot go to next page because '" + clickable.data.goto + "' does not exist");
+            //     });
         }
         let event;
         if (page.media.isImage() || page.media.isIframe())

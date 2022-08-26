@@ -1,7 +1,7 @@
 import type {MediaContextType} from "./tour-dev-tool/TourContexts";
 import type {Complete, UnFlatArray} from "./tour-dev-tool/utils";
 import type {
-    AbstractJsonInlineObject,
+    AbstractJsonInlineObject, JsonActivating, AddressableObjects,
     AnimationType,
     CustomAnimations,
     FetchPriorityType,
@@ -25,7 +25,7 @@ import type {
 } from "./types";
 
 
-type DataType<T extends Data<any>> = Omit<{ [k in keyof T as T[k] extends Function ? never : k]: T[k] }, "excludeFromDataType" | T['excludeFromDataType']>;
+type DataType<T extends Data<any>> = Omit<{ [k in keyof T as T[k] extends Function ? never : k]: T[k] }, "excludeFromDataType" | T["excludeFromDataType"]>;
 
 /**
  * Checks if the arrays are equal<br>
@@ -68,7 +68,7 @@ abstract class Data<T extends Data<T>> {
 }
 
 class SchulTourConfigFile extends Data<SchulTourConfigFile> {
-    public declare excludeFromDataType: 'excludeFromDataType';
+    public declare excludeFromDataType: "excludeFromDataType";
 
     public readonly pages: PageData[];
 
@@ -95,13 +95,13 @@ class SchulTourConfigFile extends Data<SchulTourConfigFile> {
 
     public toJSON(): JsonSchulTourConfigFile {
         return {
-            pages: this.pages,
+            pages: this.pages.map(page => page.toJSON()),
         };
     }
 }
 
 class PageData extends Data<PageData> {
-    public declare excludeFromDataType: 'excludeFromDataType';
+    public declare excludeFromDataType: "excludeFromDataType";
 
     public readonly media: MediaData;
     public readonly id: string;
@@ -110,14 +110,7 @@ class PageData extends Data<PageData> {
     public readonly initialDirection: number;
     public readonly inlineObjects: InlineObjectData[];
 
-    constructor({
-                    media,
-                    id,
-                    is360,
-                    isPanorama,
-                    initialDirection,
-                    inlineObjects,
-                }: DataType<PageData>) {
+    constructor({media, id, is360, isPanorama, initialDirection, inlineObjects}: DataType<PageData>) {
         super();
         this.media = media;
         this.id = id;
@@ -249,7 +242,7 @@ class MediaData extends Data<MediaData> {
     public static readonly iframeUrlEndings = ["html", "htm", "com", "org", "edu", "net", "gov", "mil", "int", "de", "en", "eu", "us", "fr", "ch", "at", "au"];
     public static readonly Types: Array<MediaType> = ["img", "video", "iframe"];
 
-    declare excludeFromDataType: 'fileDoesNotExist';
+    declare excludeFromDataType: "fileDoesNotExist";
 
     constructor(
         other: DataType<MediaData>,
@@ -373,7 +366,7 @@ class MediaData extends Data<MediaData> {
 }
 
 class AbstractInlineObjectData<T extends AbstractInlineObjectData<T, Json>, Json extends AbstractJsonInlineObject> extends Data<T> {
-    public declare excludeFromDataType: 'excludeFromDataType';
+    public declare excludeFromDataType: "excludeFromDataType";
 
     // standard attributes
     public readonly x: number;
@@ -538,7 +531,7 @@ class AbstractInlineObjectData<T extends AbstractInlineObjectData<T, Json>, Json
 }
 
 class AbstractAddressableInlineObjectData<T extends AbstractAddressableInlineObjectData<T, Json>, Json extends AbstractJsonInlineObject & JsonAddressableObject> extends AbstractInlineObjectData<T, Json> {
-    public declare excludeFromDataType: 'excludeFromDataType';
+    public declare excludeFromDataType: "excludeFromDataType";
 
     public readonly id: string;
 
@@ -562,6 +555,50 @@ class AbstractAddressableInlineObjectData<T extends AbstractAddressableInlineObj
 
     public withId(id: string): this {
         return new (this.constructor as typeof AbstractAddressableInlineObjectData)({...this, id: id}) as this;
+    }
+}
+
+class AbstractActivatingInlineObjectData<T extends AbstractActivatingInlineObjectData<T, Json>, Json extends AbstractJsonInlineObject & JsonActivating> extends AbstractInlineObjectData<T, Json> {
+    public declare excludeFromDataType: "excludeFromDataType";
+
+    public readonly goto?: string;
+    public readonly targetType: AddressableObjects;
+
+    constructor({goto, targetType, ...base}: DataType<AbstractActivatingInlineObjectData<T, Json>>) {
+        super(base);
+        this.goto = goto;
+        this.targetType = targetType;
+    }
+
+    public toJSON(): { [k in keyof Pick<Json, keyof (AbstractJsonInlineObject & JsonActivating)>]: Json[k] } {
+        return {
+            ...super.toJSON(),
+            goto: this.goto,
+            targetType: this.targetType,
+        };
+    }
+
+    public equals(other: DataType<AbstractActivatingInlineObjectData<T, Json>> | undefined | null): other is DataType<AbstractActivatingInlineObjectData<T, Json>> {
+        return super.equals(other)
+            && this.goto === other.goto
+            && this.targetType === other.targetType;
+    }
+
+    public withGoto(goto: string): this {
+        if (this.goto === goto) {
+            return this;
+        }
+        return new (this.constructor as typeof AbstractActivatingInlineObjectData)({...this, goto: goto}) as this;
+    }
+
+    public withTargetType(targetType: AddressableObjects): this {
+        if (this.targetType === targetType) {
+            return this;
+        }
+        return new (this.constructor as typeof AbstractActivatingInlineObjectData)({
+            ...this,
+            targetType: targetType,
+        }) as this;
     }
 }
 
@@ -600,22 +637,20 @@ const InlineObjectData = {
 type InlineObjectData = ClickableData | CustomObjectData | TextFieldData;
 export type InlineObjectDataConstructor = typeof ClickableData | typeof CustomObjectData | typeof TextFieldData;
 
-class ClickableData extends AbstractInlineObjectData<ClickableData, JsonClickable> {
-    public declare excludeFromDataType: 'excludeFromDataType';
+class ClickableData extends AbstractActivatingInlineObjectData<ClickableData, JsonClickable> {
+    public declare excludeFromDataType: "excludeFromDataType";
 
     public readonly title: string;
     public readonly icon: IconType;
 
     declare public readonly type: "clickable";
-    declare public readonly animationType: PageAnimations;
-    declare public readonly goto?: string;
+    // declare public readonly animationType: PageAnimations;
+    // declare public readonly goto?: string;
 
 
-    public static readonly Icons: Array<IconType> = ['arrow_l', "arrow_u", "arrow_r", "arrow_d"];
+    public static readonly Icons: Array<IconType> = ["arrow_l", "arrow_u", "arrow_r", "arrow_d"];
 
-    constructor(
-        {title, icon, ...r}: DataType<ClickableData>,
-    ) {
+    constructor({title, icon, ...r}: DataType<ClickableData>) {
         super({...r, type: "clickable"});
         this.title = title;
         this.icon = icon;
@@ -623,12 +658,13 @@ class ClickableData extends AbstractInlineObjectData<ClickableData, JsonClickabl
 
     public static default: ClickableData = new ClickableData({
         icon: "arrow_l",
-        title: '',
+        title: "",
         animationType: "forward",
-        goto: '',
+        goto: "",
+        targetType: "page", // TODO 26.08.22 thats not good add auto detection!!!
         x: 0,
         y: 0,
-        type: 'clickable',
+        type: "clickable",
         position: "media",
         hidden: false,
     });
@@ -641,6 +677,7 @@ class ClickableData extends AbstractInlineObjectData<ClickableData, JsonClickabl
             x: typeof json.x === "number" ? json.x : parseFloat(json.x),
             y: typeof json.y === "number" ? json.y : parseFloat(json.y),
             goto: json.goto,
+            targetType: json.targetType ?? ClickableData.default.targetType,
             position: json.position ?? ClickableData.default.position,
             animationType: json.animationType ?? ClickableData.default.animationType,
             hidden: json.hidden ?? ClickableData.default.hidden,
@@ -650,8 +687,7 @@ class ClickableData extends AbstractInlineObjectData<ClickableData, JsonClickabl
     public equals(other: DataType<ClickableData> | undefined | null): other is DataType<ClickableData> {
         return super.equals(other)
             && this.title === other.title
-            && this.icon === other.icon
-            && this.goto === other.goto;
+            && this.icon === other.icon;
     }
 
     public toJSON(): JsonClickable {
@@ -659,8 +695,8 @@ class ClickableData extends AbstractInlineObjectData<ClickableData, JsonClickabl
             ...super.toJSON(),
             title: this.title,
             icon: this.icon,
-            goto: this.goto,
-        };
+        } as JsonClickable;
+        // we need to cast here because JsonActivating is dynamic
     }
 
     public withIcon(icon: IconType): ClickableData {
@@ -673,7 +709,7 @@ class ClickableData extends AbstractInlineObjectData<ClickableData, JsonClickabl
 }
 
 class TextFieldData extends AbstractAddressableInlineObjectData<TextFieldData, JsonTextField> {
-    public declare excludeFromDataType: 'excludeFromDataType';
+    public declare excludeFromDataType: "excludeFromDataType";
 
     public readonly title?: string;
     public readonly content: string;
@@ -762,7 +798,7 @@ class TextFieldData extends AbstractAddressableInlineObjectData<TextFieldData, J
 }
 
 class CustomObjectData extends AbstractInlineObjectData<CustomObjectData, JsonCustomObject> {
-    public declare excludeFromDataType: 'excludeFromDataType';
+    public declare excludeFromDataType: "excludeFromDataType";
 
     public readonly htmlId: string;
 
@@ -781,9 +817,9 @@ class CustomObjectData extends AbstractInlineObjectData<CustomObjectData, JsonCu
         hidden: false,
         x: 0,
         y: 0,
-        animationType: 'fade',
+        animationType: "fade",
         position: "media",
-        htmlId: '',
+        htmlId: "",
     };
 
     public static fromJSON(json: Omit<JsonCustomObject, "type">): CustomObjectData {
@@ -812,7 +848,7 @@ class CustomObjectData extends AbstractInlineObjectData<CustomObjectData, JsonCu
 }
 
 class SourceData extends Data<SourceData> {
-    public declare excludeFromDataType: 'excludeFromDataType';
+    public declare excludeFromDataType: "excludeFromDataType";
 
     public readonly name: string;
     // natural width
@@ -949,7 +985,7 @@ class SourceData extends Data<SourceData> {
 
 
 class FileData extends Data<FileData> {
-    public declare excludeFromDataType: 'excludeFromDataType' | 'outdated';
+    public declare excludeFromDataType: "excludeFromDataType" | "outdated";
 
     public readonly name: string;
     public readonly size: number;
@@ -1072,7 +1108,7 @@ class FileData extends Data<FileData> {
             intrinsicHeight: json.intrinsicHeight,
             // base64: json.data,
             file: file,
-            type: MediaData.determineType('auto', json.name),
+            type: MediaData.determineType("auto", json.name),
         });
     }
 
@@ -1083,7 +1119,7 @@ class FileData extends Data<FileData> {
 
     public async toJSON(): Promise<JsonFileData> {
         const stream = this.file.stream().getReader();
-        let binaryString = '';
+        let binaryString = "";
         while (true) {
             const data = await stream.read();
             if (data.done) {

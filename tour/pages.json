@@ -11,12 +11,21 @@
       "initial_direction": 34,
       "inlineObjects": [
         {
+          "type": "clickable",
+          "goto": "text-test",
+          "x": 70,
+          "y": 30,
+          "title": "text test",
+          "animationType": "fade",
+          "targetType": "text-field"
+        },
+        {
           "type": "text",
           "title": "Title TTT",
           "position": "page",
           "content": "hello test kjsdbfkjsdbv kjbsd jskdbvk jsdbvjksdb jdsvb ksdjbvjksbd kjsdbvkjsd bvkjbsdvb jkdsfh sjkdfb jksdfh g skdjhf  sdhf ksdfkjs fks dkjhg skjhdgf khjsdg fkhjgsfgsd khfgsdghgf ncyx",
           "animationType": "fade",
-          "hidden": false,
+          "hidden": true,
           "id": "text-test",
           "x": 50,
           "y": 50
@@ -127,6 +136,7 @@
           "x": "50",
           "y": "85",
           "goto": "15_flur_eg",
+          "animationType": "backward",
           "icon": "arrow_d"
         }
       ]
@@ -142,6 +152,7 @@
           "title": "Zurück",
           "x": "10",
           "y": "10",
+          "animationType": "backward",
           "goto": "15_flur_eg",
           "icon": "arrow_l"
         }
