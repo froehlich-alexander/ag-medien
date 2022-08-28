@@ -6,6 +6,7 @@ export default function useDialog() {
     const [importDialogVisibility, setImportDialogVisibility] = useState(false);
     const [mediaDialogVisibility, setMediaDialogVisibility] = useState(false);
     const [unsavedChangesAlertVisibility, setUnsavedChangesAlertVisibility] = useState(false);
+    const [mediaPreviewDialogVisibility, setMediaPreviewDialogVisibility] = useState(false);
 
     const showImportDialog = useCallback(() => {
         setImportDialogVisibility(true);
@@ -17,6 +18,10 @@ export default function useDialog() {
     
     const showUnsavedChangesAlert = useCallback(() => {
         setUnsavedChangesAlertVisibility(true);
+    }, []);
+
+    const showMediaPreviewDialog = useCallback(() => {
+        setMediaPreviewDialogVisibility(true);
     }, []);
     
     const dialogContext: DialogContextType = useMemo(() => ({
@@ -31,7 +36,11 @@ export default function useDialog() {
         unsavedChangesAlertVisibility: unsavedChangesAlertVisibility,
         setUnsavedChangesAlertVisibility: setUnsavedChangesAlertVisibility,
         showUnsavedChangesAlert: showUnsavedChangesAlert,
-    }), [importDialogVisibility,mediaDialogVisibility, unsavedChangesAlertVisibility]);
+
+        mediaPreviewDialogVisibility: mediaPreviewDialogVisibility,
+        setMediaPreviewDialogVisibility: setMediaPreviewDialogVisibility,
+        showMediaPreviewDialog: showMediaPreviewDialog,
+    }), [importDialogVisibility,mediaDialogVisibility, unsavedChangesAlertVisibility, mediaPreviewDialogVisibility]);
 
     return {
         mediaDialogVisibility,
@@ -45,6 +54,10 @@ export default function useDialog() {
         unsavedChangesAlertVisibility,
         setUnsavedChangesAlertVisibility,
         showUnsavedChangesAlert,
+
+        mediaPreviewDialogVisibility,
+        setMediaPreviewDialogVisibility,
+        showMediaPreviewDialog,
 
         dialogContext,
     }

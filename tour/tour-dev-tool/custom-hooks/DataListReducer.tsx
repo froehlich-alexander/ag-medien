@@ -8,6 +8,7 @@ function useDataList<DataItem extends { equals(other: DataItem): boolean }, Data
 (
     initialValue: Array<DataItem>,
     getKey: (item: DataItem | DataItemKey) => DataItemKey,
+    // should return whether the two items have the same key (and one will be replaced by the other) (NOT whether they are equal)
     compareItems: (item1: DataItem, item2: DataItem) => boolean = (item1, item2) => (getKey(item1) === getKey(item2)),
     onItemsAdded?: (items: Array<DataItem>) => void,
     onItemsUpdated?: (items: Array<DataItem>) => void,
@@ -17,14 +18,16 @@ function useDataList<DataItem extends { equals(other: DataItem): boolean }, Data
     update: (...items: UnFlatArray<DataItem>) => void,
     remove: (...items: UnFlatArray<DataItem | DataItemKey>) => void,
     reset: (...items: UnFlatArray<DataItem>) => void,
+    replace: (...items: Array<[DataItemKey, DataItem]>) => void,
 }] {
     type DataItemList = Array<DataItem>;
     type DataItemKeyList = Array<DataItemKey>;
 
     const reducer = useCallback((state: DataItemList, action:
-        { type: 'add' | 'update', items: DataItemList }
-        | { type: 'remove', items: DataItemList | DataItemKeyList }
-        | { type: 'reset', items?: DataItemList },
+        { type: "add" | "update", items: DataItemList }
+        | { type: "remove", items: DataItemList | DataItemKeyList }
+        | { type: "reset", items?: DataItemList }
+        | { type: "replace", items: Array<[DataItemKey, DataItem]> },
     ): DataItemList => {
         switch (action.type) {
             case "reset":
@@ -98,25 +101,44 @@ function useDataList<DataItem extends { equals(other: DataItem): boolean }, Data
                 } else {
                     return state;
                 }
+            case "replace":
+                let edited = false;
+                const res = state.slice();
+                for (let [key, item] of action.items) {
+                    const index = state.findIndex(value => getKey(value) === key);
+                    if (index >= 0) {
+                        res[index] = item;
+                        edited = true;
+                    }
+                }
+                if (edited) {
+                    return res;
+                } else {
+                    return state;
+                }
         }
     }, [onItemsAdded, onItemsUpdated, onItemsRemoved]);
     const [dataList, dispatch] = useReducer(reducer, initialValue);
 
 
     const add = useCallback((...items: UnFlatArray<DataItem>) => {
-        dispatch({type: 'add', items: items.flat(1) as DataItemList});
+        dispatch({type: "add", items: items.flat(1) as DataItemList});
     }, []);
 
     const update = useCallback((...items: UnFlatArray<DataItem>) => {
-        dispatch({type: 'update', items: items.flat(1) as DataItemList});
+        dispatch({type: "update", items: items.flat(1) as DataItemList});
     }, []);
 
     const remove = useCallback((...items: UnFlatArray<DataItem | DataItemKey>) => {
-        dispatch({type: 'remove', items: items.flat() as DataItemList | DataItemKeyList});
+        dispatch({type: "remove", items: items.flat() as DataItemList | DataItemKeyList});
     }, []);
 
     const reset = useCallback((...items: UnFlatArray<DataItem>) => {
-        dispatch({type: 'reset', items: items.flat() as DataItemList});
+        dispatch({type: "reset", items: items.flat() as DataItemList});
+    }, []);
+
+    const replace = useCallback((...items: Array<[DataItemKey, DataItem]>) => {
+        dispatch({type: "replace", items: items});
     }, []);
 
     return [
@@ -126,6 +148,7 @@ function useDataList<DataItem extends { equals(other: DataItem): boolean }, Data
             update: update,
             remove: remove,
             reset: reset,
+            replace: replace,
         },
     ];
 }

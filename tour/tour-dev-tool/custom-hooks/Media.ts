@@ -6,7 +6,7 @@ import useDataList from "./DataListReducer";
 export default function useMedia(mediaDirectory: FileSystemDirectoryHandle | undefined) {
 
     const writeMediaFiles = useCallback((files: FileData[]) => {
-        console.log('write media', files, mediaDirectory);
+        console.log("write media", files, mediaDirectory);
         if (!mediaDirectory) return;
 
         const proms: Array<Promise<void>> = [];
@@ -36,7 +36,7 @@ export default function useMedia(mediaDirectory: FileSystemDirectoryHandle | und
     // }, [pages]);
 
     const deleteMediaFiles = useCallback((files: FileData[]) => {
-        console.log('delete media', files, mediaDirectory);
+        console.log("delete media", files, mediaDirectory);
         if (!mediaDirectory) return;
 
         const fileNames = files.map(value => value.name);
@@ -53,7 +53,7 @@ export default function useMedia(mediaDirectory: FileSystemDirectoryHandle | und
                     await mediaDirectory.removeEntry(fileName);
                 } catch (e) {
                     if (e instanceof DOMException) {
-                        console.log('media already deleted', fileName, e);
+                        console.log("media already deleted", fileName, e);
                     } else {
                         throw e;
                     }
@@ -68,15 +68,16 @@ export default function useMedia(mediaDirectory: FileSystemDirectoryHandle | und
         remove: removeMediaFiles,
         reset: resetMediaFiles,
         update: updateMediaFiles,
+        replace: replaceMediaFiles,
     }] = useDataList<FileData, string>([], (file => typeof file === "string" ? file : file.name),
         undefined, writeMediaFiles, writeMediaFiles, deleteMediaFiles);
 
     const mediaContext: MediaContextType = useMemo(() => ({
-        mediaFiles, resetMediaFiles, removeMediaFiles, updateMediaFiles, addMediaFiles,
+        mediaFiles, resetMediaFiles, removeMediaFiles, updateMediaFiles, addMediaFiles, replaceMediaFiles,
     }), [mediaFiles]);
 
     return {
         mediaFiles, mediaContext,
-        addMediaFiles, removeMediaFiles, resetMediaFiles, updateMediaFiles,
+        addMediaFiles, removeMediaFiles, resetMediaFiles, updateMediaFiles, replaceMediaFiles,
     };
 };

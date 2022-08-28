@@ -16,6 +16,7 @@ export type TextAnimations = "fade";
 export type CustomAnimations = TextAnimations;
 export type AnimationType = PageAnimations | TextAnimations | CustomAnimations;
 export type AddressableObjects = "page" | "text-field";
+export type ActionType = "activate" | "deactivate" | "toggle";
 
 /**
  * A type for all objects which can be addressed in any way
@@ -97,15 +98,20 @@ interface AbstractJsonInlineObject {
 export type JsonActivating = {
     // the id of the target (JsonAddressableObject)
     goto?: string;
+    action?: ActionType;
 } & ({
     // The Type of the target
     targetType?: "page",
     animationType?: PageAnimations,
+    action?: "activate",
 } | {
     // The Type of the target
     targetType?: "text-field",
     animationType?: TextAnimations,
-})
+} | {
+    targetType: "auto";
+    animationType: AnimationType;
+});
 
 /**
  * A type which represents a clickable object in the pages json file (pages.json or pages.json)
@@ -142,4 +148,5 @@ export type JsonInlineObject = JsonCustomObject | JsonTextField | JsonClickable;
 
 export type JsonSchulTourConfigFile = {
     pages: JsonPage[],
+    initialPage?: string,
 }

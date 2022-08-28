@@ -1,4 +1,4 @@
-import React, {ChangeEvent, useCallback, useContext, useState} from 'react';
+import React, {ChangeEvent, useCallback, useContext, useState} from "react";
 import {Button, ButtonGroup, Col, Container, Form, FormControl, Modal, Row, Spinner, Table} from "react-bootstrap";
 import {useTranslation} from "react-i18next";
 import {FileData} from "../Data";
@@ -121,12 +121,17 @@ type MediaItemProps = {
 }
 
 function MediaItem({file, selected, onSelected}: MediaItemProps) {
-
     const mediaContext = useContext(MediaContext);
+    const dialogContext = useContext(DialogContext);
 
     const handleDelete = useCallback(() => {
         mediaContext.removeMediaFiles(file.name);
     }, [file.name, mediaContext.removeMediaFiles]);
+
+    const handlePreview = useCallback(() => {
+        
+        dialogContext.showMediaPreviewDialog();
+    }, [dialogContext.showMediaPreviewDialog]);
 
     const handleCheckboxClick = useCallback(() => {
         onSelected(file.name);
@@ -138,7 +143,10 @@ function MediaItem({file, selected, onSelected}: MediaItemProps) {
             <td><code>{file.name}</code></td>
             <td>{file.type}</td>
             <td>{formatFileSize(file.size, false)}</td>
-            <td><MaterialIcon icon="delete" color="danger" onClick={handleDelete}/></td>
+            <td>
+                <MaterialIcon icon="delete" color="danger" onClick={handleDelete}/>
+                <MaterialIcon icon="preview" color="primary" onClick={handlePreview}/>
+            </td>
         </tr>
     );
 }

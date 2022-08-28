@@ -1,5 +1,6 @@
 import React, {useCallback, useEffect, useState} from "react";
 import {Button, Col, Container, Spinner} from "react-bootstrap";
+import {Provider as StoreProvider} from "react-redux";
 import {FileData, SchulTourConfigFile} from "../Data";
 import {JsonSchulTourConfigFile} from "../types";
 import useDialog from "./custom-hooks/Dialog";
@@ -13,6 +14,7 @@ import ListView from "./ListView";
 import MediaDialog from "./MediaDialog";
 import {MyNavBar} from "./MyNavBar";
 import PageForm from "./PageForm";
+import store from "./store";
 import {DialogContext, FormContext, ListViewContext, MediaContext, PageContext, TemplateContext} from "./TourContexts";
 import UnsavedChangesAlert from "./UnsavedChangesAlert";
 
@@ -25,17 +27,16 @@ export default function CreateTool() {
     const [startingAllowed, setStartingAllowed] = useState(false);
     const [loadingFromFS, setLoadingFromFS] = useState(false);
 
-    const [formHasChanged, setFormHasChanged] = useState(false);
-
     const {dialogContext, importDialogVisibility, setImportDialogVisibility} = useDialog();
     const {mediaFiles, resetMediaFiles, mediaContext} = useMedia(mediaDirectory);
     const {
         pages, resetPages,
         setCurrentPage,
+        setInitialPage,
         pageContext,
     } = usePages(mediaContext, configFile);
     const {templateContext} = useTemplates();
-    const {formContext, setPage} = useForms(pageContext.currentPage, pageContext.updatePages);
+    const {formContext, setPage, setRenamePageIdUsages} = useForms(pageContext);
     const {listViewContext} = useListView(pageContext, formContext, dialogContext);
 
     useEffect(() => {
@@ -72,6 +73,7 @@ export default function CreateTool() {
                 }
                 resetPages(config.pages ?? []);
                 setCurrentPage(config.pages.find(page => page.id === window.localStorage.getItem("current_page")));
+                setInitialPage(config.initialPage);
 
                 setMediaDirectory(mediaDirectory);
                 setConfigFile(configFile);
@@ -104,32 +106,34 @@ export default function CreateTool() {
 
     return (
         startingAllowed
-            ? <MediaContext.Provider value={mediaContext}>
-                <PageContext.Provider value={pageContext}>
-                    <DialogContext.Provider value={dialogContext}>
-                        <TemplateContext.Provider value={templateContext}>
-                            <FormContext.Provider value={formContext}>
-                                <ListViewContext.Provider value={listViewContext}>
-                                    <MediaDialog/>
-                                    <ImportDialog show={importDialogVisibility} onVisibilityChange={setImportDialogVisibility}/>
-                                    <Container fluid className={"p-2 CreateTool"}>
-                                        <MyNavBar className="mb-2"/>
-                                        <div className="row">
-                                            <Col sm={4}>
-                                                <UnsavedChangesAlert/>
-                                                <ListView/>
-                                            </Col>
-                                            <Col>
-                                                {formContext.page && <PageForm onChange={setPage}/>}
-                                            </Col>
-                                        </div>
-                                    </Container>
-                                </ListViewContext.Provider>
-                            </FormContext.Provider>
-                        </TemplateContext.Provider>
-                    </DialogContext.Provider>
-                </PageContext.Provider>
-            </MediaContext.Provider>
+            ?<StoreProvider store={store}>
+                 <MediaContext.Provider value={mediaContext}>
+                    <PageContext.Provider value={pageContext}>
+                        <DialogContext.Provider value={dialogContext}>
+                            <TemplateContext.Provider value={templateContext}>
+                                <FormContext.Provider value={formContext}>
+                                    <ListViewContext.Provider value={listViewContext}>
+                                        <MediaDialog/>
+                                        <ImportDialog show={importDialogVisibility} onVisibilityChange={setImportDialogVisibility}/>
+                                        <Container fluid className={"p-2 CreateTool"}>
+                                            <MyNavBar className="mb-2"/>
+                                            <div className="row">
+                                                <Col sm={4}>
+                                                    <UnsavedChangesAlert/>
+                                                    <ListView/>
+                                                </Col>
+                                                <Col>
+                                                    {formContext.page && <PageForm onChange={setPage} onRenamePageIdUsagesChange={setRenamePageIdUsages}/>}
+                                                </Col>
+                                            </div>
+                                        </Container>
+                                    </ListViewContext.Provider>
+                                </FormContext.Provider>
+                            </TemplateContext.Provider>
+                        </DialogContext.Provider>
+                    </PageContext.Provider>
+                </MediaContext.Provider>
+            </StoreProvider>
             : <Container className="p-5">
                 <p className={selectWorkingDirectoryAborted ? 'text-danger' : 'text-info'}>
                     You need to select a project directory to get started

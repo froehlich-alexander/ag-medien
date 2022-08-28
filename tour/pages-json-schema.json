@@ -10,6 +10,9 @@
           "items": {
             "$ref": "#/definitions/JsonPage"
           }
+        },
+        "initialPage": {
+          "type": "string"
         }
       },
       "required": [
@@ -101,6 +104,21 @@
                   {
                     "type": "object",
                     "properties": {}
+                  },
+                  {
+                    "type": "object",
+                    "properties": {}
+                  },
+                  {
+                    "type": "object",
+                    "properties": {}
+                  },
+                  {
+                    "type": "object",
+                    "properties": {}
+                  },
+                  {
+                    "$ref": "#/definitions/CustomAnimations"
                   }
                 ]
               },
@@ -110,11 +128,31 @@
               "goto": {
                 "type": "string"
               },
+              "action": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "const": "activate"
+                  },
+                  {
+                    "type": "object",
+                    "properties": {}
+                  },
+                  {
+                    "type": "object",
+                    "properties": {}
+                  },
+                  {
+                    "$ref": "#/definitions/ActionType"
+                  }
+                ]
+              },
               "targetType": {
                 "type": "string",
                 "enum": [
                   "page",
-                  "text-field"
+                  "text-field",
+                  "auto"
                 ]
               },
               "title": {
@@ -316,6 +354,17 @@
       "type": "string",
       "const": "fade"
     },
+    "CustomAnimations": {
+      "$ref": "#/definitions/TextAnimations"
+    },
+    "ActionType": {
+      "type": "string",
+      "enum": [
+        "activate",
+        "deactivate",
+        "toggle"
+      ]
+    },
     "IconType": {
       "type": "string",
       "enum": [
@@ -404,9 +453,6 @@
         "forward",
         "backward"
       ]
-    },
-    "CustomAnimations": {
-      "$ref": "#/definitions/TextAnimations"
     },
     "JsonTextField": {
       "type": "object",
@@ -506,6 +552,9 @@
             "animationType": {
               "$ref": "#/definitions/AnimationType"
             },
+            "action": {
+              "$ref": "#/definitions/ActionType"
+            },
             "goto": {
               "type": "string"
             },
@@ -561,6 +610,9 @@
             "goto": {
               "type": "string"
             },
+            "action": {
+              "$ref": "#/definitions/ActionType"
+            },
             "x": {
               "type": [
                 "number",
@@ -581,6 +633,63 @@
             }
           },
           "required": [
+            "title",
+            "type",
+            "x",
+            "y"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "title": {
+              "type": "string"
+            },
+            "icon": {
+              "$ref": "#/definitions/IconType"
+            },
+            "backward": {
+              "type": "boolean"
+            },
+            "type": {
+              "$ref": "#/definitions/InlineObjectType"
+            },
+            "targetType": {
+              "type": "string",
+              "const": "auto"
+            },
+            "animationType": {
+              "$ref": "#/definitions/AnimationType"
+            },
+            "goto": {
+              "type": "string"
+            },
+            "action": {
+              "$ref": "#/definitions/ActionType"
+            },
+            "x": {
+              "type": [
+                "number",
+                "string"
+              ]
+            },
+            "y": {
+              "type": [
+                "number",
+                "string"
+              ]
+            },
+            "position": {
+              "$ref": "#/definitions/InlineObjectPosition"
+            },
+            "hidden": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "animationType",
+            "targetType",
             "title",
             "type",
             "x",

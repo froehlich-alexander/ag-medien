@@ -53,7 +53,10 @@ body {
     .inlineObject {
         position: absolute;
         transform: translate(-50%);
-        opacity: 1;
+
+        &.show {
+            opacity: 1;
+        }
 
         &:not(.show) {
             display: none !important;
@@ -61,14 +64,16 @@ body {
         }
 
         &[data-animation="fade"] {
-            animation-duration: 200ms;
+            $duration: 500;
+            animation-duration: $duration+ms;
+            animation-name: none;
 
             &.show {
                 animation-name: fade-in-animation;
-            }
 
-            &:not(.show) {
-                animation-name: fade-out-animation;
+                &.beforeHide {
+                    animation-name: fade-out-animation;
+                }
             }
 
             @keyframes fade-in-animation {
@@ -79,7 +84,6 @@ body {
                     opacity: 1;
                 }
             }
-
             @keyframes fade-out-animation {
                 0% {
                     opacity: 1;
@@ -180,7 +184,7 @@ body {
         }
 
         &.small {
-            max-width: calc($normal_width / 2);
+            max-width: $normal_width / 2;
         }
 
         &.large {
@@ -241,8 +245,9 @@ body {
         height: calc(100% - 10px);
     }
 
-    &.walk_in_in {
-        animation: walk_in_in ease 0.5s forwards;
+    $page-animation-duration: 500ms;
+    &.activate-forward {
+        animation: activate-forward ease $page-animation-duration forwards;
         z-index: 1;
         position: absolute;
         top: 0;
@@ -252,8 +257,8 @@ body {
         display: flex;
     }
 
-    &.walk_in_out {
-        animation: walk_in_out ease 0.5s forwards;
+    &.deactivate-forward {
+        animation: deactivate-forward ease $page-animation-duration forwards;
         z-index: 1;
         position: absolute;
         top: 0;
@@ -263,8 +268,8 @@ body {
         display: flex;
     }
 
-    &.walk_out_in {
-        animation: walk_out_in ease 0.5s forwards;
+    &.activate-backward {
+        animation: activate-backward ease $page-animation-duration forwards;
         z-index: 1;
         position: absolute;
         top: 0;
@@ -274,8 +279,8 @@ body {
         display: flex;
     }
 
-    &.walk_out_out {
-        animation: walk_out_out ease 0.5s forwards;
+    &.deactivate-backward {
+        animation: deactivate-backward ease $page-animation-duration forwards;
         z-index: 1;
         position: absolute;
         top: 0;
@@ -285,7 +290,7 @@ body {
         display: flex;
     }
 
-    @keyframes walk_in_in {
+    @keyframes activate-forward {
         from {
             transform: scale(0.75);
             opacity: 0;
@@ -296,7 +301,7 @@ body {
         }
     }
 
-    @keyframes walk_in_out {
+    @keyframes deactivate-forward {
         from {
             transform: scale(1);
             opacity: 1;
@@ -307,7 +312,7 @@ body {
         }
     }
 
-    @keyframes walk_out_in {
+    @keyframes activate-backward {
         from {
             transform: scale(1.25);
             opacity: 0;
@@ -318,7 +323,7 @@ body {
         }
     }
 
-    @keyframes walk_out_out {
+    @keyframes deactivate-backward {
         from {
             transform: scale(1);
             opacity: 1;

@@ -12,6 +12,7 @@ import useDataList from "./DataListReducer";
 function usePages(mediaContext: MediaContextType, configFile: FileSystemFileHandle | undefined) {
 
     const [currentPage, setCurrentPage] = useState<PageData>();
+    const [initialPage, setInitialPage] = useState<string|undefined>();
 
 
     const handlePagesAddUpdate = useCallback((pages: PageData[]) => {
@@ -24,6 +25,7 @@ function usePages(mediaContext: MediaContextType, configFile: FileSystemFileHand
         update: updatePages,
         remove: removePages,
         reset: resetPages,
+        replace: replace,
     }] = useDataList<PageData, string>([], (page => typeof page === "string" ? page : page.id),
         undefined, handlePagesAddUpdate, handlePagesAddUpdate);
 
@@ -31,6 +33,15 @@ function usePages(mediaContext: MediaContextType, configFile: FileSystemFileHand
     const setCurrentPageById = useCallback((id: string | undefined | null) => {
         setCurrentPage(pages.find(value => value.id === id));
     }, [pages]);
+
+    const replacePages = useCallback((...items: [string, PageData][]) => {
+        replace(...items);
+        for (let [k, page] of items) {
+            if (k === currentPage?.id) {
+                setCurrentPage(page);
+            }
+        }
+    }, [currentPage?.id]);
 
     // write current page to local storage
     useEffect(() => {
@@ -51,6 +62,7 @@ function usePages(mediaContext: MediaContextType, configFile: FileSystemFileHand
 
         const config = new SchulTourConfigFile({
             pages: pages,
+            initialPage:initialPage,
         });
         (async function () {
             const stream = (await configFile.createWritable());
@@ -67,14 +79,19 @@ function usePages(mediaContext: MediaContextType, configFile: FileSystemFileHand
         updatePages: updatePages,
         removePages: removePages,
         resetPages: resetPages,
+        replacePages: replacePages,
 
         currentPage: currentPage,
         setCurrentPage: setCurrentPageById,
-    }), [pages, setCurrentPageById, currentPage]);
+
+        initialPage: initialPage,
+        setInitialPage: setInitialPage,
+    }), [pages, setCurrentPageById, currentPage, initialPage]);
 
     return {
-        pages, addPages, updatePages, removePages, resetPages,
+        pages, addPages, updatePages, removePages, resetPages,replacePages,
         currentPage, setCurrentPage, setCurrentPageById,
+        initialPage, setInitialPage,
         pageContext,
     };
 }

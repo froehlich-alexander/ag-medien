@@ -17,7 +17,8 @@
           "y": 30,
           "title": "text test",
           "animationType": "fade",
-          "targetType": "text-field"
+          "targetType": "text-field",
+          "action": "toggle"
         },
         {
           "type": "text",

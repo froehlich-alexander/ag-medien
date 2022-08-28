@@ -1,9 +1,8 @@
 import classNames from "classnames";
-import React, {ChangeEvent, useCallback, useContext, useEffect, useMemo, useState} from "react";
+import React, {ChangeEvent, useCallback, useContext, useEffect, useMemo} from "react";
 import {Button, ButtonGroup, Col, Form, FormControl, FormText, InputGroup, Row} from "react-bootstrap";
 import {useTranslation} from "react-i18next";
 import {InlineObjectData, MediaData, PageData} from "../Data";
-import {renameAddressableId} from "./refactor-data";
 import InlineObjectContainerForm from "./InlineObjectContainerForm";
 import {MediaForm} from "./MediaForm";
 import {FormContext, PageContext} from "./TourContexts";
@@ -11,12 +10,14 @@ import {DefaultProps} from "./utils";
 
 interface PageFormProps extends DefaultProps {
     onChange: (page: PageData) => void,
+    onRenamePageIdUsagesChange: (value: boolean)=>void,
 }
 
 export default function PageForm(
     {
         className,
         onChange,
+        onRenamePageIdUsagesChange,
     }: PageFormProps,
 ) {
 
@@ -25,21 +26,20 @@ export default function PageForm(
     const {t} = useTranslation("mainPage", {keyPrefix: 'pageForm'});
     const {t: tGlob} = useTranslation("translation");
 
-    const [renamePageIdUsages, setRenamePageIdUsages] = useState(true);
     const page = formContext.page!;
 
     const handleId = useCallback((event: ChangeEvent<HTMLInputElement>) => {
         const newId = event.target.value;
         if (page.id !== newId) {
             onChange(page.withId(newId));
-            if (renamePageIdUsages) {
-                renameAddressableId(page.id, newId, pageContext.pages);
-            }
+            // if (renamePageIdUsages) {
+            //     renameAddressableId(page.id, newId, pageContext.pages);
+            // }
         }
     }, [page, onChange, pageContext.pages]);
 
     const handleRenamePageIdUsagesChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
-        setRenamePageIdUsages(event.target.checked);
+        onRenamePageIdUsagesChange(event.target.checked);
     }, []);
 
     const handleInitialDirection = useCallback((event: ChangeEvent<HTMLInputElement>) => {
@@ -89,14 +89,14 @@ export default function PageForm(
     return (
         <div className={classNames("pt-4 pb-4", className)}>
             <Form className={"gy-3 gx-4 row row-cols-12"} validated={true} onSubmit={formContext.save}
-                  action="js:void(0)">
+                  action="javascript:void(0)">
                 <h3 className="mx-auto">{page.id}</h3>
                 <InputGroup>
                     <InputGroup.Text as="label"
                                      htmlFor="i-id">{t('id.label')}</InputGroup.Text>
                     <Form.Control id="i-id" type="text" value={page.id} onChange={handleId} pattern={idPattern}/>
                     <InputGroup.Text>{t('id.renameUsages')}</InputGroup.Text>
-                    <InputGroup.Checkbox checked={renamePageIdUsages} onChange={handleRenamePageIdUsagesChange}/>
+                    <InputGroup.Checkbox checked={formContext.renamePageIdUsages} onChange={handleRenamePageIdUsagesChange}/>
                     <FormControl.Feedback type="invalid">{t('id.invalidFeedback')}</FormControl.Feedback>
                 </InputGroup>
                 <Col sm={12}>
@@ -138,10 +138,12 @@ export default function PageForm(
 
                 <MediaForm media={page.media} onMediaChange={handleMediaChange}/>
                 <InlineObjectContainerForm inlineObjects={page.inlineObjects} onChange={handleInlineObjectsChange}/>
-                <ButtonGroup>
-                    <Button type="submit" variant="primary">{tGlob('save')}</Button>
-                    <Button variant="secondary" onClick={formContext.reset}>{tGlob('cancel')}</Button>
-                </ButtonGroup>
+                <Col sm={4}>
+                    <ButtonGroup>
+                        <Button type="submit" variant="primary">{tGlob('save')}</Button>
+                        <Button variant="secondary" onClick={formContext.reset}>{tGlob('cancel')}</Button>
+                    </ButtonGroup>
+                </Col>
             </Form>
         </div>
     );

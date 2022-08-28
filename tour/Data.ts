@@ -1,13 +1,16 @@
 import type {MediaContextType} from "./tour-dev-tool/TourContexts";
 import type {Complete, UnFlatArray} from "./tour-dev-tool/utils";
 import type {
-    AbstractJsonInlineObject, JsonActivating, AddressableObjects,
+    AbstractJsonInlineObject,
+    ActionType,
+    AddressableObjects,
     AnimationType,
     CustomAnimations,
     FetchPriorityType,
     IconType,
     InlineObjectPosition,
     InlineObjectType,
+    JsonActivating,
     JsonAddressableObject,
     JsonClickable,
     JsonCustomObject,
@@ -19,8 +22,8 @@ import type {
     JsonTextField,
     LoadingType,
     MediaType,
-    PageAnimations,
-    TextAnimations, TextFieldSize,
+    TextAnimations,
+    TextFieldSize,
     VideoPreloadType,
 } from "./types";
 
@@ -71,31 +74,40 @@ class SchulTourConfigFile extends Data<SchulTourConfigFile> {
     public declare excludeFromDataType: "excludeFromDataType";
 
     public readonly pages: PageData[];
+    public readonly initialPage: string | undefined;
 
     constructor(other: DataType<SchulTourConfigFile>) {
         super();
         this.pages = other.pages;
+        this.initialPage = other.initialPage;
     }
 
     public static default(): SchulTourConfigFile {
         return new SchulTourConfigFile({
             pages: [],
+            initialPage: undefined,
         });
     }
 
     public static fromJSON(json: JsonSchulTourConfigFile): SchulTourConfigFile {
+        const pages = json.pages.map(PageData.fromJSON);
         return new SchulTourConfigFile({
-            pages: json.pages.map(PageData.fromJSON),
+            pages: pages,
+            initialPage: json.initialPage,
         });
     }
 
     public equals(other: null | undefined | DataType<SchulTourConfigFile>): boolean {
-        return other != null && (this === other || arrayEquals(this.pages, other.pages));
+        return other != null && (this === other || (
+            arrayEquals(this.pages, other.pages)
+            && this.initialPage === other.initialPage
+        ));
     }
 
     public toJSON(): JsonSchulTourConfigFile {
         return {
             pages: this.pages.map(page => page.toJSON()),
+            initialPage: this.initialPage,
         };
     }
 }
@@ -562,12 +574,14 @@ class AbstractActivatingInlineObjectData<T extends AbstractActivatingInlineObjec
     public declare excludeFromDataType: "excludeFromDataType";
 
     public readonly goto?: string;
-    public readonly targetType: AddressableObjects;
+    public readonly targetType: AddressableObjects | "auto";
+    public readonly action: ActionType;
 
-    constructor({goto, targetType, ...base}: DataType<AbstractActivatingInlineObjectData<T, Json>>) {
+    constructor({goto, targetType, action, ...base}: DataType<AbstractActivatingInlineObjectData<T, Json>>) {
         super(base);
         this.goto = goto;
         this.targetType = targetType;
+        this.action = action;
     }
 
     public toJSON(): { [k in keyof Pick<Json, keyof (AbstractJsonInlineObject & JsonActivating)>]: Json[k] } {
@@ -575,6 +589,7 @@ class AbstractActivatingInlineObjectData<T extends AbstractActivatingInlineObjec
             ...super.toJSON(),
             goto: this.goto,
             targetType: this.targetType,
+            action: this.action,
         };
     }
 
@@ -630,7 +645,7 @@ const InlineObjectData = {
     },
 
     default(): InlineObjectData {
-        return ClickableData.default;
+        return ClickableData.fromJSON(ClickableData.default);
     },
 };
 
@@ -656,18 +671,20 @@ class ClickableData extends AbstractActivatingInlineObjectData<ClickableData, Js
         this.icon = icon;
     }
 
-    public static default: ClickableData = new ClickableData({
+    public static default: Complete<JsonClickable> = {
         icon: "arrow_l",
         title: "",
         animationType: "forward",
         goto: "",
-        targetType: "page", // TODO 26.08.22 thats not good add auto detection!!!
+        targetType: "auto",
         x: 0,
         y: 0,
         type: "clickable",
         position: "media",
         hidden: false,
-    });
+        backward: false,
+        action: "activate",
+    };
 
     public static fromJSON(json: Omit<JsonClickable, "type">): ClickableData {
         return new ClickableData({
@@ -677,6 +694,7 @@ class ClickableData extends AbstractActivatingInlineObjectData<ClickableData, Js
             x: typeof json.x === "number" ? json.x : parseFloat(json.x),
             y: typeof json.y === "number" ? json.y : parseFloat(json.y),
             goto: json.goto,
+            action: json.action ?? ClickableData.default.action,
             targetType: json.targetType ?? ClickableData.default.targetType,
             position: json.position ?? ClickableData.default.position,
             animationType: json.animationType ?? ClickableData.default.animationType,

@@ -11,6 +11,7 @@ export interface PageContextType {
     updatePages: (...pages: UnFlatArray<PageData>) => void,
     removePages: (...pages: UnFlatArray<string | PageData>) => void,
     resetPages: (...pages: UnFlatArray<PageData>) => void;
+    replacePages: (...pages: Array<[string, PageData]>) => void,
 }
 
 export interface MediaContextType {
@@ -19,19 +20,25 @@ export interface MediaContextType {
     updateMediaFiles: (...files: UnFlatArray<FileData>) => void,
     removeMediaFiles: (...files: UnFlatArray<string | FileData>) => void,
     resetMediaFiles: (...files: UnFlatArray<FileData>) => void,
+    replaceMediaFiles: (...files: Array<[string, FileData]>) => void,
 }
 
 export interface DialogContextType {
     importDialogVisibility: boolean,
-    mediaDialogVisibility: boolean,
-    unsavedChangesAlertVisibility: boolean,
-
     setImportDialogVisibility: (vis: boolean) => void,
     showImportDialog: () => void,
+
+    mediaDialogVisibility: boolean,
     setMediaDialogVisibility: (vis: boolean) => void,
     showMediaDialog: () => void,
+
+    unsavedChangesAlertVisibility: boolean,
     setUnsavedChangesAlertVisibility: (vis: boolean) => void,
     showUnsavedChangesAlert: () => void;
+
+    mediaPreviewDialogVisibility: boolean,
+    setMediaPreviewDialogVisibility: (vis: boolean) => void,
+    showMediaPreviewDialog: () => void,
 }
 
 export interface TemplateContextType {
@@ -44,10 +51,12 @@ export interface FormContextType {
     save: () => void,
     reset: () => void,
     isModified: boolean,
+    renamePageIdUsages: boolean,
 }
 
 export interface ListViewContextType {
     requestSetCurrentPage: (id: string | undefined) => void,
+    schedulesCurrentPage: string | undefined | null,
 }
 
 export const DialogContext = createContext<DialogContextType>({} as DialogContextType);

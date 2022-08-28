@@ -76,7 +76,7 @@ export function MediaForm({onMediaChange, media}: Props) {
                         <Col sm={2}>{t('normalSource')}</Col>
                         <MaterialIcon icon="warning" color="danger" className="ms-2"
                                       hidden={media.src?.isComplete() !== false}/>
-                        {media.src && media.src?.name}
+                        <span className="ms-2">{media.src && media.src?.name}</span>
                     </Accordion.Header>
                     <Accordion.Body>
                         <SourceForm source={media.src} onSourceChange={setSrc}
@@ -88,7 +88,7 @@ export function MediaForm({onMediaChange, media}: Props) {
                         <Col sm={2}>{t('srcMin')}</Col>
                         <MaterialIcon icon="warning" color="danger" className="ms-2"
                                       hidden={media.srcMin?.isComplete() !== false}/>
-                        {media.srcMin && media.srcMin?.name}
+                        <span className="ms-2">{media.srcMin && media.srcMin?.name}</span>
                     </Accordion.Header>
                     <Accordion.Body>
                         <SourceForm source={media.srcMin} onSourceChange={setMinSrc}
@@ -100,7 +100,7 @@ export function MediaForm({onMediaChange, media}: Props) {
                         <Col sm={2}>{t('srcMax')}</Col>
                         <MaterialIcon icon="warning" color="danger" className="ms-2"
                                       hidden={media.srcMax?.isComplete() !== false}/>
-                        {media.srcMax && media.srcMax?.name}
+                        <span className="ms-2">{media.srcMax && media.srcMax?.name}</span>
                     </Accordion.Header>
                     <Accordion.Body>
                         <SourceForm source={media.srcMax} onSourceChange={setMaxSrc}

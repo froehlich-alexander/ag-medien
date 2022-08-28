@@ -1,10 +1,11 @@
 import {PageData} from "../Data";
 
 function renameAddressableId(oldId: string, newId: string, pages: PageData[]) {
-    const updated = [];
+    const updated: [string, PageData][] = [];
 
     for (let page of pages) {
-        let edited = false
+        const pageId = page.id;
+        let edited = false;
         if (page.id === oldId) {
             page = page.withId(newId);
             edited = true;
@@ -13,7 +14,7 @@ function renameAddressableId(oldId: string, newId: string, pages: PageData[]) {
         const newInlineObjects = [];
         let changedInlineObjects = false;
         for (let o of page.inlineObjects) {
-            if (o.goto === oldId) {
+            if (o.isClickable() && o.goto === oldId) {
                 o = o.withGoto(newId);
                 changedInlineObjects = true;
             }
@@ -33,9 +34,10 @@ function renameAddressableId(oldId: string, newId: string, pages: PageData[]) {
         }
 
         if (edited) {
-            updated.push(page);
+            updated.push([pageId, page]);
         }
     }
+    return updated;
 }
 
 /**

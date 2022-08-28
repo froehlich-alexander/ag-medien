@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Schultour der AG-Medien</title>
+    <link rel="stylesheet" href="tour.css">
+    <script src="jquery.js" type="application/javascript"></script>
+</head>
+<body>
+<!-- URL: http://localhost:8000/tour/local-testing.html -->
+<script src="Data.js" type="module"></script>
+<script src="tour.js" type="module"></script>
+<script type="module">
+    import * as Tour from "./tour.js";
+    Tour.init("pages.json");
+</script>
+</body>
+</html>

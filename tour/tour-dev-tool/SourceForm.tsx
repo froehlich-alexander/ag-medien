@@ -1,5 +1,5 @@
-import React, {ChangeEvent, useCallback, useContext} from 'react';
-import {Button, Col, Container, FormControl, FormSelect, FormText, InputGroup, Row} from "react-bootstrap";
+import React, {ChangeEvent, useCallback, useContext} from "react";
+import {Button, Col, Container, FormControl, FormSelect, InputGroup, Row} from "react-bootstrap";
 import {Trans, useTranslation} from "react-i18next";
 import {MediaData, SourceData} from "../Data";
 import {MediaType} from "../types";
