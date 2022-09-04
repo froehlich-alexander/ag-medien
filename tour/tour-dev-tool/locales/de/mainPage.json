@@ -4,7 +4,8 @@
       "label": "Sprache"
     },
     "importPages": "Importiere Pages",
-    "media": "Medien"
+    "media": "Medien",
+    "tourPreview": "Tour Vorschau"
   },
 
   "pageForm": {
@@ -27,7 +28,7 @@
       "sourceForm": {
         "name": {
           "label": "Name",
-          "notFound": "Die Datei <1>{{file}}</1> konnte nicht gefunden werden. Bitte füge es im <3>medien Dialog</3> hinzu."
+          "notFound": "Die Datei <1>{{file}}</1> konnte nicht gefunden werden. Bitte füge es im <3>Medien Dialog</3> hinzu."
         },
         "type": {
           "label": "Type",

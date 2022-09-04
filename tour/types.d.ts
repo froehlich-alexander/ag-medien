@@ -149,4 +149,7 @@ export type JsonInlineObject = JsonCustomObject | JsonTextField | JsonClickable;
 export type JsonSchulTourConfigFile = {
     pages: JsonPage[],
     initialPage?: string,
+    fullscreen?: boolean,
+    mode?: "normal" | "inline",
+    colorTheme?: "dark" | "light",
 }

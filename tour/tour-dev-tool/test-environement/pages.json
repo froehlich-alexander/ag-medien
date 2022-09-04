@@ -1,1 +1,451 @@
-{"pages":[{"id":"01_hof111","media":{"type":"img","src":{"name":"01_hof.jpg","type":"img"},"fetchPriority":"auto","loading":"auto","loop":false,"muted":false,"preload":"auto","autoplay":false},"inlineObjects":[{"x":39.8,"y":80,"type":"clickable","position":"media","animationType":"forward","hidden":false,"goto":"15_eingang","targetType":"auto","action":"activate","title":"Zum Eingang","icon":"arrow_l"},{"x":69,"y":82,"type":"clickable","position":"media","animationType":"forward","hidden":false,"goto":"05_sporthalle","targetType":"auto","action":"activate","title":"Zur Sporthalle","icon":"arrow_l"}],"is_panorama":true,"is_360":false,"initial_direction":34},{"id":"05_sporthalle","media":{"type":"img","src":{"name":"05_sporthalle.jpg","type":"img"},"fetchPriority":"auto","loading":"auto","loop":false,"muted":false,"preload":"auto","autoplay":false},"inlineObjects":[{"x":10,"y":50,"type":"clickable","position":"media","animationType":"forward","hidden":false,"goto":"01_hof111","targetType":"auto","action":"activate","title":"Zum Hof","icon":"arrow_l"}],"is_panorama":false,"is_360":false,"initial_direction":0},{"id":"15_eingang","media":{"type":"img","src":{"name":"15_eingang.jpg","type":"img"},"fetchPriority":"auto","loading":"auto","loop":false,"muted":false,"preload":"auto","autoplay":false},"inlineObjects":[{"x":70,"y":45,"type":"clickable","position":"media","animationType":"forward","hidden":false,"goto":"01_hof111","targetType":"auto","action":"activate","title":"Zum Hof","icon":"arrow_u"},{"x":10,"y":30,"type":"clickable","position":"media","animationType":"forward","hidden":false,"goto":"15_flur_eg","targetType":"auto","action":"activate","title":"Zum Flur","icon":"arrow_l"}],"is_panorama":false,"is_360":false,"initial_direction":0},{"id":"25_lehrerzimmer","media":{"type":"img","src":{"name":"25_lehrerzimmer.jpg","type":"img"},"fetchPriority":"auto","loading":"auto","loop":false,"muted":false,"preload":"auto","autoplay":false},"inlineObjects":[{"x":50,"y":50,"type":"clickable","position":"media","animationType":"forward","hidden":false,"goto":"20_foyer","targetType":"auto","action":"activate","title":"zum foyer","icon":"arrow_r"}],"is_panorama":false,"is_360":false,"initial_direction":0},{"id":"30_flur","media":{"type":"img","src":{"name":"30_aula_foyer_flur.jpg","type":"img"},"fetchPriority":"auto","loading":"auto","loop":false,"muted":false,"preload":"auto","autoplay":false},"inlineObjects":[{"x":50,"y":50,"type":"clickable","position":"media","animationType":"forward","hidden":false,"goto":"30_aula_foyer","targetType":"auto","action":"activate","title":"Aula Vorraum","icon":"arrow_u"}],"is_panorama":false,"is_360":false,"initial_direction":0},{"id":"30_aula_foyer","media":{"type":"img","src":{"name":"vor_der_aula.jpg","type":"img"},"fetchPriority":"auto","loading":"auto","loop":false,"muted":false,"preload":"auto","autoplay":false},"inlineObjects":[{"x":23,"y":45,"type":"clickable","position":"media","animationType":"forward","hidden":false,"goto":"20_1stock_foyer","targetType":"auto","action":"activate","title":"1.stock Foyer","icon":"arrow_l"}],"is_panorama":false,"is_360":false,"initial_direction":0},{"id":"klassenraum_s","media":{"type":"img","src":{"name":"klassenraum_s.jpg","type":"img"},"fetchPriority":"auto","loading":"auto","loop":false,"muted":false,"preload":"auto","autoplay":false},"inlineObjects":[{"x":50,"y":50,"type":"clickable","position":"media","animationType":"forward","hidden":false,"goto":"20_1stock_foyer","targetType":"auto","action":"activate","title":"zurück zum 1. Stock","icon":"arrow_r"}],"is_panorama":false,"is_360":false,"initial_direction":0},{"id":"30_Dachboden","media":{"type":"img","src":{"name":"Dachboden.jpg","type":"img"},"fetchPriority":"auto","loading":"auto","loop":false,"muted":false,"preload":"auto","autoplay":false},"inlineObjects":[{"x":50,"y":50,"type":"clickable","position":"media","animationType":"forward","hidden":false,"goto":"20_1stock_foyer","targetType":"auto","action":"activate","title":"nach unten","icon":"arrow_d"},{"x":50,"y":40,"type":"clickable","position":"media","animationType":"forward","hidden":false,"goto":"40_Turm","targetType":"auto","action":"activate","title":"weiter nachoben","icon":"arrow_u"}],"is_panorama":false,"is_360":false,"initial_direction":0},{"id":"40_Turm","media":{"type":"img","src":{"name":"turm4.jpg","type":"img"},"fetchPriority":"auto","loading":"auto","loop":false,"muted":false,"preload":"auto","autoplay":false},"inlineObjects":[{"x":6,"y":50,"type":"clickable","position":"media","animationType":"forward","hidden":false,"goto":"60_turm","targetType":"auto","action":"activate","title":"unser team","icon":"arrow_l"},{"x":80,"y":50,"type":"clickable","position":"media","animationType":"forward","hidden":false,"goto":"30_Dachboden","targetType":"auto","action":"activate","title":"zurück zum Dachboden","icon":"arrow_d"}],"is_panorama":true,"is_360":false,"initial_direction":0},{"id":"60_turm","media":{"type":"img","src":{"name":"60_turm.jpg","type":"img"},"fetchPriority":"auto","loading":"auto","loop":false,"muted":false,"preload":"auto","autoplay":false},"inlineObjects":[{"x":80,"y":50,"type":"clickable","position":"media","animationType":"forward","hidden":false,"goto":"40_Turm","targetType":"auto","action":"activate","title":"zurück","icon":"arrow_r"},{"x":10,"y":50,"type":"clickable","position":"media","animationType":"forward","hidden":false,"goto":"Hof_von_oben","targetType":"auto","action":"activate","title":"weiter am Turm","icon":"arrow_l"}],"is_panorama":false,"is_360":false,"initial_direction":0},{"id":"Hof_von_oben","media":{"type":"img","src":{"name":"schulhof_vom_turm.jpg","type":"img"},"fetchPriority":"auto","loading":"auto","loop":false,"muted":false,"preload":"auto","autoplay":false},"inlineObjects":[{"x":6,"y":50,"type":"clickable","position":"media","animationType":"forward","hidden":false,"goto":"40_Turm","targetType":"auto","action":"activate","title":"zum Ausgangspunkt","icon":"arrow_l"},{"x":73,"y":50,"type":"clickable","position":"media","animationType":"forward","hidden":false,"goto":"60_turm","targetType":"auto","action":"activate","title":"zum Team","icon":"arrow_r"}],"is_panorama":false,"is_360":false,"initial_direction":0},{"id":"16_sekretariat","media":{"type":"img","src":{"name":"16_sekretariat.jpg","type":"img"},"fetchPriority":"auto","loading":"auto","loop":false,"muted":false,"preload":"auto","autoplay":false},"inlineObjects":[{"x":10,"y":10,"type":"clickable","position":"media","animationType":"forward","hidden":false,"goto":"15_flur_eg","targetType":"auto","action":"activate","title":"Zurück","icon":"arrow_l"}],"is_panorama":true,"is_360":false,"initial_direction":0},{"id":"20_foyer","media":{"type":"img","src":{"name":"20_foyer.jpg","type":"img"},"fetchPriority":"auto","loading":"auto","loop":false,"muted":false,"preload":"auto","autoplay":false},"inlineObjects":[{"x":5,"y":30,"type":"clickable","position":"media","animationType":"forward","hidden":false,"goto":"20_treppe_eg","targetType":"auto","action":"activate","title":"in das 1.OG","icon":"arrow_u"},{"x":28,"y":50,"type":"clickable","position":"media","animationType":"forward","hidden":false,"goto":"15_flur_eg","targetType":"auto","action":"activate","title":"In den Flur","icon":"arrow_u"},{"x":90,"y":50,"type":"clickable","position":"media","animationType":"forward","hidden":false,"goto":"25_lehrerzimmer","targetType":"auto","action":"activate","title":"Zum lehrerzimmer","icon":"arrow_u"}],"is_panorama":false,"is_360":false,"initial_direction":90},{"id":"15_flur_eg","media":{"type":"img","src":{"name":"15_flur_eg.jpg","type":"img"},"fetchPriority":"auto","loading":"auto","loop":false,"muted":false,"preload":"auto","autoplay":false},"inlineObjects":[{"x":30,"y":57,"type":"clickable","position":"media","animationType":"forward","hidden":false,"goto":"16_sekretariat","targetType":"auto","action":"activate","title":"Zum Sekretariat","icon":"arrow_u"},{"x":80,"y":50,"type":"clickable","position":"media","animationType":"forward","hidden":false,"goto":"15_eingang","targetType":"auto","action":"activate","title":"Zum Eingang","icon":"arrow_u"},{"x":58,"y":45,"type":"clickable","position":"media","animationType":"forward","hidden":false,"goto":"20_foyer","targetType":"auto","action":"activate","title":"Zum Foyer","icon":"arrow_u"},{"x":11.5,"y":45,"type":"clickable","position":"media","animationType":"forward","hidden":false,"goto":"15_glaskasten","targetType":"auto","action":"activate","title":"Zum Glaskasten","icon":"arrow_u"}],"is_panorama":true,"is_360":false,"initial_direction":0},{"id":"20_1stock_foyer","media":{"type":"img","src":{"name":"20_1stock_foyer.jpg","type":"img"},"fetchPriority":"auto","loading":"auto","loop":false,"muted":false,"preload":"auto","autoplay":false},"inlineObjects":[{"x":50,"y":50,"type":"clickable","position":"media","animationType":"forward","hidden":false,"goto":"30_vor_physik_raum","targetType":"auto","action":"activate","title":"Zum Foyer","icon":"arrow_u"},{"x":68,"y":50,"type":"clickable","position":"media","animationType":"forward","hidden":false,"goto":"20_foyer","targetType":"auto","action":"activate","title":"Nach unten","icon":"arrow_d"},{"x":80,"y":50,"type":"clickable","position":"media","animationType":"forward","hidden":false,"goto":"klassenraum_s","targetType":"auto","action":"activate","title":"Zum Beispiel Klassenzimmer","icon":"arrow_u"},{"x":61,"y":50,"type":"clickable","position":"media","animationType":"forward","hidden":false,"goto":"30_Dachboden","targetType":"auto","action":"activate","title":"Nach ganz oben","icon":"arrow_u"}],"is_panorama":true,"is_360":false,"initial_direction":0},{"id":"30_physik_raum","media":{"type":"video","srcMin":{"name":"fb_physik_s.webm","type":"video"},"srcMax":{"name":"fb_physik.webm","type":"video","height":100,"width":100},"fetchPriority":"auto","loading":"auto","loop":false,"muted":false,"preload":"auto","autoplay":false},"inlineObjects":[{"x":3,"y":3,"type":"clickable","position":"page","animationType":"backward","hidden":false,"goto":"30_vor_physik_raum","targetType":"auto","action":"activate","title":"Zurück","icon":"arrow_l"}],"is_panorama":true,"is_360":true,"initial_direction":0},{"id":"20_treppe_eg","media":{"type":"img","src":{"name":"20_treppe_eg.jpg","type":"img"},"fetchPriority":"auto","loading":"auto","loop":false,"muted":false,"preload":"auto","autoplay":false},"inlineObjects":[{"x":50,"y":50,"type":"clickable","position":"media","animationType":"forward","hidden":false,"goto":"20_1stock_foyer","targetType":"auto","action":"activate","title":"in das 1.OG","icon":"arrow_u"}],"is_panorama":true,"is_360":false,"initial_direction":0},{"id":"15_glaskasten","media":{"type":"img","src":{"name":"15_glaskasten.jpg","type":"img"},"fetchPriority":"auto","loading":"auto","loop":false,"muted":false,"preload":"auto","autoplay":false},"inlineObjects":[{"x":50,"y":85,"type":"clickable","position":"media","animationType":"forward","hidden":false,"goto":"15_flur_eg","targetType":"auto","action":"activate","title":"Zurück","icon":"arrow_d"}],"is_panorama":true,"is_360":true,"initial_direction":0}]}
+{
+  "pages": [
+    {
+      "id": "01_hof",
+      "media": {
+        "src": {
+          "name": "01_hof.jpg"
+        }
+      },
+      "is_panorama": true,
+      "initial_direction": 34,
+      "inlineObjects": [
+        {
+          "type": "clickable",
+          "goto": "text-test",
+          "x": 70,
+          "y": 30,
+          "title": "text test",
+          "animationType": "fade",
+          "targetType": "text-field",
+          "action": "toggle"
+        },
+        {
+          "type": "text",
+          "title": "Title TTT",
+          "position": "page",
+          "content": "hello test kjsdbfkjsdbv kjbsd jskdbvk jsdbvjksdb jdsvb ksdjbvjksbd kjsdbvkjsd bvkjbsdvb jkdsfh sjkdfb jksdfh g skdjhf  sdhf ksdfkjs fks dkjhg skjhdgf khjsdg fkhjgsfgsd khfgsdghgf ncyx",
+          "animationType": "fade",
+          "hidden": true,
+          "id": "text-test",
+          "x": 50,
+          "y": 50
+        }
+      ],
+      "clickables": [
+        {
+          "title": "Zum Eingang",
+          "x": "39.8",
+          "y": "80",
+          "goto": "15_eingang",
+          "icon": "arrow_l"
+        },
+        {
+          "title": "Zur Sporthalle",
+          "x": "69",
+          "y": "82",
+          "goto": "05_sporthalle",
+          "icon": "arrow_l"
+        }
+      ]
+    },
+    {
+      "id": "05_sporthalle",
+      "media": {
+        "src": "05_sporthalle.jpg"
+      },
+      "clickables": [
+        {
+          "title": "Zum Hof",
+          "x": "10",
+          "y": "50",
+          "goto": "01_hof",
+          "icon": "arrow_l"
+        }
+      ]
+    },
+    {
+      "id": "15_eingang",
+      "media": {
+        "src": "15_eingang.jpg",
+        "type": "img"
+      },
+      "clickables": [
+        {
+          "title": "Zum Hof",
+          "x": "70",
+          "y": "45",
+          "goto": "01_hof",
+          "icon": "arrow_u"
+        },
+        {
+          "title": "Zum Flur",
+          "x": "10",
+          "y": "30",
+          "goto": "15_flur_eg",
+          "icon": "arrow_l"
+        }
+      ]
+    },
+    {
+      "id": "15_flur_eg",
+      "media": {
+        "src": "15_flur_eg.jpg",
+        "type": "img"
+      },
+      "is_panorama": true,
+      "clickables": [
+        {
+          "title": "Zum Sekretariat",
+          "x": "30",
+          "y": "57",
+          "goto": "16_sekretariat",
+          "icon": "arrow_u"
+        },
+        {
+          "title": "Zum Eingang",
+          "x": "80",
+          "y": "50",
+          "goto": "15_eingang",
+          "icon": "arrow_u"
+        },
+        {
+          "title": "Zum Foyer",
+          "x": "58",
+          "y": "45",
+          "goto": "20_foyer",
+          "icon": "arrow_u"
+        },
+        {
+          "title": "Zum Glaskasten",
+          "x": "11.5",
+          "y": "45",
+          "goto": "15_glaskasten",
+          "icon": "arrow_u"
+        }
+      ]
+    },
+    {
+      "id": "15_glaskasten",
+      "media": {
+        "src": "15_glaskasten.jpg",
+        "type": "img"
+      },
+      "clickables": [
+        {
+          "title": "Zurück",
+          "x": "50",
+          "y": "85",
+          "goto": "15_flur_eg",
+          "animationType": "backward",
+          "icon": "arrow_d"
+        }
+      ]
+    },
+    {
+      "id": "16_sekretariat",
+      "media": {
+        "src": "16_sekretariat.jpg",
+        "type": "img"
+      },
+      "clickables": [
+        {
+          "title": "Zurück",
+          "x": "10",
+          "y": "10",
+          "animationType": "backward",
+          "goto": "15_flur_eg",
+          "icon": "arrow_l"
+        }
+      ]
+    },
+    {
+      "id": "20_foyer",
+      "media": {
+        "src": "20_foyer.jpg",
+        "type": "img"
+      },
+      "is_360": true,
+      "initial_direction": 90,
+      "clickables": [
+        {
+          "title": "in das 1.OG",
+          "x": "5",
+          "y": "30",
+          "goto": "20_treppe_eg",
+          "icon": "arrow_u"
+        },
+        {
+          "title": "In den Flur",
+          "x": "28",
+          "y": "50",
+          "goto": "15_flur_eg",
+          "icon": "arrow_u"
+        },
+        {
+          "title": "Zum lehrerzimmer",
+          "x": "90",
+          "y": "50",
+          "goto": "25_lehrerzimmer",
+          "icon": "arrow_u"
+        }
+      ]
+    },
+    {
+      "id": "20_treppe_eg",
+      "media": {
+        "src": "20_treppe_eg.jpg",
+        "type": "img"
+      },
+      "clickables": [
+        {
+          "title": "in das 1.OG",
+          "x": "50",
+          "y": "50",
+          "goto": "20_1stock_foyer",
+          "icon": "arrow_u"
+        }
+      ]
+    },
+    {
+      "id": "25_lehrerzimmer",
+      "media": {
+        "src": "25_lehrerzimmer.jpg",
+        "type": "img"
+      },
+      "clickables": [
+        {
+          "title": "zum foyer",
+          "x": "50",
+          "y": "50",
+          "goto": "20_foyer",
+          "icon": "arrow_r"
+        }
+      ]
+    },
+    {
+      "id": "20_1stock_foyer",
+      "media": {
+        "src": "20_1stock_foyer.jpg",
+        "type": "img"
+      },
+      "is_360": true,
+      "clickables": [
+        {
+          "title": "Zum Foyer",
+          "x": "50",
+          "y": "50",
+          "goto": "30_vor_physik_raum",
+          "icon": "arrow_u"
+        },
+        {
+          "title": "Nach unten",
+          "x": "68",
+          "y": "50",
+          "goto": "20_foyer",
+          "icon": "arrow_d"
+        },
+        {
+          "title": "Zum Beispiel Klassenzimmer",
+          "x": "80",
+          "y": "50",
+          "goto": "klassenraum_s",
+          "icon": "arrow_u"
+        },
+        {
+          "title": "Nach ganz oben",
+          "x": "61",
+          "y": "50",
+          "goto": "30_Dachboden",
+          "icon": "arrow_u"
+        }
+      ]
+    },
+    {
+      "id": "30_vor_physik_raum",
+      "media": {
+        "src": "30_vor_physik_raum.jpg"
+      },
+      "clickables": [
+        {
+          "title": "Richtung Aula",
+          "icon": "arrow_u",
+          "x": 45,
+          "y": 43,
+          "goto": "30_flur"
+        },
+        {
+          "title": "Physik Raum",
+          "icon": "arrow_r",
+          "x": 75,
+          "y": 65,
+          "goto": "30_physik_raum"
+        }
+      ]
+    },
+    {
+      "id": "30_physik_raum",
+      "media": {
+        "srcMax": {
+          "name": "fb_physik.webm",
+          "width": 100,
+          "height": 100
+        },
+        "srcMin": "fb_physik_s.webm",
+        "type": "video"
+      },
+      "clickables": [
+        {
+          "title": "Zurück",
+          "goto": "30_vor_physik_raum",
+          "animationType": "backward",
+          "icon": "arrow_l",
+          "position": "page",
+          "x": 3,
+          "y": 3
+        }
+      ]
+    },
+    {
+      "id": "30_flur",
+      "media": {
+        "src": "30_aula_foyer_flur.jpg",
+        "type": "img"
+      },
+      "clickables": [
+        {
+          "title": "Aula Vorraum",
+          "x": "50",
+          "y": "50",
+          "goto": "30_aula_foyer",
+          "icon": "arrow_u"
+        }
+      ]
+    },
+    {
+      "id": "30_aula_foyer",
+      "media": {
+        "src": "vor_der_aula.jpg",
+        "type": "img"
+      },
+      "is_panorama": true,
+      "clickables": [
+        {
+          "title": "1.stock Foyer",
+          "x": "23",
+          "y": "45",
+          "goto": "20_1stock_foyer",
+          "icon": "arrow_l"
+        }
+      ]
+    },
+    {
+      "id": "klassenraum_s",
+      "media": {
+        "src": "klassenraum_s.jpg",
+        "type": "img"
+      },
+      "clickables": [
+        {
+          "title": "zurück zum 1. Stock",
+          "x": "50",
+          "y": "50",
+          "goto": "20_1stock_foyer",
+          "icon": "arrow_r"
+        }
+      ]
+    },
+    {
+      "id": "30_Dachboden",
+      "media": {
+        "src": "Dachboden.jpg",
+        "type": "img"
+      },
+      "clickables": [
+        {
+          "title": "nach unten",
+          "x": "50",
+          "y": "50",
+          "goto": "20_1stock_foyer",
+          "icon": "arrow_d"
+        },
+        {
+          "title": "weiter nachoben",
+          "x": "50",
+          "y": "40",
+          "goto": "40_Turm",
+          "icon": "arrow_u"
+        }
+      ]
+    },
+    {
+      "id": "40_Turm",
+      "media": {
+        "src": "turm4.jpg",
+        "type": "img"
+      },
+      "clickables": [
+        {
+          "title": "unser team",
+          "x": "6",
+          "y": "50",
+          "goto": "60_turm",
+          "icon": "arrow_l"
+        },
+        {
+          "title": "zurück zum Dachboden",
+          "x": "80",
+          "y": "50",
+          "goto": "30_Dachboden",
+          "icon": "arrow_d"
+        }
+      ]
+    },
+    {
+      "id": "60_turm",
+      "media": {
+        "src": "60_turm.jpg",
+        "type": "img"
+      },
+      "clickables": [
+        {
+          "title": "zurück",
+          "x": "80",
+          "y": "50",
+          "goto": "40_Turm",
+          "icon": "arrow_r"
+        },
+        {
+          "title": "weiter am Turm",
+          "x": "10",
+          "y": "50",
+          "goto": "Hof_von_oben",
+          "icon": "arrow_l"
+        }
+      ]
+    },
+    {
+      "id": "Hof_von_oben",
+      "media": {
+        "src": "schulhof_vom_turm.jpg",
+        "type": "img"
+      },
+      "clickables": [
+        {
+          "title": "zum Ausgangspunkt",
+          "x": "6",
+          "y": "50",
+          "goto": "40_Turm",
+          "icon": "arrow_l"
+        },
+        {
+          "title": "zum Team",
+          "x": "73",
+          "y": "50",
+          "goto": "60_turm",
+          "icon": "arrow_r"
+        }
+      ]
+    }
+  ]
+}

@@ -1,25 +1,26 @@
 import * as React from "react";
-import {ChangeEvent, useContext, useState} from "react";
+import {ChangeEvent, useCallback, useContext, useState} from "react";
 import {Button, Col, Form, FormControl, FormText, InputGroup, Modal, Spinner} from "react-bootstrap";
 import {Trans, useTranslation} from "react-i18next";
 import {FileData, PageData, SchulTourConfigFile} from "../Data";
-import {DialogContext, MediaContext, PageContext} from "./TourContexts";
+import {hideDialog, showDialog} from "./store/dialog";
+import {useAppDispatch, useAppSelector} from "./store/hooks";
+import {MediaContext, PageContext} from "./TourContexts";
 
 type Props = {
-    show: boolean,
-    onVisibilityChange: (visibility: boolean) => any,
+    // show: boolean,
+    // onVisibilityChange: (visibility: boolean) => any,
 };
 
 export function ImportDialog(
-    {
-        show,
-        onVisibilityChange,
-    }: Props) {
-    const dialogContext = useContext(DialogContext);
+    {}: Props) {
     const mediaContext = useContext(MediaContext);
     const pageContext = useContext(PageContext);
 
-    const {t} = useTranslation("dialog", {keyPrefix: 'import'});
+    const {t} = useTranslation("dialog", {keyPrefix: "import"});
+
+    const dispatch = useAppDispatch();
+    const dialog = useAppSelector(state => state.dialog);
 
     const [pageConfigs, setPageConfigs] = useState<PageData[]>([]);
     const [configInputLoading, setConfigInputLoading] = useState(false);
@@ -34,14 +35,17 @@ export function ImportDialog(
     // whether we want to reset everything else and create a clean new project based on ths input of this dialog or not
     const [newImport, setNewImport] = useState(false);
 
-    function hide() {
-        onVisibilityChange(false);
-    }
+    const hide = useCallback(() => {
+        dispatch(hideDialog("import"));
+    }, []);
+    //  consthide=() {
+    //     onVisibilityChange(false);
+    // }
 
     return (
-        <Modal show={show} onHide={hide}>
+        <Modal show={dialog.import} onHide={hide}>
             <Modal.Header closeButton={true}>
-                <Modal.Title>{t('modal.header')}</Modal.Title>
+                <Modal.Title>{t("modal.header")}</Modal.Title>
             </Modal.Header>
             <Modal.Body>
                 <Form className="row gy-3">
@@ -55,16 +59,16 @@ export function ImportDialog(
                         <InputGroup.Text as="label" htmlFor="config-file">
                             <Spinner animation="border" className="me-2" variant="primary" hidden={!configInputLoading}
                                      size="sm" role="status">
-                                <span className="visually-hidden">{t('configFile.spinner')}</span>
+                                <span className="visually-hidden">{t("configFile.spinner")}</span>
                             </Spinner>
                             Tour Config
                         </InputGroup.Text>
-                        <FormControl type="file" id="config-file" accept={'pages.json,application/json'}
+                        <FormControl type="file" id="config-file" accept={"pages.json,application/json"}
                                      onChange={handleConfigChange} disabled={configInputLoading}/>
                         <Col sm={12}>
                             <FormText>
                                 <Trans i18nKey="import.configFile.formText" ns="dialog">
-                                    The Tour Config File should be named <code></code> {{filename: 'pages.json'}}
+                                    The Tour Config File should be named <code></code> {{filename: "pages.json"}}
                                 </Trans>
                             </FormText>
                         </Col>
@@ -78,31 +82,31 @@ export function ImportDialog(
                             </Spinner>
                             Media
                         </InputGroup.Text>
-                        <FormControl id="media-files" type={'file'} accept={'image/*,video/*, text/html'} multiple
+                        <FormControl id="media-files" type={"file"} accept={"image/*,video/*, text/html"} multiple
                                      onChange={handleMediaChange} disabled={mediaInputLoading || resettingMedia}/>
                         <Button className="input-group-text" as="button" onClick={resetMedia} variant="danger">
                             <Spinner animation="border" as="span" hidden={!resettingMedia}
                                      role="status" size="sm" className="me-2">
-                                <span className="visually-hidden">{t('media.reset.spinner')}</span>
+                                <span className="visually-hidden">{t("media.reset.spinner")}</span>
                             </Spinner>
-                            {t('media.reset.label')}
+                            {t("media.reset.label")}
                         </Button>
                         <Col sm={12}>
                             <FormText>
                                 <Trans ns="dialog" i18nKey="import.media.formText">
                                     The Images, Videos, etc. which are used in the tour.
                                     You can configure the media more precise in the
-                                    <a onClick={dialogContext.showMediaDialog} href="#">Media Dialog</a>
+                                    <a onClick={() => dispatch(showDialog("media"))} href="#">Media Dialog</a>
                                 </Trans>
                             </FormText>
                         </Col>
                     </InputGroup>
 
                     <InputGroup>
-                        <InputGroup.Text as="label" htmlFor="import-clean">{t('cleanImport.label')}</InputGroup.Text>
+                        <InputGroup.Text as="label" htmlFor="import-clean">{t("cleanImport.label")}</InputGroup.Text>
                         <InputGroup.Checkbox id="import-clean" selected={newImport} onChange={handleNewImportChange}/>
                         <Col sm={12}>
-                            <FormText>{t('cleanImport.formText')}</FormText>
+                            <FormText>{t("cleanImport.formText")}</FormText>
                         </Col>
                     </InputGroup>
                 </Form>
@@ -127,8 +131,8 @@ export function ImportDialog(
             </Modal.Body>
             <Modal.Footer>
                 {/*<Row className={"gx-3"}>*/}
-                <Button variant="secondary" onClick={hide}>{t('modal.closeButton')}</Button>
-                <Button onClick={importPages}>{t('modal.importButton')}</Button>
+                <Button variant="secondary" onClick={hide}>{t("modal.closeButton")}</Button>
+                <Button onClick={importPages}>{t("modal.importButton")}</Button>
                 {/*</Row>*/}
             </Modal.Footer>
         </Modal>

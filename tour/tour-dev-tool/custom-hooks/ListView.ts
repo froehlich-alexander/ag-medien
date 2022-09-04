@@ -1,7 +1,9 @@
 import {useCallback, useEffect, useMemo, useState} from "react";
-import {DialogContextType, FormContextType, ListViewContextType, PageContextType} from "../TourContexts";
+import type Store from "../store";
+import {showDialog} from "../store/dialog";
+import {FormContextType, ListViewContextType, PageContextType} from "../TourContexts";
 
-export default function useListView(pageContext: PageContextType, formContext: FormContextType, dialogContext: DialogContextType) {
+export default function useListView(pageContext: PageContextType, formContext: FormContextType, store: typeof Store) {
     // null == nothing scheduled
     const [scheduledSetCurrentPage, setScheduledSetCurrentPage] = useState<string | undefined | null>(null);
 
@@ -17,7 +19,8 @@ export default function useListView(pageContext: PageContextType, formContext: F
             setScheduledSetCurrentPage(null);
         } else {
             setScheduledSetCurrentPage(id);
-            dialogContext.showUnsavedChangesAlert();
+            store.dispatch(showDialog("unsavedChanges"));
+            // dialogContext.showUnsavedChangesAlert();
         }
     }, [pageContext.currentPage?.id, formContext.isModified, pageContext.setCurrentPage]);
 

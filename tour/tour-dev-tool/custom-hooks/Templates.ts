@@ -29,7 +29,7 @@ class Template extends Data<Template>{
 
     public toJSON(): JsonTemplate {
         return {
-            inlineObject: this.inlineObject,
+            inlineObject: this.inlineObject.toJSON(),
         }
     }
 }

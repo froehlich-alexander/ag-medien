@@ -1,5 +1,6 @@
 import {useCallback, useEffect, useMemo, useState} from "react";
 import {PageData, SchulTourConfigFile} from "../../Data";
+import Store from "../store";
 import {MediaContextType, PageContextType} from "../TourContexts";
 import useDataList from "./DataListReducer";
 
@@ -9,7 +10,7 @@ import useDataList from "./DataListReducer";
  * @param mediaContext
  * @param configFile
  */
-function usePages(mediaContext: MediaContextType, configFile: FileSystemFileHandle | undefined) {
+function usePages(mediaContext: MediaContextType, configFile: FileSystemFileHandle | undefined, store: typeof Store) {
 
     const [currentPage, setCurrentPage] = useState<PageData>();
     const [initialPage, setInitialPage] = useState<string|undefined>();
@@ -53,7 +54,6 @@ function usePages(mediaContext: MediaContextType, configFile: FileSystemFileHand
     useEffect(() => {
         setCurrentPageById(currentPage?.id)
     }, [pages]);
-
 
     // write fs pages
     useEffect(() => {

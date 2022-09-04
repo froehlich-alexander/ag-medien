@@ -1202,7 +1202,7 @@ setDocument = Sizzle.setDocument = function( node ) {
 	// The broken getElementById methods don't pick up programmatically-set names,
 	// so use a roundabout getElementsByName test
 	support.getById = assert( function( el ) {
-		docElem.appendChild( el ).id = expando;
+		docElem.appendChild( el ).uniqueId = expando;
 		return !document.getElementsByName || !document.getElementsByName( expando ).length;
 	} );
 
@@ -4274,7 +4274,7 @@ Data.prototype = {
 
 		return value;
 	},
-	set: function( owner, data, value ) {
+	setVisibility: function(owner, data, value ) {
 		var prop,
 			cache = this.cache( owner );
 
@@ -4325,7 +4325,7 @@ Data.prototype = {
 		//   1. An object of properties
 		//   2. A key and value
 		//
-		this.set( owner, key, value );
+		this.setVisibility( owner, key, value );
 
 		// Since the "set" path can have two possible entry points
 		// return the expected data based on which path was taken[*]
@@ -4442,7 +4442,7 @@ function dataAttr( elem, key, data ) {
 			} catch ( e ) {}
 
 			// Make sure we set the data so it isn't changed later
-			dataUser.set( elem, key, data );
+			dataUser.setVisibility( elem, key, data );
 		} else {
 			data = undefined;
 		}
@@ -4499,7 +4499,7 @@ jQuery.fn.extend( {
 							}
 						}
 					}
-					dataPriv.set( elem, "hasDataAttrs", true );
+					dataPriv.setVisibility( elem, "hasDataAttrs", true );
 				}
 			}
 
@@ -4509,7 +4509,7 @@ jQuery.fn.extend( {
 		// Sets multiple values
 		if ( typeof key === "object" ) {
 			return this.each( function() {
-				dataUser.set( this, key );
+				dataUser.setVisibility( this, key );
 			} );
 		}
 
@@ -4545,7 +4545,7 @@ jQuery.fn.extend( {
 			this.each( function() {
 
 				// We always store the camelCased key
-				dataUser.set( this, key, value );
+				dataUser.setVisibility( this, key, value );
 			} );
 		}, null, value, arguments.length > 1, null, true );
 	},
@@ -4863,7 +4863,7 @@ function showHide( elements, show ) {
 				values[ index ] = "none";
 
 				// Remember what we're overwriting
-				dataPriv.set( elem, "display", display );
+				dataPriv.setVisibility( elem, "display", display );
 			}
 		}
 	}
@@ -4879,22 +4879,22 @@ function showHide( elements, show ) {
 }
 
 jQuery.fn.extend( {
-	show: function() {
+	showDialog: function() {
 		return showHide( this, true );
 	},
-	hide: function() {
+	hideDialog: function() {
 		return showHide( this );
 	},
 	toggle: function( state ) {
 		if ( typeof state === "boolean" ) {
-			return state ? this.show() : this.hide();
+			return state ? this.showDialog() : this.hideDialog();
 		}
 
 		return this.each( function() {
 			if ( isHiddenWithinTree( this ) ) {
-				jQuery( this ).show();
+				jQuery( this ).showDialog();
 			} else {
-				jQuery( this ).hide();
+				jQuery( this ).hideDialog();
 			}
 		} );
 	}
@@ -4992,7 +4992,7 @@ function setGlobalEval( elems, refElements ) {
 		l = elems.length;
 
 	for ( ; i < l; i++ ) {
-		dataPriv.set(
+		dataPriv.setVisibility(
 			elems[ i ],
 			"globalEval",
 			!refElements || dataPriv.get( refElements[ i ], "globalEval" )
@@ -5621,7 +5621,7 @@ function leverageNative( el, type, expectSync ) {
 	}
 
 	// Register the controller as a special universal handler for all event namespaces
-	dataPriv.set( el, type, false );
+	dataPriv.setVisibility( el, type, false );
 	jQuery.event.add( el, type, {
 		namespace: false,
 		handler: function( event ) {
@@ -5639,7 +5639,7 @@ function leverageNative( el, type, expectSync ) {
 					// There will always be at least one argument (an event object), so this array
 					// will not be confused with a leftover capture object.
 					saved = slice.call( arguments );
-					dataPriv.set( this, type, saved );
+					dataPriv.setVisibility( this, type, saved );
 
 					// Trigger the native event and capture its result
 					// Support: IE <=9 - 11+
@@ -5648,7 +5648,7 @@ function leverageNative( el, type, expectSync ) {
 					this[ type ]();
 					result = dataPriv.get( this, type );
 					if ( saved !== result || notAsync ) {
-						dataPriv.set( this, type, false );
+						dataPriv.setVisibility( this, type, false );
 					} else {
 						result = {};
 					}
@@ -5681,7 +5681,7 @@ function leverageNative( el, type, expectSync ) {
 			} else if ( saved.length ) {
 
 				// ...and capture the result
-				dataPriv.set( this, type, {
+				dataPriv.setVisibility( this, type, {
 					value: jQuery.event.trigger(
 
 						// Support: IE <=9 - 11+
@@ -6012,7 +6012,7 @@ function cloneCopyEvent( src, dest ) {
 		udataOld = dataUser.access( src );
 		udataCur = jQuery.extend( {}, udataOld );
 
-		dataUser.set( dest, udataCur );
+		dataUser.setVisibility( dest, udataCur );
 	}
 }
 
@@ -7034,7 +7034,7 @@ jQuery.each( [ "height", "width" ], function( _i, dimension ) {
 			}
 		},
 
-		set: function( elem, value, extra ) {
+		setVisibility: function(elem, value, extra ) {
 			var matches,
 				styles = getStyles( elem ),
 
@@ -7118,7 +7118,7 @@ jQuery.each( {
 	};
 
 	if ( prefix !== "margin" ) {
-		jQuery.cssHooks[ prefix + suffix ].set = setPositiveNumber;
+		jQuery.cssHooks[ prefix + suffix ].setVisibility = setPositiveNumber;
 	}
 } );
 
@@ -7191,7 +7191,7 @@ Tween.prototype = {
 		if ( hooks && hooks.set ) {
 			hooks.set( this );
 		} else {
-			Tween.propHooks._default.set( this );
+			Tween.propHooks._default.setVisibility( this );
 		}
 		return this;
 	}
@@ -7220,7 +7220,7 @@ Tween.propHooks = {
 			// Empty strings, null, undefined and "auto" are converted to 0.
 			return !result || result === "auto" ? 0 : result;
 		},
-		set: function( tween ) {
+		setVisibility: function(tween ) {
 
 			// Use step hook for back compat.
 			// Use cssHook if its there.
@@ -7241,7 +7241,7 @@ Tween.propHooks = {
 // Support: IE <=9 only
 // Panic based approach to setting things on disconnected nodes
 Tween.propHooks.scrollTop = Tween.propHooks.scrollLeft = {
-	set: function( tween ) {
+	setVisibility: function(tween ) {
 		if ( tween.elem.nodeType && tween.elem.parentNode ) {
 			tween.elem[ tween.prop ] = tween.now;
 		}
@@ -7748,7 +7748,7 @@ jQuery.fn.extend( {
 	fadeTo: function( speed, to, easing, callback ) {
 
 		// Show any hidden elements after setting opacity to 0
-		return this.filter( isHiddenWithinTree ).css( "opacity", 0 ).show()
+		return this.filter( isHiddenWithinTree ).css( "opacity", 0 ).showDialog()
 
 			// Animate to the value specified
 			.end().animate( { opacity: to }, speed, easing, callback );
@@ -8045,7 +8045,7 @@ jQuery.extend( {
 
 	attrHooks: {
 		type: {
-			set: function( elem, value ) {
+			setVisibility: function(elem, value ) {
 				if ( !support.radioValue && value === "radio" &&
 					nodeName( elem, "input" ) ) {
 					var val = elem.value;
@@ -8077,7 +8077,7 @@ jQuery.extend( {
 
 // Hooks for boolean attributes
 boolHook = {
-	set: function( elem, value, name ) {
+	setVisibility: function(elem, value, name ) {
 		if ( value === false ) {
 
 			// Remove boolean attributes when set to false
@@ -8215,7 +8215,7 @@ if ( !support.optSelected ) {
 			}
 			return null;
 		},
-		set: function( elem ) {
+		setVisibility: function(elem ) {
 
 			/* eslint no-unused-expressions: "off" */
 
@@ -8397,7 +8397,7 @@ jQuery.fn.extend( {
 				if ( className ) {
 
 					// Store className if set
-					dataPriv.set( this, "__className__", className );
+					dataPriv.setVisibility( this, "__className__", className );
 				}
 
 				// If the element has a class name or if we're passed `false`,
@@ -8566,7 +8566,7 @@ jQuery.extend( {
 				return values;
 			},
 
-			set: function( elem, value ) {
+			setVisibility: function(elem, value ) {
 				var optionSet, option,
 					options = elem.options,
 					values = jQuery.makeArray( value ),
@@ -8599,7 +8599,7 @@ jQuery.extend( {
 // Radios and checkboxes getter/setter
 jQuery.each( [ "radio", "checkbox" ], function() {
 	jQuery.valHooks[ this ] = {
-		set: function( elem, value ) {
+		setVisibility: function(elem, value ) {
 			if ( Array.isArray( value ) ) {
 				return ( elem.checked = jQuery.inArray( jQuery( elem ).val(), value ) > -1 );
 			}

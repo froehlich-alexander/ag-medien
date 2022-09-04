@@ -1,67 +1,73 @@
-body {
-}
 
 .CreateTool {
-  .MediaForm {
-    .SrcTable {
-      caption {
-        border-top-width: 0;
-      }
+    .MediaForm {
+        .SrcTable {
+            caption {
+                border-top-width: 0;
+            }
+        }
     }
-  }
 
-  .PageForm {
-    .InlineObjectContainerForm {
-      .InlineObjectForm {
-        border-color: var(--bs-accordion-border-color);
-        border-width: var(--bs-accordion-border-width);
-      }
+    .PageForm {
+        .InlineObjectContainerForm {
+            .InlineObjectForm {
+                border-color: var(--bs-accordion-border-color);
+                border-width: var(--bs-accordion-border-width);
+            }
+        }
     }
-  }
 
-  .ListView {
-    .SelectControls {
-      border-color: var(--bs-gray-500);
+    .ListView {
+        .SelectControls {
+            border-color: var(--bs-gray-500);
+        }
+
+        .PageItem {
+            cursor: pointer;
+
+            .MainLabel {
+                font-size: larger;
+            }
+        }
     }
-    .PageItem {
-      cursor: pointer;
+}
 
-      .MainLabel {
-        font-size: larger;
-      }
-    }
-  }
+.UnsavedChangesAlert {
+}
 
-  .UnsavedChangesAlert {
-  }
-
-  .MediaDialog {
+.MediaDialog {
     .MediaTable {
 
     }
-  }
 }
 
+.TourPreviewDialog {
+    .Body {
+    }
+}
+
+
 .material-icons {
-  cursor: pointer;
-  &.md-18 {
-    font-size: 18px;
-  }
+    cursor: pointer;
 
-  &.md-24 {
-    font-size: 24px;
-  }
+    &.md-18 {
+        font-size: 18px;
+    }
 
-  &.md-36 {
-    font-size: 36px;
-  }
+    &.md-24 {
+        font-size: 24px;
+    }
 
-  &.md-48 {
-    font-size: 48px;
-  }
+    &.md-36 {
+        font-size: 36px;
+    }
 
-  &.disabled {
-    --bs-text-opacity: 0.3;
-    cursor: default;
-  }
+    &.md-48 {
+        font-size: 48px;
+    }
+
+    &.disabled {
+        --bs-text-opacity: 0.3;
+        cursor: default;
+    }
 }

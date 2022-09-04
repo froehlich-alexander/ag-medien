@@ -23,23 +23,23 @@ export interface MediaContextType {
     replaceMediaFiles: (...files: Array<[string, FileData]>) => void,
 }
 
-export interface DialogContextType {
-    importDialogVisibility: boolean,
-    setImportDialogVisibility: (vis: boolean) => void,
-    showImportDialog: () => void,
-
-    mediaDialogVisibility: boolean,
-    setMediaDialogVisibility: (vis: boolean) => void,
-    showMediaDialog: () => void,
-
-    unsavedChangesAlertVisibility: boolean,
-    setUnsavedChangesAlertVisibility: (vis: boolean) => void,
-    showUnsavedChangesAlert: () => void;
-
-    mediaPreviewDialogVisibility: boolean,
-    setMediaPreviewDialogVisibility: (vis: boolean) => void,
-    showMediaPreviewDialog: () => void,
-}
+// export interface DialogContextType {
+//     mediaDialogVisibility: boolean,
+//     setMediaDialogVisibility: (vis: boolean) => void,
+//     showMediaDialog: () => void,
+//
+//     unsavedChangesAlertVisibility: boolean,
+//     setUnsavedChangesAlertVisibility: (vis: boolean) => void,
+//     showUnsavedChangesAlert: () => void;
+//
+//     mediaPreviewDialogVisibility: boolean,
+//     setMediaPreviewDialogVisibility: (vis: boolean) => void,
+//     showMediaPreviewDialog: () => void,
+//
+//     tourPagePreviewDialogVisibility: boolean,
+//     setTourPagePreviewDialogVisibility: (vis: boolean) => void,
+//     showTourPagePreviewDialog: () => void,
+// }
 
 export interface TemplateContextType {
     inlineObject: InlineObjectData,
@@ -59,7 +59,7 @@ export interface ListViewContextType {
     schedulesCurrentPage: string | undefined | null,
 }
 
-export const DialogContext = createContext<DialogContextType>({} as DialogContextType);
+// export const DialogContext = createContext<DialogContextType>({} as DialogContextType);
 export const MediaContext = createContext<MediaContextType>({} as MediaContextType);
 export const PageContext = createContext<PageContextType>({} as PageContextType);
 export const TemplateContext = createContext<TemplateContextType>({} as TemplateContextType);

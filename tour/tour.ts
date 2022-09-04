@@ -1,43 +1,55 @@
+// import * as $ from "jquery";
 import {
     ClickableData,
     CustomObjectData,
+    DataType,
     InlineObjectData,
     MediaData,
+    mediaFolder,
     PageData,
     SchulTourConfigFile,
     SourceData,
     TextFieldData,
+    uniqueId,
 } from "./Data.js";
 import type {
     AnimationType,
-    FetchPriorityType,
     JsonClickable,
     JsonCustomObject,
     JsonInlineObject,
-    JsonPage,
     JsonSchulTourConfigFile,
     JsonTextField,
     LoadingType,
     MediaType,
     PageAnimations,
-    VideoPreloadType,
 } from "./types";
 
 let finished_last = true;
-let idPrefix = "tour_pg_";
-let imgFolder = "media";
-let baustellenFotoUrl = imgFolder + "/baustelle.png";
-// let animationDuration = 500;
+const idPrefix = "tour_pg_";
+const baustellenFotoUrl = mediaFolder + "/baustelle.png";
 let lastest = "";
-let pages: Page[] = [];
-let isDesktop = window.innerWidth > 768;
+const isDesktop = window.innerWidth > 768;
+const scrollSensitivity = 10;
+const devTool = {
+    dataTransferTypes: {
+        // MUST be lowercase (because the browser will always lower it which can lead to bugs)
+        inlineObject: {
+            offset: "tour/inline_object/offset",
+            data: "tour/inline_object/data",
+            id: "tour/inline_object/id",
+        },
+    },
+};
 
 /**
  * This class holds the media element for the page. This could be an image, a video, etc. (see {@link MediaType} for more options)<br>
  */
 class Media<T extends HTMLImageElement | HTMLVideoElement | HTMLIFrameElement = HTMLImageElement | HTMLVideoElement | HTMLIFrameElement> {
+    public readonly data: MediaData;
+    public readonly loading: LoadingType;
+
     // the actual string which is used as src attr of the <img> <video>, etc. tag
-    public readonly srcString: string;
+    public readonly srcUrl: string;
 
     protected _src: SourceData;
     protected initialized: boolean = false;
@@ -45,13 +57,22 @@ class Media<T extends HTMLImageElement | HTMLVideoElement | HTMLIFrameElement = 
     private _page?: Page;
     private _type!: MediaType;
     private visibilityObserver: IntersectionObserver;
+    private loadingErrorOccurred: boolean = false;
 
-    declare protected _html: JQuery<T>;
+    declare protected readonly _html: JQuery<T>;
 
-    protected constructor(src: SourceData) {
-        this._src = src;
-        this.srcString = Media.formatSrc(src.name);
-        this._type = src.type;
+    // dev tool
+    public handleDrop?: (inlineObjectId: number, inlineObjectData: InlineObjectData) => void;
+
+    protected constructor(data: MediaData, htmlTag: keyof HTMLElementTagNameMap | JQuery<T>) {
+        const {source, loading} = Media.computeSourceAndLoading(data);
+
+        this._src = source;
+        this.srcUrl = source.url();
+        this.loading = loading;
+        this._type = source.type;
+        this.data = data;
+        this._html = typeof htmlTag === "string" ? $(`<${htmlTag}/>`) : htmlTag;
 
         this.visibilityObserver = new IntersectionObserver(() => {
             this.triggerResize();
@@ -62,10 +83,10 @@ class Media<T extends HTMLImageElement | HTMLVideoElement | HTMLIFrameElement = 
     }
 
     /**
-     * Create a {@link Media} object from a {@link MediaData} object
+     * Computes the source and the loading type depending on the platform of the client (desktop or mobile)
      * @param data
      */
-    public static from(data: MediaData): Media {
+    public static computeSourceAndLoading(data: MediaData): {source: SourceData, loading: LoadingType} {
         // higher / lower resolution and loading type depend on device (=connection bandwidth)
         let src: SourceData;
         let loading: LoadingType;
@@ -79,25 +100,24 @@ class Media<T extends HTMLImageElement | HTMLVideoElement | HTMLIFrameElement = 
             src = data.srcMin ?? (data.src ?? data.srcMax)!;
             loading = "lazy";
         }
+        return {
+            source: src,
+            loading: loading,
+        };
+    }
 
+    /**
+     * Create a {@link Media} object from a {@link MediaData} object
+     * @param data
+     */
+    public static from(data: MediaData): Media {
         switch (data.type) {
             case "img":
-                return new ImageMedia({
-                    src: src,
-                    loading: loading,
-                    fetchPriority: data.fetchPriority,
-                });
+                return ImageMedia.from(data);
             case "video":
-                return new VideoMedia({
-                    ...data,
-                    src: src,
-                });
+                return VideoMedia.from(data);
             case "iframe":
-                return new IframeMedia({
-                    src: src,
-                    loading: loading,
-                    fetchPriority: data.fetchPriority,
-                });
+                return IframeMedia.from(data);
         }
     }
 
@@ -108,8 +128,10 @@ class Media<T extends HTMLImageElement | HTMLVideoElement | HTMLIFrameElement = 
     protected prepareHTML() {
         // Error logging
         this.html.on("error", () => {
-            console.error("error");
-            console.warn("Error loading Media", this);
+            console.error("Error loading Media", this);
+            if (!this.loadingErrorOccurred) {
+                this.onLoadingError();
+            }
         });
 
         // add width and height from json
@@ -119,15 +141,54 @@ class Media<T extends HTMLImageElement | HTMLVideoElement | HTMLIFrameElement = 
         }
 
         this.visibilityObserver.observe(this.html[0]);
-
         this.html.addClass("bg");
+
+        if (Tour.devTool) {
+            this.html.on("dragover", (event) => {
+                if (event.originalEvent!.dataTransfer!.types.includes(devTool.dataTransferTypes.inlineObject.data)) {
+                    event.preventDefault();
+                }
+            });
+
+            /**
+             * @param coord relative to document
+             * @param closestSize size of parent element
+             * @param closestOffset offset of parent element (space between document 0 and parent start)
+             */
+            const getRelativeCoordinate = (coord: number, closestSize: number, closestOffset: number): number => {
+                // Durchmesser in rem
+                let iconDurchmesser = 3;
+                iconDurchmesser = iconDurchmesser / 2 * parseFloat($(".clickable").css("fontSize"));
+                return ((coord - closestOffset + iconDurchmesser) / closestSize) * 100;
+            };
+
+            this.html.on("drop", (event) => {
+                console.log("drop event");
+                event.preventDefault();
+                const inlineObjectData = InlineObjectData.fromJSON(JSON.parse(
+                    event.originalEvent!.dataTransfer!.getData(devTool.dataTransferTypes.inlineObject.data),
+                ) as JsonInlineObject);
+                const inlineObjectId = parseInt(event.originalEvent!.dataTransfer!.getData(devTool.dataTransferTypes.inlineObject.id));
+                const inlineObjectOffset = event.originalEvent!.dataTransfer!.getData(devTool.dataTransferTypes.inlineObject.offset)
+                    .split(" ").map(v => parseInt(v));
+
+                this.handleDrop!(inlineObjectId, inlineObjectData.withUpdate({
+                    x: getRelativeCoordinate(event.clientX!, this.html.width()!,
+                        this.html.offset()!.left + inlineObjectOffset[0]),
+                    y: getRelativeCoordinate(event.clientY!, this.html.height()!,
+                        this.html.offset()!.top + inlineObjectOffset[1]),
+                }));
+            });
+        }
     }
 
-    public clone(): Media {
-        // let n = new Media(this.src, this.type, this.poster, this.autoplay, this.loop, this.muted);
-        let n = new Media(this._src);
-        n._html = this._html.clone(true);
-        return n;
+    /**
+     * Clones and returns this Media Object (also clones all its events)
+     */
+    public clone(): this {
+        type T1 = this;
+        const constructor = (this.constructor as { new( data: MediaData, html?: JQuery<HTMLElement>): T1 });
+        return new constructor(this.data, this._html.clone(true));
     }
 
     // @ts-ignore
@@ -140,6 +201,10 @@ class Media<T extends HTMLImageElement | HTMLVideoElement | HTMLIFrameElement = 
         this.onPageSet();
     }
 
+    protected onLoadingError() {
+        this.loadingErrorOccurred = true;
+    }
+
     /**
      * Override this method to do things when we know the natural intrinsic size of this media<br>
      * This method is called each time the intrinsic size changes, that means
@@ -149,8 +214,8 @@ class Media<T extends HTMLImageElement | HTMLVideoElement | HTMLIFrameElement = 
      */
     protected onSizeKnown() {
         // remove eventually previously added width and height specified from json file, because that could be wrong
-        this.html.removeAttr("width")
-            .removeAttr("height");
+        this.html.attr("width", this.src.width!)
+            .attr("height", this.src.height!);
         this.triggerResize();
     }
 
@@ -203,7 +268,7 @@ class Media<T extends HTMLImageElement | HTMLVideoElement | HTMLIFrameElement = 
     }
 
     set type(value: MediaType | "auto") {
-        this._type = MediaData.determineType(value, this.srcString);
+        this._type = MediaData.determineType(value, this.srcUrl);
     }
 
     /**
@@ -211,29 +276,16 @@ class Media<T extends HTMLImageElement | HTMLVideoElement | HTMLIFrameElement = 
      * @private
      */
     protected applyRatio() {
-        const screenRatio = window.innerWidth / window.innerHeight;
+        const tourElement = this.html.closest(".schul-tour");
+        const screenRatio = tourElement.width()! / tourElement.height()!;
         let mediaRatio = this._src.width! / this._src.height!;
         if (mediaRatio > screenRatio) {
-            this.html.addClass("fill-width")
+            this.html.closest(".bg_container").addClass("fill-width")
                 .removeClass("fill-height");
         } else {
-            this.html.addClass("fill-height")
+            this.html.closest(".bg_container").addClass("fill-height")
                 .removeClass("fill-width");
         }
-    }
-
-    public static formatSrc(src: string): string {
-        let regex = new RegExp("^(?:[a-z]+:)?//", "i");
-        //if src is absolute (e.g. http://abc.xyz)
-        //or src relative to document root (starts with '/') (the browser interprets that correctly)
-        if (regex.test(src) || src.startsWith("/")) {
-            if (src.startsWith("http://")) {
-                console.warn("Security waring: Using unsecure url in iframe:", src);
-            }
-            return src;
-        }
-        //add prefix
-        return imgFolder + "/" + src;
     }
 
     public pause(): void {
@@ -241,45 +293,18 @@ class Media<T extends HTMLImageElement | HTMLVideoElement | HTMLIFrameElement = 
 }
 
 class VideoMedia extends Media<HTMLVideoElement> {
-    public readonly poster?: string;
-    public readonly autoplay: boolean;
-    public readonly loop: boolean;
-    public readonly muted: boolean;
-    public readonly preload: VideoPreloadType;
-
     declare protected _html: JQuery<HTMLVideoElement>;
 
-    constructor({src, autoplay, loop, muted, poster, preload}: {
-        src: SourceData,
-        poster?: string,
-        autoplay: boolean,
-        loop: boolean,
-        muted: boolean,
-        preload: VideoPreloadType,
-    }) {
-        super(src.withType("video"));
-        this.poster = poster;
-        this.autoplay = autoplay;
-        this.loop = loop;
-        this.muted = muted;
-        this.preload = preload;
-        this._html = $("<video></video>")
-            .text("HTML Video is not supported")
-            .attr("poster", this.poster ?? "")
-            .prop("autoplay", this.autoplay)
-            .prop("loop", this.loop)
-            .prop("muted", this.muted)
-            .prop("preload", this.preload) as JQuery<HTMLVideoElement>;
+    constructor(data: MediaData, html?: JQuery<HTMLVideoElement>) {
+        super(data, html ?? "video");
+        this._html.text("HTML Video is not supported")
+            .attr("poster", this.data.poster ?? "")
+            .prop("autoplay", this.data.autoplay)
+            .prop("loop", this.data.loop)
+            .prop("muted", this.data.muted)
+            .prop("preload", this.data.preload);
 
         this.prepareHTML();
-        // error handling
-        this.html.on("error", () => {
-            this.html.attr("poster", baustellenFotoUrl)
-                .prop("controls", false);
-            // .removeAttr("src")
-            // .removeAttr("preload")
-            // .removeAttr("type");
-        });
 
         this.html.on("loadedmetadata", () => {
             console.log("Video loaded", this);
@@ -300,7 +325,7 @@ class VideoMedia extends Media<HTMLVideoElement> {
 
         //add src last so that we won't trigger error event too early
         this.html.find("source").last().attr("type", "video/mp4")
-            .attr("src", this.srcString);
+            .attr("src", this.srcUrl);
 
         //should be redundant
         if ((this.html.get(0) as HTMLVideoElement).readyState > 0) {
@@ -308,10 +333,15 @@ class VideoMedia extends Media<HTMLVideoElement> {
         }
     }
 
-    public clone(): VideoMedia {
-        let n = new VideoMedia(this);
-        n._html = this.html.clone(true);
-        return n;
+    public static from(data: MediaData) {
+        return new VideoMedia(data);
+    }
+
+    protected onLoadingError(): void {
+        super.onLoadingError();
+
+        this.html.attr("poster", baustellenFotoUrl)
+            .prop("controls", false);
     }
 
     public pause() {
@@ -320,79 +350,37 @@ class VideoMedia extends Media<HTMLVideoElement> {
 }
 
 class ImageMedia extends Media<HTMLImageElement> {
-    public readonly loading: LoadingType;
-    public readonly fetchPriority: FetchPriorityType;
+    declare public readonly loading: LoadingType;
 
-    constructor({src, loading, fetchPriority}:
-                    { src: SourceData, loading: LoadingType, fetchPriority: FetchPriorityType }) {
-        super(src.withType("img"));
-        this.loading = loading;
-        this.fetchPriority = fetchPriority;
-        this._html = $("<img>")
+    constructor(data: MediaData, htmlTag?: JQuery<HTMLImageElement>) {
+        super(data, htmlTag ?? "img");
+        this._html
             .attr("alt", "Could not load Image :(")
             .attr("loading", this.loading)
-            .attr("fetchPriority", this.fetchPriority) as JQuery<HTMLImageElement>;
+            .attr("fetchPriority", this.data.fetchPriority);
 
         this.prepareHTML();
-        // console.log('img w, h', this.src.name, this.html[0].naturalWidth, this.html[0].height);
-
-        // Error Handling
-        this.html.on("error", () => {
-            this.html.attr("src", baustellenFotoUrl);
-        });
 
         this.html.on("load", () => {
-            console.log(`Media Loaded: ${this.srcString}`);
+            console.log(`Media Loaded: ${this.srcUrl}`);
             this._src = this.src.withUpdate({
                 width: this.html[0].naturalWidth,
                 height: this.html[0].naturalHeight,
             });
             this.onSizeKnown();
-            // this.applyRatio();
-            //
-            // //remove panorama if screen is big enough
-            // if (this.page!.is_panorama && this.src.width! <= window.innerWidth) {
-            //     this.page!.is_panorama = false;
-            //     this.page!.html.removeClass("pg_panorama");
-            // }
-            //
-            // // let onVisible = (pageElements?: MutationRecord[], observer?: MutationObserver) => {
-            // //     // console.log("st")
-            // //     // console.info("onVisible params", pageElements, "B:", observer);
-            // //
-            // //     if (this.html.is(":hidden")) {
-            // //         return;
-            // //     }
-            // //     console.log("onVisible", this.page!.id, this.page!.is_panorama, this.page!.is_360);
-            // //     //initial direction
-            // //     if (this.page!.is_panorama) {
-            // //         let initialDirection = (this.page!.initial_direction / 100) * this.html.width()!;
-            // //         console.log("init dir", this.page!.initial_direction, initialDirection);
-            // //         if (this.page!.is_360 && initialDirection === 0) {
-            // //             console.log("init dir ===", initialDirection, this.html.width());
-            // //             initialDirection = this.html.width()!;
-            // //         }
-            // //         this.html.closest(".pg_wrapper").scrollLeft(initialDirection);
-            // //     }
-            // //     adjust_clickables();
-            // //     //disconnect observer
-            // //     if (observer) {
-            // //         observer.disconnect();
-            // //         // console.info("disconnected observer");
-            // //     }
-            // // };
-            // if (this.html.is(":visible")) {
-            //     this.onVisible();
-            // } else {
-            //     // console.log("obsever")
-            //     let observer = new MutationObserver(this.onVisible);
-            //     observer.observe(this.page!.html.get(0)!, {
-            //         attributeFilter: ["style", "class"],
-            //     });
-            // }
         });
 
-        this.html.attr("src", this.srcString);
+        this.html.attr("src", this.srcUrl);
+    }
+
+    public static from(data: MediaData) {
+        return new ImageMedia(data);
+    }
+
+    protected onLoadingError(): void {
+        super.onLoadingError();
+
+        this.html.attr("src", baustellenFotoUrl);
     }
 
     protected override onSizeKnown() {
@@ -404,12 +392,12 @@ class ImageMedia extends Media<HTMLImageElement> {
         let panoramaAdded = false;
 
         //remove panorama if screen is big enough
-        if (this.page!.is_panorama && this.src.width! <= window.innerWidth) {
+        if (this.page!.is_panorama && this.src.width! <= this.html.closest(".schul-tour").width()!) {
             this.page!.is_panorama = false;
             this.page!.html.removeClass("pg_panorama");
         }
         // add panorama if screen is too small
-        else if (!this.page!.is_panorama && this.src.width! > window.innerWidth) {
+        else if (!this.page!.is_panorama && this.src.width! > this.html.closest(".schul-tour").width()!) {
             this.page!.is_panorama = true;
             this.page!.html.addClass("pg_panorama");
             panoramaAdded = true;
@@ -428,59 +416,128 @@ class ImageMedia extends Media<HTMLImageElement> {
 
     private applyInitialDirection() {
         if (this.page!.is_panorama) {
-            let initialDirection = (this.page!.initial_direction / 100) * this.src.width!;
+            const pgWrapper = this.html.closest(".pg_wrapper");
+            let initialDirection = (this.page!.initial_direction / 100) * this.html.width()!;
             console.log("init dir", this.page!.initial_direction, initialDirection);
             if (this.page!.is_360 && initialDirection === 0) {
-                console.log("init dir ===", initialDirection, this.src.width);
+                console.log("init dir ===", initialDirection, this.html.width());
                 initialDirection = this.html.width()!;
             }
-            this.html.closest(".pg_wrapper").scrollLeft(initialDirection);
+            // if init dir is too high
+            else if (this.page!.is_360 && initialDirection > pgWrapper[0].scrollWidth) {
+                // = init dir = n * width of img
+                // if init dir === 0
+                initialDirection = pgWrapper[0].scrollWidth % this.html.width()! || this.html.width()!;
+            }
+            pgWrapper.scrollLeft(initialDirection);
         }
     }
 }
 
 class IframeMedia extends Media<HTMLIFrameElement> {
-    public readonly loading: LoadingType;
-    public readonly fetchPriority: FetchPriorityType;
+    declare public readonly loading: LoadingType;
 
-    /**
-     * @param src
-     * @param loading
-     * @param fetchPriority
-     */
-    constructor({src, loading, fetchPriority}:
-                    { src: SourceData, loading: LoadingType, fetchPriority: FetchPriorityType }) {
-        super(src.withType("iframe"));
-        this.loading = loading;
-        this.fetchPriority = fetchPriority;
-        this._html = $("<iframe></iframe>")
-            .addClass("bg")
+    constructor(data: MediaData, htmlTag?: JQuery<HTMLIFrameElement>) {
+        super(data, htmlTag ?? "iframe");
+        this._html.addClass("bg")
             .attr("loading", this.loading)
-            .attr("fetchPriority", this.fetchPriority) as JQuery<HTMLIFrameElement>;
+            .attr("fetchPriority", this.data.fetchPriority);
 
         this.prepareHTML();
-
-        // Error Handling
-        this.html.on("error", () => {
-            //the plain html text
-            this.html.attr("srcdoc", "<!DOCTYPE html>" +
-                "<html lang=\"de\">" +
-                "<head>" +
-                "    <meta charset=\"UTF-8\">" +
-                "    <title>Baustelle</title>" +
-                "</head>" +
-                "<body>" +
-                "<img src=\"./img1/baustelle.png\" alt=\"Baustelle :)\" style=\"width: 100%;height: 100%;\">" +
-                "</body>" +
-                "</html>");
-        });
 
         this.html.on("load", () => {
             console.log("Iframe loaded", this);
         });
 
         // Add src after adding events so that they can get triggered
-        this.html.attr("src", this.srcString);
+        this.html.attr("src", this.srcUrl);
+    }
+
+    public static from(data: MediaData) {
+        return new IframeMedia(data);
+    }
+
+    protected onLoadingError(): void {
+        super.onLoadingError();
+
+        //the plain html text
+        this.html.attr("srcdoc",
+            `<!DOCTYPE html>
+            <html lang="de">
+                <head> 
+                   <meta charset="UTF-8"> 
+                   <title>Baustelle</title>
+               </head>
+               <body>
+                   <img src="${baustellenFotoUrl}" alt="Baustelle :)" style="width: 100%;height: 100%;">
+               </body>
+           </html>`,
+        );
+    }
+}
+
+class SchulTour {
+    public readonly data: SchulTourConfigFile;
+
+    public readonly html: JQuery<HTMLDivElement>;
+    public readonly pages: Page[];
+
+    constructor(data: SchulTourConfigFile) {
+        this.data = data;
+        this.pages = [];
+        this.html = $("<div/>")
+            .addClass("schul-tour")
+            .attr("data-color-theme", data.colorTheme)
+            .attr("data-tour-mode", data.mode)
+            .toggleClass("fullscreen", data.fullscreen) as JQuery<HTMLDivElement>;
+
+        for (let pageData of data.pages) {
+            let page = Page.from(pageData);
+
+            this.pages.push(page);
+            this.html.append(page.html);
+        }
+    }
+
+    /**
+     * Appends this element to the html body and sets the global {@link Tour.pages} object<br>
+     * Do <b>NOT</b> call this method more than <b>ONE</b> time
+     */
+    public init(initPage?: string) {
+        Tour.pages = this.pages;
+        this.html.appendTo(document.body);
+
+        let done = false;
+        // activate the page from the address line (initPage param)
+        for (let page of this.pages) {
+            if (page.id === initPage) {
+                page.initialActivate(this.pages);
+                done = true;
+                break;
+            }
+        }
+
+        // activate the page from the config file
+        if (!done) {
+            for (let page of this.pages) {
+                if (page.id === this.data.initialPage) {
+                    page.initialActivate(this.pages);
+                    done = true;
+                    break;
+                }
+            }
+        }
+
+        // page [0] as fallback
+        if (!done) {
+            this.pages[0].initialActivate(this.pages);
+        }
+
+        adjust_clickables();
+    }
+
+    public static from(data: SchulTourConfigFile): SchulTour {
+        return new SchulTour(data);
     }
 }
 
@@ -493,6 +550,11 @@ class Page extends AddressableObject() {
     public initial_direction: number;
     public readonly inlineObjects: InlineObject[];
     private readonly _html: JQuery<HTMLDivElement>;
+
+    // dev tool
+    public handleUpdate?: (page: Partial<DataType<PageData>>) => void;
+    public handleInlineObjectEditClick?: (index: number, inlineObject: InlineObjectData) => void;
+    public onCurrentPageChange?: (pageId: string) => void;
 
     constructor(
         {
@@ -510,6 +572,88 @@ class Page extends AddressableObject() {
         this.inlineObjects = inlineObjects.slice();
         this._html = $("<div></div>");
         this.html[0].addEventListener("animationend", this.handleAnimationEnd);
+
+        if ((!isDesktop) && this.media.isImage()) {
+            this.is_panorama = true;
+        }
+
+        this.html
+            .addClass("page")
+            .attr("id", idPrefix + this.id)
+            .toggleClass("pg_panorama", this.is_panorama)
+            .toggleClass("deg360", this.is_360)
+            .append(
+                $("<div></div>")
+                    .addClass("pg_wrapper"));
+
+        //first img
+        this.html.children(".pg_wrapper")
+            .append($("<div></div>")
+                .addClass("bg_container")
+                .append(this.media.html)
+                .append(this.inlineObjects
+                    .filter(v => v.data.position === "media" && (!v.second))
+                    .map(v => v.html)))
+            .append(this.inlineObjects
+                .filter(v => v.data.position === "page")
+                .map(v => v.html));
+
+        if (this.is_360) {
+            console.log("is_360");
+            //add second clickables for second img in 360deg IMGs
+            this.addInlineObjects(...this.clickables.filter(v => v.data.position === "media" && (!v.second)).map(v => v.clone()));
+            this.secondaryImg = this.media.clone();
+            //second img
+            let bgContainer1 = $("<div></div>")
+                .addClass("bg_container")
+                .append(this.secondaryImg.html)
+                .append(this.inlineObjects
+                    .filter(v => v.data.position === "media" && v.second)
+                    .map(v => v.html));
+
+            this.html.children(".pg_wrapper")
+                .append(bgContainer1);
+
+            this.html.find(".pg_wrapper").on("scroll", () => {
+                const pgWrapper = this.html.find(".pg_wrapper");
+                const pgWrapperElement = pgWrapper[0];
+                console.log("scroll", pgWrapperElement.scrollLeft);
+                if (pgWrapperElement.scrollWidth - pgWrapperElement.clientWidth - pgWrapperElement.scrollLeft < scrollSensitivity) {
+                    // if new scroll would trigger this event again
+                    if (pgWrapperElement.scrollLeft - this.media.html.width()! < scrollSensitivity) {
+                        return;
+                    }
+                    pgWrapper.scrollLeft(pgWrapperElement.scrollLeft - this.media.html.width()!);
+                } else if (pgWrapperElement.scrollLeft! < scrollSensitivity) {
+                    // if new scroll would trigger this event again
+                    if (pgWrapperElement.scrollWidth - pgWrapperElement.clientWidth - (pgWrapperElement.scrollLeft + this.media.html.width()!) < scrollSensitivity) {
+                        return;
+                    }
+                    pgWrapper.scrollLeft(pgWrapperElement.scrollLeft + this.media.html.width()!);
+                }
+            });
+        }
+
+        if (Tour.devTool) {
+            this.media.handleDrop = (inlineObjectId, inlineObjectData) => {
+                let pageData = {
+                    inlineObjects: [
+                        ...this.inlineObjects.filter(v => uniqueId(v) !== inlineObjectId).map(v => v.data),
+                        inlineObjectData,
+                    ],
+                };
+                this.handleUpdate!(pageData);
+                this.clickables.find(v => uniqueId(v) === inlineObjectId)!.html
+                    .css("left", inlineObjectData.x + "%")
+                    .css("top", inlineObjectData.y + "%");
+            };
+            for (let i of this.clickables) {
+                i.handleEditClick = (inlineObjectId, inlineObjectData) => {
+                    const index = this.clickables.filter(v => !v.second).findIndex(value => uniqueId(value) === inlineObjectId);
+                    this.handleInlineObjectEditClick!(index, inlineObjectData);
+                };
+            }
+        }
     }
 
     public static from(data: PageData): Page {
@@ -533,7 +677,7 @@ class Page extends AddressableObject() {
                 .removeClass("activate-backward");
             this.activateRunning = false;
             // finished last only true if (de-) activation has finished on all pages
-            finished_last = pages.map(page => !page.activateRunning && !page.deactivateRunning)
+            finished_last = Tour.pages.map(page => !page.activateRunning && !page.deactivateRunning)
                 .reduce((p, c) => p && c);
         }
         // deactivation
@@ -544,7 +688,7 @@ class Page extends AddressableObject() {
                 .removeClass("deactivate-backward");
             this.deactivateRunning = false;
             // finished last only true if (de-) activation has finished on all pages
-            finished_last = pages.map(page => !page.activateRunning && !page.deactivateRunning)
+            finished_last = Tour.pages.map(page => !page.activateRunning && !page.deactivateRunning)
                 .reduce((p, c) => p && c);
         }
     };
@@ -563,7 +707,7 @@ class Page extends AddressableObject() {
         adjust_clickables();
 
         // get prev page
-        for (let page of pages) {
+        for (let page of Tour.pages) {
             if (page.activated && page.id !== this.id) {
                 prevPage = page;
                 break;
@@ -584,8 +728,8 @@ class Page extends AddressableObject() {
 
         window.location.hash = this.id;
         createLastestClickable(this.clickables.filter(v => v.data.goto === prevPage.id));
+        this.onCurrentPageChange?.(this.id);
 
-        // goTo(this.id, animationType);
         return true;
     }
 
@@ -602,6 +746,13 @@ class Page extends AddressableObject() {
             case "backward":
                 this.html.addClass("deactivate-backward");
                 break;
+            case undefined:
+                this.html.removeClass("show");
+                this.deactivateRunning = false;
+
+                // finished last only true if (de-) activation has finished on all pages
+                finished_last = Tour.pages.map(page => !page.activateRunning && !page.deactivateRunning)
+                    .reduce((p, c) => p && c);
         }
         return true;
     }
@@ -626,8 +777,9 @@ class Page extends AddressableObject() {
         return this._html;
     }
 
-    public initialActivate(pages: Page[]): void {
+    public initialActivate(pages: readonly Page[]): void {
         this.activated = true;
+        $(".schul-tour .page").removeClass("show");
         this.html.addClass("show");
 
         // set lastest to any page with a matching clickable
@@ -636,6 +788,7 @@ class Page extends AddressableObject() {
             if (page.id === this.id) {
                 continue;
             }
+            page.deactivate();
             let done = false;
             for (let c of page.clickables) {
                 if (c.data.goto === this.id) {
@@ -651,6 +804,17 @@ class Page extends AddressableObject() {
 
         // since the user did not really come from the page which is now the lastest we could skip this ???
         createLastestClickable(this.clickables.filter(value => value.data.goto === lastest));
+    }
+
+    public data(): PageData {
+        return new PageData({
+            id: this.id,
+            media: this.media.data,
+            inlineObjects: this.inlineObjects.map(v => v.data),
+            is360: this.is_360,
+            isPanorama: this.is_panorama,
+            initialDirection: this.initial_direction,
+        });
     }
 }
 
@@ -711,6 +875,9 @@ class InlineObject {
     private readonly _second: boolean;
     private readonly _html: JQuery;
 
+    // dev tool
+    public handleEditClick?: (inlineObjectId: number, inlineObject: InlineObjectData) => void;
+
     constructor(data: InlineObjectData, htmlTag: keyof HTMLElementTagNameMap | JQuery, isClone = false) {
         this.data = data;
         this._second = isClone;
@@ -728,8 +895,31 @@ class InlineObject {
             if (this.data.x !== undefined) {
                 this._html.css("left", this.data.x + "%");
             }
+
             if (this.data.y !== undefined) {
                 this._html.css("top", this.data.y + "%");
+            }
+
+            if (Tour.devTool) {
+                this.html
+                    .prop("draggable", true);
+
+                this.html.on("dragstart", (event) => {
+                    console.log("dragstart");
+                    event.originalEvent!.dataTransfer!.dropEffect = "move";
+                    event.originalEvent!.dataTransfer!.setData(devTool.dataTransferTypes.inlineObject.data, JSON.stringify(this.data));
+                    event.originalEvent!.dataTransfer!.setData(devTool.dataTransferTypes.inlineObject.id, String(uniqueId(this)));
+                    event.originalEvent!.dataTransfer!.setData(devTool.dataTransferTypes.inlineObject.offset,
+                        [event.clientX! - this.html.offset()!.left, event.clientY! - this.html.offset()!.top].join(" "));
+                });
+
+                // edit icon (material icons required)
+                this.html.append($("<div/>")
+                    .text("edit")
+                    .addClass("material-icons dev-tool-edit-icon")
+                    .on("click", () => {
+                        this.handleEditClick!(uniqueId(this), this.data);
+                    }));
             }
         }
     }
@@ -875,7 +1065,7 @@ class Clickable extends InlineObject {
     }
 
     private handleClick = () => {
-        for (let page of pages) {
+        for (let page of Tour.pages) {
             if (page.id === this.data.goto) {
                 page.activate(this.data.animationType as PageAnimations);
                 break;
@@ -923,7 +1113,7 @@ window.addEventListener("resize", function () {
             $(this).addClass("fill-height");
         }
     });
-    for (let i of pages) {
+    for (let i of Tour.pages) {
         i.media.triggerResize();
     }
     adjust_clickables();
@@ -937,54 +1127,6 @@ window.addEventListener("popstate", function () {
     else
         pgs.eq(0).addClass("show");
 });
-
-// function goTo(pg: string | undefined, animationType: "backward"): void;
-// function goTo(pg: string, animationType: PageAnimations): void;
-// function goTo(pg: string | undefined, animationType: PageAnimations) {
-//     if (finished_last) {
-//         finished_last = false;
-//
-//         let prev = pages.find(v => v.id === $(".page.show").attr("id")!.substring(idPrefix.length))!;
-//         let next: Page | undefined;
-//         // next === lastest if animationType === backward
-//         if (animationType === "backward") {
-//             next = pages.find(v => v.id === lastest);
-//         } else {
-//             next = pages.find(v => v.id === pg!);
-//         }
-//
-//         if (next === undefined) {
-//             console.error("Cannot find target:", pg, "Animation:", animationType);
-//             return;
-//         }
-//         //pause video
-//         prev.media.pause();
-//         next.html.addClass("show");
-//         adjust_clickables();
-//         lastest = prev.id;
-//         if (animationType === "forward") {
-//             prev.html.addClass("walk_in_out");
-//             next.html.addClass("walk_in_in");
-//             setTimeout(function () {
-//                 $(".page.activate-forward").removeClass("activate-forward");
-//                 $(".page.deactivate-forward").removeClass("show")
-//                     .removeClass("deactivate-forward");
-//                 finished_last = true;
-//             }, animationDuration);
-//         } else if (animationType === "backward") {
-//             prev.html.addClass("walk_out_out");
-//             next.html.addClass("walk_out_in");
-//             setTimeout(function () {
-//                 $(".page.activate-backward").removeClass("activate-backward");
-//                 $(".page.deactivate-backward").removeClass("show")
-//                     .removeClass("deactivate-backward");
-//                 finished_last = true;
-//             }, animationDuration);
-//         }
-//         window.location.hash = next.id;
-//         createLastestClickable(next.clickables.filter(v => v.data.goto === prev.id));
-//     }
-// }
 
 function adjust_clickables() {
     let clickables = $(".clickable");
@@ -1006,244 +1148,21 @@ function createLastestClickable(clickables: Clickable[]) {
     }
 }
 
-function createHtml(json: JsonPage[]) {
-    let scrollSensitivity = 10;
-
-    for (let pageData of json.map(PageData.fromJSON)) {
-        let page = Page.from(pageData);
-        // let page = new Page(jsonPage.id, Media.fromJson(jsonPage.img));
-        //let page = new Page(jsonPage.id, new Image(jsonPage.img));
-
-        pages.push(page);
-
-        // page.is_360 = page.is_360 != null ? page.is_360 : false;
-        // page.is_panorama = (page.is_panorama != null ? page.is_panorama : false) || page.is_360;
-
-        //is mobile device
-        //via user agent
-        // if (/(iPhone|iPod|iPad|blackberry|android|Kindle|htc|lg|midp|mmp|mobile|nokia|opera mini|palm|pocket|psp|sgh|smartphone|symbian|treo mini|Playstation Portable|SonyEricsson|Samsung|MobileExplorer|PalmSource|Benq|Windows Phone|Windows Mobile|IEMobile|Windows CE|Nintendo Wii)/.test(navigator.userAgent))
-        //or via screen size
-        if ((!isDesktop) && page.media.isImage()) {
-            page.is_panorama = true;
-        }
-        // console.log("page", page);
-
-        // for (let clickable of jsonPage.clickables.map(jsonClickable => new Clickable(jsonClickable.title,
-        //     jsonClickable.x, jsonClickable.y, jsonClickable.goto, jsonClickable.icon, jsonClickable.backward))) {
-        //     page.clickables.push(clickable);
-        for (let clickable of page.clickables) {
-            let gotoExists = json.filter(value => value.id === clickable.data.goto).length > 0;
-            if (!gotoExists) {
-                console.log("Id '" + clickable.data.goto + "' does not exist");
-            }
-            // console.log(clickable.data.title, clickable.data.goto);
-            // console.log(page.inlineObjects);
-
-            // clickable.html.find("button")
-            //     .on("click", gotoExists ? () => {
-            //         goTo(clickable.data.goto, clickable.data.animationType as "backward");
-            //     } : () => {
-            //         console.error("Cannot go to next page because '" + clickable.data.goto + "' does not exist");
-            //     });
-        }
-
-        // let event;
-        // if (page.media.isImage() || page.media.isIframe())
-        //     event = "load";
-        // else if (page.media.isVideo()) {
-        //     event = "loadedmetadata";
-        // } else {
-        //     console.error("cannot determine event type because Media Type is not known (or not implemented)\nContinuing with 'load' as event type, but FIX THIS");
-        //     event = "load";
-        // }
-        // page.media.html
-        //     .addClass("bg")
-        //     // .attr("initial_direction", page.initial_direction)
-        //     .on(event, function () {
-        //         console.log(`Media Loaded: ${page.media.srcString}`);
-        //         // let self = $(this);
-        //         let self = page.media.html;
-        //
-        //         self.removeClass("fill-width");
-        //         self.removeClass("fill-height");
-        //         let imgRatio: number;
-        //         if (page.media.isImage(self)) {
-        //             imgRatio = self.get(0)!.naturalWidth / self.get(0)!.naturalHeight;
-        //             //remove panorama if screen is big enough
-        //             if (page.is_panorama && self.get(0)!.naturalWidth <= window.innerWidth) {
-        //                 page.is_panorama = false;
-        //                 page.html.removeClass("pg_panorama");
-        //             }
-        //
-        //             let onVisible = (pageElements?: MutationRecord[], observer?: MutationObserver) => {
-        //                 // console.log("st")
-        //                 // console.info("onVisible params", pageElements, "B:", observer);
-        //
-        //                 if (self.is(":hidden")) {
-        //                     return;
-        //                 }
-        //                 console.log("onVisible", page.id, page.is_panorama, page.is_360);
-        //                 //initial direction
-        //                 if (page.is_panorama) {
-        //                     let initialDirection = (page.initial_direction / 100) * self.width()!;
-        //                     console.log("init dir", page.initial_direction, initialDirection);
-        //                     if (page.is_360 && initialDirection === 0) {
-        //                         console.log("init dir ===", initialDirection, self.width());
-        //                         initialDirection = self.width()!;
-        //                     }
-        //                     self.closest(".pg_wrapper").scrollLeft(initialDirection);
-        //                 }
-        //                 adjust_clickables();
-        //                 //disconnect observer
-        //                 if (observer) {
-        //                     observer.disconnect();
-        //                     // console.info("disconnected observer");
-        //                 }
-        //             };
-        //             if (self.is(":visible")) {
-        //                 onVisible();
-        //             } else {
-        //                 // console.log("obsever")
-        //                 let observer = new MutationObserver(onVisible);
-        //                 observer.observe(page.html.get(0)!, {
-        //                     attributeFilter: ["style", "class"],
-        //                 });
-        //             }
-        //
-        //         } else if (page.media.isVideo(self)) {
-        //             imgRatio = self.get(0)!.videoWidth / self.get(0)!.videoHeight;
-        //         } else if (page.media.isIframe()) {
-        //             return; //all resizing has to be done by the iframe itself
-        //         } else {
-        //             console.error("Need to add handling for MediaType:", page.media.type);
-        //             return;
-        //         }
-        //         let screenRatio = window.innerWidth / window.innerHeight;
-        //         if (imgRatio > screenRatio)
-        //             self.addClass("fill-width");
-        //         else
-        //             self.addClass("fill-height");
-        //     })
-        // .on("error", function () {
-        //     console.error("error");
-        //     console.warn("Error loading Media", page.media);
-        //     if (page.media.isImage())
-        //         page.media.html.attr("src", baustellenFotoUrl);
-        //     else if (page.media.isVideo()) {
-        //         page.media.html
-        //             .attr("poster", baustellenFotoUrl)
-        //             .prop("controls", false);
-        //         // .removeAttr("src")
-        //         // .removeAttr("preload")
-        //         // .removeAttr("type");
-        //     } else if (page.media.isIframe()) {
-        //         page.media.html
-        //             //the plain html text
-        //             .attr("srcdoc", "<!DOCTYPE html>" +
-        //                 "<html lang=\"de\">" +
-        //                 "<head>" +
-        //                 "    <meta charset=\"UTF-8\">" +
-        //                 "    <title>Baustelle</title>" +
-        //                 "</head>" +
-        //                 "<body>" +
-        //                 "<img src=\"./img1/baustelle.png\" alt=\"Baustelle :)\" style=\"width: 100%;height: 100%;\">" +
-        //                 "</body>" +
-        //                 "</html>");
-        //     }
-        // });
-        //add src last so that error and load events aren't triggered before we add the event handler
-        // if (page.media.isImage()) {
-        //     page.media.html.attr("src", page.media.srcString);
-        // } else if (page.media.isVideo()) {
-        //     page.media.html
-        //         .prop("controls", true)
-        //         .append($("<source>"));
-        //
-        //     //firefox dispatches error events on last <source> tag, so we need to handle them there
-        //     page.media.html.find("source").last()
-        //         .on("error", e => page.media.html.trigger("error", e));
-        //
-        //     //add src last so that we won't trigger error event too early
-        //     page.media.html.find("source").last().attr("type", "video/mp4")
-        //         .attr("src", page.media.srcString);
-        //
-        //     //should be redundant
-        //     if ((page.media.html.get(0) as HTMLVideoElement).readyState > 0) {
-        //         page.media.html.trigger(event);
-        //     }
-        // }
-        //iframes src is already added in constructor of IframeMedia obj
-
-        // .each(function () {
-        //     if (page.img.isImage() && page.img.html[0].complete || page.img.isVideo() && page.img.html.wid) {
-        //         page.img.html.trigger('load');
-        //     }
-        // });
-
-        // if (page.is_panorama || page.is_360) {
-        //     img.attr("initial_direction", page.initial_direction);
-        // }
-
-        page.html
-            .addClass("page")
-            .attr("id", idPrefix + page.id)
-            .toggleClass("pg_panorama", page.is_panorama)
-            .toggleClass("deg360", page.is_360)
-            .append(
-                $("<div></div>")
-                    .addClass("pg_wrapper"));
-
-        //first img
-        page.html.children(".pg_wrapper")
-            .append($("<div></div>")
-                .addClass("bg_container")
-                .append(page.media.html)
-                .append(page.inlineObjects
-                    .filter(v => v.data.position == "media" && (!v.second))
-                    .map(v => v.html)))
-            .append(page.inlineObjects
-                .filter(v => v.data.position == "page")
-                .map(v => v.html));
-
-        if (page.is_360) {
-            console.log("is_360");
-            //add second clickables for second img in 360deg IMGs
-            page.addInlineObjects(...page.clickables.filter(v => v.data.position == "media" && (!v.second)).map(v => v.clone()));
-            page.secondaryImg = page.media.clone();
-            //second img
-            let bgContainer1 = $("<div></div>")
-                .addClass("bg_container")
-                .append(page.secondaryImg.html)
-                .append(page.inlineObjects
-                    .filter(v => v.data.position === "media" && v.second)
-                    .map(v => v.html));
-
-            page.html.children(".pg_wrapper")
-                .append(bgContainer1);
-
-            page.html.find(".pg_wrapper").on("scroll", function () {
-                console.log("scroll", this.scrollLeft);
-                let self = $(this);
-                if (this.scrollWidth - this.clientWidth - this.scrollLeft < scrollSensitivity) {
-                    // if new scroll would trigger this event again
-                    if (this.scrollLeft - page.media.html.width()! < scrollSensitivity) {
-                        return;
-                    }
-                    self.scrollLeft(this.scrollLeft - page.media.html.width()!);
-                } else if (self.scrollLeft()! < scrollSensitivity) {
-                    // if new scroll would trigger this event again
-                    if (this.scrollWidth - this.clientWidth - (this.scrollLeft + page.media.html.width()!) < scrollSensitivity) {
-                        return;
-                    }
-                    self.scrollLeft(this.scrollLeft + page.media.html.width()!);
-                }
-            });
-        }
-        page.html.appendTo("body");
-    }
-    console.log(json);
-    adjust_clickables();
-}
+// function createHtml(json: JsonPage[]) {
+//     const pages: Page[] = [];
+//     const tourElement = $("<div/>")
+//         .addClass('schul-tour');
+//     for (let pageData of json.map(PageData.fromJSON)) {
+//         let page = Page.from(pageData);
+//
+//         pages.push(page);
+//         tourElement.append(page.html);
+//     }
+//     Tour.pages = pages;
+//     document.body.append(tourElement[0]);
+//     console.log(json);
+//     adjust_clickables();
+// }
 
 /**
  * Ajax requests to file:// endpoints do not work in chrome base browsers<br>
@@ -1253,33 +1172,35 @@ function createHtml(json: JsonPage[]) {
 function init(pagesJsonPath: string | JsonSchulTourConfigFile) {
     const callback = (json: JsonSchulTourConfigFile) => {
         console.log("done", json);
-        const config = SchulTourConfigFile.fromJSON(json);
-        createHtml(json.pages);
-        let done = false;
-        const location = window.location.hash.substring(1);
-        // activate the page from the address line
-        for (let page of pages) {
-            if (page.id === location) {
-                page.initialActivate(pages);
-                done = true;
-                break;
-            }
-        }
-
-        // activate the page from the config file
-        if (!done) {
-            for (let page of pages) {
-                if (page.id === config.initialPage) {
-                    page.initialActivate(pages);
-                    done = true;
-                    break;
-                }
-            }
-        }
-        // page [0] as fallback
-        if (!done) {
-            pages[0].initialActivate(pages);
-        }
+        // let config = SchulTourConfigFile.fromJSON(json);
+        const schulTour = new SchulTour(SchulTourConfigFile.fromJSON(json));
+        schulTour.init(window.location.hash.substring(1));
+        // createHtml(json.pages);
+        // let done = false;
+        // const location = window.location.hash.substring(1);
+        // // activate the page from the address line
+        // for (let page of Tour.pages) {
+        //     if (page.id === location) {
+        //         page.initialActivate(Tour.pages);
+        //         done = true;
+        //         break;
+        //     }
+        // }
+        //
+        // // activate the page from the config file
+        // if (!done) {
+        //     for (let page of Tour.pages) {
+        //         if (page.id === config.initialPage) {
+        //             page.initialActivate(Tour.pages);
+        //             done = true;
+        //             break;
+        //         }
+        //     }
+        // }
+        // // page [0] as fallback
+        // if (!done) {
+        //     Tour.pages[0].initialActivate(Tour.pages);
+        // }
     };
     if (typeof pagesJsonPath === "string") {
         $.getJSON(pagesJsonPath, callback);
@@ -1289,7 +1210,20 @@ function init(pagesJsonPath: string | JsonSchulTourConfigFile) {
 }
 
 const Tour = {
-    init: init,
+    init,
+    Page,
+    ImageMedia,
+    VideoMedia,
+    IframeMedia,
+    TextField,
+    Clickable,
+    CustomObject,
+
+    pages: [] as Page[],
+
+    // variables to be set from out
+    // whether this is used by the dev tool (if true e.g. clickables are draggable, etc.)
+    devTool: true,
 };
 
 Object.defineProperty(window, "Tour", {
@@ -1299,6 +1233,6 @@ Object.defineProperty(window, "Tour", {
 });
 
 export default Tour;
-export {init};
+export {init, Page, ImageMedia, VideoMedia, IframeMedia, TextField, Clickable, CustomObject};
 
 // init("pages.json");

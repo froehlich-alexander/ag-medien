@@ -1,336 +1,416 @@
-a {
-    background-color: black;
-}
+@use "sass:math" as math;
 
 body {
     margin: 0;
-    background-color: rgb(50, 50, 50);
-    display: flex;
-    justify-content: center;
-    align-items: center;
     overflow: hidden;
-    font-family: sans-serif;
+    //background-color: rgb(50, 50, 50);
+    //display: flex;
+    //justify-content: center;
+    //align-items: center;
+    //font-family: sans-serif;
 }
 
 * {
     box-sizing: border-box;
 }
 
-.page {
-    height: 100vh;
-    position: relative;
+.schul-tour {
+    $page-animation-duration: 500ms;
+
+    font-family: sans-serif;
     overflow: hidden;
-    display: none;
-    user-select: none;
-    touch-action: none;
+    position: relative;
 
-    /*.page:not(.show) {*/
-    /*    left: 1000000px;*/
-    /*    top: 1000000px;*/
-    /*    display: none;*/
-    /*}*/
+    width: 100%;
+    height: 100%;
 
-    &.show {
-        display: flex;
+    &[data-color-theme=dark] {
+        background-color: rgb(50, 50, 50);
     }
 
-    .pg_wrapper {
-        margin: auto;
-        width: max-content;
-        position: relative;
-        white-space: nowrap;
-        // scrolling does not apply if the inlineObjects are placed directly inside .pg_wrapper
-        & > .inlineObject {
-            position: fixed;
-        }
-    }
+    &[data-tour-mode=inline] {
+        $page-border-radius: 1rem;
+        $img-border-radius: 0.5rem;
 
-    &.pg_panorama .pg_wrapper {
-        height: 100%;
-    }
+        border-radius: $page-border-radius;
+        transition: border-radius $page-animation-duration;
 
-    // every clickable, text field, etc. also gets this class
-    .inlineObject {
-        position: absolute;
-        transform: translate(-50%);
-
-        &.show {
-            opacity: 1;
+        &:has(.page.show.pg_panorama), &:has(.page.show.deg360) {
+            border-bottom-left-radius: 0;
+            border-bottom-right-radius: 0;
         }
 
-        &:not(.show) {
-            display: none !important;
-            opacity: 0;
-        }
+        .page {
+            border-radius: $page-border-radius;
+            transition: border-radius $page-animation-duration;
 
-        &[data-animation="fade"] {
-            $duration: 500;
-            animation-duration: $duration+ms;
-            animation-name: none;
-
-            &.show {
-                animation-name: fade-in-animation;
-
-                &.beforeHide {
-                    animation-name: fade-out-animation;
-                }
+            .pg_wrapper .bg_container .bg {
+                border-radius: $img-border-radius;
+                transition: border-radius $page-animation-duration;
             }
 
-            @keyframes fade-in-animation {
-                0% {
-                    opacity: 0;
-                }
-                100% {
-                    opacity: 1;
-                }
-            }
-            @keyframes fade-out-animation {
-                0% {
-                    opacity: 1;
-                }
-                100% {
-                    opacity: 0;
+            &.pg_panorama, &.deg360 {
+                border-bottom-left-radius: 0;
+                border-bottom-right-radius: 0;
+
+                .pg_wrapper .bg_container .bg {
+                    border-bottom-left-radius: 0;
+                    border-bottom-right-radius: 0;
+
                 }
             }
         }
     }
 
-    .clickable {
-        background-color: rgba(0, 0, 0, 0.5);
-        color: white;
-        border-radius: 3rem 0.5rem 0.5rem 3rem;
-        display: flex;
-        align-items: center;
-        flex-flow: row-reverse;
-        // only move 50% of button width
-        transform: translateX(-1.5rem);
-
-        .title {
-            padding: 0.5rem 1rem;
-            font-weight: bold;
-        }
-
-        .icon {
-            border: none;
-            outline: none;
-            border-radius: 100%;
-            width: 3rem;
-            height: 3rem;
-            background-color: rgba(0, 0, 0, 0.5);
-            position: relative;
-            cursor: pointer;
-            flex-shrink: 0;
-        }
-
-        &.right {
-            flex-flow: row;
-            transform: translateX(calc((100% - 1.5rem) * -1));
-            border-radius: 0.5rem 3rem 3rem 0.5rem;
-        }
-
-        .icon::after {
-            content: '';
-            position: absolute;
-            top: 0.5rem;
-            left: 0.5rem;
-            width: 2rem;
-            height: 2rem;
-            background-image: url('/tour/svg/arrow_left.svg');
-            background-size: contain;
-            background-repeat: no-repeat;
-            background-position: center;
-            display: inline-block;
-        }
-
-        .icon.arrow_r::after {
-            background-image: url('/tour/svg/arrow_right.svg');
-        }
-
-        .icon.arrow_u::after {
-            background-image: url('/tour/svg/arrow_up.svg');
-        }
-
-        .icon.arrow_d::after {
-            background-image: url('/tour/svg/arrow_down.svg');
-        }
-
-        // Clickable which goes to the place where we came from
-        &.clickable.lastest-clickable {
-
-        }
-    }
-
-    .text-field {
-        background-color: rgba(black, 0.7);
-        color: white;
-        border-radius: 1rem;
-        padding: 1rem;
-        $normal_width: 20rem;
-        max-width: $normal_width;
-
-        .text-field-title {
-            text-align: center;
-            font-weight: bold;
-            margin-bottom: 1rem;
-        }
-
-        .text-field-content {
-            display: inline-block;
-            white-space: normal;
-        }
-
-        &.normal {
-            max-width: $normal_width;
-        }
-
-        &.small {
-            max-width: $normal_width / 2;
-        }
-
-        &.large {
-            max-width: $normal_width*2;
-        }
-
-        &.x-large {
-            max-width: $normal_width*4;
-        }
-
-        &.xx-large {
-            max-width: $normal_width*8;
-        }
-    }
-
-    .bg {
-        &.fill-width {
-            width: 100vw;
-        }
-
-        &.fill-height {
-            height: 100vh;
-        }
-    }
-
-    iframe.bg {
+    &.fullscreen {
         width: 100vw;
         height: 100vh;
     }
 
-    &.pg_panorama .pg_wrapper, &.deg360 .pg_wrapper {
-        overflow-x: auto;
-    }
-
-    &.pg_panorama .bg, &.deg360 .bg {
+    .page {
         height: 100%;
-        width: inherit;
-    }
-
-    /*.page .deg360 {*/
-    /*    white-space: nowrap;*/
-    /*    overflow-x: scroll;*/
-    /*}*/
-
-    &.deg360 .pg_wrapper {
-        /*Hide scrollbar because of infinite scrolling*/
-        scrollbar-width: auto;
-    }
-
-    &.deg360 .bg_container, &.pg_panorama .bg_container {
+        width: 100%;
         position: relative;
-        display: inline-block;
-        height: 100%;
-        width: max-content;
-    }
+        overflow: hidden;
+        display: none;
+        user-select: none;
+        touch-action: none;
 
-    &.pg_panorama .bg_container {
-        height: calc(100% - 10px);
-    }
+        /*.page:not(.show) {*/
+        /*    left: 1000000px;*/
+        /*    top: 1000000px;*/
+        /*    display: none;*/
+        /*}*/
 
-    $page-animation-duration: 500ms;
-    &.activate-forward {
-        animation: activate-forward ease $page-animation-duration forwards;
-        z-index: 1;
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        display: flex;
-    }
-
-    &.deactivate-forward {
-        animation: deactivate-forward ease $page-animation-duration forwards;
-        z-index: 1;
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        display: flex;
-    }
-
-    &.activate-backward {
-        animation: activate-backward ease $page-animation-duration forwards;
-        z-index: 1;
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        display: flex;
-    }
-
-    &.deactivate-backward {
-        animation: deactivate-backward ease $page-animation-duration forwards;
-        z-index: 1;
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        display: flex;
-    }
-
-    @keyframes activate-forward {
-        from {
-            transform: scale(0.75);
-            opacity: 0;
+        &.show {
+            display: flex;
         }
-        to {
-            transform: scale(1);
-            opacity: 1;
-        }
-    }
 
-    @keyframes deactivate-forward {
-        from {
-            transform: scale(1);
-            opacity: 1;
-        }
-        to {
-            transform: scale(1.25);
-            opacity: 0;
-        }
-    }
+        .pg_wrapper {
+            display: flex;
+            //align-items: center;
+            //justify-content: center;
+            width: 100%;
+            height: 100%;
+            position: relative;
+            flex-wrap: nowrap;
+            //white-space: nowrap;
 
-    @keyframes activate-backward {
-        from {
-            transform: scale(1.25);
-            opacity: 0;
-        }
-        to {
-            transform: scale(1);
-            opacity: 1;
-        }
-    }
+            .bg_container {
+                //object-fit: contain;
+                position: relative;
 
-    @keyframes deactivate-backward {
-        from {
-            transform: scale(1);
-            opacity: 1;
+                .bg {
+                    display: block;
+                    //object-fit: contain;
+                    user-select: none;
+                }
+
+                &.fill-width {
+                    width: 100%;
+                    height: auto;
+                    margin: {
+                        top: auto;
+                        bottom: auto;
+                    }
+
+                    & > .bg {
+                        width: 100%;
+                        height: auto;
+                    }
+                }
+
+                &.fill-height {
+                    height: 100%;
+                    width: auto;
+                    margin: {
+                        left: auto;
+                        right: auto;
+                    }
+
+                    & > .bg {
+                        height: 100%;
+                        width: auto;
+                    }
+                }
+            }
+
+            // scrolling does not apply if the inlineObjects are placed directly inside .pg_wrapper
+            & > .inlineObject {
+                position: fixed;
+            }
         }
-        to {
-            transform: scale(0.75);
-            opacity: 0;
+
+        // every clickable, text field, etc. also gets this class
+        .inlineObject {
+            position: absolute;
+            transform: translate(-50%);
+
+            .dev-tool-edit-icon {
+                margin: 0.2rem;
+                align-self: start;
+            }
+
+            &.show {
+                opacity: 1;
+            }
+
+            &:not(.show) {
+                display: none !important;
+                opacity: 0;
+            }
+
+            &[data-animation=fade] {
+                $duration: 500;
+                animation-duration: $duration+ms;
+                animation-name: none;
+
+                &.show {
+                    animation-name: fade-in-animation;
+
+                    &.beforeHide {
+                        animation-name: fade-out-animation;
+                    }
+                }
+
+                @keyframes fade-in-animation {
+                    0% {
+                        opacity: 0;
+                    }
+                    100% {
+                        opacity: 1;
+                    }
+                }
+                @keyframes fade-out-animation {
+                    0% {
+                        opacity: 1;
+                    }
+                    100% {
+                        opacity: 0;
+                    }
+                }
+            }
+
+            &.clickable {
+                background-color: rgba(0, 0, 0, 0.5);
+                color: white;
+                border-radius: 3rem 0.5rem 0.5rem 3rem;
+                display: flex;
+                align-items: center;
+                flex-flow: row-reverse;
+                // only move 50% of button width
+                $btn-durchmesser: 3rem;
+                transform: translate(- math.div($btn-durchmesser, 2), - math.div($btn-durchmesser, 2));
+
+                .title {
+                    padding: 0.5rem 1rem;
+                    font-weight: bold;
+                }
+
+                .icon {
+                    border: none;
+                    outline: none;
+                    border-radius: 100%;
+                    width: $btn-durchmesser;
+                    height: $btn-durchmesser;
+                    background-color: rgba(0, 0, 0, 0.5);
+                    position: relative;
+                    cursor: pointer;
+                    flex-shrink: 0;
+                }
+
+                // button right
+                &.right {
+                    flex-flow: row;
+                    transform: translateX(calc((100% - 1.5rem) * -1));
+                    border-radius: 0.5rem 3rem 3rem 0.5rem;
+                }
+
+                .icon::after {
+                    content: '';
+                    position: absolute;
+                    top: 0.5rem;
+                    left: 0.5rem;
+                    width: 2rem;
+                    height: 2rem;
+                    background-image: url('/tour/svg/arrow_left.svg');
+                    background-size: contain;
+                    background-repeat: no-repeat;
+                    background-position: center;
+                    display: inline-block;
+                }
+
+                .icon.arrow_r::after {
+                    background-image: url('/tour/svg/arrow_right.svg');
+                }
+
+                .icon.arrow_u::after {
+                    background-image: url('/tour/svg/arrow_up.svg');
+                }
+
+                .icon.arrow_d::after {
+                    background-image: url('/tour/svg/arrow_down.svg');
+                }
+
+                // Clickable which goes to the place where we came from
+                &.clickable.lastest-clickable {
+
+                }
+            }
+
+            &.text-field {
+                background-color: rgba(black, 0.7);
+                color: white;
+                border-radius: 1rem;
+                padding: 1rem;
+                $normal_width: 20rem;
+                max-width: $normal_width;
+
+                .text-field-title {
+                    text-align: center;
+                    font-weight: bold;
+                    margin-bottom: 1rem;
+                }
+
+                .text-field-content {
+                    display: inline-block;
+                    white-space: normal;
+                }
+
+                &.normal {
+                    max-width: $normal_width;
+                }
+
+                &.small {
+                    max-width: math.div($normal_width, 2);
+                }
+
+                &.large {
+                    max-width: $normal_width*2;
+                }
+
+                &.x-large {
+                    max-width: $normal_width*4;
+                }
+
+                &.xx-large {
+                    max-width: $normal_width*8;
+                }
+            }
+        }
+
+        iframe.bg {
+            width: 100%;
+            height: 100%;
+        }
+
+        &.pg_panorama, &.deg360 {
+            .pg_wrapper {
+                overflow-x: auto;
+
+                .bg_container {
+                    height: 100%;
+                    width: auto;
+
+                    & > .bg {
+                        height: 100%;
+                        width: inherit;
+                    }
+                }
+            }
+        }
+
+        &.deg360 .pg_wrapper {
+            /*Hide scrollbar because of infinite scrolling*/
+            //scrollbar-width: auto;
+        }
+
+        &.activate-forward {
+            animation: activate-forward ease $page-animation-duration forwards;
+            z-index: 1;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+        }
+
+        &.deactivate-forward {
+            animation: deactivate-forward ease $page-animation-duration forwards;
+            z-index: 1;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+        }
+
+        &.activate-backward {
+            animation: activate-backward ease $page-animation-duration forwards;
+            z-index: 1;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+        }
+
+        &.deactivate-backward {
+            animation: deactivate-backward ease $page-animation-duration forwards;
+            z-index: 1;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+        }
+
+        @keyframes activate-forward {
+            from {
+                transform: scale(0.75);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        @keyframes deactivate-forward {
+            from {
+                transform: scale(1);
+                opacity: 1;
+            }
+            to {
+                transform: scale(1.25);
+                opacity: 0;
+            }
+        }
+
+        @keyframes activate-backward {
+            from {
+                transform: scale(1.25);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        @keyframes deactivate-backward {
+            from {
+                transform: scale(1);
+                opacity: 1;
+            }
+            to {
+                transform: scale(0.75);
+                opacity: 0;
+            }
         }
     }
 }

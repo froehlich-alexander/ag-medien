@@ -27,6 +27,8 @@ import type {
     VideoPreloadType,
 } from "./types";
 
+export const mediaFolder = "media";
+
 
 type DataType<T extends Data<any>> = Omit<{ [k in keyof T as T[k] extends Function ? never : k]: T[k] }, "excludeFromDataType" | T["excludeFromDataType"]>;
 
@@ -57,8 +59,31 @@ function arrayEquals(array1: Array<any> | undefined, array2: Array<any> | undefi
     return true;
 }
 
+const uniqueId = (() => {
+    let currentId = 0;
+    const map = new WeakMap<object, number>();
+
+    return (object: object): number => {
+        if (!map.has(object)) {
+            map.set(object, ++currentId);
+        }
+
+        return map.get(object)!;
+    };
+})();
+
 abstract class Data<T extends Data<T>> {
     declare abstract excludeFromDataType: keyof T;
+
+    protected onConstructionFinished(prototype: Function) {
+        if (prototype === Object.getPrototypeOf(this)) {
+            Object.freeze(this);
+        }
+    }
+
+    protected constructor() {
+        this.onConstructionFinished(Data);
+    }
 
     public abstract equals(other: any | null | undefined): boolean;
 
@@ -75,17 +100,27 @@ class SchulTourConfigFile extends Data<SchulTourConfigFile> {
 
     public readonly pages: PageData[];
     public readonly initialPage: string | undefined;
+    public readonly fullscreen: boolean;
+    public readonly colorTheme: "dark" | "light";
+    public readonly mode: "inline" | "normal";
 
     constructor(other: DataType<SchulTourConfigFile>) {
         super();
         this.pages = other.pages;
         this.initialPage = other.initialPage;
+        this.fullscreen = other.fullscreen;
+        this.colorTheme = other.colorTheme;
+        this.mode = other.mode;
+        this.onConstructionFinished(SchulTourConfigFile);
     }
 
     public static default(): SchulTourConfigFile {
         return new SchulTourConfigFile({
             pages: [],
             initialPage: undefined,
+            fullscreen: true,
+            colorTheme: "dark",
+            mode: "normal",
         });
     }
 
@@ -94,6 +129,9 @@ class SchulTourConfigFile extends Data<SchulTourConfigFile> {
         return new SchulTourConfigFile({
             pages: pages,
             initialPage: json.initialPage,
+            fullscreen: json.fullscreen ?? true,
+            colorTheme: json.colorTheme ?? "dark",
+            mode: json.mode ?? "normal",
         });
     }
 
@@ -101,6 +139,9 @@ class SchulTourConfigFile extends Data<SchulTourConfigFile> {
         return other != null && (this === other || (
             arrayEquals(this.pages, other.pages)
             && this.initialPage === other.initialPage
+            && this.fullscreen === other.fullscreen
+            && this.mode === other.mode
+            && this.colorTheme === other.colorTheme
         ));
     }
 
@@ -108,7 +149,17 @@ class SchulTourConfigFile extends Data<SchulTourConfigFile> {
         return {
             pages: this.pages.map(page => page.toJSON()),
             initialPage: this.initialPage,
+            colorTheme: this.colorTheme,
+            mode: this.mode,
+            fullscreen: this.fullscreen,
         };
+    }
+
+    public withInitialPage(initialPage: string): SchulTourConfigFile {
+        if (this.initialPage === initialPage) {
+            return this;
+        }
+        return new SchulTourConfigFile({...this, initialPage: initialPage});
     }
 }
 
@@ -130,6 +181,7 @@ class PageData extends Data<PageData> {
         this.isPanorama = isPanorama;
         this.initialDirection = initialDirection;
         this.inlineObjects = inlineObjects;
+        this.onConstructionFinished(PageData);
     }
 
     static fromJSON(page: JsonPage): PageData {
@@ -166,7 +218,7 @@ class PageData extends Data<PageData> {
         ));
     }
 
-    public withUpdate(other: Partial<PageData>): PageData {
+    public withUpdate(other: Partial<DataType<PageData>>): PageData {
         return new PageData({...this, ...other});
     }
 
@@ -273,13 +325,14 @@ class MediaData extends Data<MediaData> {
         this.preload = other.preload;
 
         this.fileDoesNotExist = (this.src?.fileDoesNotExist || this.srcMin?.fileDoesNotExist || this.srcMax?.fileDoesNotExist) ?? true;
+        this.onConstructionFinished(MediaData);
     }
 
     public async complete(mediaContext: MediaContextType): Promise<MediaData> {
         const src = await this.src?.complete(mediaContext);
         const srcMin = await this.srcMin?.complete(mediaContext);
         const srcMax = await this.srcMax?.complete(mediaContext);
-        if (src !== this.src && srcMin !== this.srcMin && srcMax !== this.srcMax) {
+        if (src !== this.src || srcMin !== this.srcMin || srcMax !== this.srcMax) {
             return this.withUpdate({
                 src: src,
                 srcMin: srcMin,
@@ -419,16 +472,7 @@ class AbstractInlineObjectData<T extends AbstractInlineObjectData<T, Json>, Json
         this.position = position;
         this.animationType = animationType;
         this.hidden = hidden;
-        // // clickable
-        // this.title = title;
-        // this.icon = icon;
-        // //text
-        // // this.title = title;
-        // this.content = content;
-        // this.footer = footer;
-        // this.cssClasses = cssClasses;
-        // // custom
-        // this.htmlId = htmlId;
+        this.onConstructionFinished(AbstractInlineObjectData);
     }
 
     // let position = json.position;
@@ -550,6 +594,7 @@ class AbstractAddressableInlineObjectData<T extends AbstractAddressableInlineObj
     protected constructor({id, ...base}: DataType<AbstractAddressableInlineObjectData<T, Json>>) {
         super(base);
         this.id = id;
+        this.onConstructionFinished(AbstractAddressableInlineObjectData);
     }
 
     public equals(other: DataType<AbstractAddressableInlineObjectData<T, Json>> | undefined | null): other is DataType<AbstractAddressableInlineObjectData<T, Json>> {
@@ -582,6 +627,7 @@ class AbstractActivatingInlineObjectData<T extends AbstractActivatingInlineObjec
         this.goto = goto;
         this.targetType = targetType;
         this.action = action;
+        this.onConstructionFinished(AbstractActivatingInlineObjectData);
     }
 
     public toJSON(): { [k in keyof Pick<Json, keyof (AbstractJsonInlineObject & JsonActivating)>]: Json[k] } {
@@ -669,6 +715,7 @@ class ClickableData extends AbstractActivatingInlineObjectData<ClickableData, Js
         super({...r, type: "clickable"});
         this.title = title;
         this.icon = icon;
+        this.onConstructionFinished(ClickableData);
     }
 
     public static default: Complete<JsonClickable> = {
@@ -746,7 +793,7 @@ class TextFieldData extends AbstractAddressableInlineObjectData<TextFieldData, J
         this.content = content;
         this.cssClasses = cssClasses;
         this.size = size;
-        // this.id = id;
+        this.onConstructionFinished(TextFieldData);
     }
 
     public static default: Complete<JsonTextField> = {
@@ -823,11 +870,10 @@ class CustomObjectData extends AbstractInlineObjectData<CustomObjectData, JsonCu
     declare public readonly type: "custom";
     declare public readonly animationType: CustomAnimations;
 
-    constructor(
-        {htmlId, ...base}: DataType<CustomObjectData>,
-    ) {
+    constructor({htmlId, ...base}: DataType<CustomObjectData>) {
         super({...base, type: "custom"});
         this.htmlId = htmlId;
+        this.onConstructionFinished(CustomObjectData);
     }
 
     public static default: Complete<JsonCustomObject> = {
@@ -891,14 +937,7 @@ class SourceData extends Data<SourceData> {
         this.width = width;
         this.height = height;
         this.type = type;
-        // if (!width || !height) {
-        //     this.file?.computeWidthHeight()
-        //         .then(([w, h]) => {
-        //             console.log("w, h", w, h);
-        //             this.width = w;
-        //             this.height = h;
-        //         });
-        // }
+        this.onConstructionFinished(SourceData);
     }
 
     public static fromJSON(other: JsonSource) {
@@ -913,6 +952,20 @@ class SourceData extends Data<SourceData> {
             // @ts-ignore
             type: MediaData.determineType(other?.type ?? "auto", name),
         });
+    }
+
+    public static formatSrc(src: string): string {
+        let regex = new RegExp("^(?:[a-z]+:)?//", "i");
+        //if src is absolute (e.g. http://abc.xyz)
+        //or src relative to document root (starts with '/') (the browser interprets that correctly)
+        if (regex.test(src) || src.startsWith("/")) {
+            if (src.startsWith("http://")) {
+                console.warn("Security waring: Using unsecure url in iframe:", src);
+            }
+            return src;
+        }
+        //add prefix
+        return mediaFolder + "/" + src;
     }
 
     public static async fromFile(file: File): Promise<SourceData> {
@@ -972,6 +1025,16 @@ class SourceData extends Data<SourceData> {
         };
     }
 
+    /**
+     * Return a string which is a (valid) url to the source
+     */
+    public url(): string {
+        if (this.isComplete()) {
+            return this.file.url;
+        }
+        return SourceData.formatSrc(this.name);
+    }
+
     public withType(type: MediaType): SourceData {
         if (this.type === type) {
             return this;
@@ -1028,6 +1091,7 @@ class FileData extends Data<FileData> {
         this.intrinsicWidth = intrinsicWidth;
         this.intrinsicHeight = intrinsicHeight;
         this.url = url;
+        this.onConstructionFinished(FileData);
         // this.hash = hashString(name+base64);
         // this.base64 = base64;
         // document.body.append(this.img, this.video);
@@ -1203,4 +1267,5 @@ export {
     SourceData,
     FileData,
     hashString,
+    uniqueId,
 };

@@ -1,27 +1,32 @@
 import classNames from "classnames";
 import * as React from "react";
-import {ChangeEvent, useCallback, useContext, useMemo} from "react";
+import {ChangeEvent, useCallback, useMemo} from "react";
 import {CloseButton, Col, Container, FormSelect, Nav, Navbar} from "react-bootstrap";
 import {useTranslation} from "react-i18next";
-import {DialogContext} from "./TourContexts";
+import {showDialog} from "./store/dialog";
+import {useAppDispatch, useAppSelector} from "./store/hooks";
 import {DefaultProps} from "./utils";
 
 interface Props extends DefaultProps {
 }
 
 export function MyNavBar({className}: Props) {
-    const dialogContext = useContext(DialogContext);
-    const {t, i18n} = useTranslation("mainPage", {keyPrefix: 'navBar'});
+    const {t, i18n} = useTranslation("mainPage", {keyPrefix: "navBar"});
+    const dispatch = useAppDispatch();
+    const dialog = useAppSelector(state => state.dialog);
 
     const showImportDialog = useCallback(() => {
-            dialogContext.setImportDialogVisibility(true);
-        },
-        [dialogContext.setImportDialogVisibility]);
+        // dialogContext.setImportDialogVisibility(true);
+        dispatch(showDialog("import"));
+    }, []);
 
     const showMediaDialog = useCallback(() => {
-            dialogContext.setMediaDialogVisibility(true);
-        },
-        [dialogContext.setMediaDialogVisibility]);
+        dispatch(showDialog("media"));
+    }, []);
+
+    const showTourPreviewDialog = useCallback(() => {
+        dispatch(showDialog("tourPreview"));
+    }, []);
 
     const handleLanguageChange = useCallback((event: ChangeEvent<HTMLSelectElement>) => {
         const lang = event.target.value;
@@ -30,11 +35,11 @@ export function MyNavBar({className}: Props) {
 
     const langs = useMemo(() => ({
         en: "English",
-        de: 'Deutsch',
+        de: "Deutsch",
     }), []);
 
     return (
-        <Navbar variant="light" bg="light" expand="lg" className={classNames(className, 'rounded-2')}>
+        <Navbar variant="light" bg="light" expand="lg" className={classNames(className, "rounded-2")}>
             <Container fluid>
                 <Navbar.Brand>
                     Schultour Developer Tool
@@ -42,11 +47,14 @@ export function MyNavBar({className}: Props) {
                 <Navbar.Toggle aria-controls="navbar-collapse"/>
                 <Navbar.Collapse id="navbar-collapse" className="me-auto">
                     <Nav>
-                        <Nav.Link key="load" active={dialogContext.importDialogVisibility} onClick={showImportDialog}>
-                            {t('importPages')}
+                        <Nav.Link key="load" active={dialog.import} onClick={showImportDialog}>
+                            {t("importPages")}
                         </Nav.Link>
-                        <Nav.Link key="media" active={dialogContext.mediaDialogVisibility} onClick={showMediaDialog}>
-                            {t('media')}
+                        <Nav.Link key="media" active={dialog.media} onClick={showMediaDialog}>
+                            {t("media")}
+                        </Nav.Link>
+                        <Nav.Link key="tourPreview" active={dialog.tourPreview} onClick={showTourPreviewDialog}>
+                            {t('tourPreview')}
                         </Nav.Link>
                     </Nav>
                 </Navbar.Collapse>
@@ -58,7 +66,7 @@ export function MyNavBar({className}: Props) {
                                 {langs[value as keyof typeof langs] ?? value}
                             </option>)}
                     </FormSelect>
-                    <label htmlFor="language-select" className="visually-hidden">{t('language.label')}</label>
+                    <label htmlFor="language-select" className="visually-hidden">{t("language.label")}</label>
                 </Col>
                 <CloseButton/>
             </Container>

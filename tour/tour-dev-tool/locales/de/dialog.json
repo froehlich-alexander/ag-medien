@@ -15,14 +15,14 @@
     "media": {
       "spinner": "Vorbereiten der media dateien...",
       "reset": {
-        "spinner": "Setze Media Dateien zurück...",
+        "spinner": "Setze Medien Dateien zurück...",
         "label": "Zurücksetzen"
       },
-      "formText": "Die Bilder, Videos, etc. für die Tour. Im <1>Media Dialog</1> können die einzelnen Dateien genauer bearbeitet werden."
+      "formText": "Die Bilder, Videos, etc. für die Tour. Im <1>Medien Dialog</1> können die einzelnen Dateien genauer bearbeitet werden."
     },
     "cleanImport": {
       "label": "Lösche Altes",
-      "formText": "Aktiviere, um alle alten Media Dateien und Pages zu löschen"
+      "formText": "Aktiviere, um alle alten Medien Dateien und Pages zu löschen"
     }
   },
 
@@ -48,7 +48,15 @@
     },
     "closeButton": "Schließen"
   },
+
   "unsavedChangesAlert": {
     "text": "Die Seite <1>{{pageName}}</1> wurde verändert. Willst du die Änderungen <3>$t(translation:save)</3> oder <5>$t(translation:discard)</5>"
+  },
+
+  "mediaPreview": {
+    "title": "Medien Vorschau"
+  },
+  "tourPreview": {
+    "title": "Tour Vorschau"
   }
 }

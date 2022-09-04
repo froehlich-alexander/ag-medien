@@ -3,7 +3,9 @@ import {Button, Col, Container, FormControl, FormSelect, InputGroup, Row} from "
 import {Trans, useTranslation} from "react-i18next";
 import {MediaData, SourceData} from "../Data";
 import {MediaType} from "../types";
-import {DialogContext, MediaContext} from "./TourContexts";
+import {showDialog} from "./store/dialog";
+import {useAppDispatch} from "./store/hooks";
+import {MediaContext} from "./TourContexts";
 
 type SourceFormProps = {
     source: SourceData | undefined,
@@ -13,8 +15,8 @@ type SourceFormProps = {
 
 function SourceForm({source, onSourceChange, mediaNotExistent}: SourceFormProps) {
     const mediaContext = useContext(MediaContext);
-    const dialogContext = useContext(DialogContext);
     const {t} = useTranslation("mainPage", {keyPrefix: 'pageForm.mediaForm.sourceForm'});
+    const dispatch = useAppDispatch();
 
     const handleNameChange = useCallback((event: ChangeEvent<HTMLSelectElement>) => {
         const eventValue = event.target.value;
@@ -83,7 +85,7 @@ function SourceForm({source, onSourceChange, mediaNotExistent}: SourceFormProps)
                                 <Trans ns="mainPage" i18nKey={'pageForm.mediaForm.sourceForm.name.notFound'}>
                                     Could not find this media file: <code>{{file: source?.name}}</code>.
                                     Please add it in the &ensp;
-                                    <a className="link-primary" onClick={dialogContext.showMediaDialog} href="#">Media Dialog</a>
+                                    <a className="link-primary" onClick={()=>dispatch(showDialog('media'))} href="#">Media Dialog</a>
                                 </Trans>
                             </FormControl.Feedback>
                         </InputGroup>

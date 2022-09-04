@@ -1,3 +1,4 @@
+export const mediaFolder = "media";
 /**
  * Checks if the arrays are equal<br>
  * Ignores order of the items and if one item appears more often in one array than in the other
@@ -24,7 +25,25 @@ function arrayEquals(array1, array2) {
     }
     return true;
 }
+const uniqueId = (() => {
+    let currentId = 0;
+    const map = new WeakMap();
+    return (object) => {
+        if (!map.has(object)) {
+            map.set(object, ++currentId);
+        }
+        return map.get(object);
+    };
+})();
 class Data {
+    onConstructionFinished(prototype) {
+        if (prototype === Object.getPrototypeOf(this)) {
+            Object.freeze(this);
+        }
+    }
+    constructor() {
+        this.onConstructionFinished(Data);
+    }
     withUpdate(other) {
         // @ts-ignore
         return new this.constructor({ ...this, ...other });
@@ -35,11 +54,18 @@ class SchulTourConfigFile extends Data {
         super();
         this.pages = other.pages;
         this.initialPage = other.initialPage;
+        this.fullscreen = other.fullscreen;
+        this.colorTheme = other.colorTheme;
+        this.mode = other.mode;
+        this.onConstructionFinished(SchulTourConfigFile);
     }
     static default() {
         return new SchulTourConfigFile({
             pages: [],
             initialPage: undefined,
+            fullscreen: true,
+            colorTheme: "dark",
+            mode: "normal",
         });
     }
     static fromJSON(json) {
@@ -47,17 +73,32 @@ class SchulTourConfigFile extends Data {
         return new SchulTourConfigFile({
             pages: pages,
             initialPage: json.initialPage,
+            fullscreen: json.fullscreen ?? true,
+            colorTheme: json.colorTheme ?? "dark",
+            mode: json.mode ?? "normal",
         });
     }
     equals(other) {
         return other != null && (this === other || (arrayEquals(this.pages, other.pages)
-            && this.initialPage === other.initialPage));
+            && this.initialPage === other.initialPage
+            && this.fullscreen === other.fullscreen
+            && this.mode === other.mode
+            && this.colorTheme === other.colorTheme));
     }
     toJSON() {
         return {
             pages: this.pages.map(page => page.toJSON()),
             initialPage: this.initialPage,
+            colorTheme: this.colorTheme,
+            mode: this.mode,
+            fullscreen: this.fullscreen,
         };
+    }
+    withInitialPage(initialPage) {
+        if (this.initialPage === initialPage) {
+            return this;
+        }
+        return new SchulTourConfigFile({ ...this, initialPage: initialPage });
     }
 }
 class PageData extends Data {
@@ -69,6 +110,7 @@ class PageData extends Data {
         this.isPanorama = isPanorama;
         this.initialDirection = initialDirection;
         this.inlineObjects = inlineObjects;
+        this.onConstructionFinished(PageData);
     }
     static fromJSON(page) {
         const inlineObjects = page.inlineObjects?.map(InlineObjectData.fromJSON) ?? [];
@@ -168,12 +210,13 @@ class MediaData extends Data {
         this.loop = other.loop;
         this.preload = other.preload;
         this.fileDoesNotExist = (this.src?.fileDoesNotExist || this.srcMin?.fileDoesNotExist || this.srcMax?.fileDoesNotExist) ?? true;
+        this.onConstructionFinished(MediaData);
     }
     async complete(mediaContext) {
         const src = await this.src?.complete(mediaContext);
         const srcMin = await this.srcMin?.complete(mediaContext);
         const srcMax = await this.srcMax?.complete(mediaContext);
-        if (src !== this.src && srcMin !== this.srcMin && srcMax !== this.srcMax) {
+        if (src !== this.src || srcMin !== this.srcMin || srcMax !== this.srcMax) {
             return this.withUpdate({
                 src: src,
                 srcMin: srcMin,
@@ -290,16 +333,7 @@ class AbstractInlineObjectData extends Data {
         this.position = position;
         this.animationType = animationType;
         this.hidden = hidden;
-        // // clickable
-        // this.title = title;
-        // this.icon = icon;
-        // //text
-        // // this.title = title;
-        // this.content = content;
-        // this.footer = footer;
-        // this.cssClasses = cssClasses;
-        // // custom
-        // this.htmlId = htmlId;
+        this.onConstructionFinished(AbstractInlineObjectData);
     }
     // let position = json.position;
     // const extras: Mutable<Partial<DataType<InlineObjectData>>> = {};
@@ -400,6 +434,7 @@ class AbstractAddressableInlineObjectData extends AbstractInlineObjectData {
     constructor({ id, ...base }) {
         super(base);
         this.id = id;
+        this.onConstructionFinished(AbstractAddressableInlineObjectData);
     }
     equals(other) {
         return super.equals(other)
@@ -422,6 +457,7 @@ class AbstractActivatingInlineObjectData extends AbstractInlineObjectData {
         this.goto = goto;
         this.targetType = targetType;
         this.action = action;
+        this.onConstructionFinished(AbstractActivatingInlineObjectData);
     }
     toJSON() {
         return {
@@ -485,6 +521,7 @@ class ClickableData extends AbstractActivatingInlineObjectData {
         super({ ...r, type: "clickable" });
         this.title = title;
         this.icon = icon;
+        this.onConstructionFinished(ClickableData);
     }
     static fromJSON(json) {
         return new ClickableData({
@@ -545,7 +582,7 @@ class TextFieldData extends AbstractAddressableInlineObjectData {
         this.content = content;
         this.cssClasses = cssClasses;
         this.size = size;
-        // this.id = id;
+        this.onConstructionFinished(TextFieldData);
     }
     static fromJSON(json) {
         return new TextFieldData({
@@ -609,6 +646,7 @@ class CustomObjectData extends AbstractInlineObjectData {
     constructor({ htmlId, ...base }) {
         super({ ...base, type: "custom" });
         this.htmlId = htmlId;
+        this.onConstructionFinished(CustomObjectData);
     }
     static fromJSON(json) {
         return new CustomObjectData({
@@ -652,14 +690,7 @@ class SourceData extends Data {
         this.width = width;
         this.height = height;
         this.type = type;
-        // if (!width || !height) {
-        //     this.file?.computeWidthHeight()
-        //         .then(([w, h]) => {
-        //             console.log("w, h", w, h);
-        //             this.width = w;
-        //             this.height = h;
-        //         });
-        // }
+        this.onConstructionFinished(SourceData);
     }
     static fromJSON(other) {
         let name = typeof other !== "string" ? other.name : other;
@@ -673,6 +704,19 @@ class SourceData extends Data {
             // @ts-ignore
             type: MediaData.determineType(other?.type ?? "auto", name),
         });
+    }
+    static formatSrc(src) {
+        let regex = new RegExp("^(?:[a-z]+:)?//", "i");
+        //if src is absolute (e.g. http://abc.xyz)
+        //or src relative to document root (starts with '/') (the browser interprets that correctly)
+        if (regex.test(src) || src.startsWith("/")) {
+            if (src.startsWith("http://")) {
+                console.warn("Security waring: Using unsecure url in iframe:", src);
+            }
+            return src;
+        }
+        //add prefix
+        return mediaFolder + "/" + src;
     }
     static async fromFile(file) {
         const fileData = await FileData.fromFile(file);
@@ -722,6 +766,15 @@ class SourceData extends Data {
             width: this.width,
         };
     }
+    /**
+     * Return a string which is a (valid) url to the source
+     */
+    url() {
+        if (this.isComplete()) {
+            return this.file.url;
+        }
+        return SourceData.formatSrc(this.name);
+    }
     withType(type) {
         if (this.type === type) {
             return this;
@@ -761,6 +814,7 @@ class FileData extends Data {
         this.intrinsicWidth = intrinsicWidth;
         this.intrinsicHeight = intrinsicHeight;
         this.url = url;
+        this.onConstructionFinished(FileData);
         // this.hash = hashString(name+base64);
         // this.base64 = base64;
         // document.body.append(this.img, this.video);
@@ -899,5 +953,5 @@ function hashString(str, seed = 0) {
     h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
     return 4294967296 * (2097151 & h2) + (h1 >>> 0);
 }
-export { Data, SchulTourConfigFile, PageData, InlineObjectData, AbstractInlineObjectData, ClickableData, CustomObjectData, TextFieldData, MediaData, SourceData, FileData, hashString, };
+export { Data, SchulTourConfigFile, PageData, InlineObjectData, AbstractInlineObjectData, ClickableData, CustomObjectData, TextFieldData, MediaData, SourceData, FileData, hashString, uniqueId, };
 //# sourceMappingURL=Data.js.map

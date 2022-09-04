@@ -1,8 +1,17 @@
 {
   "save": "Speichern",
+  "exit": "Schließen",
+  "and": "und",
   "activate": "Aktivieren",
   "cancel": "Abbrechen",
   "reset": "Zurücksetzen",
   "discard": "Verwerfen",
-  "notAvailable": "Nicht Verfügbar"
+  "notAvailable": "Nicht Verfügbar",
+  "close": "Schließen",
+  "previous": "Vorherige",
+  "previous_male": "Vorheriger",
+  "previous_div": "Vorheriges",
+  "next": "Nächste",
+  "next_male": "Nächster",
+  "next_div": "Nächste"
 }

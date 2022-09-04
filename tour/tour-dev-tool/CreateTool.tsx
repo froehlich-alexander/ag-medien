@@ -2,8 +2,8 @@ import React, {useCallback, useEffect, useState} from "react";
 import {Button, Col, Container, Spinner} from "react-bootstrap";
 import {Provider as StoreProvider} from "react-redux";
 import {FileData, SchulTourConfigFile} from "../Data";
+import Tour from "../tour";
 import {JsonSchulTourConfigFile} from "../types";
-import useDialog from "./custom-hooks/Dialog";
 import useForms from "./custom-hooks/Forms";
 import useListView from "./custom-hooks/ListView";
 import useMedia from "./custom-hooks/Media";
@@ -12,11 +12,15 @@ import useTemplates from "./custom-hooks/Templates";
 import {ImportDialog} from "./ImportDialog";
 import ListView from "./ListView";
 import MediaDialog from "./MediaDialog";
+import MediaPreview from "./MediaPreview";
 import {MyNavBar} from "./MyNavBar";
 import PageForm from "./PageForm";
 import store from "./store";
-import {DialogContext, FormContext, ListViewContext, MediaContext, PageContext, TemplateContext} from "./TourContexts";
+import {FormContext, ListViewContext, MediaContext, PageContext, TemplateContext} from "./TourContexts";
+import TourPreview from "./TourPreview";
 import UnsavedChangesAlert from "./UnsavedChangesAlert";
+
+Tour.devTool = true;
 
 export default function CreateTool() {
     const [fileSystem, setFileSystem] = useState<FileSystemDirectoryHandle>();
@@ -27,17 +31,17 @@ export default function CreateTool() {
     const [startingAllowed, setStartingAllowed] = useState(false);
     const [loadingFromFS, setLoadingFromFS] = useState(false);
 
-    const {dialogContext, importDialogVisibility, setImportDialogVisibility} = useDialog();
+    // const {dialogContext, importDialogVisibility, setImportDialogVisibility} = useDialog();
     const {mediaFiles, resetMediaFiles, mediaContext} = useMedia(mediaDirectory);
     const {
         pages, resetPages,
         setCurrentPage,
         setInitialPage,
         pageContext,
-    } = usePages(mediaContext, configFile);
+    } = usePages(mediaContext, configFile, store);
     const {templateContext} = useTemplates();
     const {formContext, setPage, setRenamePageIdUsages} = useForms(pageContext);
-    const {listViewContext} = useListView(pageContext, formContext, dialogContext);
+    const {listViewContext} = useListView(pageContext, formContext, store);
 
     useEffect(() => {
         console.log('pages', pages);
@@ -109,12 +113,13 @@ export default function CreateTool() {
             ?<StoreProvider store={store}>
                  <MediaContext.Provider value={mediaContext}>
                     <PageContext.Provider value={pageContext}>
-                        <DialogContext.Provider value={dialogContext}>
                             <TemplateContext.Provider value={templateContext}>
                                 <FormContext.Provider value={formContext}>
                                     <ListViewContext.Provider value={listViewContext}>
                                         <MediaDialog/>
-                                        <ImportDialog show={importDialogVisibility} onVisibilityChange={setImportDialogVisibility}/>
+                                        <ImportDialog/>
+                                        <MediaPreview/>
+                                        <TourPreview/>
                                         <Container fluid className={"p-2 CreateTool"}>
                                             <MyNavBar className="mb-2"/>
                                             <div className="row">
@@ -130,7 +135,6 @@ export default function CreateTool() {
                                     </ListViewContext.Provider>
                                 </FormContext.Provider>
                             </TemplateContext.Provider>
-                        </DialogContext.Provider>
                     </PageContext.Provider>
                 </MediaContext.Provider>
             </StoreProvider>

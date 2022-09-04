@@ -21,9 +21,8 @@ export default function InlineObjectForm({inlineObject, onChange: onChangeWithIn
         [pageContext.pages]);
 
     const onChange = useCallback((inlineObject: InlineObjectData) => {
-            onChangeWithIndex(inlineObject, index);
-        }
-        , [onChangeWithIndex]);
+        onChangeWithIndex(inlineObject, index);
+    }, [onChangeWithIndex]);
 
     // inline object input handlers
     const handleTypeChange = useCallback((event: ChangeEvent<HTMLSelectElement>) => {

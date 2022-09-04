@@ -14,9 +14,9 @@
     "types": [
       "react",
       "bootstrap",
+      "react-bootstrap",
       "jquery",
       "wicg-file-system-access",
-      "store/hooks.d.ts"
     ],
     "strict": true,
     "useDefineForClassFields": false,

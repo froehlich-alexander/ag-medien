@@ -3,23 +3,29 @@ import {Button, ButtonGroup, Col, Container, Form, FormControl, Modal, Row, Spin
 import {useTranslation} from "react-i18next";
 import {FileData} from "../Data";
 import useSet from "./custom-hooks/SetSate";
-import {DialogContext, MediaContext} from "./TourContexts";
+import {hideDialog, showDialog} from "./store/dialog";
+import {useAppDispatch, useAppSelector} from "./store/hooks";
+import {set} from "./store/mediaPreview";
+import {MediaContext} from "./TourContexts";
 import {formatFileSize, MaterialIcon} from "./utils";
 
 interface PropsType {
 }
 
 function MediaDialog({}: PropsType) {
-    const dialogContext = useContext(DialogContext);
     const mediaContext = useContext(MediaContext);
+    const dispatch = useAppDispatch();
+    const visibility = useAppSelector(state => state.dialog.media);
 
     const hide = useCallback(() => {
-        dialogContext.setMediaDialogVisibility(false);
-    }, [dialogContext.setMediaDialogVisibility]);
+        // dialogContext.setMediaDialogVisibility(false);
+        dispatch(hideDialog("media"));
+    }, []);
 
     const show = useCallback(() => {
-        dialogContext.setMediaDialogVisibility(true);
-    }, [dialogContext.setMediaDialogVisibility]);
+        // dialogContext.setMediaDialogVisibility(true);
+        dispatch(showDialog("media"));
+    }, []);
 
     const [selectedMedia, {toggle: toggleSelection, reset: resetSelection}] = useSet<string>();
 
@@ -39,7 +45,7 @@ function MediaDialog({}: PropsType) {
         mediaContext.resetMediaFiles();
     }, [mediaContext.resetMediaFiles]);
 
-    const {t} = useTranslation("dialog", {keyPrefix: 'media'});
+    const {t} = useTranslation("dialog", {keyPrefix: "media"});
 
     const [mediaInputLoading, setMediaInputLoading] = useState(false);
 
@@ -51,7 +57,7 @@ function MediaDialog({}: PropsType) {
     }, [mediaContext.addMediaFiles]);
 
     return (
-        <Modal show={dialogContext.mediaDialogVisibility} className="MediaDialog" onHide={hide} onShow={show} size="lg">
+        <Modal show={visibility} className="MediaDialog" onHide={hide} onShow={show} size="lg">
             <Modal.Header closeButton={true}>
                 <Modal.Title>Media</Modal.Title>
             </Modal.Header>
@@ -75,12 +81,12 @@ function MediaDialog({}: PropsType) {
                                 <ButtonGroup>
                                     <Button onClick={selectAll}>{t("buttons.selectAll")}</Button>
                                     <Button variant="secondary"
-                                            onClick={unselectAll}>{t('buttons.unselectAll')}</Button>
+                                            onClick={unselectAll}>{t("buttons.unselectAll")}</Button>
                                 </ButtonGroup>
 
                                 <ButtonGroup>
                                     <Button variant="danger"
-                                            onClick={deleteSelected}>{t('buttons.deleteSelected')}</Button>
+                                            onClick={deleteSelected}>{t("buttons.deleteSelected")}</Button>
                                 </ButtonGroup>
                             </Row>
                         </Container>
@@ -92,10 +98,10 @@ function MediaDialog({}: PropsType) {
                         <tr>
                             <th className=""><MaterialIcon icon="check_box" className="align-bottom" color="primary"/>
                             </th>
-                            <th>{t('table.name')}</th>
+                            <th>{t("table.name")}</th>
                             <th>{t("table.type")}</th>
-                            <th>{t('table.size')}</th>
-                            <th>{t('table.actions')}</th>
+                            <th>{t("table.size")}</th>
+                            <th>{t("table.actions")}</th>
                         </tr>
                         </thead>
                         <tbody>
@@ -108,7 +114,7 @@ function MediaDialog({}: PropsType) {
                 </Form>
             </Modal.Body>
             <Modal.Footer>
-                <Button variant="secondary" onClick={hide}>{t('closeButton')}</Button>
+                <Button variant="secondary" onClick={hide}>{t("closeButton")}</Button>
             </Modal.Footer>
         </Modal>
     );
@@ -122,16 +128,16 @@ type MediaItemProps = {
 
 function MediaItem({file, selected, onSelected}: MediaItemProps) {
     const mediaContext = useContext(MediaContext);
-    const dialogContext = useContext(DialogContext);
+    const dispatch = useAppDispatch();
 
     const handleDelete = useCallback(() => {
         mediaContext.removeMediaFiles(file.name);
     }, [file.name, mediaContext.removeMediaFiles]);
 
     const handlePreview = useCallback(() => {
-        
-        dialogContext.showMediaPreviewDialog();
-    }, [dialogContext.showMediaPreviewDialog]);
+        dispatch(set([file, mediaContext.mediaFiles]));
+        dispatch(showDialog("mediaPreview"));
+    }, [mediaContext.mediaFiles]);
 
     const handleCheckboxClick = useCallback(() => {
         onSelected(file.name);
@@ -144,7 +150,7 @@ function MediaItem({file, selected, onSelected}: MediaItemProps) {
             <td>{file.type}</td>
             <td>{formatFileSize(file.size, false)}</td>
             <td>
-                <MaterialIcon icon="delete" color="danger" onClick={handleDelete}/>
+                <MaterialIcon className="me-2" icon="delete" color="danger" onClick={handleDelete}/>
                 <MaterialIcon icon="preview" color="primary" onClick={handlePreview}/>
             </td>
         </tr>

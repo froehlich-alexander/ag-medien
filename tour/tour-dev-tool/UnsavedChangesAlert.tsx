@@ -1,14 +1,17 @@
 import React, {useCallback, useContext, useMemo} from "react";
 import {Alert, Button, Col, Row} from "react-bootstrap";
 import {Trans, useTranslation} from "react-i18next";
-import {DialogContext, FormContext, PageContext} from "./TourContexts";
+import {hideDialog} from "./store/dialog";
+import {useAppDispatch, useAppSelector} from "./store/hooks";
+import {FormContext, PageContext} from "./TourContexts";
 
 type UnsavedChangesAlertProps = {}
 
 export default function UnsavedChangesAlert({}: UnsavedChangesAlertProps) {
-    const dialogContext = useContext(DialogContext);
     const pageContext = useContext(PageContext);
     const formContext = useContext(FormContext);
+    const dispatch = useAppDispatch();
+    const visibility = useAppSelector(state=>state.dialog.unsavedChanges);
 
     const {t} = useTranslation("dialog", {keyPrefix: 'unsavedChangesAlert'});
     const {t: tGlob} = useTranslation("translation");
@@ -18,8 +21,8 @@ export default function UnsavedChangesAlert({}: UnsavedChangesAlertProps) {
     }, [pageContext.currentPage?.id, tGlob]);
 
     const handleClose = useCallback(() => {
-        dialogContext.setUnsavedChangesAlertVisibility(false);
-    }, [dialogContext.setUnsavedChangesAlertVisibility]);
+        dispatch(hideDialog("unsavedChanges"));
+    }, []);
 
     const handleDiscard = useCallback(() => {
         formContext.reset();
@@ -32,7 +35,7 @@ export default function UnsavedChangesAlert({}: UnsavedChangesAlertProps) {
     }, [handleClose, formContext.save]);
 
     return (
-        <Alert show={dialogContext.unsavedChangesAlertVisibility} dismissible onClose={handleClose}
+        <Alert show={visibility} dismissible onClose={handleClose}
                className="UnsavedChangesAlert">
             <p>
                 <Trans ns="dialog" i18nKey={'unsavedChangesAlert.text'}>
