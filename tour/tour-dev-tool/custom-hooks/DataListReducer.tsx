@@ -6,29 +6,29 @@ function useDataList<DataItem extends { equals(other: DataItem): boolean }, Data
 // DataItemList extends Readonly<Array<DataItem>> = Array<DataItem>,
 // DataItemKeyList extends Readonly<Array<DataItemKey>> = Array<DataItemKey>>
 (
-    initialValue: Array<DataItem>,
-    getKey: (item: DataItem | DataItemKey) => DataItemKey,
+    initialValue: Readonly<Array<DataItem>>,
+    getKey: (item: Readonly<DataItem | DataItemKey>) => DataItemKey,
     // should return whether the two items have the same key (and one will be replaced by the other) (NOT whether they are equal)
-    compareItems: (item1: DataItem, item2: DataItem) => boolean = (item1, item2) => (getKey(item1) === getKey(item2)),
-    onItemsAdded?: (items: Array<DataItem>) => void,
-    onItemsUpdated?: (items: Array<DataItem>) => void,
-    onItemsRemoved?: (items: Array<DataItem>) => void,
-): [Array<DataItem>, {
-    add: (...items: UnFlatArray<DataItem>) => void,
-    update: (...items: UnFlatArray<DataItem>) => void,
-    remove: (...items: UnFlatArray<DataItem | DataItemKey>) => void,
-    reset: (...items: UnFlatArray<DataItem>) => void,
-    replace: (...items: Array<[DataItemKey, DataItem]>) => void,
+    compareItems: (item1: Readonly<DataItem>, item2: Readonly<DataItem>) => boolean = (item1, item2) => (getKey(item1) === getKey(item2)),
+    onItemsAdded?: (items: Readonly<Array<DataItem>>) => void,
+    onItemsUpdated?: (items: Readonly<Array<DataItem>>) => void,
+    onItemsRemoved?: (items: Readonly<Array<DataItem>>) => void,
+): [readonly DataItem[], {
+    add: (...items: UnFlatArray<DataItem, 2, true, true>) => void,
+    update: (...items: UnFlatArray<DataItem, 2, true, true>) => void,
+    remove: (...items: UnFlatArray<DataItem | DataItemKey, 2, true, true>) => void,
+    reset: (...items: UnFlatArray<DataItem, 2, true, true>) => void,
+    replace: (...items: readonly [DataItemKey, DataItem][]) => void,
 }] {
     type DataItemList = Array<DataItem>;
     type DataItemKeyList = Array<DataItemKey>;
 
-    const reducer = useCallback((state: DataItemList, action:
-        { type: "add" | "update", items: DataItemList }
-        | { type: "remove", items: DataItemList | DataItemKeyList }
-        | { type: "reset", items?: DataItemList }
-        | { type: "replace", items: Array<[DataItemKey, DataItem]> },
-    ): DataItemList => {
+    const reducer = useCallback((state: Readonly<DataItemList>, action:
+        { type: "add" | "update", items: Readonly<DataItemList> }
+        | { type: "remove", items: Readonly<DataItemList | DataItemKeyList> }
+        | { type: "reset", items?: Readonly<DataItemList> }
+        | { type: "replace", items: Readonly<Array<[DataItemKey, DataItem]>> },
+    ): Readonly<DataItemList> => {
         switch (action.type) {
             case "reset":
                 const media = action.items;
@@ -121,23 +121,23 @@ function useDataList<DataItem extends { equals(other: DataItem): boolean }, Data
     const [dataList, dispatch] = useReducer(reducer, initialValue);
 
 
-    const add = useCallback((...items: UnFlatArray<DataItem>) => {
+    const add = useCallback((...items: UnFlatArray<DataItem, 2, true, true>) => {
         dispatch({type: "add", items: items.flat(1) as DataItemList});
     }, []);
 
-    const update = useCallback((...items: UnFlatArray<DataItem>) => {
+    const update = useCallback((...items: UnFlatArray<DataItem, 2, true, true>) => {
         dispatch({type: "update", items: items.flat(1) as DataItemList});
     }, []);
 
-    const remove = useCallback((...items: UnFlatArray<DataItem | DataItemKey>) => {
+    const remove = useCallback((...items: UnFlatArray<DataItem | DataItemKey, 2, true, true>) => {
         dispatch({type: "remove", items: items.flat() as DataItemList | DataItemKeyList});
     }, []);
 
-    const reset = useCallback((...items: UnFlatArray<DataItem>) => {
+    const reset = useCallback((...items: UnFlatArray<DataItem, 2, true, true>) => {
         dispatch({type: "reset", items: items.flat() as DataItemList});
     }, []);
 
-    const replace = useCallback((...items: Array<[DataItemKey, DataItem]>) => {
+    const replace = useCallback((...items: Readonly<Array<[DataItemKey, DataItem]>>) => {
         dispatch({type: "replace", items: items});
     }, []);
 

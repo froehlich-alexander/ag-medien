@@ -13,6 +13,23 @@
         },
         "initialPage": {
           "type": "string"
+        },
+        "fullscreen": {
+          "type": "boolean"
+        },
+        "mode": {
+          "type": "string",
+          "enum": [
+            "normal",
+            "inline"
+          ]
+        },
+        "colorTheme": {
+          "type": "string",
+          "enum": [
+            "dark",
+            "light"
+          ]
         }
       },
       "required": [

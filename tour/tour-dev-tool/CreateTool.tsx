@@ -9,14 +9,23 @@ import useListView from "./custom-hooks/ListView";
 import useMedia from "./custom-hooks/Media";
 import usePages from "./custom-hooks/Pages";
 import useTemplates from "./custom-hooks/Templates";
+import useTourPreview from "./custom-hooks/TourPreviewState";
 import {ImportDialog} from "./ImportDialog";
+import InlineObjectDialog from "./InlineObjectDialog";
 import ListView from "./ListView";
 import MediaDialog from "./MediaDialog";
 import MediaPreview from "./MediaPreview";
 import {MyNavBar} from "./MyNavBar";
 import PageForm from "./PageForm";
 import store from "./store";
-import {FormContext, ListViewContext, MediaContext, PageContext, TemplateContext} from "./TourContexts";
+import {
+    FormContext,
+    ListViewContext,
+    MediaContext,
+    PageContext,
+    TemplateContext,
+    TourPreviewContext,
+} from "./TourContexts";
 import TourPreview from "./TourPreview";
 import UnsavedChangesAlert from "./UnsavedChangesAlert";
 
@@ -36,19 +45,13 @@ export default function CreateTool() {
     const {
         pages, resetPages,
         setCurrentPage,
-        setInitialPage,
+        setTourConfig,
         pageContext,
     } = usePages(mediaContext, configFile, store);
     const {templateContext} = useTemplates();
     const {formContext, setPage, setRenamePageIdUsages} = useForms(pageContext);
     const {listViewContext} = useListView(pageContext, formContext, store);
-
-    useEffect(() => {
-        console.log('pages', pages);
-    }, [pages]);
-    useEffect(() => {
-        console.log('media', mediaFiles);
-    }, [mediaFiles]);
+    const {tourPreviewContext} = useTourPreview(pageContext);
 
     // read fs
     // read localstorage
@@ -77,7 +80,7 @@ export default function CreateTool() {
                 }
                 resetPages(config.pages ?? []);
                 setCurrentPage(config.pages.find(page => page.id === window.localStorage.getItem("current_page")));
-                setInitialPage(config.initialPage);
+                setTourConfig(config);
 
                 setMediaDirectory(mediaDirectory);
                 setConfigFile(configFile);
@@ -116,22 +119,25 @@ export default function CreateTool() {
                             <TemplateContext.Provider value={templateContext}>
                                 <FormContext.Provider value={formContext}>
                                     <ListViewContext.Provider value={listViewContext}>
-                                        <MediaDialog/>
-                                        <ImportDialog/>
-                                        <MediaPreview/>
-                                        <TourPreview/>
-                                        <Container fluid className={"p-2 CreateTool"}>
-                                            <MyNavBar className="mb-2"/>
-                                            <div className="row">
-                                                <Col sm={4}>
-                                                    <UnsavedChangesAlert/>
-                                                    <ListView/>
-                                                </Col>
-                                                <Col>
-                                                    {formContext.page && <PageForm onChange={setPage} onRenamePageIdUsagesChange={setRenamePageIdUsages}/>}
-                                                </Col>
-                                            </div>
-                                        </Container>
+                                        <TourPreviewContext.Provider value={tourPreviewContext}>
+                                            <MediaDialog/>
+                                            <ImportDialog/>
+                                            <MediaPreview/>
+                                            <TourPreview/>
+                                            <InlineObjectDialog/>
+                                            <Container fluid className={"p-2 CreateTool"}>
+                                                <MyNavBar className="mb-2"/>
+                                                <div className="row">
+                                                    <Col sm={4}>
+                                                        <UnsavedChangesAlert/>
+                                                        <ListView/>
+                                                    </Col>
+                                                    <Col>
+                                                        {formContext.page && <PageForm onChange={setPage} onRenamePageIdUsagesChange={setRenamePageIdUsages}/>}
+                                                    </Col>
+                                                </div>
+                                            </Container>
+                                        </TourPreviewContext.Provider>
                                     </ListViewContext.Provider>
                                 </FormContext.Provider>
                             </TemplateContext.Provider>

@@ -1,3 +1,4 @@
+// this is a node.js script and cannot be run in the browser
 const TSJ = require("ts-to-json");
 const fs = require("fs");
 

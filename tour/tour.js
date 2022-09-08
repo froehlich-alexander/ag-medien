@@ -1,5 +1,6 @@
 // import * as $ from "jquery";
-import { InlineObjectData, MediaData, mediaFolder, PageData, SchulTourConfigFile, uniqueId, } from "./Data.js";
+import {InlineObjectData, MediaData, mediaFolder, PageData, SchulTourConfigFile, uniqueId} from "./Data.js";
+
 let finished_last = true;
 const idPrefix = "tour_pg_";
 const baustellenFotoUrl = mediaFolder + "/baustelle.png";
@@ -1001,7 +1002,7 @@ const Tour = {
     pages: [],
     // variables to be set from out
     // whether this is used by the dev tool (if true e.g. clickables are draggable, etc.)
-    devTool: true,
+    devTool: false,
 };
 Object.defineProperty(window, "Tour", {
     writable: false,

@@ -1,5 +1,5 @@
 import type {MediaContextType} from "./tour-dev-tool/TourContexts";
-import type {Complete, UnFlatArray} from "./tour-dev-tool/utils";
+import type {Complete, Mutable, UnFlatArray} from "./tour-dev-tool/utils";
 import type {
     AbstractJsonInlineObject,
     ActionType,
@@ -38,7 +38,7 @@ type DataType<T extends Data<any>> = Omit<{ [k in keyof T as T[k] extends Functi
  * @param array1
  * @param array2
  */
-function arrayEquals(array1: Array<any> | undefined, array2: Array<any> | undefined): array2 is typeof array1 {
+function arrayEquals(array1: readonly any[] | undefined, array2: readonly any[]| undefined): array2 is typeof array1 {
     if (array1 === array2) {
         return true;
     }
@@ -47,12 +47,12 @@ function arrayEquals(array1: Array<any> | undefined, array2: Array<any> | undefi
         return false;
     }
     for (let item of array1) {
-        if (array2.some(value => value !== item && !value.equals?.(item))) {
+        if (!array2.some(value => value === item || value.equals?.(item))) {
             return false;
         }
     }
     for (let item of array2) {
-        if (array1.some(value => value !== item && !value.equals?.(item))) {
+        if (!array1.some(value => value === item || value.equals?.(item))) {
             return false;
         }
     }
@@ -91,14 +91,19 @@ abstract class Data<T extends Data<T>> {
 
     public withUpdate(other: Partial<DataType<T>>): T {
         // @ts-ignore
-        return new (this.constructor as typeof T)({...this, ...other});
+        const updated = new (this.constructor as typeof T)({...this, ...other});
+        if (this.equals(updated)) {
+            return this as unknown as T;
+        } else {
+            return updated;
+        }
     }
 }
 
 class SchulTourConfigFile extends Data<SchulTourConfigFile> {
     public declare excludeFromDataType: "excludeFromDataType";
 
-    public readonly pages: PageData[];
+    public readonly pages: readonly PageData[];
     public readonly initialPage: string | undefined;
     public readonly fullscreen: boolean;
     public readonly colorTheme: "dark" | "light";
@@ -161,6 +166,13 @@ class SchulTourConfigFile extends Data<SchulTourConfigFile> {
         }
         return new SchulTourConfigFile({...this, initialPage: initialPage});
     }
+
+    public withPages(pages: readonly PageData[]): SchulTourConfigFile {
+        if (this.pages === pages) {
+            return this;
+        }
+        return new SchulTourConfigFile({...this, pages: pages});
+    }
 }
 
 class PageData extends Data<PageData> {
@@ -171,7 +183,7 @@ class PageData extends Data<PageData> {
     public readonly is360: boolean;
     public readonly isPanorama: boolean;
     public readonly initialDirection: number;
-    public readonly inlineObjects: InlineObjectData[];
+    public readonly inlineObjects: readonly InlineObjectData[];
 
     constructor({media, id, is360, isPanorama, initialDirection, inlineObjects}: DataType<PageData>) {
         super();
@@ -840,7 +852,7 @@ class TextFieldData extends AbstractAddressableInlineObjectData<TextFieldData, J
             ...super.toJSON(),
             title: this.title,
             content: this.content,
-            cssClasses: this.cssClasses,
+            cssClasses: this.cssClasses as Mutable<TextFieldData["cssClasses"]>,
             size: this.size,
         };
     }
@@ -1080,9 +1092,7 @@ class FileData extends Data<FileData> {
     // public readonly base64: string;
     private _outdated = false;
 
-    protected constructor({
-                              name, file, size, type, intrinsicWidth, intrinsicHeight, url,
-                          }: DataType<FileData>) {
+    protected constructor({name, file, size, type, intrinsicWidth, intrinsicHeight, url,}: DataType<FileData>) {
         super();
         this.name = name;
         this.size = size;
@@ -1268,4 +1278,5 @@ export {
     FileData,
     hashString,
     uniqueId,
+    arrayEquals,
 };

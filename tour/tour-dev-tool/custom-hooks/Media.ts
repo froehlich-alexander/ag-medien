@@ -5,7 +5,7 @@ import useDataList from "./DataListReducer";
 
 export default function useMedia(mediaDirectory: FileSystemDirectoryHandle | undefined) {
 
-    const writeMediaFiles = useCallback((files: FileData[]) => {
+    const writeMediaFiles = useCallback((files: readonly FileData[]) => {
         console.log("write media", files, mediaDirectory);
         if (!mediaDirectory) return;
 
@@ -35,7 +35,7 @@ export default function useMedia(mediaDirectory: FileSystemDirectoryHandle | und
     //         .then(value => updatePages(value));
     // }, [pages]);
 
-    const deleteMediaFiles = useCallback((files: FileData[]) => {
+    const deleteMediaFiles = useCallback((files: readonly FileData[]) => {
         console.log("delete media", files, mediaDirectory);
         if (!mediaDirectory) return;
 

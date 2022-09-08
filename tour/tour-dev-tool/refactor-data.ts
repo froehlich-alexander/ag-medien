@@ -1,6 +1,6 @@
 import {PageData} from "../Data";
 
-function renameAddressableId(oldId: string, newId: string, pages: PageData[]) {
+function renameAddressableId(oldId: string, newId: string, pages: readonly PageData[]) {
     const updated: [string, PageData][] = [];
 
     for (let page of pages) {
@@ -44,7 +44,7 @@ function renameAddressableId(oldId: string, newId: string, pages: PageData[]) {
  * Returns a list containing all ids of addressable inline objects (an addressable inline object is a page or a text field, etc.; and it must define an id field)
  * @param pages
  */
-function getAddressableIds(pages: PageData[]): string[] {
+function getAddressableIds(pages:readonly PageData[]): string[] {
     const res: string[] = [];
     for (let page of pages) {
         res.push(page.id);

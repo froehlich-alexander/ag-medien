@@ -7,7 +7,7 @@ import {TemplateContext} from "./TourContexts";
 import {MaterialIcon} from "./utils";
 
 type InlineObjectContainerFormProps = {
-    inlineObjects: InlineObjectData[],
+    inlineObjects: readonly InlineObjectData[],
     onChange: (inlineObjects: InlineObjectData[]) => void,
 }
 export default function InlineObjectContainerForm({inlineObjects, onChange}: InlineObjectContainerFormProps) {

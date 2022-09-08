@@ -11,4 +11,3 @@ httpRequests/
 /node_modules/
 /package-lock.json
 /tour/tsconfig.tsbuildinfo
-/dist/

@@ -14,12 +14,12 @@ function arrayEquals(array1, array2) {
         return false;
     }
     for (let item of array1) {
-        if (array2.some(value => value !== item && !value.equals?.(item))) {
+        if (!array2.some(value => value === item || value.equals?.(item))) {
             return false;
         }
     }
     for (let item of array2) {
-        if (array1.some(value => value !== item && !value.equals?.(item))) {
+        if (!array1.some(value => value === item || value.equals?.(item))) {
             return false;
         }
     }
@@ -46,7 +46,13 @@ class Data {
     }
     withUpdate(other) {
         // @ts-ignore
-        return new this.constructor({ ...this, ...other });
+        const updated = new this.constructor({ ...this, ...other });
+        if (this.equals(updated)) {
+            return this;
+        }
+        else {
+            return updated;
+        }
     }
 }
 class SchulTourConfigFile extends Data {
@@ -99,6 +105,12 @@ class SchulTourConfigFile extends Data {
             return this;
         }
         return new SchulTourConfigFile({ ...this, initialPage: initialPage });
+    }
+    withPages(pages) {
+        if (this.pages === pages) {
+            return this;
+        }
+        return new SchulTourConfigFile({ ...this, pages: pages });
     }
 }
 class PageData extends Data {
@@ -953,5 +965,5 @@ function hashString(str, seed = 0) {
     h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
     return 4294967296 * (2097151 & h2) + (h1 >>> 0);
 }
-export { Data, SchulTourConfigFile, PageData, InlineObjectData, AbstractInlineObjectData, ClickableData, CustomObjectData, TextFieldData, MediaData, SourceData, FileData, hashString, uniqueId, };
+export { Data, SchulTourConfigFile, PageData, InlineObjectData, AbstractInlineObjectData, ClickableData, CustomObjectData, TextFieldData, MediaData, SourceData, FileData, hashString, uniqueId, arrayEquals, };
 //# sourceMappingURL=Data.js.map

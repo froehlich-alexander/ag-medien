@@ -96,8 +96,8 @@ export default function PageForm(
                                      htmlFor="i-id">{t('id.label')}</InputGroup.Text>
                     <Form.Control id="i-id" type="text" value={page.id} onChange={handleId} pattern={idPattern}/>
                     <InputGroup.Text>{t('id.renameUsages')}</InputGroup.Text>
-                    <InputGroup.Checkbox checked={formContext.renamePageIdUsages} onChange={handleRenamePageIdUsagesChange}/>
                     <FormControl.Feedback type="invalid">{t('id.invalidFeedback')}</FormControl.Feedback>
+                    <InputGroup.Checkbox checked={formContext.renamePageIdUsages} onChange={handleRenamePageIdUsagesChange}/>
                 </InputGroup>
                 <Col sm={12}>
                     <Row>

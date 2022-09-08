@@ -9,14 +9,14 @@ import useDataList from "./DataListReducer";
  * Does <b>not</b> abstract it in any way and is <b>not</b> intended to reuse anywhere else
  * @param mediaContext
  * @param configFile
+ * @param store
  */
 function usePages(mediaContext: MediaContextType, configFile: FileSystemFileHandle | undefined, store: typeof Store) {
 
     const [currentPage, setCurrentPage] = useState<PageData>();
-    const [initialPage, setInitialPage] = useState<string|undefined>();
+    const [tourConfig, setTourConfig] = useState<SchulTourConfigFile>(SchulTourConfigFile.default());
 
-
-    const handlePagesAddUpdate = useCallback((pages: PageData[]) => {
+    const handlePagesAddUpdate = useCallback((pages: readonly PageData[]) => {
         return Promise.all(pages.map(value => value.complete(mediaContext)))
             .then(pages => updatePages(pages));
     }, [mediaContext]);
@@ -31,11 +31,11 @@ function usePages(mediaContext: MediaContextType, configFile: FileSystemFileHand
         undefined, handlePagesAddUpdate, handlePagesAddUpdate);
 
 
-    const setCurrentPageById = useCallback((id: string | undefined | null) => {
+    const setCurrentPageById = useCallback((id: Readonly<string | undefined | null>) => {
         setCurrentPage(pages.find(value => value.id === id));
     }, [pages]);
 
-    const replacePages = useCallback((...items: [string, PageData][]) => {
+    const replacePages = useCallback((...items: readonly [string, PageData][]) => {
         replace(...items);
         for (let [k, page] of items) {
             if (k === currentPage?.id) {
@@ -55,22 +55,28 @@ function usePages(mediaContext: MediaContextType, configFile: FileSystemFileHand
         setCurrentPageById(currentPage?.id)
     }, [pages]);
 
-    // write fs pages
+    useEffect(() => {
+        setTourConfig(tourConfig!.withPages(pages));
+    }, [pages]);
+
+    // write fs config
     useEffect(() => {
         if (!configFile)
             return;
-
-        const config = new SchulTourConfigFile({
-            pages: pages,
-            initialPage:initialPage,
-        });
         (async function () {
+            // const config = new SchulTourConfigFile({
+            //     pages: pages,
+            //     initialPage:initialPage,
+            //     colorTheme: store.getState().TourConfig.colorTheme,
+            //     mode: store
+            // });
+
             const stream = (await configFile.createWritable());
-            await stream.write(JSON.stringify(config));
+            await stream.write(JSON.stringify(tourConfig));
             await stream.close();
         })();
 
-    }, [pages, configFile]);
+    }, [tourConfig, configFile]);
 
     const pageContext: PageContextType = useMemo(() => ({
         pages: pages,
@@ -81,17 +87,18 @@ function usePages(mediaContext: MediaContextType, configFile: FileSystemFileHand
         resetPages: resetPages,
         replacePages: replacePages,
 
+        tourConfig: tourConfig,
+        setTourConfig: setTourConfig,
+
         currentPage: currentPage,
         setCurrentPage: setCurrentPageById,
 
-        initialPage: initialPage,
-        setInitialPage: setInitialPage,
-    }), [pages, setCurrentPageById, currentPage, initialPage]);
+    }), [pages, setCurrentPageById, currentPage]);
 
     return {
         pages, addPages, updatePages, removePages, resetPages,replacePages,
         currentPage, setCurrentPage, setCurrentPageById,
-        initialPage, setInitialPage,
+        tourConfig, setTourConfig,
         pageContext,
     };
 }

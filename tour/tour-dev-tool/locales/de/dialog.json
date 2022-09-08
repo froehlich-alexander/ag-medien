@@ -58,5 +58,9 @@
   },
   "tourPreview": {
     "title": "Tour Vorschau"
+  },
+
+  "inlineObject": {
+    "title": "$t(translation:inlineObject)"
   }
 }

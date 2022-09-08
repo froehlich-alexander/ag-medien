@@ -1,4 +1,5 @@
 {
+  "initialPage": "01_hof",
   "pages": [
     {
       "id": "01_hof",
@@ -13,23 +14,33 @@
         {
           "type": "clickable",
           "goto": "text-test",
-          "x": 70,
-          "y": 30,
-          "title": "text test",
+          "x": 54,
+          "y": 21,
+          "title": "???",
           "animationType": "fade",
           "targetType": "text-field",
           "action": "toggle"
         },
         {
           "type": "text",
-          "title": "Title TTT",
-          "position": "page",
-          "content": "hello test kjsdbfkjsdbv kjbsd jskdbvk jsdbvjksdb jdsvb ksdjbvjksbd kjsdbvkjsd bvkjbsdvb jkdsfh sjkdfb jksdfh g skdjhf  sdhf ksdfkjs fks dkjhg skjhdgf khjsdg fkhjgsfgsd khfgsdghgf ncyx",
+          "title": "Turm",
+          "position": "media",
+          "content": "Findest du den weg hier hoch???",
           "animationType": "fade",
           "hidden": true,
           "id": "text-test",
-          "x": 50,
-          "y": 50
+          "x": 52,
+          "y": 10
+        },
+        {
+          "type": "text",
+          "title": "Schultour!",
+          "position": "page",
+          "x": 10,
+          "y": 87,
+          "content": "Die neue Schultour der AG-Medien (beta)",
+          "hidden": false,
+          "id": "welcome-text"
         }
       ],
       "clickables": [
@@ -430,6 +441,28 @@
         "src": "schulhof_vom_turm.jpg",
         "type": "img"
       },
+      "inlineObjects": [
+        {
+          "type": "clickable",
+          "goto": "jump-to-schulhof",
+          "title": "Freier Fall",
+          "x": 40,
+          "y": 90,
+          "icon": "arrow_d",
+          "targetType": "text-field",
+          "action": "toggle"
+        },
+        {
+          "type": "text",
+          "id": "jump-to-schulhof",
+          "hidden": true,
+          "x": 20,
+          "y": 88,
+          "title": "",
+          "content": "Hier fehlt ein direkter Weg nach unten (Video)",
+          "size": "small"
+        }
+      ],
       "clickables": [
         {
           "title": "zum Ausgangspunkt",

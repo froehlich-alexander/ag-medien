@@ -100,9 +100,9 @@ export default function InlineObjectForm({inlineObject, onChange: onChangeWithIn
                 <Col sm={6}>
                     <InputGroup>
                         <InputGroup.Text as="label" htmlFor="object-x">{t("x.label")}</InputGroup.Text>
+                        <FormControl.Feedback type="invalid">{t("x.invalidFeedback")}</FormControl.Feedback>
                         <FormControl value={inlineObject.x} id="object-x" required type="number"
                                      onChange={handleXChange} min={0} max={100} step={0.01}/>
-                        <FormControl.Feedback type="invalid">{t("x.invalidFeedback")}</FormControl.Feedback>
                     </InputGroup>
                     <FormText>{t("sizeFormText")}</FormText>
                 </Col>
@@ -110,9 +110,9 @@ export default function InlineObjectForm({inlineObject, onChange: onChangeWithIn
                 <Col sm={6}>
                     <InputGroup>
                         <InputGroup.Text as="label" htmlFor="object-y">{t("y.label")}</InputGroup.Text>
+                        <FormControl.Feedback type="invalid">{t("y.invalidFeedback")}</FormControl.Feedback>
                         <FormControl value={inlineObject.y} id="object-y" required type="number"
                                      onChange={handleYChange} min={0} max={100} step={0.1}/>
-                        <FormControl.Feedback type="invalid">{t("y.invalidFeedback")}</FormControl.Feedback>
                     </InputGroup>
                 </Col>
 
@@ -143,16 +143,16 @@ export default function InlineObjectForm({inlineObject, onChange: onChangeWithIn
                     <Col>
                         <InputGroup>
                             <InputGroup.Text as="label" htmlFor="object-goto">{t("goto.label")}</InputGroup.Text>
-                            <FormControl value={inlineObject.goto} placeholder="Type to search a target..."
-                                         id="object-goto"
-                                         type="text" pattern={"^(" + targetIds.join(")|(") + ")$"}
-                                         onChange={handleGotoChange} list="object-goto-datalist"/>
+                            <FormControl.Feedback type="invalid">{t("goto.invalidFeedback")}</FormControl.Feedback>
                             <datalist id="object-goto-datalist">
                                 {targetIds.map(id =>
                                     <option key={id} value={id}>{id}</option>,
                                 )}
                             </datalist>
-                            <FormControl.Feedback type="invalid">{t("goto.invalidFeedback")}</FormControl.Feedback>
+                            <FormControl value={inlineObject.goto} placeholder="Type to search a target..."
+                                         id="object-goto"
+                                         type="text" pattern={"^(" + targetIds.join(")|(") + ")$"}
+                                         onChange={handleGotoChange} list="object-goto-datalist"/>
                         </InputGroup>
                     </Col>
                 </>}

@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <title>Schultour der AG-Medien</title>
-    <link rel="stylesheet" href="../tour.css">
-    <script src="../lib/jquery.js" type="application/javascript"></script>
+    <link rel="stylesheet" href="tour.css">
+    <script src="jquery.js" type="application/javascript"></script>
 </head>
 <body>
-<script src="tour.js"></script>
-<script>
-    window.Tour.init("pages.json");
+<script type="module">
+    import Tour from "./tour.js";
+    Tour.init("pages.json");
 </script>
 </body>
 </html>

@@ -22,17 +22,16 @@ export type NumberRange<N extends MAXIMUM_NUMBER_RANGE> = NumberRangeArray<N>[nu
 //     : never
 // );
 
-type UnFlatArrayRecursive<LastT, Depth extends MAXIMUM_NUMBER_RANGE, DepthArray extends Array<unknown>> =
+type UnFlatArrayRecursive<T, Depth extends MAXIMUM_NUMBER_RANGE, DepthArray extends Array<unknown>, isReadonly extends boolean> =
     (DepthArray[Depth] extends undefined
-        ? UnFlatArrayRecursive<Array<LastT>, Depth, [...DepthArray, Array<LastT>]>
+        ? UnFlatArrayRecursive<Array<T>, Depth, [...DepthArray, (isReadonly extends true ? readonly Readonly<T>[] : T[])], isReadonly>
         : DepthArray[number]);
-
 /**
  * Opposite of {@link FlatArray}<br>
  * Depth 0 means T; Depth 1 means T | T[]; and so on
  */
-export type UnFlatArray<T, Depth extends MAXIMUM_NUMBER_RANGE = 2, ExcludeMainType extends boolean = true> =
-    UnFlatArrayRecursive<T, Depth, [(ExcludeMainType extends true ? never : T)]>;
+export type UnFlatArray<T, Depth extends MAXIMUM_NUMBER_RANGE = 2, ExcludeMainType extends boolean = true, isReadonly extends boolean = false> =
+    UnFlatArrayRecursive<T, Depth, [(ExcludeMainType extends true ? never : T)], isReadonly>;
 
 export type Mutable<T> = { -readonly [k in keyof T]: T[k] };
 export type Complete<T> = { [k in keyof T]-?: NonNullable<T[k]> };
@@ -41,7 +40,7 @@ export interface DefaultProps {
     className?: string,
 }
 
-export function arrayIsValid<T>(array: Array<T> | undefined): array is Array<T> & { length: Exclude<number, 0> } {
+export function arrayIsValid<T>(array: Readonly<Array<T>> | undefined): array is Readonly<Array<T>> & { length: Exclude<number, 0> } {
     return array !== undefined && array.length !== 0;
 }
 

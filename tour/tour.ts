@@ -1223,7 +1223,7 @@ const Tour = {
 
     // variables to be set from out
     // whether this is used by the dev tool (if true e.g. clickables are draggable, etc.)
-    devTool: true,
+    devTool: false,
 };
 
 Object.defineProperty(window, "Tour", {
