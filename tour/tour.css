@@ -53,11 +53,6 @@ body {
   display: none;
   user-select: none;
   touch-action: none;
-  /*.page:not(.show) {*/
-  /*    left: 1000000px;*/
-  /*    top: 1000000px;*/
-  /*    display: none;*/
-  /*}*/
 }
 .schul-tour .page.show {
   display: flex;
@@ -111,34 +106,7 @@ body {
   opacity: 1;
 }
 .schul-tour .page .inlineObject:not(.show) {
-  display: none !important;
   opacity: 0;
-}
-.schul-tour .page .inlineObject[data-animation=fade] {
-  animation-duration: 500ms;
-  animation-name: none;
-}
-.schul-tour .page .inlineObject[data-animation=fade].show {
-  animation-name: fade-in-animation;
-}
-.schul-tour .page .inlineObject[data-animation=fade].show.beforeHide {
-  animation-name: fade-out-animation;
-}
-@keyframes fade-in-animation {
-  0% {
-    opacity: 0;
-  }
-  100% {
-    opacity: 1;
-  }
-}
-@keyframes fade-out-animation {
-  0% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-  }
 }
 .schul-tour .page .inlineObject.clickable {
   background-color: rgba(0, 0, 0, 0.5);
@@ -176,20 +144,20 @@ body {
   left: 0.5rem;
   width: 2rem;
   height: 2rem;
-  background-image: url("/tour/svg/arrow_left.svg");
+  background-image: url("svg/arrow_left.svg");
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
   display: inline-block;
 }
 .schul-tour .page .inlineObject.clickable .icon.arrow_r::after {
-  background-image: url("/tour/svg/arrow_right.svg");
+  background-image: url("svg/arrow_right.svg");
 }
 .schul-tour .page .inlineObject.clickable .icon.arrow_u::after {
-  background-image: url("/tour/svg/arrow_up.svg");
+  background-image: url("svg/arrow_up.svg");
 }
 .schul-tour .page .inlineObject.clickable .icon.arrow_d::after {
-  background-image: url("/tour/svg/arrow_down.svg");
+  background-image: url("svg/arrow_down.svg");
 }
 .schul-tour .page .inlineObject.text-field {
   background-color: rgba(0, 0, 0, 0.7);
@@ -240,8 +208,7 @@ body {
 .schul-tour .page.deg360 .pg_wrapper {
   /*Hide scrollbar because of infinite scrolling*/
 }
-.schul-tour .page.activate-forward {
-  animation: activate-forward ease 500ms forwards;
+.schul-tour .page.show.before-show, .schul-tour .page.show.before-hide {
   z-index: 1;
   position: absolute;
   top: 0;
@@ -250,75 +217,125 @@ body {
   height: 100%;
   display: flex;
 }
-.schul-tour .page.deactivate-forward {
-  animation: deactivate-forward ease 500ms forwards;
-  z-index: 1;
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  display: flex;
+.schul-tour .addressable {
+  /* mixin ("prototype") for a new animation
+   * Usage:
+   *      @include animation(my-name, (0: (opacity: 0), 100: (opacity: 1))) {
+   *          // set any other things e.g.:
+   *          animation-duration: 500ms;
+   *      }
+   * generates the following keyframes:
+   *      @keyframe activate-my-name {
+   *          0% { opacity: 0; }
+   *          100% {opacity: 1: }
+   *      }
+   *      @keyframe deactivate-my-name {
+   *          100% { opacity: 0; }
+   *          0% {opacity: 1: }
+   *      }
+   * Please use 0 and 100 instead of 'from' and 'to'
+   */
 }
-.schul-tour .page.activate-backward {
-  animation: activate-backward ease 500ms forwards;
-  z-index: 1;
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  display: flex;
+@keyframes activate-none {}
+@keyframes deactivate-none {}
+.schul-tour .addressable[data-tour-animation=none]:not([data-tour-animation-onetime]).show, .schul-tour .addressable[data-tour-animation-onetime=none].show {
+  animation-name: none;
+  animation-duration: 500ms;
+  animation-duration: 0ms;
 }
-.schul-tour .page.deactivate-backward {
-  animation: deactivate-backward ease 500ms forwards;
-  z-index: 1;
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  display: flex;
+.schul-tour .addressable[data-tour-animation=none]:not([data-tour-animation-onetime]).show.before-show, .schul-tour .addressable[data-tour-animation-onetime=none].show.before-show {
+  animation-name: activate-none;
+}
+.schul-tour .addressable[data-tour-animation=none]:not([data-tour-animation-onetime]).show.before-hide, .schul-tour .addressable[data-tour-animation-onetime=none].show.before-hide {
+  animation-name: deactivate-none;
+}
+@keyframes activate-fade {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+@keyframes deactivate-fade {
+  100% {
+    opacity: 0;
+  }
+  0% {
+    opacity: 1;
+  }
+}
+.schul-tour .addressable[data-tour-animation=fade]:not([data-tour-animation-onetime]).show, .schul-tour .addressable[data-tour-animation-onetime=fade].show {
+  animation-name: none;
+  animation-duration: 500ms;
+}
+.schul-tour .addressable[data-tour-animation=fade]:not([data-tour-animation-onetime]).show.before-show, .schul-tour .addressable[data-tour-animation-onetime=fade].show.before-show {
+  animation-name: activate-fade;
+}
+.schul-tour .addressable[data-tour-animation=fade]:not([data-tour-animation-onetime]).show.before-hide, .schul-tour .addressable[data-tour-animation-onetime=fade].show.before-hide {
+  animation-name: deactivate-fade;
 }
 @keyframes activate-forward {
-  from {
+  0% {
     transform: scale(0.75);
     opacity: 0;
   }
-  to {
+  100% {
     transform: scale(1);
     opacity: 1;
   }
 }
 @keyframes deactivate-forward {
-  from {
+  0% {
     transform: scale(1);
     opacity: 1;
   }
-  to {
+  100% {
     transform: scale(1.25);
     opacity: 0;
   }
 }
+.schul-tour .addressable[data-tour-animation=forward]:not([data-tour-animation-onetime]).show, .schul-tour .addressable[data-tour-animation-onetime=forward].show {
+  animation-name: none;
+  animation-duration: 500ms;
+  animation-timing-function: ease;
+}
+.schul-tour .addressable[data-tour-animation=forward]:not([data-tour-animation-onetime]).show.before-show, .schul-tour .addressable[data-tour-animation-onetime=forward].show.before-show {
+  animation-name: activate-forward;
+}
+.schul-tour .addressable[data-tour-animation=forward]:not([data-tour-animation-onetime]).show.before-hide, .schul-tour .addressable[data-tour-animation-onetime=forward].show.before-hide {
+  animation-name: deactivate-forward;
+}
 @keyframes activate-backward {
-  from {
+  0% {
     transform: scale(1.25);
     opacity: 0;
   }
-  to {
+  100% {
     transform: scale(1);
     opacity: 1;
   }
 }
 @keyframes deactivate-backward {
-  from {
+  0% {
     transform: scale(1);
     opacity: 1;
   }
-  to {
+  100% {
     transform: scale(0.75);
     opacity: 0;
   }
+}
+.schul-tour .addressable[data-tour-animation=backward]:not([data-tour-animation-onetime]).show, .schul-tour .addressable[data-tour-animation-onetime=backward].show {
+  animation-name: none;
+  animation-duration: 500ms;
+  animation-timing-function: ease;
+}
+.schul-tour .addressable[data-tour-animation=backward]:not([data-tour-animation-onetime]).show.before-show, .schul-tour .addressable[data-tour-animation-onetime=backward].show.before-show {
+  animation-name: activate-backward;
+}
+.schul-tour .addressable[data-tour-animation=backward]:not([data-tour-animation-onetime]).show.before-hide, .schul-tour .addressable[data-tour-animation-onetime=backward].show.before-hide {
+  animation-name: deactivate-backward;
 }
 
 /*# sourceMappingURL=tour.css.map */

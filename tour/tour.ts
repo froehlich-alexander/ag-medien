@@ -86,7 +86,7 @@ class Media<T extends HTMLImageElement | HTMLVideoElement | HTMLIFrameElement = 
      * Computes the source and the loading type depending on the platform of the client (desktop or mobile)
      * @param data
      */
-    public static computeSourceAndLoading(data: MediaData): {source: SourceData, loading: LoadingType} {
+    public static computeSourceAndLoading(data: MediaData): { source: SourceData, loading: LoadingType } {
         // higher / lower resolution and loading type depend on device (=connection bandwidth)
         let src: SourceData;
         let loading: LoadingType;
@@ -187,7 +187,7 @@ class Media<T extends HTMLImageElement | HTMLVideoElement | HTMLIFrameElement = 
      */
     public clone(): this {
         type T1 = this;
-        const constructor = (this.constructor as { new( data: MediaData, html?: JQuery<HTMLElement>): T1 });
+        const constructor = (this.constructor as { new(data: MediaData, html?: JQuery<HTMLElement>): T1 });
         return new constructor(this.data, this._html.clone(true));
     }
 
@@ -507,31 +507,31 @@ class SchulTour {
         Tour.pages = this.pages;
         this.html.appendTo(document.body);
 
-        let done = false;
+        let startPage: Page | undefined = undefined;
         // activate the page from the address line (initPage param)
         for (let page of this.pages) {
             if (page.id === initPage) {
-                page.initialActivate(this.pages);
-                done = true;
+                startPage = page;
                 break;
             }
         }
 
         // activate the page from the config file
-        if (!done) {
+        if (!startPage) {
             for (let page of this.pages) {
                 if (page.id === this.data.initialPage) {
-                    page.initialActivate(this.pages);
-                    done = true;
+                    startPage = page;
                     break;
                 }
             }
         }
 
         // page [0] as fallback
-        if (!done) {
-            this.pages[0].initialActivate(this.pages);
+        if (!startPage) {
+            startPage = this.pages[0];
         }
+        startPage.initialActivate(this.pages);
+        Tour.startPage = startPage;
 
         adjust_clickables();
     }
@@ -542,6 +542,7 @@ class SchulTour {
 }
 
 class Page extends AddressableObject() {
+    public readonly data: PageData;
     public readonly id: string;
     public readonly media: Media;
     public secondaryImg?: Media;
@@ -549,29 +550,31 @@ class Page extends AddressableObject() {
     public is_360 = false;
     public initial_direction: number;
     public readonly inlineObjects: InlineObject[];
-    private readonly _html: JQuery<HTMLDivElement>;
+    public readonly animationType: PageAnimations;
+
+    public readonly html: JQuery<HTMLDivElement>;
 
     // dev tool
     public handleUpdate?: (page: Partial<DataType<PageData>>) => void;
     public handleInlineObjectEditClick?: (index: number, inlineObject: InlineObjectData) => void;
     public onCurrentPageChange?: (pageId: string) => void;
+    public onScroll?: (scrollLeft: number)=>void;
 
     constructor(
-        {
-            id, initial_direction,
-            media, inlineObjects,
-            is_360, is_panorama,
-        }: { id: string, media: Media, is_panorama: boolean, is_360: boolean, initial_direction: number, inlineObjects: InlineObject[] }) {
+        {data, media, inlineObjects}: { data: PageData, media: Media, inlineObjects: InlineObject[], }) {
         super();
-        this.id = id;
+        this.data = data;
+        this.id = data.id;
         this.media = media;
         this.media.page = this;
-        this.is_360 = is_360;
-        this.is_panorama = is_panorama;
-        this.initial_direction = initial_direction;
+        this.is_360 = data.is360;
+        this.is_panorama = data.isPanorama;
+        this.initial_direction = data.initialDirection;
+        this.animationType = data.animationType;
         this.inlineObjects = inlineObjects.slice();
-        this._html = $("<div></div>");
-        this.html[0].addEventListener("animationend", this.handleAnimationEnd);
+        this.html = $("<div></div>");
+        // this.html[0].addEventListener("animationend", this.handleAnimationEnd);
+        this.prepareHTML();
 
         if ((!isDesktop) && this.media.isImage()) {
             this.is_panorama = true;
@@ -592,7 +595,7 @@ class Page extends AddressableObject() {
                 .addClass("bg_container")
                 .append(this.media.html)
                 .append(this.inlineObjects
-                    .filter(v => v.data.position === "media" && (!v.second))
+                    .filter(v => v.data.position === "media" && (!v.cloned))
                     .map(v => v.html)))
             .append(this.inlineObjects
                 .filter(v => v.data.position === "page")
@@ -601,14 +604,14 @@ class Page extends AddressableObject() {
         if (this.is_360) {
             console.log("is_360");
             //add second clickables for second img in 360deg IMGs
-            this.addInlineObjects(...this.clickables.filter(v => v.data.position === "media" && (!v.second)).map(v => v.clone()));
+            this.addInlineObjects(...this.clickables.filter(v => v.data.position === "media" && (!v.cloned)).map(v => v.clone()));
             this.secondaryImg = this.media.clone();
             //second img
             let bgContainer1 = $("<div></div>")
                 .addClass("bg_container")
                 .append(this.secondaryImg.html)
                 .append(this.inlineObjects
-                    .filter(v => v.data.position === "media" && v.second)
+                    .filter(v => v.data.position === "media" && v.cloned)
                     .map(v => v.html));
 
             this.html.children(".pg_wrapper")
@@ -617,7 +620,6 @@ class Page extends AddressableObject() {
             this.html.find(".pg_wrapper").on("scroll", () => {
                 const pgWrapper = this.html.find(".pg_wrapper");
                 const pgWrapperElement = pgWrapper[0];
-                console.log("scroll", pgWrapperElement.scrollLeft);
                 if (pgWrapperElement.scrollWidth - pgWrapperElement.clientWidth - pgWrapperElement.scrollLeft < scrollSensitivity) {
                     // if new scroll would trigger this event again
                     if (pgWrapperElement.scrollLeft - this.media.html.width()! < scrollSensitivity) {
@@ -636,74 +638,88 @@ class Page extends AddressableObject() {
 
         if (Tour.devTool) {
             this.media.handleDrop = (inlineObjectId, inlineObjectData) => {
+                const newInlineObjects: InlineObject[] = this.inlineObjects.filter(v => !v.cloned);
+                const newInlineObjectsData = newInlineObjects.map(v => v.data);
+                newInlineObjectsData[newInlineObjects.findIndex(v => uniqueId(v.html) === inlineObjectId)] = inlineObjectData;
                 let pageData = {
-                    inlineObjects: [
-                        ...this.inlineObjects.filter(v => uniqueId(v) !== inlineObjectId).map(v => v.data),
-                        inlineObjectData,
-                    ],
+                    inlineObjects: newInlineObjectsData,
                 };
                 this.handleUpdate!(pageData);
-                this.clickables.find(v => uniqueId(v) === inlineObjectId)!.html
-                    .css("left", inlineObjectData.x + "%")
-                    .css("top", inlineObjectData.y + "%");
+                this.clickables.filter(v => uniqueId(v.originHtml) === inlineObjectId)
+                    .forEach(v => v.html
+                        .css("left", inlineObjectData.x + "%")
+                        .css("top", inlineObjectData.y + "%"));
             };
             for (let i of this.clickables) {
                 i.handleEditClick = (inlineObjectId, inlineObjectData) => {
-                    const index = this.clickables.filter(v => !v.second).findIndex(value => uniqueId(value) === inlineObjectId);
+                    const index = this.clickables.findIndex(value => uniqueId(value.html) === inlineObjectId);
                     this.handleInlineObjectEditClick!(index, inlineObjectData);
                 };
             }
+
+            this.html[0].addEventListener("scroll", () => {
+                this.onScroll?.(this.html.scrollLeft()!);
+            });
         }
     }
 
     public static from(data: PageData): Page {
         return new Page({
-            id: data.id,
-            is_panorama: data.isPanorama,
-            is_360: data.is360,
-            initial_direction: data.initialDirection,
+            data: data,
             media: Media.from(data.media),
             inlineObjects: data.inlineObjects.map(InlineObject.from),
         });
     }
 
     // event handler when the animation has ended
-    private handleAnimationEnd = (event: AnimationEvent) => {
+    protected handleAnimationEnd (event: AnimationEvent): boolean {
+        if (!super.handleAnimationEnd(event)) {
+            return false;
+        }
+        // if (event.target !== this.html[0]) {
+        //     return;
+        // }
 
-        // activation
-        if (event.animationName.startsWith("activate")) {
-            this.html
-                .removeClass("activate-forward")
-                .removeClass("activate-backward");
-            this.activateRunning = false;
-            // finished last only true if (de-) activation has finished on all pages
-            finished_last = Tour.pages.map(page => !page.activateRunning && !page.deactivateRunning)
-                .reduce((p, c) => p && c);
-        }
-        // deactivation
-        if (event.animationName.startsWith("deactivate")) {
-            this.html
-                .removeClass("show")
-                .removeClass("deactivate-forward")
-                .removeClass("deactivate-backward");
-            this.deactivateRunning = false;
-            // finished last only true if (de-) activation has finished on all pages
-            finished_last = Tour.pages.map(page => !page.activateRunning && !page.deactivateRunning)
-                .reduce((p, c) => p && c);
-        }
+        // // activation
+        // if (event.animationName.startsWith("activate")) {
+        //     this.html
+        //         .removeClass("activate-forward")
+        //         .removeClass("activate-backward");
+        //     this.activateRunning = false;
+        //     // finished last only true if (de-) activation has finished on all pages
+        //     finished_last = Tour.pages.map(page => !page.activateRunning && !page.deactivateRunning)
+        //         .reduce((p, c) => p && c);
+        // }
+        // // deactivation
+        // if (event.animationName.startsWith("deactivate")) {
+        //     this.html
+        //         .removeClass("show")
+        //         .removeClass("deactivate-forward")
+        //         .removeClass("deactivate-backward");
+        //     this.deactivateRunning = false;
+        //     // finished last only true if (de-) activation has finished on all pages
+        //     finished_last = Tour.pages.map(page => !page.activateRunning && !page.deactivateRunning)
+        //         .reduce((p, c) => p && c);
+        // }
+
+        // finished last only true if (de-) activation has finished on all pages
+        finished_last = Tour.pages.map(page => !page.activateRunning && !page.deactivateRunning)
+            .reduce((p, c) => p && c);
+
+        return true;
     };
 
     protected activateAllowed(): boolean {
         return finished_last && !this.activated && !this.activateRunning;
     }
 
-    public activate(animationType: PageAnimations): boolean {
-        if (!super.activate()) {
+    public activate(animationType?: PageAnimations): boolean {
+        if (!super.activate(animationType)) {
             return false;
         }
         finished_last = false;
         let prevPage: Page;
-        this.html.addClass("show");
+        // this.html.addClass("show");
         adjust_clickables();
 
         // get prev page
@@ -715,16 +731,16 @@ class Page extends AddressableObject() {
         }
 
         // activate / show this page
-        switch (animationType) {
-            case "forward":
-                this.html.addClass("activate-forward");
-                break;
-            case "backward":
-                this.html.addClass("activate-backward");
-                break;
-        }
+        // switch (animationType) {
+        //     case "forward":
+        //         this.html.addClass("activate-forward");
+        //         break;
+        //     case "backward":
+        //         this.html.addClass("activate-backward");
+        //         break;
+        // }
         // deactivate / start hide animation on prev page
-        prevPage!.deactivate(animationType);
+        prevPage!.deactivate(animationType ?? this.data.animationType);
 
         window.location.hash = this.id;
         createLastestClickable(this.clickables.filter(v => v.data.goto === prevPage.id));
@@ -739,21 +755,21 @@ class Page extends AddressableObject() {
         }
         this.media.pause();
         lastest = this.id;
-        switch (animationType) {
-            case "forward":
-                this.html.addClass("deactivate-forward");
-                break;
-            case "backward":
-                this.html.addClass("deactivate-backward");
-                break;
-            case undefined:
-                this.html.removeClass("show");
-                this.deactivateRunning = false;
+        // switch (animationType) {
+        //     case "forward":
+        //         this.html.addClass("deactivate-forward");
+        //         break;
+        //     case "backward":
+        //         this.html.addClass("deactivate-backward");
+        //         break;
+        //     case undefined:
+        //         this.html.removeClass("show");
+        //         this.deactivateRunning = false;
+        // }
 
-                // finished last only true if (de-) activation has finished on all pages
-                finished_last = Tour.pages.map(page => !page.activateRunning && !page.deactivateRunning)
-                    .reduce((p, c) => p && c);
-        }
+        // finished last only true if (de-) activation has finished on all pages
+        finished_last = Tour.pages.map(page => !page.activateRunning && !page.deactivateRunning)
+            .reduce((p, c) => p && c);
         return true;
     }
 
@@ -773,13 +789,13 @@ class Page extends AddressableObject() {
         this.inlineObjects.push(...inlineObjects);
     }
 
-    get html() {
-        return this._html;
-    }
-
+    /**
+     * Activate (show) this page immediately (without animations etc.)
+     * This should be used only 1 time at the beginning
+     * @param pages
+     */
     public initialActivate(pages: readonly Page[]): void {
         this.activated = true;
-        $(".schul-tour .page").removeClass("show");
         this.html.addClass("show");
 
         // set lastest to any page with a matching clickable
@@ -806,16 +822,17 @@ class Page extends AddressableObject() {
         createLastestClickable(this.clickables.filter(value => value.data.goto === lastest));
     }
 
-    public data(): PageData {
-        return new PageData({
-            id: this.id,
-            media: this.media.data,
-            inlineObjects: this.inlineObjects.map(v => v.data),
-            is360: this.is_360,
-            isPanorama: this.is_panorama,
-            initialDirection: this.initial_direction,
-        });
-    }
+    // public get data(): PageData {
+    //     return new PageData({
+    //         id: this.id,
+    //         media: this.media.data,
+    //         inlineObjects: this.inlineObjects.map(v => v.data),
+    //         is360: this.is_360,
+    //         isPanorama: this.is_panorama,
+    //         initialDirection: this.initial_direction,
+    //         animationType: this.animationType,
+    //     });
+    // }
 }
 
 function AddressableObject<T extends { new(...args: any[]): {} }>(baseClass?: T) {
@@ -823,10 +840,45 @@ function AddressableObject<T extends { new(...args: any[]): {} }>(baseClass?: T)
         baseClass = class PlaceHolder {
         } as T;
     }
+
     return class AddressableObject extends baseClass {
+        declare public readonly html: JQuery;
+        declare public readonly data: { animationType: AnimationType};
+
         protected activated: boolean = false;
         protected activateRunning = false;
         protected deactivateRunning = false;
+
+        protected prepareHTML() {
+            this.html.addClass("addressable");
+            //animations
+            this.html.attr("data-tour-animation", this.data.animationType);
+            this.html[0].addEventListener("animationend", (event)=>this.handleAnimationEnd(event));
+        }
+
+        protected handleAnimationEnd (event: AnimationEvent): boolean {
+            // we do not want to bubble up
+            if (event.target !== this.html[0]) {
+                return false;
+            }
+
+            console.log("animationend textfield", event.animationName);
+            if (this.html.attr("data-tour-animation-onetime") !== undefined) {
+                this.html.removeAttr("data-tour-animation-onetime");
+            }
+            if (event.animationName.startsWith("activate")) {
+                this.html.removeClass("before-show");
+                this.activateRunning = false;
+            }
+            // name must be the same as in tour.scss
+            else if (event.animationName.startsWith("deactivate")) {
+                console.log(this.html);
+                this.html.removeClass("before-hide")
+                    .removeClass("show");
+                this.deactivateRunning = false;
+            }
+            return true;
+        };
 
         protected activateAllowed(): boolean {
             return !this.activated && !this.activateRunning && !this.deactivateRunning;
@@ -836,21 +888,37 @@ function AddressableObject<T extends { new(...args: any[]): {} }>(baseClass?: T)
             return this.activated && !this.deactivateRunning && !this.activateRunning;
         }
 
-        public activate(animationType?: AnimationType): boolean {
+        public activate( animationType?: AnimationType): boolean {
             if (!this.activateAllowed()) {
                 return false;
             }
             this.activated = true;
             this.activateRunning = true;
+
+            if (animationType !== undefined && animationType !== this.data.animationType) {
+                this.html.attr("data-tour-animation-onetime", animationType);
+            }
+
+            this.html
+                .addClass("show")
+                .addClass("before-show");
+
             return true;
         }
 
-        public deactivate(animationType?: AnimationType): boolean {
+        public deactivate( animationType?: AnimationType): boolean {
             if (!this.deactivateAllowed()) {
                 return false;
             }
             this.activated = false;
             this.deactivateRunning = true;
+
+            if (animationType !== undefined && animationType !== this.data.animationType) {
+                this.html.attr("data-tour-animation-onetime", animationType);
+            }
+
+            this.html
+                .addClass("before-hide");
             return true;
         }
 
@@ -872,18 +940,34 @@ function AddressableObject<T extends { new(...args: any[]): {} }>(baseClass?: T)
 class InlineObject {
     public readonly data: InlineObjectData;
 
-    private readonly _second: boolean;
+    private readonly _cloned: boolean;
+    // holds the origin inlineObject html
+    // if this._cloned == true, it holds the html it was cloned from
+    // if this._cloned == false, it holds the same value as this._html
+    public readonly originHtml: JQuery;
     private readonly _html: JQuery;
 
     // dev tool
     public handleEditClick?: (inlineObjectId: number, inlineObject: InlineObjectData) => void;
 
+    constructor(data: InlineObjectData, htmlTag: JQuery, isClone: true);
+    constructor(data: InlineObjectData, htmlTag: keyof HTMLElementTagNameMap | JQuery, isClone: boolean);
     constructor(data: InlineObjectData, htmlTag: keyof HTMLElementTagNameMap | JQuery, isClone = false) {
         this.data = data;
-        this._second = isClone;
-        this._html = typeof htmlTag === "string" ? $(`<${htmlTag}/>`) : htmlTag;
-        if (!this._second) {
-            // this._html = $(`<${htmlTag}/>`);
+        this._cloned = isClone;
+
+        if (typeof htmlTag === "string") {
+            this._html = $(`<${htmlTag}/>`);
+            this.originHtml = this._html;
+        } else {
+            this.originHtml = htmlTag;
+            if (isClone) {
+                this._html = htmlTag.clone(true);
+            } else {
+                this._html = htmlTag;
+            }
+        }
+        if (!this._cloned) {
             this.html.addClass("inlineObject");
 
             // by default everything is hidden via display none
@@ -908,7 +992,7 @@ class InlineObject {
                     console.log("dragstart");
                     event.originalEvent!.dataTransfer!.dropEffect = "move";
                     event.originalEvent!.dataTransfer!.setData(devTool.dataTransferTypes.inlineObject.data, JSON.stringify(this.data));
-                    event.originalEvent!.dataTransfer!.setData(devTool.dataTransferTypes.inlineObject.id, String(uniqueId(this)));
+                    event.originalEvent!.dataTransfer!.setData(devTool.dataTransferTypes.inlineObject.id, String(uniqueId(this.originHtml)));
                     event.originalEvent!.dataTransfer!.setData(devTool.dataTransferTypes.inlineObject.offset,
                         [event.clientX! - this.html.offset()!.left, event.clientY! - this.html.offset()!.top].join(" "));
                 });
@@ -918,7 +1002,7 @@ class InlineObject {
                     .text("edit")
                     .addClass("material-icons dev-tool-edit-icon")
                     .on("click", () => {
-                        this.handleEditClick!(uniqueId(this), this.data);
+                        this.handleEditClick!(uniqueId(this.originHtml), this.data);
                     }));
             }
         }
@@ -930,15 +1014,16 @@ class InlineObject {
     public clone(): this {
         type T = this;
         const constructor = (this.constructor as { new(data: InlineObjectData, html?: JQuery<HTMLElement>): T });
-        return new constructor(this.data, this._html.clone(true));
+        return new constructor(this.data, this.html);
+        // return new constructor(this.data, this._html.clone(true));
     }
 
     public get html(): JQuery {
         return this._html;
     }
 
-    public get second(): boolean {
-        return this._second;
+    public get cloned(): boolean {
+        return this._cloned;
     }
 
     public static from(data: InlineObjectData): InlineObject {
@@ -1004,41 +1089,57 @@ class TextField extends AddressableObject(InlineObject) {
             this.html.addClass(i);
         }
 
+        this.prepareHTML();
         //animations
-        this.html.attr("data-animation", data.animationType);
-        this.html.on("animationend", (jEvent) => {
-            const event = jEvent.originalEvent as AnimationEvent;
-            if (event.animationName === "fade-in-animation") {
-                this.activateRunning = false;
-            }
-            // name must be the same as in tour.scss
-            if (event.animationName === "fade-out-animation") {
-                this.html.removeClass("show")
-                    .removeClass("beforeHide");
-                this.deactivateRunning = false;
-            }
-        });
+        // this.html.attr("data-tour-animation", data.animationType);
+        // this.html.on("animationend", (jEvent) => {
+        //     const event = jEvent.originalEvent as AnimationEvent;
+        //     console.log("animationend textfield", event.animationName);
+        //     if (this.html.attr("data-tour-animation-onetime") !== undefined) {
+        //         this.html.removeAttr("data-tour-animation-onetime");
+        //     }
+        //     if (event.animationName.startsWith("activate")) {
+        //         this.html.removeClass("before-show");
+        //         this.activateRunning = false;
+        //     }
+        //     // name must be the same as in tour.scss
+        //     else if (event.animationName.startsWith("deactivate")) {
+        //         console.log(this.html);
+        //         this.html.removeClass("before-hide")
+        //             .removeClass("show");
+        //         this.deactivateRunning = false;
+        //     }
+        // });
     }
 
     public static from(data: TextFieldData): TextField {
         return new TextField(data);
     }
 
-    public override activate() {
-        if (!super.activate()) {
-            return false;
-        }
-        this.html.addClass("show");
-        return true;
-    }
-
-    public deactivate(): boolean {
-        if (!super.deactivate()) {
-            return false;
-        }
-        this.html.addClass("beforeHide");
-        return true;
-    }
+    // public override activate(animationType?: AnimationType) {
+    //     if (!super.activate()) {
+    //         return false;
+    //     }
+    //     // if (animationType !== undefined) {
+    //     //     this.html.attr("data-tour-animation-onetime", animationType);
+    //     // }
+    //     //
+    //     // this.html
+    //     //     .addClass("show")
+    //     //     .addClass("before-show");
+    //     return true;
+    // }
+    //
+    // public deactivate(animationType?: AnimationType): boolean {
+    //     if (!super.deactivate()) {
+    //         return false;
+    //     }
+    //     // if (animationType !== undefined) {
+    //     //     this.html.attr("data-tour-animation-onetime", animationType);
+    //     // }
+    //     // this.html.addClass("before-hide");
+    //     return true;
+    // }
 }
 
 class Clickable extends InlineObject {
@@ -1047,7 +1148,7 @@ class Clickable extends InlineObject {
     constructor(data: ClickableData, html?: JQuery<HTMLElement>) {
         super(data, html ?? "div", html !== undefined);
 
-        if (!this.second) {
+        if (!this.cloned) {
             this.html.addClass("clickable")
                 .attr("goto", this.data.goto!)//todo redundant
                 .append($("<div></div>")
@@ -1120,12 +1221,26 @@ window.addEventListener("resize", function () {
 });
 
 window.addEventListener("popstate", function () {
-    let pgs = $(".page");
-    pgs.removeClass("show");
-    if (window.location.hash !== "")
-        $("#" + idPrefix + window.location.hash.slice(1)).addClass("show");
-    else
-        pgs.eq(0).addClass("show");
+    const newPageId = window.location.hash.substring(1);
+    const newPage = Tour.pages.find(v => v.id === newPageId);
+    if (newPage !== undefined) {
+        let animation: PageAnimations;
+        if (lastest === newPage.id) {
+            animation = "backward";
+        } else {
+            animation = "forward";
+        }
+        newPage.activate(animation);
+    } else {
+        Tour.startPage?.activate("backward");
+    }
+    // let pgs = $(".page");
+    // pgs.removeClass("show");
+    // if (window.location.hash !== "") {
+    //
+    //     $("#" + idPrefix + window.location.hash.substring(1)).addClass("show");
+    // } else
+    //     pgs.eq(0).addClass("show");
 });
 
 function adjust_clickables() {
@@ -1220,6 +1335,8 @@ const Tour = {
     CustomObject,
 
     pages: [] as Page[],
+    // the page which is shown at the beginning
+    startPage: undefined as Page | undefined,
 
     // variables to be set from out
     // whether this is used by the dev tool (if true e.g. clickables are draggable, etc.)

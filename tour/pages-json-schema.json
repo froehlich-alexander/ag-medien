@@ -77,7 +77,55 @@
                 "anyOf": [
                   {
                     "type": "string",
+                    "const": "fade"
+                  },
+                  {
+                    "type": "object",
+                    "properties": {}
+                  },
+                  {
+                    "type": "object",
+                    "properties": {}
+                  },
+                  {
+                    "type": "object",
+                    "properties": {}
+                  },
+                  {
+                    "type": "object",
+                    "properties": {}
+                  },
+                  {
+                    "type": "string",
+                    "const": "none"
+                  },
+                  {
+                    "type": "object",
+                    "properties": {}
+                  },
+                  {
+                    "type": "object",
+                    "properties": {}
+                  },
+                  {
+                    "type": "object",
+                    "properties": {}
+                  },
+                  {
+                    "type": "object",
+                    "properties": {}
+                  },
+                  {
+                    "type": "string",
                     "const": "forward"
+                  },
+                  {
+                    "type": "object",
+                    "properties": {}
+                  },
+                  {
+                    "type": "object",
+                    "properties": {}
                   },
                   {
                     "type": "object",
@@ -90,52 +138,6 @@
                   {
                     "type": "string",
                     "const": "backward"
-                  },
-                  {
-                    "type": "object",
-                    "properties": {}
-                  },
-                  {
-                    "type": "object",
-                    "properties": {}
-                  },
-                  {
-                    "type": "object",
-                    "properties": {}
-                  },
-                  {
-                    "type": "object",
-                    "properties": {}
-                  },
-                  {
-                    "type": "object",
-                    "properties": {}
-                  },
-                  {
-                    "type": "object",
-                    "properties": {}
-                  },
-                  {
-                    "$ref": "#/definitions/TextAnimations"
-                  },
-                  {
-                    "type": "object",
-                    "properties": {}
-                  },
-                  {
-                    "type": "object",
-                    "properties": {}
-                  },
-                  {
-                    "type": "object",
-                    "properties": {}
-                  },
-                  {
-                    "type": "object",
-                    "properties": {}
-                  },
-                  {
-                    "$ref": "#/definitions/CustomAnimations"
                   }
                 ]
               },
@@ -195,6 +197,9 @@
           "items": {
             "$ref": "#/definitions/JsonInlineObject"
           }
+        },
+        "animationType": {
+          "$ref": "#/definitions/AnimationType"
         },
         "id": {
           "type": "string"
@@ -367,13 +372,6 @@
         "page"
       ]
     },
-    "TextAnimations": {
-      "type": "string",
-      "const": "fade"
-    },
-    "CustomAnimations": {
-      "$ref": "#/definitions/TextAnimations"
-    },
     "ActionType": {
       "type": "string",
       "enum": [
@@ -465,17 +463,41 @@
       ]
     },
     "PageAnimations": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/AnimationForAll"
+        },
+        {
+          "type": "string",
+          "const": "forward"
+        },
+        {
+          "type": "string",
+          "const": "backward"
+        }
+      ]
+    },
+    "AnimationForAll": {
       "type": "string",
       "enum": [
-        "forward",
-        "backward"
+        "fade",
+        "none"
       ]
+    },
+    "TextAnimations": {
+      "$ref": "#/definitions/AnimationForAll"
+    },
+    "CustomAnimations": {
+      "$ref": "#/definitions/AnimationForAll"
     },
     "JsonTextField": {
       "type": "object",
       "properties": {
         "id": {
           "type": "string"
+        },
+        "animationType": {
+          "$ref": "#/definitions/TextAnimations"
         },
         "x": {
           "type": [
@@ -491,9 +513,6 @@
         },
         "position": {
           "$ref": "#/definitions/InlineObjectPosition"
-        },
-        "animationType": {
-          "$ref": "#/definitions/TextAnimations"
         },
         "type": {
           "type": "string",

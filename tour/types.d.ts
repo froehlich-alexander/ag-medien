@@ -11,9 +11,10 @@ export type FetchPriorityType = "high" | "low" | "auto";
 export type InlineObjectType = "clickable" | "text" | "custom";
 export type InlineObjectPosition = "media" | "page"; //  whether the object is moving together with the media (like clickables) or the page and whether it is positioned relative to the media or to the page (normally full screen)
 export type TextFieldSize = "normal" | "small" | "large" | "x-large" | "xx-large";
-export type PageAnimations = "forward" | "backward";
-export type TextAnimations = "fade";
-export type CustomAnimations = TextAnimations;
+type AnimationForAll = "fade" | "none";
+export type PageAnimations = AnimationForAll | "forward" | "backward";
+export type TextAnimations = AnimationForAll;
+export type CustomAnimations = AnimationForAll;
 export type AnimationType = PageAnimations | TextAnimations | CustomAnimations;
 export type AddressableObjects = "page" | "text-field";
 export type ActionType = "activate" | "deactivate" | "toggle";
@@ -23,18 +24,20 @@ export type ActionType = "activate" | "deactivate" | "toggle";
  */
 interface JsonAddressableObject {
     id: string; //a UNIQUE id
+    animationType?: AnimationType;
 }
 
 /**
  * Type for the Page-Objects in pages.json (or pages.json)
  */
 export type JsonPage = JsonAddressableObject & {
-    media: JsonMedia;
-    is_360?: boolean;
-    is_panorama?: boolean;
-    initial_direction?: number;
-    clickables?: Omit<JsonClickable, "type">[];
+    media: JsonMedia,
+    is_360?: boolean,
+    is_panorama?: boolean,
+    initial_direction?: number,
+    clickables?: Omit<JsonClickable, "type">[],
     inlineObjects?: JsonInlineObject[];
+    animationType?: PageAnimations,
 }
 export type JsonMedia = {
     //see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/video for video

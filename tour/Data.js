@@ -41,9 +41,17 @@ class Data {
             Object.freeze(this);
         }
     }
-    constructor() {
+    constructor(placeholder) {
         this.onConstructionFinished(Data);
     }
+    equals(other) {
+        throw Error("Not Implemented");
+    }
+    ;
+    toJSON() {
+        throw Error("Not Implemented");
+    }
+    ;
     withUpdate(other) {
         // @ts-ignore
         const updated = new this.constructor({ ...this, ...other });
@@ -113,11 +121,43 @@ class SchulTourConfigFile extends Data {
         return new SchulTourConfigFile({ ...this, pages: pages });
     }
 }
-class PageData extends Data {
-    constructor({ media, id, is360, isPanorama, initialDirection, inlineObjects }) {
-        super();
-        this.media = media;
+class AbstractAddressableObject extends Data {
+    constructor({ id, animationType, ...base }) {
+        super(base);
         this.id = id;
+        this.animationType = animationType;
+        this.onConstructionFinished(AbstractAddressableObject);
+    }
+    equals(other) {
+        return other != null && (this === other || (this.id === other.id
+            && this.animationType === other.animationType));
+    }
+    toJSON() {
+        return {
+            id: this.id,
+            animationType: this.animationType,
+        };
+    }
+    withId(id) {
+        if (this.id === id) {
+            return this;
+        }
+        return new this.constructor({ ...this, id: id });
+    }
+    withAnimationType(animationType) {
+        if (this.animationType === animationType) {
+            return this;
+        }
+        return new this.constructor({
+            ...this,
+            animationType: animationType,
+        });
+    }
+}
+class PageData extends AbstractAddressableObject {
+    constructor({ media, is360, isPanorama, initialDirection, inlineObjects, ...base }) {
+        super(base);
+        this.media = media;
         this.is360 = is360;
         this.isPanorama = isPanorama;
         this.initialDirection = initialDirection;
@@ -133,8 +173,9 @@ class PageData extends Data {
         // defaults to false; iframes cannot be 360 nor panorama
         const isPanorama = is360 || ((page.is_panorama ?? false) && (media.type === "img" || media.type === "video"));
         return new PageData({
-            media: media,
+            animationType: page.animationType ?? "forward",
             id: page.id,
+            media: media,
             is360: is360,
             isPanorama: isPanorama,
             initialDirection: page.initial_direction ?? 0,
@@ -142,14 +183,14 @@ class PageData extends Data {
         });
     }
     equals(other) {
-        return other != null && (this === other || (this.media.equals(other.media) &&
-            this.id === other.id &&
+        return super.equals(other) &&
+            this.media.equals(other.media) &&
             this.is360 === other.is360 &&
             this.initialDirection === other.initialDirection &&
             this.isPanorama === other.isPanorama &&
             //@ts-ignore
             (this.inlineObjects.length === other.inlineObjects.length && this.inlineObjects.map(v => other.inlineObjects.find(value => value.equals(v)) !== undefined)
-                .reduce((prev, now) => prev && now, true))));
+                .reduce((prev, now) => prev && now, true));
     }
     withUpdate(other) {
         return new PageData({ ...this, ...other });
@@ -168,16 +209,13 @@ class PageData extends Data {
     }
     toJSON() {
         return {
-            id: this.id,
+            ...super.toJSON(),
             media: this.media.toJSON(),
             inlineObjects: this.inlineObjects.map(value => value.toJSON()),
             is_panorama: this.isPanorama,
             is_360: this.is360,
             initial_direction: this.initialDirection,
         };
-    }
-    withId(id) {
-        return new PageData({ ...this, id: id });
     }
     withInlineObjects(...inlineObjects) {
         return new PageData({ ...this, inlineObjects: inlineObjects.flat() });
@@ -283,7 +321,7 @@ class MediaData extends Data {
         return [this.src?.type, this.srcMin?.type, this.srcMax?.type].filter((value) => value != null);
     }
     equals(other) {
-        return this === other || (this.src === other.src &&
+        return other != null && (this === other || (this.src === other.src &&
             this.srcMax === other.srcMax &&
             this.srcMin === other.srcMin &&
             this.preload === other.preload &&
@@ -293,7 +331,7 @@ class MediaData extends Data {
             this.loop === other.loop &&
             this.muted === other.muted &&
             this.poster === other.poster &&
-            this.type === other.type);
+            this.type === other.type));
     }
     withUpdate(other) {
         return new MediaData({ ...this, ...other });
@@ -442,6 +480,60 @@ class AbstractInlineObjectData extends Data {
         return new this.constructor({ ...this, hidden: hidden });
     }
 }
+// function AbstractAddressable<T extends AbstractInlineObjectData<any, any> | Data<any>, Json extends JsonAddressableObject>(base: typeof AbstractInlineObjectData|typeof Data) {
+//     // let constr = base ?? Data;
+//
+//     // @ts-ignore
+//     interface AbstractAddressableObject extends Data<any>, T {
+//     }
+//
+//     class AbstractAddressableObject extends base {
+//         public declare excludeFromDataType: "excludeFromDataType";
+//
+//         public readonly id: string;
+//         public readonly animationType: AnimationType;
+//
+//         protected constructor({id, animationType, ...base}: DataType<AbstractAddressableObject>) {
+//             super(base);
+//             this.id = id;
+//             this.animationType = animationType;
+//             this.onConstructionFinished(AbstractAddressableObject);
+//         }
+//
+//         public equals(other: DataType<AbstractAddressableObject> | undefined | null): other is DataType<AbstractAddressableObject> {
+//             return super.equals(other)
+//                 && this.id === other!.id
+//                 && this.animationType === other!.animationType;
+//         }
+//
+//         public toJSON(): { [k in keyof Pick<Json, keyof (JsonAddressableObject)>]: Json[k] } {
+//             return {
+//                 ...super.toJSON(),
+//                 id: this.id,
+//                 animationType: this.animationType,
+//             };
+//         }
+//
+//         public withId(id: string): this {
+//             if (this.id === id) {
+//                 return this;
+//             }
+//             return new (this.constructor as typeof AbstractAddressableObject)({...this, id: id}) as this;
+//         }
+//
+//         public withAnimationType(animationType: AnimationType): this {
+//             if (this.animationType === animationType) {
+//                 return this;
+//             }
+//             return new (this.constructor as typeof AbstractAddressableObject)({
+//                 ...this,
+//                 animationType: animationType,
+//             }) as this;
+//         }
+//     }
+//
+//     return AbstractAddressableObject;
+// }
 class AbstractAddressableInlineObjectData extends AbstractInlineObjectData {
     constructor({ id, ...base }) {
         super(base);
@@ -587,6 +679,7 @@ ClickableData.default = {
     backward: false,
     action: "activate",
 };
+// interface TextFieldData extends AbstractInlineObjectData<TextFieldData, JsonTextField>{}
 class TextFieldData extends AbstractAddressableInlineObjectData {
     constructor({ title, content, cssClasses, size, ...base }) {
         super({ ...base, type: "text" });
@@ -813,7 +906,7 @@ class SourceData extends Data {
     }
 }
 class FileData extends Data {
-    constructor({ name, file, size, type, intrinsicWidth, intrinsicHeight, url, }) {
+    constructor({ name, file, size, type, intrinsicWidth, intrinsicHeight, url }) {
         super();
         // we would need to get the complete file content and that need way too much time
         // public readonly hash: number;

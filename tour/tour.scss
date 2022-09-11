@@ -1,4 +1,5 @@
 @use "sass:math" as math;
+@use "sass:map" as map;
 
 body {
     margin: 0;
@@ -76,12 +77,6 @@ body {
         user-select: none;
         touch-action: none;
 
-        /*.page:not(.show) {*/
-        /*    left: 1000000px;*/
-        /*    top: 1000000px;*/
-        /*    display: none;*/
-        /*}*/
-
         &.show {
             display: flex;
         }
@@ -156,39 +151,8 @@ body {
             }
 
             &:not(.show) {
-                display: none !important;
+                //display: none !important;
                 opacity: 0;
-            }
-
-            &[data-animation=fade] {
-                $duration: 500;
-                animation-duration: $duration+ms;
-                animation-name: none;
-
-                &.show {
-                    animation-name: fade-in-animation;
-
-                    &.beforeHide {
-                        animation-name: fade-out-animation;
-                    }
-                }
-
-                @keyframes fade-in-animation {
-                    0% {
-                        opacity: 0;
-                    }
-                    100% {
-                        opacity: 1;
-                    }
-                }
-                @keyframes fade-out-animation {
-                    0% {
-                        opacity: 1;
-                    }
-                    100% {
-                        opacity: 0;
-                    }
-                }
             }
 
             &.clickable {
@@ -233,7 +197,7 @@ body {
                     left: 0.5rem;
                     width: 2rem;
                     height: 2rem;
-                    background-image: url('/tour/svg/arrow_left.svg');
+                    background-image: url('svg/arrow_left.svg');
                     background-size: contain;
                     background-repeat: no-repeat;
                     background-position: center;
@@ -241,15 +205,15 @@ body {
                 }
 
                 .icon.arrow_r::after {
-                    background-image: url('/tour/svg/arrow_right.svg');
+                    background-image: url('svg/arrow_right.svg');
                 }
 
                 .icon.arrow_u::after {
-                    background-image: url('/tour/svg/arrow_up.svg');
+                    background-image: url('svg/arrow_up.svg');
                 }
 
                 .icon.arrow_d::after {
-                    background-image: url('/tour/svg/arrow_down.svg');
+                    background-image: url('svg/arrow_down.svg');
                 }
 
                 // Clickable which goes to the place where we came from
@@ -325,92 +289,108 @@ body {
             //scrollbar-width: auto;
         }
 
-        &.activate-forward {
-            animation: activate-forward ease $page-animation-duration forwards;
-            z-index: 1;
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: flex;
-        }
-
-        &.deactivate-forward {
-            animation: deactivate-forward ease $page-animation-duration forwards;
-            z-index: 1;
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: flex;
-        }
-
-        &.activate-backward {
-            animation: activate-backward ease $page-animation-duration forwards;
-            z-index: 1;
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: flex;
-        }
-
-        &.deactivate-backward {
-            animation: deactivate-backward ease $page-animation-duration forwards;
-            z-index: 1;
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: flex;
-        }
-
-        @keyframes activate-forward {
-            from {
-                transform: scale(0.75);
-                opacity: 0;
-            }
-            to {
-                transform: scale(1);
-                opacity: 1;
+        // active while an animation is running
+        &.show {
+            &.before-show, &.before-hide {
+                z-index: 1;
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                display: flex;
             }
         }
+    }
 
-        @keyframes deactivate-forward {
-            from {
-                transform: scale(1);
-                opacity: 1;
-            }
-            to {
-                transform: scale(1.25);
-                opacity: 0;
+    .addressable {
+        $activate-animation-prefix: activate;
+        $deactivate-animation-prefix: deactivate;
+        $animation-attr: data-tour-animation;
+        $animation-attr-onetime: data-tour-animation-onetime;
+
+        /* mixin ("prototype") for a new animation
+         * Usage:
+         *      @include animation(my-name, (0: (opacity: 0), 100: (opacity: 1))) {
+         *          // set any other things e.g.:
+         *          animation-duration: 500ms;
+         *      }
+         * generates the following keyframes:
+         *      @keyframe activate-my-name {
+         *          0% { opacity: 0; }
+         *          100% {opacity: 1: }
+         *      }
+         *      @keyframe deactivate-my-name {
+         *          100% { opacity: 0; }
+         *          0% {opacity: 1: }
+         *      }
+         * Please use 0 and 100 instead of 'from' and 'to'
+         */
+        @mixin animation($name, $keyframes, $deactivate-keyframes: null) {
+            &[#{$animation-attr}=#{$name}]:not([#{$animation-attr-onetime}]), &[#{$animation-attr-onetime}=#{$name}] {
+
+                // activate
+                @keyframes #{$activate-animation-prefix}-#{$name} {
+                    @each $number, $attribute-map in $keyframes {
+                        #{$number}% {
+                            @each $key, $value in $attribute-map {
+                                #{$key}: $value;
+                            }
+                        }
+                    }
+                }
+
+                // user can specify deactivate keyframes but don't has to
+                @if $deactivate-keyframes == null {
+                    $deactivate-keyframes: ();
+                    // revert keyframes
+                    // 70% {...} -> 30% {...}
+                    @each $number, $attribute-map in $keyframes {
+                        $deactivate-keyframes: map.set($deactivate-keyframes, 100-$number, $attribute-map)
+                    }
+                }
+
+                // deactivate
+                @keyframes #{$deactivate-animation-prefix}-#{$name} {
+                    @each $number, $attribute-map in $deactivate-keyframes {
+                        #{$number}% {
+                            @each $key, $value in $attribute-map {
+                                #{$key}: $value;
+                            }
+                        }
+                    }
+                }
+
+                &.show {
+                    animation-name: none;
+                    animation-duration: 500ms;
+                    @content;
+
+                    &.before-show {
+                        animation-name: #{$activate-animation-prefix}-#{$name};
+                    }
+
+                    &.before-hide {
+                        animation-name: #{$deactivate-animation-prefix}-#{$name};
+                    }
+                }
             }
         }
 
-        @keyframes activate-backward {
-            from {
-                transform: scale(1.25);
-                opacity: 0;
-            }
-            to {
-                transform: scale(1);
-                opacity: 1;
-            }
+        @include animation(none, ()) {
+            animation-duration: 0ms;
         }
 
-        @keyframes deactivate-backward {
-            from {
-                transform: scale(1);
-                opacity: 1;
-            }
-            to {
-                transform: scale(0.75);
-                opacity: 0;
-            }
+        @include animation(fade, (0: (opacity: 0), 100: (opacity: 1)));
+
+        @include animation(forward, (0: (transform: scale(0.75), opacity: 0), 100: (transform: scale(1), opacity: 1)),
+                (0: (transform: scale(1), opacity: 1), 100: (transform: scale(1.25), opacity: 0))) {
+            animation-timing-function: ease;
+        }
+
+        @include animation(backward, (0: (transform: scale(1.25), opacity: 0), 100: (transform: scale(1), opacity: 1)),
+                (0: (transform: scale(1), opacity: 1), 100: (transform: scale(0.75), opacity: 0))) {
+            animation-timing-function: ease;
         }
     }
 }

@@ -93,6 +93,7 @@ const TourPage = memo(({pageData, onChange, addPage, removePage}: TourPageProps)
     const dispatch = useAppDispatch();
     const pageContext = useContext(PageContext);
     const [page, setPage] = useState(Page.from(pageData));
+    const [pageScroll, setPageScroll] = useState(pageData.initialDirection);
 
     const handleChange = useCallback((changes: Partial<DataType<PageData>>) => {
         onChange(pageData.withUpdate(changes));
@@ -107,6 +108,7 @@ const TourPage = memo(({pageData, onChange, addPage, removePage}: TourPageProps)
         page.handleUpdate = handleChange;
         page.handleInlineObjectEditClick = handleInlineObjectEditClick;
         page.onCurrentPageChange = pageContext.setCurrentPage;
+        page.onScroll = setPageScroll;
     }, [handleChange, handleInlineObjectEditClick, pageContext.setCurrentPage, page]);
 
     useEffect(() => {
@@ -117,15 +119,18 @@ const TourPage = memo(({pageData, onChange, addPage, removePage}: TourPageProps)
     }, [page, addPage, removePage]);
 
     useEffect(() => {
-        const page = Page.from(pageData);
-        setPage(page);
+        // if (!page.data.equals(pageData)) {
+            const page = Page.from(pageData);
+            // page.initial_direction = pageScroll;
+            setPage(page);
 
-        // addPage(page);
-        pageContainerRef.current!.append(page.html[0]);
-        return () => {
-            pageContainerRef.current?.removeChild(page.html[0]);
-            // removePage(page);
-        };
+            // addPage(page);
+            pageContainerRef.current!.append(page.html[0]);
+            return () => {
+                pageContainerRef.current?.removeChild(page.html[0]);
+                // removePage(page);
+            };
+        // }
     }, [pageData]);
 
     return (
