@@ -14,6 +14,9 @@ import useDataList from "./DataListReducer";
 function usePages(mediaContext: MediaContextType, configFile: FileSystemFileHandle | undefined, store: typeof Store) {
 
     const [currentPage, setCurrentPage] = useState<PageData>();
+    // holds the id but if currentPage is undefined it still can hold a valid id of a page that does not exist yet
+    // (useful when we create new pages)
+    const [currentPageId, setCurrentPageId] = useState<string|undefined>();
     const [tourConfig, setTourConfig] = useState<SchulTourConfigFile>(SchulTourConfigFile.default());
 
     const handlePagesAddUpdate = useCallback((pages: readonly PageData[]) => {
@@ -30,8 +33,8 @@ function usePages(mediaContext: MediaContextType, configFile: FileSystemFileHand
     }] = useDataList<PageData, string>([], (page => typeof page === "string" ? page : page.id),
         undefined, handlePagesAddUpdate, handlePagesAddUpdate);
 
-
-    const setCurrentPageById = useCallback((id: Readonly<string | undefined | null>) => {
+    const setCurrentPageById = useCallback((id: Readonly<string | undefined>) => {
+        setCurrentPageId(id);
         setCurrentPage(pages.find(value => value.id === id));
     }, [pages]);
 
@@ -46,14 +49,20 @@ function usePages(mediaContext: MediaContextType, configFile: FileSystemFileHand
 
     // write current page to local storage
     useEffect(() => {
-        if (currentPage) {
+        if (currentPage?.id !== undefined) {
             window.localStorage.setItem('current_page', currentPage.id);
         }
-    }, [currentPage]);
+    }, [currentPage?.id]);
+
+    useEffect(() => {
+        if (currentPage?.id !== undefined) {
+            setCurrentPageId(currentPage.id);
+        }
+    }, [currentPage?.id]);
     
     useEffect(() => {
-        setCurrentPageById(currentPage?.id)
-    }, [pages]);
+        setCurrentPageById(currentPage?.id ?? currentPageId);
+    }, [pages, currentPage?.id, currentPageId, setCurrentPageId]);
 
     useEffect(() => {
         setTourConfig(tourConfig!.withPages(pages));

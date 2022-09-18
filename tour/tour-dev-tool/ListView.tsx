@@ -15,7 +15,6 @@ export default function ListView(
     }: ListViewProps) {
     const pageContext = useContext(PageContext);
     const [selectedPages, {toggle, reset: resetSelectedPages}] = useSet<string>();
-    // console.log(selectedPages);
 
     const selectAll = useCallback(() => {
         resetSelectedPages(pageContext.pages.map(value => value.id));
@@ -28,6 +27,23 @@ export default function ListView(
     const deleteAllSelected = useCallback(() => {
         pageContext.removePages(Array.from(selectedPages));
     }, [selectedPages, pageContext.removePages]);
+
+    const createNewPage = useCallback(() => {
+        let page = PageData.default;
+        const badIds = pageContext.pages.map(v => v.id);
+        const idPrefix = "Page Nr. ";
+
+        // replace possible non unique id with unique id (check if pages contains id if yes try again...)
+        let i = badIds.length;
+        while (true) {
+            if (!badIds.includes(idPrefix + i)) {
+                page = page.withId(idPrefix + i);
+                break;
+            }
+        }
+        pageContext.addPages(page);
+        pageContext.setCurrentPage(page.id);
+    }, [pageContext.pages, pageContext.setCurrentPage]);
 
     return (
         <div className={classNames("ListView", className)}>
@@ -42,6 +58,13 @@ export default function ListView(
                         </Col>
                         <Col>
                             <Button variant="danger" onClick={deleteAllSelected}>Delete All Selected</Button>
+                        </Col>
+                        <Col>
+                            <Button style={{marginLeft: "auto"}} className={"d-flex align-items-center"}
+                                    variant={"success"} onClick={createNewPage}>
+                                <MaterialIcon icon="add" className={"me-2"}/>
+                                New
+                            </Button>
                         </Col>
                     </Row>
                 </ListGroup.Item>

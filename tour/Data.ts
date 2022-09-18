@@ -32,6 +32,11 @@ export const mediaFolder = "media";
 
 
 type DataType<T extends Data<any>> = Omit<{ [k in keyof T as T[k] extends Function ? never : k]: T[k] }, "excludeFromDataType" | T["excludeFromDataType"]>;
+type JsonType<T extends Data<any>> = ReturnType<T["toJSON"]>;
+type DeepDataType<T extends Data<any>> = {
+    [k in keyof DataType<T>]: (DataType<T>[k] extends Data<any> ? DeepDataType<DataType<T>[k]> : DataType<T>[k])
+    | (DataType<T>[k] extends undefined ? undefined : never)
+};
 
 /**
  * Checks if the arrays are equal<br>
@@ -105,81 +110,6 @@ class Data<T extends Data<T>> {
     }
 }
 
-class SchulTourConfigFile extends Data<SchulTourConfigFile> {
-    public declare excludeFromDataType: "excludeFromDataType";
-
-    public readonly pages: readonly PageData[];
-    public readonly initialPage: string | undefined;
-    public readonly fullscreen: boolean;
-    public readonly colorTheme: "dark" | "light";
-    public readonly mode: "inline" | "normal";
-
-    constructor(other: DataType<SchulTourConfigFile>) {
-        super();
-        this.pages = other.pages;
-        this.initialPage = other.initialPage;
-        this.fullscreen = other.fullscreen;
-        this.colorTheme = other.colorTheme;
-        this.mode = other.mode;
-        this.onConstructionFinished(SchulTourConfigFile);
-    }
-
-    public static default(): SchulTourConfigFile {
-        return new SchulTourConfigFile({
-            pages: [],
-            initialPage: undefined,
-            fullscreen: true,
-            colorTheme: "dark",
-            mode: "normal",
-        });
-    }
-
-    public static fromJSON(json: JsonSchulTourConfigFile): SchulTourConfigFile {
-        const pages = json.pages.map(PageData.fromJSON);
-        return new SchulTourConfigFile({
-            pages: pages,
-            initialPage: json.initialPage,
-            fullscreen: json.fullscreen ?? true,
-            colorTheme: json.colorTheme ?? "dark",
-            mode: json.mode ?? "normal",
-        });
-    }
-
-    public equals(other: null | undefined | DataType<SchulTourConfigFile>): boolean {
-        return other != null && (this === other || (
-            arrayEquals(this.pages, other.pages)
-            && this.initialPage === other.initialPage
-            && this.fullscreen === other.fullscreen
-            && this.mode === other.mode
-            && this.colorTheme === other.colorTheme
-        ));
-    }
-
-    public toJSON(): JsonSchulTourConfigFile {
-        return {
-            pages: this.pages.map(page => page.toJSON()),
-            initialPage: this.initialPage,
-            colorTheme: this.colorTheme,
-            mode: this.mode,
-            fullscreen: this.fullscreen,
-        };
-    }
-
-    public withInitialPage(initialPage: string): SchulTourConfigFile {
-        if (this.initialPage === initialPage) {
-            return this;
-        }
-        return new SchulTourConfigFile({...this, initialPage: initialPage});
-    }
-
-    public withPages(pages: readonly PageData[]): SchulTourConfigFile {
-        if (this.pages === pages) {
-            return this;
-        }
-        return new SchulTourConfigFile({...this, pages: pages});
-    }
-}
-
 class AbstractAddressableObject<T extends Data<T>, Json extends JsonAddressableObject> extends Data<T> {
     public declare excludeFromDataType: "excludeFromDataType";
 
@@ -225,267 +155,6 @@ class AbstractAddressableObject<T extends Data<T>, Json extends JsonAddressableO
     }
 }
 
-class PageData extends AbstractAddressableObject<PageData, JsonPage> {
-    public declare excludeFromDataType: "excludeFromDataType";
-    public declare readonly animationType: PageAnimations;
-
-    public readonly media: MediaData;
-    public readonly is360: boolean;
-    public readonly isPanorama: boolean;
-    public readonly initialDirection: number;
-    public readonly inlineObjects: readonly InlineObjectData[];
-
-    constructor({media, is360, isPanorama, initialDirection, inlineObjects, ...base}: DataType<PageData>) {
-        super(base);
-        this.media = media;
-        this.is360 = is360;
-        this.isPanorama = isPanorama;
-        this.initialDirection = initialDirection;
-        this.inlineObjects = inlineObjects;
-        this.onConstructionFinished(PageData);
-    }
-
-    static fromJSON(page: JsonPage): PageData {
-        const inlineObjects = page.inlineObjects?.map(InlineObjectData.fromJSON) ?? [];
-        inlineObjects.push(...page.clickables?.map(ClickableData.fromJSON) ?? []);
-        const media = MediaData.fromJSON(page.media);
-
-        // defaults to false; iframes cannot be 360 nor panorama
-        const is360 = (page.is_360 ?? false) && (media.type === "img" || media.type === "video");
-
-        // defaults to false; iframes cannot be 360 nor panorama
-        const isPanorama = is360 || ((page.is_panorama ?? false) && (media.type === "img" || media.type === "video"));
-
-        return new PageData({
-            animationType: page.animationType ?? "forward",
-            id: page.id,
-            media: media,
-            is360: is360,
-            isPanorama: isPanorama,
-            initialDirection: page.initial_direction ?? 0,
-            inlineObjects: inlineObjects,
-        });
-    }
-
-    public equals(other: DataType<PageData> | null | undefined): other is DataType<PageData> {
-        return super.equals(other) &&
-            this.media.equals(other.media) &&
-            this.is360 === other.is360 &&
-            this.initialDirection === other.initialDirection &&
-            this.isPanorama === other.isPanorama &&
-            //@ts-ignore
-            (this.inlineObjects.length === other.inlineObjects.length && this.inlineObjects.map(v => other.inlineObjects.find(value => value.equals(v)) !== undefined)
-                .reduce((prev, now) => prev && now, true));
-    }
-
-    public withUpdate(other: Partial<DataType<PageData>>): PageData {
-        return new PageData({...this, ...other});
-    }
-
-    public async complete(mediaContext: MediaContextType): Promise<PageData> {
-        let media = await this.media.complete(mediaContext);
-        if (media !== this.media) {
-            return this.withUpdate({
-                media: media,
-            });
-        }
-        return this;
-    }
-
-    public isComplete(): boolean {
-        return this.media.isComplete();
-    }
-
-    public toJSON(): JsonPage {
-        return {
-            ...super.toJSON(),
-            media: this.media.toJSON(),
-            inlineObjects: this.inlineObjects.map(value => value.toJSON()),
-            is_panorama: this.isPanorama,
-            is_360: this.is360,
-            initial_direction: this.initialDirection,
-        };
-    }
-
-    public withInlineObjects(...inlineObjects: UnFlatArray<InlineObjectData>): PageData {
-        return new PageData({...this, inlineObjects: inlineObjects.flat()});
-    }
-
-    public withInitialDirection(initialDirection: number): PageData {
-        if (this.initialDirection === initialDirection) {
-            return this;
-        }
-        return new PageData({...this, initialDirection: initialDirection});
-    }
-
-    public withMedia(media: MediaData): PageData {
-        if (this.media === media) {
-            return this;
-        }
-        return new PageData({...this, media: media});
-    }
-
-    public withIs360(is360: boolean): PageData {
-        if (this.is360 === is360) {
-            return this;
-        }
-        return new PageData({...this, is360: is360, isPanorama: is360 || this.isPanorama});
-    }
-
-    public withIsPanorama(isPanorama: boolean): PageData {
-        if (this.isPanorama === isPanorama) {
-            return this;
-        }
-        return new PageData({...this, isPanorama: isPanorama, is360: isPanorama && this.is360});
-    }
-}
-
-class MediaData extends Data<MediaData> {
-    public readonly src?: SourceData;
-    public readonly srcMin?: SourceData;
-    public readonly srcMax?: SourceData;
-    public readonly loading: LoadingType | "auto";
-    public readonly type: MediaType;
-    public readonly fetchPriority: FetchPriorityType;
-    public readonly poster?: string;
-    public readonly autoplay: boolean;
-    public readonly muted: boolean;
-    public readonly loop: boolean;
-    public readonly preload: VideoPreloadType;
-
-    // dev tool only
-    public readonly fileDoesNotExist: boolean;
-
-    public static readonly imgFileEndings = ["png", "jpeg", "jpg", "gif", "svg", "webp", "apng", "avif"];
-    public static readonly videoFileEndings = ["mp4", "webm", "ogg", "ogm", "ogv", "avi"];
-    //this list is not exhaustive
-    public static readonly iframeUrlEndings = ["html", "htm", "com", "org", "edu", "net", "gov", "mil", "int", "de", "en", "eu", "us", "fr", "ch", "at", "au"];
-    public static readonly Types: Array<MediaType> = ["img", "video", "iframe"];
-
-    declare excludeFromDataType: "fileDoesNotExist";
-
-    constructor(
-        other: DataType<MediaData>,
-    ) {
-        super();
-        this.src = other.src;
-        this.srcMin = other.srcMin;
-        this.srcMax = other.srcMax;
-        this.loading = other.loading;
-        this.type = other.type;
-        this.fetchPriority = other.fetchPriority;
-        this.poster = other.poster;
-        this.autoplay = other.autoplay;
-        this.muted = other.muted;
-        this.loop = other.loop;
-        this.preload = other.preload;
-
-        this.fileDoesNotExist = (this.src?.fileDoesNotExist || this.srcMin?.fileDoesNotExist || this.srcMax?.fileDoesNotExist) ?? true;
-        this.onConstructionFinished(MediaData);
-    }
-
-    public async complete(mediaContext: MediaContextType): Promise<MediaData> {
-        const src = await this.src?.complete(mediaContext);
-        const srcMin = await this.srcMin?.complete(mediaContext);
-        const srcMax = await this.srcMax?.complete(mediaContext);
-        if (src !== this.src || srcMin !== this.srcMin || srcMax !== this.srcMax) {
-            return this.withUpdate({
-                src: src,
-                srcMin: srcMin,
-                srcMax: srcMax,
-            });
-        }
-        return this;
-    }
-
-    public static fromJSON(media: JsonMedia) {
-        let src = media.src != null ? SourceData.fromJSON(media.src) : undefined;
-        let srcMin = media.srcMin != null ? SourceData.fromJSON(media.srcMin) : undefined;
-        let srcMax = media.srcMax != null ? SourceData.fromJSON(media.srcMax) : undefined;
-
-        return new MediaData({
-            src: src,
-            srcMin: srcMin,
-            srcMax: srcMax,
-            loading: media.loading ?? "auto",
-            type: MediaData.determineType(media.type ?? "auto", (src ?? srcMin ?? srcMax)!.name),
-            fetchPriority: media.fetchPriority ?? "auto",
-            poster: media.poster,
-            autoplay: media.autoplay ?? false,
-            muted: media.muted ?? false,
-            loop: media.loop ?? false,
-            preload: media.preload ?? "auto",
-        });
-    }
-
-    public static determineType(value: MediaType | "auto", src: string): MediaType {
-        let res: MediaType;
-        if (value === "auto") {
-            let fileSplit = src.split(".");
-            let fileEnding = fileSplit[fileSplit.length - 1];
-            if (MediaData.imgFileEndings.indexOf(fileEnding) > -1) {
-                res = "img";
-            } else if (MediaData.videoFileEndings.indexOf(fileEnding) > -1) {
-                res = "video";
-            } else if (MediaData.iframeUrlEndings.indexOf(fileEnding) > -1) {
-                res = "iframe";
-            } else {
-                console.warn("Please add the file (or url) ending to the list\n'iframe' is used as default because there are endless different url endings\nFile Name which produced the Error:", src);
-                res = "iframe";
-            }
-        } else {
-            res = value;
-        }
-        return res;
-    }
-
-    public allTypes(): Array<MediaType> {
-        return [this.src?.type, this.srcMin?.type, this.srcMax?.type].filter((value): value is MediaType => value != null);
-    }
-
-    public equals(other: DataType<MediaData> | null | undefined): boolean {
-        return other != null && (this === other || (
-            this.src === other.src &&
-            this.srcMax === other.srcMax &&
-            this.srcMin === other.srcMin &&
-            this.preload === other.preload &&
-            this.autoplay === other.autoplay &&
-            this.fetchPriority === other.fetchPriority &&
-            this.loading === other.loading &&
-            this.loop === other.loop &&
-            this.muted === other.muted &&
-            this.poster === other.poster &&
-            this.type === other.type
-        ));
-    }
-
-    public withUpdate(other: Partial<DataType<MediaData>>): MediaData {
-        return new MediaData({...this, ...other});
-    }
-
-    public isComplete(): boolean {
-        return (this.src?.isComplete() ?? true) &&
-            (this.srcMin?.isComplete() ?? true) &&
-            (this.srcMax?.isComplete() ?? true);
-    }
-
-    public toJSON(): JsonMedia {
-        return {
-            type: this.type,
-            src: this.src?.toJSON(),
-            srcMin: this.srcMin?.toJSON(),
-            srcMax: this.srcMax?.toJSON(),
-            fetchPriority: this.fetchPriority,
-            loading: this.loading,
-            loop: this.loop,
-            muted: this.muted,
-            preload: this.preload,
-            poster: this.poster,
-            autoplay: this.autoplay,
-        };
-    }
-}
-
 class AbstractInlineObjectData<T extends AbstractInlineObjectData<T, Json>, Json extends AbstractJsonInlineObject> extends Data<T> {
     public declare excludeFromDataType: "excludeFromDataType";
 
@@ -496,19 +165,6 @@ class AbstractInlineObjectData<T extends AbstractInlineObjectData<T, Json>, Json
     public readonly position: InlineObjectPosition;
     public readonly animationType: AnimationType;
     public readonly hidden: boolean;
-
-    // // clickable attrs
-    // public readonly title?: string;
-    // public readonly icon?: IconType;
-
-    // test field
-    // public readonly title?: string;
-    // public readonly content?: string;
-    // public readonly footer?: string;
-    // public readonly cssClasses?: string[] | string; // ["class-a", "class-b"] OR "class-a class-b"
-    //
-    // // custom
-    // public readonly htmlId?: string;
 
     constructor(
         {
@@ -530,38 +186,6 @@ class AbstractInlineObjectData<T extends AbstractInlineObjectData<T, Json>, Json
         this.hidden = hidden;
         this.onConstructionFinished(AbstractInlineObjectData);
     }
-
-    // let position = json.position;
-    // const extras: Mutable<Partial<DataType<InlineObjectData>>> = {};
-    // // apply default position depending on inline object type
-    // switch (json.type) {
-    //     case "clickable":
-    //         position ??= "media";
-    //         extras.title = json.title;
-    //         extras.icon = json.icon ?? "arrow_l";
-    //         break;
-    //     case "text":
-    //         position ??= "media";
-    //         extras.cssClasses = json.cssClasses ?? "";
-    //         extras.title = json.title;
-    //         extras.content = json.content;
-    //         extras.footer = json.footer;
-    //         break;
-    //     case "custom":
-    //         position ??= "media";
-    //         extras.htmlId = json.htmlId;
-    //         break;
-    // }
-    //
-    // return new InlineObjectData({
-    //     ...extras,
-    //     x: typeof json.x === "number" ? json.x : parseFloat(json.x),
-    //     y: typeof json.y === "number" ? json.y : parseFloat(json.y),
-    //     type: json.type,
-    //     goto: json.goto,
-    //     position: position,
-    //     animationType: json.animationType ?? "forward",
-    // });
 
     public equals(other: DataType<AbstractInlineObjectData<T, Json>> | undefined | null): other is DataType<AbstractInlineObjectData<T, Json>> {
         return other != null && (this === other || (
@@ -1023,160 +647,6 @@ class CustomObjectData extends AbstractInlineObjectData<CustomObjectData, JsonCu
     }
 }
 
-class SourceData extends Data<SourceData> {
-    public declare excludeFromDataType: "excludeFromDataType";
-
-    public readonly name: string;
-    // natural width
-    public readonly width?: number;
-    // natural height
-    public readonly height?: number;
-
-    public readonly type: MediaType;
-
-    // create tool only
-    public readonly file?: FileData;
-    public readonly fileDoesNotExist?: boolean;
-
-    // static readonly sourceUrl = "media/";
-
-    constructor({name, width, height, file, type, fileDoesNotExist}: DataType<SourceData>) {
-        super();
-        this.name = name;
-        this.file = file;
-        this.fileDoesNotExist = fileDoesNotExist;
-        // const srcNotExistent: boolean = media.src != null && mediaContext.mediaFiles.find(v => v.name === media.src!.name) === undefined;
-        this.width = width;
-        this.height = height;
-        this.type = type;
-        this.onConstructionFinished(SourceData);
-    }
-
-    public static fromJSON(other: JsonSource) {
-        let name = typeof other !== "string" ? other.name : other;
-        return new SourceData({
-            name: name,
-            // if typeof other == string -> other.width == undefined -> OK
-            // @ts-ignore
-            width: other?.width,
-            // @ts-ignore
-            height: other?.height,
-            // @ts-ignore
-            type: MediaData.determineType(other?.type ?? "auto", name),
-        });
-    }
-
-    public static formatSrc(src: string): string {
-        let regex = new RegExp("^(?:[a-z]+:)?//", "i");
-        //if src is absolute (e.g. http://abc.xyz)
-        //or src relative to document root (starts with '/') (the browser interprets that correctly)
-        if (regex.test(src) || src.startsWith("/")) {
-            if (src.startsWith("http://")) {
-                console.warn("Security waring: Using unsecure url in iframe:", src);
-            }
-            return src;
-        }
-        //add prefix
-        return mediaFolder + "/" + src;
-    }
-
-    public static async fromFile(file: File): Promise<SourceData> {
-        const fileData = await FileData.fromFile(file);
-        return this.fromFileData(fileData);
-    }
-
-    public static fromFileData(fileData: FileData): SourceData {
-        return new SourceData({
-            name: fileData.name,
-            file: fileData,
-            fileDoesNotExist: false,
-            width: fileData.intrinsicWidth ?? undefined,
-            height: fileData.intrinsicHeight ?? undefined,
-            type: MediaData.determineType("auto", fileData.name),
-        });
-    }
-
-    public complete(mediaContext: MediaContextType): SourceData {
-        if (this.isComplete()) {
-            // if (this.height != null && this.width != null) {
-            return this;
-            // }
-            // return SourceData.fromFile(this.file.file);
-        }
-        const media = mediaContext.mediaFiles.find(value => value.name === this.name);
-        if (media) {
-            return SourceData.fromFileData(media);
-        }
-
-        // media file not present
-        return this.withFileDoesNotExist(true);
-        // return SourceData.fromFile(await SourceData.loadMedia(this.name));
-    }
-
-    public isComplete(): this is { file: FileData & { outdated: false } } {
-        return this.file != null
-            && !this.file.outdated;
-    }
-
-    public equals(other: undefined | null | DataType<SourceData>): other is DataType<SourceData> {
-        return other != null && (this === other || (
-            this.height === other.height &&
-            this.width === other.width &&
-            this.name === other.name &&
-            this.type === other.type &&
-            (this.file === other.file || (this.file?.equals(other.file) ?? false))
-        ));
-    }
-
-    public toJSON(): JsonSource {
-        return {
-            name: this.name,
-            type: this.type,
-            height: this.height,
-            width: this.width,
-        };
-    }
-
-    /**
-     * Return a string which is a (valid) url to the source
-     */
-    public url(): string {
-        if (this.isComplete()) {
-            return this.file.url;
-        }
-        return SourceData.formatSrc(this.name);
-    }
-
-    public withType(type: MediaType): SourceData {
-        if (this.type === type) {
-            return this;
-        }
-        return new SourceData({...this, type: type});
-    }
-
-    public withWidth(width: number | undefined): SourceData {
-        if (this.width === width) {
-            return this;
-        }
-        return new SourceData({...this, width: width});
-    }
-
-    public withHeight(height: number | undefined): SourceData {
-        if (this.height === height) {
-            return this;
-        }
-        return new SourceData({...this, height: height});
-    }
-
-    public withFileDoesNotExist(fileDoesNotExist: boolean): SourceData {
-        if (this.fileDoesNotExist === fileDoesNotExist) {
-            return this;
-        }
-        return new SourceData({...this, fileDoesNotExist: fileDoesNotExist});
-    }
-}
-
-
 class FileData extends Data<FileData> {
     public declare excludeFromDataType: "excludeFromDataType" | "outdated";
 
@@ -1348,6 +818,524 @@ export type JsonFileData = {
     hash: number,
     intrinsicWidth: number | null,
     intrinsicHeight: number | null,
+}
+
+class SourceData extends Data<SourceData> {
+    public declare excludeFromDataType: "excludeFromDataType";
+
+    public readonly name: string;
+    // natural width
+    public readonly width?: number;
+    // natural height
+    public readonly height?: number;
+
+    public readonly type: MediaType;
+
+    // create tool only
+    public readonly file?: FileData;
+    public readonly fileDoesNotExist?: boolean;
+
+    constructor({name, width, height, file, type, fileDoesNotExist}: DataType<SourceData>) {
+        super();
+        this.name = name;
+        this.file = file;
+        this.fileDoesNotExist = fileDoesNotExist;
+        // const srcNotExistent: boolean = media.src != null && mediaContext.mediaFiles.find(v => v.name === media.src!.name) === undefined;
+        this.width = width;
+        this.height = height;
+        this.type = type;
+        this.onConstructionFinished(SourceData);
+    }
+
+    public static fromJSON(other: JsonSource) {
+        let name = typeof other !== "string" ? other.name : other;
+        return new SourceData({
+            name: name,
+            // if typeof other == string -> other.width == undefined -> OK
+            // @ts-ignore
+            width: other?.width,
+            // @ts-ignore
+            height: other?.height,
+            // @ts-ignore
+            type: MediaData.determineType(other?.type ?? "auto", name),
+        });
+    }
+
+    public static default: SourceData = new SourceData({
+        type: "img",
+        name: "baustelle.png",
+        width: undefined,
+        height: undefined,
+    });
+
+    public static formatSrc(src: string): string {
+        let regex = new RegExp("^(?:[a-z]+:)?//", "i");
+        //if src is absolute (e.g. http://abc.xyz)
+        //or src relative to document root (starts with '/') (the browser interprets that correctly)
+        if (regex.test(src) || src.startsWith("/")) {
+            if (src.startsWith("http://")) {
+                console.warn("Security waring: Using unsecure url in iframe:", src);
+            }
+            return src;
+        }
+        //add prefix
+        return mediaFolder + "/" + src;
+    }
+
+    public static async fromFile(file: File): Promise<SourceData> {
+        const fileData = await FileData.fromFile(file);
+        return this.fromFileData(fileData);
+    }
+
+    public static fromFileData(fileData: FileData): SourceData {
+        return new SourceData({
+            name: fileData.name,
+            file: fileData,
+            fileDoesNotExist: false,
+            width: fileData.intrinsicWidth ?? undefined,
+            height: fileData.intrinsicHeight ?? undefined,
+            type: MediaData.determineType("auto", fileData.name),
+        });
+    }
+
+    public complete(mediaContext: MediaContextType): SourceData {
+        if (this.isComplete()) {
+            // if (this.height != null && this.width != null) {
+            return this;
+            // }
+            // return SourceData.fromFile(this.file.file);
+        }
+        const media = mediaContext.mediaFiles.find(value => value.name === this.name);
+        if (media) {
+            return SourceData.fromFileData(media);
+        }
+
+        // media file not present
+        return this.withFileDoesNotExist(true);
+        // return SourceData.fromFile(await SourceData.loadMedia(this.name));
+    }
+
+    public isComplete(): this is { file: FileData & { outdated: false } } {
+        return this.file != null
+            && !this.file.outdated;
+    }
+
+    public equals(other: undefined | null | DataType<SourceData>): other is DataType<SourceData> {
+        return other != null && (this === other || (
+            this.height === other.height &&
+            this.width === other.width &&
+            this.name === other.name &&
+            this.type === other.type &&
+            (this.file === other.file || (this.file?.equals(other.file) ?? false))
+        ));
+    }
+
+    public toJSON(): JsonSource {
+        return {
+            name: this.name,
+            type: this.type,
+            height: this.height,
+            width: this.width,
+        };
+    }
+
+    /**
+     * Return a string which is a (valid) url to the source
+     */
+    public url(): string {
+        if (this.isComplete()) {
+            return this.file.url;
+        }
+        return SourceData.formatSrc(this.name);
+    }
+
+    public withType(type: MediaType): SourceData {
+        if (this.type === type) {
+            return this;
+        }
+        return new SourceData({...this, type: type});
+    }
+
+    public withWidth(width: number | undefined): SourceData {
+        if (this.width === width) {
+            return this;
+        }
+        return new SourceData({...this, width: width});
+    }
+
+    public withHeight(height: number | undefined): SourceData {
+        if (this.height === height) {
+            return this;
+        }
+        return new SourceData({...this, height: height});
+    }
+
+    public withFileDoesNotExist(fileDoesNotExist: boolean): SourceData {
+        if (this.fileDoesNotExist === fileDoesNotExist) {
+            return this;
+        }
+        return new SourceData({...this, fileDoesNotExist: fileDoesNotExist});
+    }
+}
+
+class MediaData extends Data<MediaData> {
+    public readonly src?: SourceData;
+    public readonly srcMin?: SourceData;
+    public readonly srcMax?: SourceData;
+    public readonly loading: LoadingType | "auto";
+    public readonly type: MediaType;
+    public readonly fetchPriority: FetchPriorityType;
+    public readonly poster?: string;
+    public readonly autoplay: boolean;
+    public readonly muted: boolean;
+    public readonly loop: boolean;
+    public readonly preload: VideoPreloadType;
+
+    // dev tool only
+    public readonly fileDoesNotExist: boolean;
+
+    public static readonly imgFileEndings = ["png", "jpeg", "jpg", "gif", "svg", "webp", "apng", "avif"];
+    public static readonly videoFileEndings = ["mp4", "webm", "ogg", "ogm", "ogv", "avi"];
+    //this list is not exhaustive
+    public static readonly iframeUrlEndings = ["html", "htm", "com", "org", "edu", "net", "gov", "mil", "int", "de", "en", "eu", "us", "fr", "ch", "at", "au"];
+    public static readonly Types: Array<MediaType> = ["img", "video", "iframe"];
+
+    declare excludeFromDataType: "fileDoesNotExist";
+
+    constructor(
+        other: DataType<MediaData>,
+    ) {
+        super();
+        this.src = other.src;
+        this.srcMin = other.srcMin;
+        this.srcMax = other.srcMax;
+        this.loading = other.loading;
+        this.type = other.type;
+        this.fetchPriority = other.fetchPriority;
+        this.poster = other.poster;
+        this.autoplay = other.autoplay;
+        this.muted = other.muted;
+        this.loop = other.loop;
+        this.preload = other.preload;
+
+        this.fileDoesNotExist = (this.src?.fileDoesNotExist || this.srcMin?.fileDoesNotExist || this.srcMax?.fileDoesNotExist) ?? true;
+        this.onConstructionFinished(MediaData);
+    }
+
+    public async complete(mediaContext: MediaContextType): Promise<MediaData> {
+        const src = await this.src?.complete(mediaContext);
+        const srcMin = await this.srcMin?.complete(mediaContext);
+        const srcMax = await this.srcMax?.complete(mediaContext);
+        if (src !== this.src || srcMin !== this.srcMin || srcMax !== this.srcMax) {
+            return this.withUpdate({
+                src: src,
+                srcMin: srcMin,
+                srcMax: srcMax,
+            });
+        }
+        return this;
+    }
+
+    public static fromJSON(media: JsonMedia) {
+        let src = media.src != null ? SourceData.fromJSON(media.src) : undefined;
+        let srcMin = media.srcMin != null ? SourceData.fromJSON(media.srcMin) : undefined;
+        let srcMax = media.srcMax != null ? SourceData.fromJSON(media.srcMax) : undefined;
+
+        return new MediaData({
+            src: src,
+            srcMin: srcMin,
+            srcMax: srcMax,
+            loading: media.loading ?? MediaData.default.loading,
+            type: MediaData.determineType(media.type ?? "auto", (src ?? srcMin ?? srcMax)!.name),
+            fetchPriority: media.fetchPriority ?? MediaData.default.fetchPriority,
+            poster: media.poster,
+            autoplay: media.autoplay ?? MediaData.default.autoplay,
+            muted: media.muted ?? MediaData.default.muted,
+            loop: media.loop ?? MediaData.default.loop,
+            preload: media.preload ?? MediaData.default.preload,
+        });
+    }
+
+    public static default: MediaData = new MediaData({
+        src: SourceData.default,
+        poster: undefined,
+        srcMax: undefined,
+        srcMin: undefined,
+        type: "img",
+        loading: "auto",
+        muted: false,
+        fetchPriority: "auto",
+        preload: "auto",
+        loop: false,
+        autoplay: false,
+    });
+
+    public static determineType(value: MediaType | "auto", src: string): MediaType {
+        let res: MediaType;
+        if (value === "auto") {
+            let fileSplit = src.split(".");
+            let fileEnding = fileSplit[fileSplit.length - 1];
+            if (MediaData.imgFileEndings.indexOf(fileEnding) > -1) {
+                res = "img";
+            } else if (MediaData.videoFileEndings.indexOf(fileEnding) > -1) {
+                res = "video";
+            } else if (MediaData.iframeUrlEndings.indexOf(fileEnding) > -1) {
+                res = "iframe";
+            } else {
+                console.warn("Please add the file (or url) ending to the list\n'iframe' is used as default because there are endless different url endings\nFile Name which produced the Error:", src);
+                res = "iframe";
+            }
+        } else {
+            res = value;
+        }
+        return res;
+    }
+
+    public allTypes(): Array<MediaType> {
+        return [this.src?.type, this.srcMin?.type, this.srcMax?.type].filter((value): value is MediaType => value != null);
+    }
+
+    public equals(other: DataType<MediaData> | null | undefined): boolean {
+        return other != null && (this === other || (
+            this.src === other.src &&
+            this.srcMax === other.srcMax &&
+            this.srcMin === other.srcMin &&
+            this.preload === other.preload &&
+            this.autoplay === other.autoplay &&
+            this.fetchPriority === other.fetchPriority &&
+            this.loading === other.loading &&
+            this.loop === other.loop &&
+            this.muted === other.muted &&
+            this.poster === other.poster &&
+            this.type === other.type
+        ));
+    }
+
+    public withUpdate(other: Partial<DataType<MediaData>>): MediaData {
+        return new MediaData({...this, ...other});
+    }
+
+    public isComplete(): boolean {
+        return (this.src?.isComplete() ?? true) &&
+            (this.srcMin?.isComplete() ?? true) &&
+            (this.srcMax?.isComplete() ?? true);
+    }
+
+    public toJSON(): JsonMedia {
+        return {
+            type: this.type,
+            src: this.src?.toJSON(),
+            srcMin: this.srcMin?.toJSON(),
+            srcMax: this.srcMax?.toJSON(),
+            fetchPriority: this.fetchPriority,
+            loading: this.loading,
+            loop: this.loop,
+            muted: this.muted,
+            preload: this.preload,
+            poster: this.poster,
+            autoplay: this.autoplay,
+        };
+    }
+}
+
+class PageData extends AbstractAddressableObject<PageData, JsonPage> {
+    public declare excludeFromDataType: "excludeFromDataType";
+    public declare readonly animationType: PageAnimations;
+
+    public readonly media: MediaData;
+    public readonly is360: boolean;
+    public readonly isPanorama: boolean;
+    public readonly initialDirection: number;
+    public readonly inlineObjects: readonly InlineObjectData[];
+
+    constructor({media, is360, isPanorama, initialDirection, inlineObjects, ...base}: DataType<PageData>) {
+        super(base);
+        this.media = media;
+        this.is360 = is360;
+        this.isPanorama = isPanorama;
+        this.initialDirection = initialDirection;
+        this.inlineObjects = inlineObjects;
+        this.onConstructionFinished(PageData);
+    }
+
+    static fromJSON(page: JsonPage): PageData {
+        const inlineObjects = page.inlineObjects?.map(InlineObjectData.fromJSON) ?? PageData.default.inlineObjects.slice();
+        inlineObjects.push(...page.clickables?.map(ClickableData.fromJSON) ?? []);
+        const media = MediaData.fromJSON(page.media);
+
+        // defaults to false; iframes cannot be 360 nor panorama
+        const is360 = (page.is_360 ?? PageData.default.is360) && (media.type === "img" || media.type === "video");
+
+        // defaults to false; iframes cannot be 360 nor panorama
+        const isPanorama = is360 || ((page.is_panorama ?? PageData.default.isPanorama) && (media.type === "img" || media.type === "video"));
+
+        return new PageData({
+            animationType: page.animationType ?? PageData.default.animationType,
+            id: page.id,
+            media: media,
+            is360: is360,
+            isPanorama: isPanorama,
+            initialDirection: page.initial_direction ?? PageData.default.initialDirection,
+            inlineObjects: inlineObjects,
+        });
+    }
+
+    public static default: PageData = new PageData({
+        id: "badID",
+        animationType: "forward",
+        initialDirection: 0,
+        isPanorama: false,
+        is360: false,
+        inlineObjects: [],
+        media: MediaData.default,
+    });
+
+    public equals(other: DataType<PageData> | null | undefined): other is DataType<PageData> {
+        return super.equals(other) &&
+            this.media.equals(other.media) &&
+            this.is360 === other.is360 &&
+            this.initialDirection === other.initialDirection &&
+            this.isPanorama === other.isPanorama &&
+            //@ts-ignore
+            (this.inlineObjects.length === other.inlineObjects.length && this.inlineObjects.map(v => other.inlineObjects.find(value => value.equals(v)) !== undefined)
+                .reduce((prev, now) => prev && now, true));
+    }
+
+    public withUpdate(other: Partial<DataType<PageData>>): PageData {
+        return new PageData({...this, ...other});
+    }
+
+    public async complete(mediaContext: MediaContextType): Promise<PageData> {
+        let media = await this.media.complete(mediaContext);
+        if (media !== this.media) {
+            return this.withUpdate({
+                media: media,
+            });
+        }
+        return this;
+    }
+
+    public isComplete(): boolean {
+        return this.media.isComplete();
+    }
+
+    public toJSON(): JsonPage {
+        return {
+            ...super.toJSON(),
+            media: this.media.toJSON(),
+            inlineObjects: this.inlineObjects.map(value => value.toJSON()),
+            is_panorama: this.isPanorama,
+            is_360: this.is360,
+            initial_direction: this.initialDirection,
+        };
+    }
+
+    public withInlineObjects(...inlineObjects: UnFlatArray<InlineObjectData>): PageData {
+        return new PageData({...this, inlineObjects: inlineObjects.flat()});
+    }
+
+    public withInitialDirection(initialDirection: number): PageData {
+        if (this.initialDirection === initialDirection) {
+            return this;
+        }
+        return new PageData({...this, initialDirection: initialDirection});
+    }
+
+    public withMedia(media: MediaData): PageData {
+        if (this.media === media) {
+            return this;
+        }
+        return new PageData({...this, media: media});
+    }
+
+    public withIs360(is360: boolean): PageData {
+        if (this.is360 === is360) {
+            return this;
+        }
+        return new PageData({...this, is360: is360, isPanorama: is360 || this.isPanorama});
+    }
+
+    public withIsPanorama(isPanorama: boolean): PageData {
+        if (this.isPanorama === isPanorama) {
+            return this;
+        }
+        return new PageData({...this, isPanorama: isPanorama, is360: isPanorama && this.is360});
+    }
+}
+
+class SchulTourConfigFile extends Data<SchulTourConfigFile> {
+    public declare excludeFromDataType: "excludeFromDataType";
+
+    public readonly pages: readonly PageData[];
+    public readonly initialPage: string | undefined;
+    public readonly fullscreen: boolean;
+    public readonly colorTheme: "dark" | "light";
+    public readonly mode: "inline" | "normal";
+
+    constructor(other: DataType<SchulTourConfigFile>) {
+        super();
+        this.pages = other.pages;
+        this.initialPage = other.initialPage;
+        this.fullscreen = other.fullscreen;
+        this.colorTheme = other.colorTheme;
+        this.mode = other.mode;
+        this.onConstructionFinished(SchulTourConfigFile);
+    }
+
+    public static default(): SchulTourConfigFile {
+        return new SchulTourConfigFile({
+            pages: [],
+            initialPage: undefined,
+            fullscreen: true,
+            colorTheme: "dark",
+            mode: "normal",
+        });
+    }
+
+    public static fromJSON(json: JsonSchulTourConfigFile): SchulTourConfigFile {
+        const pages = json.pages.map(PageData.fromJSON);
+        return new SchulTourConfigFile({
+            pages: pages,
+            initialPage: json.initialPage,
+            fullscreen: json.fullscreen ?? true,
+            colorTheme: json.colorTheme ?? "dark",
+            mode: json.mode ?? "normal",
+        });
+    }
+
+    public equals(other: null | undefined | DataType<SchulTourConfigFile>): boolean {
+        return other != null && (this === other || (
+            arrayEquals(this.pages, other.pages)
+            && this.initialPage === other.initialPage
+            && this.fullscreen === other.fullscreen
+            && this.mode === other.mode
+            && this.colorTheme === other.colorTheme
+        ));
+    }
+
+    public toJSON(): JsonSchulTourConfigFile {
+        return {
+            pages: this.pages.map(page => page.toJSON()),
+            initialPage: this.initialPage,
+            colorTheme: this.colorTheme,
+            mode: this.mode,
+            fullscreen: this.fullscreen,
+        };
+    }
+
+    public withInitialPage(initialPage: string): SchulTourConfigFile {
+        if (this.initialPage === initialPage) {
+            return this;
+        }
+        return new SchulTourConfigFile({...this, initialPage: initialPage});
+    }
+
+    public withPages(pages: readonly PageData[]): SchulTourConfigFile {
+        if (this.pages === pages) {
+            return this;
+        }
+        return new SchulTourConfigFile({...this, pages: pages});
+    }
 }
 
 function hashString(str: string, seed = 0): number {

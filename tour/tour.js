@@ -1,6 +1,5 @@
 // import * as $ from "jquery";
-import {InlineObjectData, MediaData, mediaFolder, SchulTourConfigFile, uniqueId} from "./Data.js";
-
+import { InlineObjectData, MediaData, mediaFolder, SchulTourConfigFile, uniqueId, } from "./Data.js";
 let finished_last = true;
 const idPrefix = "tour_pg_";
 const baustellenFotoUrl = mediaFolder + "/baustelle.png";

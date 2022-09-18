@@ -63,64 +63,6 @@ class Data {
         }
     }
 }
-class SchulTourConfigFile extends Data {
-    constructor(other) {
-        super();
-        this.pages = other.pages;
-        this.initialPage = other.initialPage;
-        this.fullscreen = other.fullscreen;
-        this.colorTheme = other.colorTheme;
-        this.mode = other.mode;
-        this.onConstructionFinished(SchulTourConfigFile);
-    }
-    static default() {
-        return new SchulTourConfigFile({
-            pages: [],
-            initialPage: undefined,
-            fullscreen: true,
-            colorTheme: "dark",
-            mode: "normal",
-        });
-    }
-    static fromJSON(json) {
-        const pages = json.pages.map(PageData.fromJSON);
-        return new SchulTourConfigFile({
-            pages: pages,
-            initialPage: json.initialPage,
-            fullscreen: json.fullscreen ?? true,
-            colorTheme: json.colorTheme ?? "dark",
-            mode: json.mode ?? "normal",
-        });
-    }
-    equals(other) {
-        return other != null && (this === other || (arrayEquals(this.pages, other.pages)
-            && this.initialPage === other.initialPage
-            && this.fullscreen === other.fullscreen
-            && this.mode === other.mode
-            && this.colorTheme === other.colorTheme));
-    }
-    toJSON() {
-        return {
-            pages: this.pages.map(page => page.toJSON()),
-            initialPage: this.initialPage,
-            colorTheme: this.colorTheme,
-            mode: this.mode,
-            fullscreen: this.fullscreen,
-        };
-    }
-    withInitialPage(initialPage) {
-        if (this.initialPage === initialPage) {
-            return this;
-        }
-        return new SchulTourConfigFile({ ...this, initialPage: initialPage });
-    }
-    withPages(pages) {
-        if (this.pages === pages) {
-            return this;
-        }
-        return new SchulTourConfigFile({ ...this, pages: pages });
-    }
-}
 class AbstractAddressableObject extends Data {
     constructor({ id, animationType, ...base }) {
         super(base);
@@ -154,226 +96,7 @@ class AbstractAddressableObject extends Data {
         });
     }
 }
-class PageData extends AbstractAddressableObject {
-    constructor({ media, is360, isPanorama, initialDirection, inlineObjects, ...base }) {
-        super(base);
-        this.media = media;
-        this.is360 = is360;
-        this.isPanorama = isPanorama;
-        this.initialDirection = initialDirection;
-        this.inlineObjects = inlineObjects;
-        this.onConstructionFinished(PageData);
-    }
-    static fromJSON(page) {
-        const inlineObjects = page.inlineObjects?.map(InlineObjectData.fromJSON) ?? [];
-        inlineObjects.push(...page.clickables?.map(ClickableData.fromJSON) ?? []);
-        const media = MediaData.fromJSON(page.media);
-        // defaults to false; iframes cannot be 360 nor panorama
-        const is360 = (page.is_360 ?? false) && (media.type === "img" || media.type === "video");
-        // defaults to false; iframes cannot be 360 nor panorama
-        const isPanorama = is360 || ((page.is_panorama ?? false) && (media.type === "img" || media.type === "video"));
-        return new PageData({
-            animationType: page.animationType ?? "forward",
-            id: page.id,
-            media: media,
-            is360: is360,
-            isPanorama: isPanorama,
-            initialDirection: page.initial_direction ?? 0,
-            inlineObjects: inlineObjects,
-        });
-    }
-    equals(other) {
-        return super.equals(other) &&
-            this.media.equals(other.media) &&
-            this.is360 === other.is360 &&
-            this.initialDirection === other.initialDirection &&
-            this.isPanorama === other.isPanorama &&
-            //@ts-ignore
-            (this.inlineObjects.length === other.inlineObjects.length && this.inlineObjects.map(v => other.inlineObjects.find(value => value.equals(v)) !== undefined)
-                .reduce((prev, now) => prev && now, true));
-    }
-    withUpdate(other) {
-        return new PageData({ ...this, ...other });
-    }
-    async complete(mediaContext) {
-        let media = await this.media.complete(mediaContext);
-        if (media !== this.media) {
-            return this.withUpdate({
-                media: media,
-            });
-        }
-        return this;
-    }
-    isComplete() {
-        return this.media.isComplete();
-    }
-    toJSON() {
-        return {
-            ...super.toJSON(),
-            media: this.media.toJSON(),
-            inlineObjects: this.inlineObjects.map(value => value.toJSON()),
-            is_panorama: this.isPanorama,
-            is_360: this.is360,
-            initial_direction: this.initialDirection,
-        };
-    }
-    withInlineObjects(...inlineObjects) {
-        return new PageData({ ...this, inlineObjects: inlineObjects.flat() });
-    }
-    withInitialDirection(initialDirection) {
-        if (this.initialDirection === initialDirection) {
-            return this;
-        }
-        return new PageData({ ...this, initialDirection: initialDirection });
-    }
-    withMedia(media) {
-        if (this.media === media) {
-            return this;
-        }
-        return new PageData({ ...this, media: media });
-    }
-    withIs360(is360) {
-        if (this.is360 === is360) {
-            return this;
-        }
-        return new PageData({ ...this, is360: is360, isPanorama: is360 || this.isPanorama });
-    }
-    withIsPanorama(isPanorama) {
-        if (this.isPanorama === isPanorama) {
-            return this;
-        }
-        return new PageData({ ...this, isPanorama: isPanorama, is360: isPanorama && this.is360 });
-    }
-}
-class MediaData extends Data {
-    constructor(other) {
-        super();
-        this.src = other.src;
-        this.srcMin = other.srcMin;
-        this.srcMax = other.srcMax;
-        this.loading = other.loading;
-        this.type = other.type;
-        this.fetchPriority = other.fetchPriority;
-        this.poster = other.poster;
-        this.autoplay = other.autoplay;
-        this.muted = other.muted;
-        this.loop = other.loop;
-        this.preload = other.preload;
-        this.fileDoesNotExist = (this.src?.fileDoesNotExist || this.srcMin?.fileDoesNotExist || this.srcMax?.fileDoesNotExist) ?? true;
-        this.onConstructionFinished(MediaData);
-    }
-    async complete(mediaContext) {
-        const src = await this.src?.complete(mediaContext);
-        const srcMin = await this.srcMin?.complete(mediaContext);
-        const srcMax = await this.srcMax?.complete(mediaContext);
-        if (src !== this.src || srcMin !== this.srcMin || srcMax !== this.srcMax) {
-            return this.withUpdate({
-                src: src,
-                srcMin: srcMin,
-                srcMax: srcMax,
-            });
-        }
-        return this;
-    }
-    static fromJSON(media) {
-        let src = media.src != null ? SourceData.fromJSON(media.src) : undefined;
-        let srcMin = media.srcMin != null ? SourceData.fromJSON(media.srcMin) : undefined;
-        let srcMax = media.srcMax != null ? SourceData.fromJSON(media.srcMax) : undefined;
-        return new MediaData({
-            src: src,
-            srcMin: srcMin,
-            srcMax: srcMax,
-            loading: media.loading ?? "auto",
-            type: MediaData.determineType(media.type ?? "auto", (src ?? srcMin ?? srcMax).name),
-            fetchPriority: media.fetchPriority ?? "auto",
-            poster: media.poster,
-            autoplay: media.autoplay ?? false,
-            muted: media.muted ?? false,
-            loop: media.loop ?? false,
-            preload: media.preload ?? "auto",
-        });
-    }
-    static determineType(value, src) {
-        let res;
-        if (value === "auto") {
-            let fileSplit = src.split(".");
-            let fileEnding = fileSplit[fileSplit.length - 1];
-            if (MediaData.imgFileEndings.indexOf(fileEnding) > -1) {
-                res = "img";
-            }
-            else if (MediaData.videoFileEndings.indexOf(fileEnding) > -1) {
-                res = "video";
-            }
-            else if (MediaData.iframeUrlEndings.indexOf(fileEnding) > -1) {
-                res = "iframe";
-            }
-            else {
-                console.warn("Please add the file (or url) ending to the list\n'iframe' is used as default because there are endless different url endings\nFile Name which produced the Error:", src);
-                res = "iframe";
-            }
-        }
-        else {
-            res = value;
-        }
-        return res;
-    }
-    allTypes() {
-        return [this.src?.type, this.srcMin?.type, this.srcMax?.type].filter((value) => value != null);
-    }
-    equals(other) {
-        return other != null && (this === other || (this.src === other.src &&
-            this.srcMax === other.srcMax &&
-            this.srcMin === other.srcMin &&
-            this.preload === other.preload &&
-            this.autoplay === other.autoplay &&
-            this.fetchPriority === other.fetchPriority &&
-            this.loading === other.loading &&
-            this.loop === other.loop &&
-            this.muted === other.muted &&
-            this.poster === other.poster &&
-            this.type === other.type));
-    }
-    withUpdate(other) {
-        return new MediaData({ ...this, ...other });
-    }
-    isComplete() {
-        return (this.src?.isComplete() ?? true) &&
-            (this.srcMin?.isComplete() ?? true) &&
-            (this.srcMax?.isComplete() ?? true);
-    }
-    toJSON() {
-        return {
-            type: this.type,
-            src: this.src?.toJSON(),
-            srcMin: this.srcMin?.toJSON(),
-            srcMax: this.srcMax?.toJSON(),
-            fetchPriority: this.fetchPriority,
-            loading: this.loading,
-            loop: this.loop,
-            muted: this.muted,
-            preload: this.preload,
-            poster: this.poster,
-            autoplay: this.autoplay,
-        };
-    }
-}
-MediaData.imgFileEndings = ["png", "jpeg", "jpg", "gif", "svg", "webp", "apng", "avif"];
-MediaData.videoFileEndings = ["mp4", "webm", "ogg", "ogm", "ogv", "avi"];
-//this list is not exhaustive
-MediaData.iframeUrlEndings = ["html", "htm", "com", "org", "edu", "net", "gov", "mil", "int", "de", "en", "eu", "us", "fr", "ch", "at", "au"];
-MediaData.Types = ["img", "video", "iframe"];
 class AbstractInlineObjectData extends Data {
-    // // clickable attrs
-    // public readonly title?: string;
-    // public readonly icon?: IconType;
-    // test field
-    // public readonly title?: string;
-    // public readonly content?: string;
-    // public readonly footer?: string;
-    // public readonly cssClasses?: string[] | string; // ["class-a", "class-b"] OR "class-a class-b"
-    //
-    // // custom
-    // public readonly htmlId?: string;
     constructor({ x, y, animationType, position, type, hidden, }) {
         super();
         // standard
@@ -385,37 +108,6 @@ class AbstractInlineObjectData extends Data {
         this.hidden = hidden;
         this.onConstructionFinished(AbstractInlineObjectData);
     }
-    // let position = json.position;
-    // const extras: Mutable<Partial<DataType<InlineObjectData>>> = {};
-    // // apply default position depending on inline object type
-    // switch (json.type) {
-    //     case "clickable":
-    //         position ??= "media";
-    //         extras.title = json.title;
-    //         extras.icon = json.icon ?? "arrow_l";
-    //         break;
-    //     case "text":
-    //         position ??= "media";
-    //         extras.cssClasses = json.cssClasses ?? "";
-    //         extras.title = json.title;
-    //         extras.content = json.content;
-    //         extras.footer = json.footer;
-    //         break;
-    //     case "custom":
-    //         position ??= "media";
-    //         extras.htmlId = json.htmlId;
-    //         break;
-    // }
-    //
-    // return new InlineObjectData({
-    //     ...extras,
-    //     x: typeof json.x === "number" ? json.x : parseFloat(json.x),
-    //     y: typeof json.y === "number" ? json.y : parseFloat(json.y),
-    //     type: json.type,
-    //     goto: json.goto,
-    //     position: position,
-    //     animationType: json.animationType ?? "forward",
-    // });
     equals(other) {
         return other != null && (this === other || (this.x === other.x &&
             this.y === other.y &&
@@ -784,127 +476,6 @@ CustomObjectData.default = {
     position: "media",
     htmlId: "",
 };
-class SourceData extends Data {
-    // static readonly sourceUrl = "media/";
-    constructor({ name, width, height, file, type, fileDoesNotExist }) {
-        super();
-        this.name = name;
-        this.file = file;
-        this.fileDoesNotExist = fileDoesNotExist;
-        // const srcNotExistent: boolean = media.src != null && mediaContext.mediaFiles.find(v => v.name === media.src!.name) === undefined;
-        this.width = width;
-        this.height = height;
-        this.type = type;
-        this.onConstructionFinished(SourceData);
-    }
-    static fromJSON(other) {
-        let name = typeof other !== "string" ? other.name : other;
-        return new SourceData({
-            name: name,
-            // if typeof other == string -> other.width == undefined -> OK
-            // @ts-ignore
-            width: other?.width,
-            // @ts-ignore
-            height: other?.height,
-            // @ts-ignore
-            type: MediaData.determineType(other?.type ?? "auto", name),
-        });
-    }
-    static formatSrc(src) {
-        let regex = new RegExp("^(?:[a-z]+:)?//", "i");
-        //if src is absolute (e.g. http://abc.xyz)
-        //or src relative to document root (starts with '/') (the browser interprets that correctly)
-        if (regex.test(src) || src.startsWith("/")) {
-            if (src.startsWith("http://")) {
-                console.warn("Security waring: Using unsecure url in iframe:", src);
-            }
-            return src;
-        }
-        //add prefix
-        return mediaFolder + "/" + src;
-    }
-    static async fromFile(file) {
-        const fileData = await FileData.fromFile(file);
-        return this.fromFileData(fileData);
-    }
-    static fromFileData(fileData) {
-        return new SourceData({
-            name: fileData.name,
-            file: fileData,
-            fileDoesNotExist: false,
-            width: fileData.intrinsicWidth ?? undefined,
-            height: fileData.intrinsicHeight ?? undefined,
-            type: MediaData.determineType("auto", fileData.name),
-        });
-    }
-    complete(mediaContext) {
-        if (this.isComplete()) {
-            // if (this.height != null && this.width != null) {
-            return this;
-            // }
-            // return SourceData.fromFile(this.file.file);
-        }
-        const media = mediaContext.mediaFiles.find(value => value.name === this.name);
-        if (media) {
-            return SourceData.fromFileData(media);
-        }
-        // media file not present
-        return this.withFileDoesNotExist(true);
-        // return SourceData.fromFile(await SourceData.loadMedia(this.name));
-    }
-    isComplete() {
-        return this.file != null
-            && !this.file.outdated;
-    }
-    equals(other) {
-        return other != null && (this === other || (this.height === other.height &&
-            this.width === other.width &&
-            this.name === other.name &&
-            this.type === other.type &&
-            (this.file === other.file || (this.file?.equals(other.file) ?? false))));
-    }
-    toJSON() {
-        return {
-            name: this.name,
-            type: this.type,
-            height: this.height,
-            width: this.width,
-        };
-    }
-    /**
-     * Return a string which is a (valid) url to the source
-     */
-    url() {
-        if (this.isComplete()) {
-            return this.file.url;
-        }
-        return SourceData.formatSrc(this.name);
-    }
-    withType(type) {
-        if (this.type === type) {
-            return this;
-        }
-        return new SourceData({ ...this, type: type });
-    }
-    withWidth(width) {
-        if (this.width === width) {
-            return this;
-        }
-        return new SourceData({ ...this, width: width });
-    }
-    withHeight(height) {
-        if (this.height === height) {
-            return this;
-        }
-        return new SourceData({ ...this, height: height });
-    }
-    withFileDoesNotExist(fileDoesNotExist) {
-        if (this.fileDoesNotExist === fileDoesNotExist) {
-            return this;
-        }
-        return new SourceData({ ...this, fileDoesNotExist: fileDoesNotExist });
-    }
-}
 class FileData extends Data {
     constructor({ name, file, size, type, intrinsicWidth, intrinsicHeight, url }) {
         super();
@@ -1044,6 +615,420 @@ class FileData extends Data {
     }
     get outdated() {
         return this._outdated;
+    }
+}
+class SourceData extends Data {
+    constructor({ name, width, height, file, type, fileDoesNotExist }) {
+        super();
+        this.name = name;
+        this.file = file;
+        this.fileDoesNotExist = fileDoesNotExist;
+        // const srcNotExistent: boolean = media.src != null && mediaContext.mediaFiles.find(v => v.name === media.src!.name) === undefined;
+        this.width = width;
+        this.height = height;
+        this.type = type;
+        this.onConstructionFinished(SourceData);
+    }
+    static fromJSON(other) {
+        let name = typeof other !== "string" ? other.name : other;
+        return new SourceData({
+            name: name,
+            // if typeof other == string -> other.width == undefined -> OK
+            // @ts-ignore
+            width: other?.width,
+            // @ts-ignore
+            height: other?.height,
+            // @ts-ignore
+            type: MediaData.determineType(other?.type ?? "auto", name),
+        });
+    }
+    static formatSrc(src) {
+        let regex = new RegExp("^(?:[a-z]+:)?//", "i");
+        //if src is absolute (e.g. http://abc.xyz)
+        //or src relative to document root (starts with '/') (the browser interprets that correctly)
+        if (regex.test(src) || src.startsWith("/")) {
+            if (src.startsWith("http://")) {
+                console.warn("Security waring: Using unsecure url in iframe:", src);
+            }
+            return src;
+        }
+        //add prefix
+        return mediaFolder + "/" + src;
+    }
+    static async fromFile(file) {
+        const fileData = await FileData.fromFile(file);
+        return this.fromFileData(fileData);
+    }
+    static fromFileData(fileData) {
+        return new SourceData({
+            name: fileData.name,
+            file: fileData,
+            fileDoesNotExist: false,
+            width: fileData.intrinsicWidth ?? undefined,
+            height: fileData.intrinsicHeight ?? undefined,
+            type: MediaData.determineType("auto", fileData.name),
+        });
+    }
+    complete(mediaContext) {
+        if (this.isComplete()) {
+            // if (this.height != null && this.width != null) {
+            return this;
+            // }
+            // return SourceData.fromFile(this.file.file);
+        }
+        const media = mediaContext.mediaFiles.find(value => value.name === this.name);
+        if (media) {
+            return SourceData.fromFileData(media);
+        }
+        // media file not present
+        return this.withFileDoesNotExist(true);
+        // return SourceData.fromFile(await SourceData.loadMedia(this.name));
+    }
+    isComplete() {
+        return this.file != null
+            && !this.file.outdated;
+    }
+    equals(other) {
+        return other != null && (this === other || (this.height === other.height &&
+            this.width === other.width &&
+            this.name === other.name &&
+            this.type === other.type &&
+            (this.file === other.file || (this.file?.equals(other.file) ?? false))));
+    }
+    toJSON() {
+        return {
+            name: this.name,
+            type: this.type,
+            height: this.height,
+            width: this.width,
+        };
+    }
+    /**
+     * Return a string which is a (valid) url to the source
+     */
+    url() {
+        if (this.isComplete()) {
+            return this.file.url;
+        }
+        return SourceData.formatSrc(this.name);
+    }
+    withType(type) {
+        if (this.type === type) {
+            return this;
+        }
+        return new SourceData({ ...this, type: type });
+    }
+    withWidth(width) {
+        if (this.width === width) {
+            return this;
+        }
+        return new SourceData({ ...this, width: width });
+    }
+    withHeight(height) {
+        if (this.height === height) {
+            return this;
+        }
+        return new SourceData({ ...this, height: height });
+    }
+    withFileDoesNotExist(fileDoesNotExist) {
+        if (this.fileDoesNotExist === fileDoesNotExist) {
+            return this;
+        }
+        return new SourceData({ ...this, fileDoesNotExist: fileDoesNotExist });
+    }
+}
+SourceData.default = new SourceData({
+    type: "img",
+    name: "baustelle.png",
+    width: undefined,
+    height: undefined,
+});
+class MediaData extends Data {
+    constructor(other) {
+        super();
+        this.src = other.src;
+        this.srcMin = other.srcMin;
+        this.srcMax = other.srcMax;
+        this.loading = other.loading;
+        this.type = other.type;
+        this.fetchPriority = other.fetchPriority;
+        this.poster = other.poster;
+        this.autoplay = other.autoplay;
+        this.muted = other.muted;
+        this.loop = other.loop;
+        this.preload = other.preload;
+        this.fileDoesNotExist = (this.src?.fileDoesNotExist || this.srcMin?.fileDoesNotExist || this.srcMax?.fileDoesNotExist) ?? true;
+        this.onConstructionFinished(MediaData);
+    }
+    async complete(mediaContext) {
+        const src = await this.src?.complete(mediaContext);
+        const srcMin = await this.srcMin?.complete(mediaContext);
+        const srcMax = await this.srcMax?.complete(mediaContext);
+        if (src !== this.src || srcMin !== this.srcMin || srcMax !== this.srcMax) {
+            return this.withUpdate({
+                src: src,
+                srcMin: srcMin,
+                srcMax: srcMax,
+            });
+        }
+        return this;
+    }
+    static fromJSON(media) {
+        let src = media.src != null ? SourceData.fromJSON(media.src) : undefined;
+        let srcMin = media.srcMin != null ? SourceData.fromJSON(media.srcMin) : undefined;
+        let srcMax = media.srcMax != null ? SourceData.fromJSON(media.srcMax) : undefined;
+        return new MediaData({
+            src: src,
+            srcMin: srcMin,
+            srcMax: srcMax,
+            loading: media.loading ?? MediaData.default.loading,
+            type: MediaData.determineType(media.type ?? "auto", (src ?? srcMin ?? srcMax).name),
+            fetchPriority: media.fetchPriority ?? MediaData.default.fetchPriority,
+            poster: media.poster,
+            autoplay: media.autoplay ?? MediaData.default.autoplay,
+            muted: media.muted ?? MediaData.default.muted,
+            loop: media.loop ?? MediaData.default.loop,
+            preload: media.preload ?? MediaData.default.preload,
+        });
+    }
+    static determineType(value, src) {
+        let res;
+        if (value === "auto") {
+            let fileSplit = src.split(".");
+            let fileEnding = fileSplit[fileSplit.length - 1];
+            if (MediaData.imgFileEndings.indexOf(fileEnding) > -1) {
+                res = "img";
+            }
+            else if (MediaData.videoFileEndings.indexOf(fileEnding) > -1) {
+                res = "video";
+            }
+            else if (MediaData.iframeUrlEndings.indexOf(fileEnding) > -1) {
+                res = "iframe";
+            }
+            else {
+                console.warn("Please add the file (or url) ending to the list\n'iframe' is used as default because there are endless different url endings\nFile Name which produced the Error:", src);
+                res = "iframe";
+            }
+        }
+        else {
+            res = value;
+        }
+        return res;
+    }
+    allTypes() {
+        return [this.src?.type, this.srcMin?.type, this.srcMax?.type].filter((value) => value != null);
+    }
+    equals(other) {
+        return other != null && (this === other || (this.src === other.src &&
+            this.srcMax === other.srcMax &&
+            this.srcMin === other.srcMin &&
+            this.preload === other.preload &&
+            this.autoplay === other.autoplay &&
+            this.fetchPriority === other.fetchPriority &&
+            this.loading === other.loading &&
+            this.loop === other.loop &&
+            this.muted === other.muted &&
+            this.poster === other.poster &&
+            this.type === other.type));
+    }
+    withUpdate(other) {
+        return new MediaData({ ...this, ...other });
+    }
+    isComplete() {
+        return (this.src?.isComplete() ?? true) &&
+            (this.srcMin?.isComplete() ?? true) &&
+            (this.srcMax?.isComplete() ?? true);
+    }
+    toJSON() {
+        return {
+            type: this.type,
+            src: this.src?.toJSON(),
+            srcMin: this.srcMin?.toJSON(),
+            srcMax: this.srcMax?.toJSON(),
+            fetchPriority: this.fetchPriority,
+            loading: this.loading,
+            loop: this.loop,
+            muted: this.muted,
+            preload: this.preload,
+            poster: this.poster,
+            autoplay: this.autoplay,
+        };
+    }
+}
+MediaData.imgFileEndings = ["png", "jpeg", "jpg", "gif", "svg", "webp", "apng", "avif"];
+MediaData.videoFileEndings = ["mp4", "webm", "ogg", "ogm", "ogv", "avi"];
+//this list is not exhaustive
+MediaData.iframeUrlEndings = ["html", "htm", "com", "org", "edu", "net", "gov", "mil", "int", "de", "en", "eu", "us", "fr", "ch", "at", "au"];
+MediaData.Types = ["img", "video", "iframe"];
+MediaData.default = new MediaData({
+    src: SourceData.default,
+    poster: undefined,
+    srcMax: undefined,
+    srcMin: undefined,
+    type: "img",
+    loading: "auto",
+    muted: false,
+    fetchPriority: "auto",
+    preload: "auto",
+    loop: false,
+    autoplay: false,
+});
+class PageData extends AbstractAddressableObject {
+    constructor({ media, is360, isPanorama, initialDirection, inlineObjects, ...base }) {
+        super(base);
+        this.media = media;
+        this.is360 = is360;
+        this.isPanorama = isPanorama;
+        this.initialDirection = initialDirection;
+        this.inlineObjects = inlineObjects;
+        this.onConstructionFinished(PageData);
+    }
+    static fromJSON(page) {
+        const inlineObjects = page.inlineObjects?.map(InlineObjectData.fromJSON) ?? PageData.default.inlineObjects.slice();
+        inlineObjects.push(...page.clickables?.map(ClickableData.fromJSON) ?? []);
+        const media = MediaData.fromJSON(page.media);
+        // defaults to false; iframes cannot be 360 nor panorama
+        const is360 = (page.is_360 ?? PageData.default.is360) && (media.type === "img" || media.type === "video");
+        // defaults to false; iframes cannot be 360 nor panorama
+        const isPanorama = is360 || ((page.is_panorama ?? PageData.default.isPanorama) && (media.type === "img" || media.type === "video"));
+        return new PageData({
+            animationType: page.animationType ?? PageData.default.animationType,
+            id: page.id,
+            media: media,
+            is360: is360,
+            isPanorama: isPanorama,
+            initialDirection: page.initial_direction ?? PageData.default.initialDirection,
+            inlineObjects: inlineObjects,
+        });
+    }
+    equals(other) {
+        return super.equals(other) &&
+            this.media.equals(other.media) &&
+            this.is360 === other.is360 &&
+            this.initialDirection === other.initialDirection &&
+            this.isPanorama === other.isPanorama &&
+            //@ts-ignore
+            (this.inlineObjects.length === other.inlineObjects.length && this.inlineObjects.map(v => other.inlineObjects.find(value => value.equals(v)) !== undefined)
+                .reduce((prev, now) => prev && now, true));
+    }
+    withUpdate(other) {
+        return new PageData({ ...this, ...other });
+    }
+    async complete(mediaContext) {
+        let media = await this.media.complete(mediaContext);
+        if (media !== this.media) {
+            return this.withUpdate({
+                media: media,
+            });
+        }
+        return this;
+    }
+    isComplete() {
+        return this.media.isComplete();
+    }
+    toJSON() {
+        return {
+            ...super.toJSON(),
+            media: this.media.toJSON(),
+            inlineObjects: this.inlineObjects.map(value => value.toJSON()),
+            is_panorama: this.isPanorama,
+            is_360: this.is360,
+            initial_direction: this.initialDirection,
+        };
+    }
+    withInlineObjects(...inlineObjects) {
+        return new PageData({ ...this, inlineObjects: inlineObjects.flat() });
+    }
+    withInitialDirection(initialDirection) {
+        if (this.initialDirection === initialDirection) {
+            return this;
+        }
+        return new PageData({ ...this, initialDirection: initialDirection });
+    }
+    withMedia(media) {
+        if (this.media === media) {
+            return this;
+        }
+        return new PageData({ ...this, media: media });
+    }
+    withIs360(is360) {
+        if (this.is360 === is360) {
+            return this;
+        }
+        return new PageData({ ...this, is360: is360, isPanorama: is360 || this.isPanorama });
+    }
+    withIsPanorama(isPanorama) {
+        if (this.isPanorama === isPanorama) {
+            return this;
+        }
+        return new PageData({ ...this, isPanorama: isPanorama, is360: isPanorama && this.is360 });
+    }
+}
+PageData.default = new PageData({
+    id: "badID",
+    animationType: "forward",
+    initialDirection: 0,
+    isPanorama: false,
+    is360: false,
+    inlineObjects: [],
+    media: MediaData.default,
+});
+class SchulTourConfigFile extends Data {
+    constructor(other) {
+        super();
+        this.pages = other.pages;
+        this.initialPage = other.initialPage;
+        this.fullscreen = other.fullscreen;
+        this.colorTheme = other.colorTheme;
+        this.mode = other.mode;
+        this.onConstructionFinished(SchulTourConfigFile);
+    }
+    static default() {
+        return new SchulTourConfigFile({
+            pages: [],
+            initialPage: undefined,
+            fullscreen: true,
+            colorTheme: "dark",
+            mode: "normal",
+        });
+    }
+    static fromJSON(json) {
+        const pages = json.pages.map(PageData.fromJSON);
+        return new SchulTourConfigFile({
+            pages: pages,
+            initialPage: json.initialPage,
+            fullscreen: json.fullscreen ?? true,
+            colorTheme: json.colorTheme ?? "dark",
+            mode: json.mode ?? "normal",
+        });
+    }
+    equals(other) {
+        return other != null && (this === other || (arrayEquals(this.pages, other.pages)
+            && this.initialPage === other.initialPage
+            && this.fullscreen === other.fullscreen
+            && this.mode === other.mode
+            && this.colorTheme === other.colorTheme));
+    }
+    toJSON() {
+        return {
+            pages: this.pages.map(page => page.toJSON()),
+            initialPage: this.initialPage,
+            colorTheme: this.colorTheme,
+            mode: this.mode,
+            fullscreen: this.fullscreen,
+        };
+    }
+    withInitialPage(initialPage) {
+        if (this.initialPage === initialPage) {
+            return this;
+        }
+        return new SchulTourConfigFile({ ...this, initialPage: initialPage });
+    }
+    withPages(pages) {
+        if (this.pages === pages) {
+            return this;
+        }
+        return new SchulTourConfigFile({ ...this, pages: pages });
     }
 }
 function hashString(str, seed = 0) {
