@@ -49,7 +49,7 @@ export default function ListView(
         <div className={classNames("ListView", className)}>
             <ListGroup>
                 <ListGroup.Item>
-                    <Row className="row-cols-auto py-2">
+                    <Row className="row-cols-auto py-2 gy-2">
                         <Col>
                             <ButtonGroup>
                                 <Button onClick={selectAll}>Select All</Button>

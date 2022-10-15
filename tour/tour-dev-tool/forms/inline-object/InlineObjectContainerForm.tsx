@@ -1,10 +1,10 @@
 import React, {useCallback, useContext} from "react";
 import {Accordion, Button, Col, Container, Row} from "react-bootstrap";
 import {useTranslation} from "react-i18next";
-import {InlineObjectData} from "../Data";
+import {AbstractInlineObjectData, InlineObjectData} from "../../../Data";
 import InlineObjectForm from "./InlineObjectForm";
-import {TemplateContext} from "./TourContexts";
-import {MaterialIcon} from "./utils";
+import {PageContext, TemplateContext} from "../../TourContexts";
+import {MaterialIcon} from "../../utils";
 
 type InlineObjectContainerFormProps = {
     inlineObjects: readonly InlineObjectData[],
@@ -13,16 +13,21 @@ type InlineObjectContainerFormProps = {
 export default function InlineObjectContainerForm({inlineObjects, onChange}: InlineObjectContainerFormProps) {
     const templateContext = useContext(TemplateContext);
     const {t} = useTranslation("mainPage", {keyPrefix: "pageForm.inlineObjectContainerForm"});
+    const pageContext = useContext(PageContext);
 
-    const handleInlineObjectChange = useCallback((inlineObject: InlineObjectData, index: number) => {
+    const handleInlineObjectChange = useCallback((inlineObject: AbstractInlineObjectData|InlineObjectData, index: number) => {
         const newInlineObjects = inlineObjects.slice();
-        newInlineObjects[index] = inlineObject;
+        newInlineObjects[index] = inlineObject as InlineObjectData;
         onChange(newInlineObjects);
     }, [inlineObjects, onChange]);
 
     const handleAdd = useCallback(() => {
         onChange([...inlineObjects, templateContext.inlineObject]);
     }, [inlineObjects, onChange]);
+
+    const handleRemove = useCallback((index: number) => {
+        onChange(inlineObjects.filter((v, index) => index !== index));
+    }, [onChange]);
 
     return (
         <Container fluid className="mt-3">
@@ -48,8 +53,8 @@ export default function InlineObjectContainerForm({inlineObjects, onChange}: Inl
                            </Container>
                         </Accordion.Header>
                         <Accordion.Body>
-                            <InlineObjectForm inlineObject={value} onChange={handleInlineObjectChange}
-                                              index={index}/>
+                            <InlineObjectForm inlineObject={value} page={pageContext.currentPage} onChange={handleInlineObjectChange}
+                                              index={index} onDelete={handleRemove}/>
                         </Accordion.Body>
                     </Accordion.Item>;
                 })}

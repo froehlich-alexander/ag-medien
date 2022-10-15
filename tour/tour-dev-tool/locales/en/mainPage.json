@@ -62,13 +62,13 @@
         },
         "x": {
           "label": "X Coordinate",
-          "invalidFeedback": "Must be between 0 and 100"
+          "invalidFeedback": "Must be between 0 and 100",
+          "formText": "The coordinates are relative to the media / page"
         },
         "y": {
           "label": "Y Coordinate",
           "invalidFeedback": "Must be between 0 and 100"
         },
-        "sizeFormText": "The coordinates are relative to the media / page",
         "title": {
           "label": "Title"
         },
@@ -79,8 +79,29 @@
           "label": "Goto / target id",
           "invalidFeedback": "Please select a target id from the list"
         },
+        "content": {
+          "label": "Content",
+          "invalidFeedback": "Please write some content in this field"
+        },
+        "css-classes": {
+          "label": "CSS Classes",
+          "formText": "Separate each class with an escape",
+          "invalidFeedback": "Only letters, numbers, underscore, dash and escape are allowed"
+        },
+        "size": {
+          "label": "Size",
+          "invalidFeedback": "Please choose a value"
+        },
         "animationType": {
           "label": "Animation Type"
+        },
+        "hidden": {
+          "label": "Hidden",
+          "formText": "Hidden at the beginning?"
+        },
+        "id": {
+          "label": "Id",
+          "invalidFeedback": "The Id must be unique and only contain letters, numbers dashes or underscore."
         }
       },
       "addButton": "Add Inline Object"

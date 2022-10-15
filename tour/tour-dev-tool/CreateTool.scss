@@ -1,5 +1,21 @@
 
 .CreateTool {
+    $navbar-height: 3.5rem;
+
+    ::-webkit-scrollbar {
+        width: 5px;
+        height: 5px;
+        //background-color: gray;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background-color: #c526f1;
+    }
+
+    .NavBar {
+        max-height: $navbar-height;
+    }
+
     .MediaForm {
         .SrcTable {
             caption {
@@ -9,6 +25,11 @@
     }
 
     .PageForm {
+        overflow-y: auto;
+        overflow-x: hidden;
+        scroll-behavior: smooth;
+        max-height: calc(100vh - $navbar-height);
+
         .InlineObjectContainerForm {
             .InlineObjectForm {
                 border-color: var(--bs-accordion-border-color);
@@ -18,6 +39,10 @@
     }
 
     .ListView {
+        scroll-behavior: smooth;
+        overflow-y: auto;
+        max-height: calc(100vh - $navbar-height - 1.5rem);
+
         .SelectControls {
             border-color: var(--bs-gray-500);
         }

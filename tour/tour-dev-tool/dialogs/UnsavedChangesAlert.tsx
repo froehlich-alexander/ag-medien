@@ -1,9 +1,9 @@
 import React, {useCallback, useContext, useMemo} from "react";
 import {Alert, Button, Col, Row} from "react-bootstrap";
 import {Trans, useTranslation} from "react-i18next";
-import {hideDialog} from "./store/dialog";
-import {useAppDispatch, useAppSelector} from "./store/hooks";
-import {FormContext, PageContext} from "./TourContexts";
+import {hideDialog} from "../store/dialog";
+import {useAppDispatch, useAppSelector} from "../store/hooks";
+import {FormContext, PageContext} from "../TourContexts";
 
 type UnsavedChangesAlertProps = {}
 

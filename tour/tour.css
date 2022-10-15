@@ -91,12 +91,13 @@ body {
   height: 100%;
   width: auto;
 }
-.schul-tour .page .pg_wrapper > .inlineObject {
+.schul-tour .page > .inlineObject {
   position: fixed;
+  z-index: 1;
 }
 .schul-tour .page .inlineObject {
   position: absolute;
-  transform: translate(-50%);
+  transform: translate(-50%, -50%);
 }
 .schul-tour .page .inlineObject .dev-tool-edit-icon {
   margin: 0.2rem;

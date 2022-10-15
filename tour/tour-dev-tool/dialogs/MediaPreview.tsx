@@ -1,11 +1,11 @@
 import React, {useCallback, useContext} from "react";
 import {Button, Col, Modal} from "react-bootstrap";
 import {useTranslation} from "react-i18next";
-import {hideDialog} from "./store/dialog";
-import {useAppDispatch, useAppSelector} from "./store/hooks";
-import {next, prev} from "./store/mediaPreview";
-import {MediaContext} from "./TourContexts";
-import {MaterialIcon} from "./utils";
+import {hideDialog} from "../store/dialog";
+import {useAppDispatch, useAppSelector} from "../store/hooks";
+import {next, prev} from "../store/mediaPreview";
+import {MediaContext} from "../TourContexts";
+import {MaterialIcon} from "../utils";
 
 interface MediaPreviewProps {
 }

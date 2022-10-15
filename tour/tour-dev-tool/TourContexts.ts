@@ -37,6 +37,7 @@ export interface FormContextType {
     reset: () => void,
     isModified: boolean,
     renamePageIdUsages: boolean,
+    idPattern: (ownId: string|undefined)=>string,
 }
 
 export interface ListViewContextType {

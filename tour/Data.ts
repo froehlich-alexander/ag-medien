@@ -1,3 +1,5 @@
+import {Page} from "./tour";
+import {getAddressableIds} from "./tour-dev-tool/refactor-data";
 import type {MediaContextType} from "./tour-dev-tool/TourContexts";
 import type {Complete, Mutable, UnFlatArray} from "./tour-dev-tool/utils";
 import type {
@@ -30,11 +32,12 @@ import type {
 
 export const mediaFolder = "media";
 
-
-type DataType<T extends Data<any>> = Omit<{ [k in keyof T as T[k] extends Function ? never : k]: T[k] }, "excludeFromDataType" | T["excludeFromDataType"]>;
-type JsonType<T extends Data<any>> = ReturnType<T["toJSON"]>;
-type DeepDataType<T extends Data<any>> = {
-    [k in keyof DataType<T>]: (DataType<T>[k] extends Data<any> ? DeepDataType<DataType<T>[k]> : DataType<T>[k])
+type DataTypeWithoutFields<T extends Data> = { [k in keyof Omit<T, "fields" | "field" | "json"> as T[k] extends Function ? never : k]: T[k] };
+type DataType<T extends Data> = Pick<T, T["field"]>;
+type JsonType<T extends Data> = T["json"];
+type toJSONFunctionType<T, T1 extends Data | never = never> = () => T & (T1 extends Data ? JsonType<T1> : never);
+type DeepDataType<T extends Data> = {
+    [k in keyof DataType<T>]: (DataType<T>[k] extends Data ? DeepDataType<DataType<T>[k]> : DataType<T>[k])
     | (DataType<T>[k] extends undefined ? undefined : never)
 };
 
@@ -78,12 +81,57 @@ const uniqueId = (() => {
     };
 })();
 
-class Data<T extends Data<T>> {
-    declare excludeFromDataType: keyof T;
+type DataWiths<T extends { [k: string]: any }> = { [k in keyof T as `with${Capitalize<k>}`]: (value: T[k]) => any };
 
-    protected onConstructionFinished(prototype: Function) {
+type DataClassType<T extends Data> = T & DataWiths<DataType<T>>;
+
+function DataClass<T extends typeof Data, T1 extends Data>(parent: T, fields: (keyof T1 & string)[], noWith: (keyof T1 & string)[] = []):
+    Omit<T, ""> & { new(...args: ConstructorParameters<T>): T1 & DataWiths<DataType<T1>> } {
+    // type dataType = { [k in keyof (typeof fields[number])]: T1[k] };
+    (parent.staticFields as Mutable<typeof parent.staticFields>) = [...(parent.prototype.constructor as typeof Data).staticFields, ...fields];
+    for (let field of fields) {
+        if (noWith.includes(field)) {
+            continue;
+        }
+        let withMethodName = `with${field[0].toUpperCase()}${field.slice(1)}`;
+        Object.defineProperty(parent, withMethodName, {
+            value: function (this: T1, value: T1[typeof field]) {
+                if (value === this[field]) {
+                    return this;
+                }
+                return new (this.constructor as typeof Data)({...this, [field]: value});
+            },
+            writable: false,
+        });
+    }
+    return parent as any;
+}
+
+class Data {
+    declare public static staticFields: string[];
+    // these 2 will never exist at runtime
+    declare public readonly json: {};
+    declare public readonly field: any;
+
+    // public readonly fields: (this["field"])[] = [];
+
+    protected onConstructionFinished<T extends typeof Data>(prototype: T) {//, ...fields: UnFlatArray<this["field"], 2, true, true>) {
+        // this.fields.push(...fields.flat());
         if (prototype === Object.getPrototypeOf(this)) {
+            // register withXxx functions
+            // for (let i of this.fields as (string & keyof DataType<this>)[]) {
+            //     Object.defineProperty(this, `with${i[0].toUpperCase() + i.slice(1)}`, {
+            //         writable: false,
+            //         value: (value: any): this => {
+            //             if (value === this[i]) {
+            //                 return this;
+            //             }
+            //             return new (this.constructor as typeof Data)({...this, [i]: value}) as this;
+            //         },
+            //     });
+            // }
             Object.freeze(this);
+            Object.freeze(this.fields);
         }
     }
 
@@ -91,72 +139,118 @@ class Data<T extends Data<T>> {
         this.onConstructionFinished(Data);
     }
 
-    public equals(other: unknown | null | undefined): boolean {
-        throw Error("Not Implemented");
+    public equals(other: DataType<this> | null | undefined, ...ignore: (keyof DataType<this>)[]): boolean {
+        if (other == null) {
+            return false;
+        }
+        //@ts-ignore
+        else if (this === other) {
+            return true;
+        }
+        for (let field of this.fields) {
+            if (!ignore.includes(field)) {
+                // @ts-ignore
+                const thisVal = this[field];
+                // @ts-ignore
+                const otherVal = other[field];
+
+                if (thisVal === otherVal) {
+                    continue;
+                }
+                // use equals method if available
+                if (thisVal.equals) {
+                    if (!thisVal.equals(otherVal)) {
+                        return false;
+                    }
+                } else if (Array.isArray(thisVal)) {
+                    //compare arrays
+                    if (!Array.isArray(otherVal)) {
+                        return false;
+                    }
+                    if (!arrayEquals(thisVal, otherVal)) {
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
     };
 
-    public toJSON(): any {
-        throw Error("Not Implemented");
+    public toJSON(): this["json"] {
+        const jsonObj: this["json"] = {};
+        for (let i of this.fields) {
+            jsonObj[i] = this[i].toJSON?.() ?? this[i];
+        }
+        return jsonObj;
     };
 
-    public withUpdate(other: Partial<DataType<T>>): T {
+    public withUpdate(other: Partial<DataType<this>>): this {
         // @ts-ignore
         const updated = new (this.constructor as typeof T)({...this, ...other});
         if (this.equals(updated)) {
-            return this as unknown as T;
+            return this;
         } else {
             return updated;
         }
     }
+
+    public get fields(): this["field"][] {
+        return (this.constructor as typeof Data).staticFields;
+    }
 }
 
-class AbstractAddressableObject<T extends Data<T>, Json extends JsonAddressableObject> extends Data<T> {
-    public declare excludeFromDataType: "excludeFromDataType";
+class _AbstractAddressableObject extends Data {
+    public readonly declare json: JsonAddressableObject;
+    declare public readonly field: keyof DataTypeWithoutFields<this>;
 
     public readonly id: string;
     public readonly animationType: AnimationType;
 
-    protected constructor({id, animationType, ...base}: DataType<AbstractAddressableObject<T, Json>>) {
+    constructor({id, animationType, ...base}: DataType<AbstractAddressableObject>) {
         super(base);
         this.id = id;
         this.animationType = animationType;
         this.onConstructionFinished(AbstractAddressableObject);
     }
 
-    public equals(other: DataType<AbstractAddressableObject<T, Json>> | undefined | null): other is DataType<AbstractAddressableObject<T, Json>> {
-        return other != null && (this === other || (
-            this.id === other!.id
-            && this.animationType === other!.animationType
-        ));
-    }
+    // public equals(other: DataType<AbstractAddressableObject<T, Json>> | undefined | null, ...ignore: (keyof T)[]): other is DataType<AbstractAddressableObject<T, Json>> {
+    //     return other != null && (this === other || (
+    //         (this.id === other!.id || ignore.includes("id"))
+    //         && (this.animationType === other!.animationType || ignore.includes("animationType"))
+    //     ));
+    // }
 
-    public toJSON(): { [k in keyof JsonAddressableObject]: Json[k] } {
-        return {
-            id: this.id,
-            animationType: this.animationType,
-        };
-    }
+    // public toJSON(): { [k in keyof JsonAddressableObject]: Json[k] } {
+    //     return {
+    //         id: this.id,
+    //         animationType: this.animationType,
+    //     };
+    // }
 
-    public withId(id: string): this {
-        if (this.id === id) {
-            return this;
-        }
-        return new (this.constructor as typeof AbstractAddressableObject)({...this, id: id}) as this;
-    }
-
-    public withAnimationType(animationType: AnimationType): this {
-        if (this.animationType === animationType) {
-            return this;
-        }
-        return new (this.constructor as typeof AbstractAddressableObject)({
-            ...this,
-            animationType: animationType,
-        }) as this;
-    }
+    // public withId(id: string): this {
+    //     if (this.id === id) {
+    //         return this;
+    //     }
+    //     return new (this.constructor as typeof AbstractAddressableObject)({...this, id: id}) as this;
+    // }
+    //
+    // public withAnimationType(animationType: AnimationType): this {
+    //     if (this.animationType === animationType) {
+    //         return this;
+    //     }
+    //     return new (this.constructor as typeof AbstractAddressableObject)({
+    //         ...this,
+    //         animationType: animationType,
+    //     }) as this;
+    // }
 }
 
-class AbstractInlineObjectData<T extends AbstractInlineObjectData<T, Json>, Json extends AbstractJsonInlineObject> extends Data<T> {
-    public declare excludeFromDataType: "excludeFromDataType";
+const AbstractAddressableObject = DataClass<typeof _AbstractAddressableObject, _AbstractAddressableObject>(_AbstractAddressableObject, ["id", "animationType"], []);
+type AbstractAddressableObject = DataClassType<_AbstractAddressableObject>;
+
+class _AbstractInlineObjectData extends Data {
+    declare public readonly json: AbstractJsonInlineObject;
+    declare public readonly field: keyof DataTypeWithoutFields<this>;
 
     // standard attributes
     public readonly x: number;
@@ -174,12 +268,12 @@ class AbstractInlineObjectData<T extends AbstractInlineObjectData<T, Json>, Json
             position,
             type,
             hidden,
-        }: DataType<AbstractInlineObjectData<T, Json>>,
+        }: DataType<AbstractInlineObjectData>,
     ) {
         super();
         // standard
-        this.x = x;
-        this.y = y;
+        this.x = Math.round(x * 10 ** InlineObjectData.CoordinateDigits) / 10 ** InlineObjectData.CoordinateDigits;
+        this.y = Math.round(y * 10 ** InlineObjectData.CoordinateDigits) / 10 ** InlineObjectData.CoordinateDigits;
         this.type = type;
         this.position = position;
         this.animationType = animationType;
@@ -187,33 +281,33 @@ class AbstractInlineObjectData<T extends AbstractInlineObjectData<T, Json>, Json
         this.onConstructionFinished(AbstractInlineObjectData);
     }
 
-    public equals(other: DataType<AbstractInlineObjectData<T, Json>> | undefined | null): other is DataType<AbstractInlineObjectData<T, Json>> {
-        return other != null && (this === other || (
-            this.x === other.x &&
-            this.y === other.y &&
-            this.type === other.type &&
-            this.position === other.position &&
-            this.animationType === other.animationType &&
-            this.hidden === other.hidden
-        ));
-    }
-
-    public toJSON(): { [k in keyof Pick<Json, keyof AbstractJsonInlineObject>]: Json[k] } {
-        return {
-            x: this.x,
-            y: this.y,
-            type: this.type,
-            position: this.position,
-            animationType: this.animationType,
-            hidden: this.hidden,
-            // title: this.title,
-            // icon: this.icon,
-            // content: this.content,
-            // footer: this.footer,
-            // cssClasses: this.cssClasses,
-            // htmlId: this.htmlId,
-        };
-    }
+    // public equals(other: DataType<AbstractInlineObjectData<T, Json>> | undefined | null): other is DataType<AbstractInlineObjectData<T, Json>> {
+    //     return other != null && (this === other || (
+    //         this.x === (Math.round(other.x * 10 ** InlineObjectData.CoordinateDigits) / 10 ** InlineObjectData.CoordinateDigits) &&
+    //         this.y === (Math.round(other.y * 10 ** InlineObjectData.CoordinateDigits) / 10 ** InlineObjectData.CoordinateDigits) &&
+    //         this.type === other.type &&
+    //         this.position === other.position &&
+    //         this.animationType === other.animationType &&
+    //         this.hidden === other.hidden
+    //     ));
+    // }
+    //
+    // public toJSON(): { [k in keyof Pick<Json, keyof AbstractJsonInlineObject>]: Json[k] } {
+    //     return {
+    //         x: this.x,
+    //         y: this.y,
+    //         type: this.type,
+    //         position: this.position,
+    //         animationType: this.animationType,
+    //         hidden: this.hidden,
+    //         // title: this.title,
+    //         // icon: this.icon,
+    //         // content: this.content,
+    //         // footer: this.footer,
+    //         // cssClasses: this.cssClasses,
+    //         // htmlId: this.htmlId,
+    //     };
+    // }
 
     public isClickable(): this is ClickableData {
         return this.type === "clickable";
@@ -227,44 +321,48 @@ class AbstractInlineObjectData<T extends AbstractInlineObjectData<T, Json>, Json
         return this.type === "custom";
     }
 
-    public isAddressable(): this is AbstractAddressableInlineObjectData<T & AbstractAddressableInlineObjectData<any, any>, Json & JsonAddressableObject> {
+    public isAddressable(): this is AbstractAddressableInlineObjectData {
         return this instanceof AbstractAddressableInlineObjectData;
     }
 
-    public withType(type: T["type"]): this {
-        return new (this.constructor as typeof AbstractInlineObjectData)({...this, type: type}) as this;
-    }
-
-    public withPosition(position: InlineObjectPosition): this {
-        return new (this.constructor as typeof AbstractInlineObjectData)({...this, position: position}) as this;
-    }
-
-    public withX(x: number): this {
-        return new (this.constructor as typeof AbstractInlineObjectData)({...this, x: x}) as this;
-    }
-
-    public withY(y: number): this {
-        return new (this.constructor as typeof AbstractInlineObjectData)({...this, y: y}) as this;
-    }
-
-    public withAnimationType(animationType: AnimationType): this {
-        return new (this.constructor as typeof AbstractInlineObjectData)({
-            ...this,
-            animationType: animationType,
-        }) as this;
-    }
-
-    public withGoto(goto: string): this {
-        return new (this.constructor as typeof AbstractInlineObjectData)({...this, goto: goto}) as this;
-    }
-
-    public withHidden(hidden: boolean): this {
-        if (this.hidden === hidden) {
-            return this;
-        }
-        return new (this.constructor as typeof AbstractInlineObjectData)({...this, hidden: hidden}) as this;
-    }
+    // public withType(type: this["type"]): this {
+    //     return new (this.constructor as typeof AbstractInlineObjectData)({...this, type: type}) as this;
+    // }
+    //
+    // public withPosition(position: InlineObjectPosition): this {
+    //     return new (this.constructor as typeof AbstractInlineObjectData)({...this, position: position}) as this;
+    // }
+    //
+    // public withX(x: number): this {
+    //     return new (this.constructor as typeof AbstractInlineObjectData)({...this, x: x}) as this;
+    // }
+    //
+    // public withY(y: number): this {
+    //     return new (this.constructor as typeof AbstractInlineObjectData)({...this, y: y}) as this;
+    // }
+    //
+    // public withAnimationType(animationType: AnimationType): this {
+    //     return new (this.constructor as typeof AbstractInlineObjectData)({
+    //         ...this,
+    //         animationType: animationType,
+    //     }) as this;
+    // }
+    //
+    // public withGoto(goto: string): this {
+    //     return new (this.constructor as typeof AbstractInlineObjectData)({...this, goto: goto}) as this;
+    // }
+    //
+    // public withHidden(hidden: boolean): this {
+    //     if (this.hidden === hidden) {
+    //         return this;
+    //     }
+    //     return new (this.constructor as typeof AbstractInlineObjectData)({...this, hidden: hidden}) as this;
+    // }
 }
+
+const AbstractInlineObjectData = DataClass<typeof _AbstractInlineObjectData, _AbstractInlineObjectData>(_AbstractInlineObjectData, ["x", "y", "type", "position", "animationType", "hidden"], []);
+type AbstractInlineObjectData = DataClassType<_AbstractInlineObjectData>;
+
 
 // function AbstractAddressable<T extends AbstractInlineObjectData<any, any> | Data<any>, Json extends JsonAddressableObject>(base: typeof AbstractInlineObjectData|typeof Data) {
 //     // let constr = base ?? Data;
@@ -321,87 +419,140 @@ class AbstractInlineObjectData<T extends AbstractInlineObjectData<T, Json>, Json
 //     return AbstractAddressableObject;
 // }
 
-class AbstractAddressableInlineObjectData<T extends AbstractAddressableInlineObjectData<T, Json>, Json extends AbstractJsonInlineObject & JsonAddressableObject> extends AbstractInlineObjectData<T, Json> {
-    public declare excludeFromDataType: "excludeFromDataType";
+export class _AbstractAddressableInlineObjectData extends AbstractInlineObjectData {
+    public readonly declare json: JsonAddressableObject & AbstractInlineObjectData["json"];
 
     public readonly id: string;
 
-    constructor({id, ...base}: DataType<AbstractAddressableInlineObjectData<T, Json>>) {
+    constructor({id, ...base}: DataType<AbstractAddressableInlineObjectData>) {
         super(base);
         this.id = id;
         this.onConstructionFinished(AbstractAddressableInlineObjectData);
     }
 
-    public equals(other: DataType<AbstractAddressableInlineObjectData<T, Json>> | undefined | null): other is DataType<AbstractAddressableInlineObjectData<T, Json>> {
-        return super.equals(other)
-            && this.id === other.id
-            && this.hidden === other.hidden;
-    }
-
-    public toJSON(): { [k in keyof Pick<Json, keyof (AbstractJsonInlineObject & JsonAddressableObject)>]: Json[k] } {
-        return {
-            ...super.toJSON(),
-            id: this.id,
-        };
-    }
-
-    public withId(id: string): this {
-        return new (this.constructor as typeof AbstractAddressableInlineObjectData)({...this, id: id}) as this;
-    }
+    // public equals(other: DataType<AbstractAddressableInlineObjectData<T, Json>> | undefined | null): other is DataType<AbstractAddressableInlineObjectData<T, Json>> {
+    //     return super.equals(other)
+    //         && this.id === other.id
+    //         && this.hidden === other.hidden;
+    // }
+    //
+    // public toJSON(): { [k in keyof Pick<Json, keyof (AbstractJsonInlineObject & JsonAddressableObject)>]: Json[k] } {
+    //     return {
+    //         ...super.toJSON(),
+    //         id: this.id,
+    //     };
+    // }
+    //
+    // public withId(id: string): this {
+    //     return new (this.constructor as typeof AbstractAddressableInlineObjectData)({...this, id: id}) as this;
+    // }
 }
 
-class AbstractActivatingInlineObjectData<T extends AbstractActivatingInlineObjectData<T, Json>, Json extends AbstractJsonInlineObject & JsonActivating> extends AbstractInlineObjectData<T, Json> {
-    public declare excludeFromDataType: "excludeFromDataType";
+const AbstractAddressableInlineObjectData = DataClass<typeof _AbstractAddressableInlineObjectData, _AbstractAddressableInlineObjectData>(_AbstractAddressableInlineObjectData, ["id"], []);
+type AbstractAddressableInlineObjectData = DataClassType<_AbstractAddressableInlineObjectData>;
+
+class _ScrollData extends Data {
+    public declare field: keyof DataTypeWithoutFields<_ScrollData>;
+    public declare toJSON: toJSONFunctionType<JsonActivating["scroll"]>;
+
+    public readonly start: number;
+    public readonly end: number;
+    public readonly time: number;
+
+    constructor(other: DataType<ScrollData>) {
+        super();
+        this.fields.push("start", "end", "time");
+        this.start = other.start;
+        this.end = other.end;
+        this.time = other.time;
+        this.onConstructionFinished(ScrollData);
+    }
+
+    // public equals(other: DataType<ScrollData> | null | undefined, ...ignore: (keyof DataType<ScrollData>)[]): boolean {
+    //     return (other != null && (this === other || (
+    //         (ignore.includes("start") || this.start === other.start)
+    //         && (ignore.includes("end") || this.end === other.end)
+    //         && (ignore.includes("time") || this.end === other.end)
+    //     )));
+    // }
+    //
+    // public toJSON(): JsonActivating["scroll"] {
+    //     return {
+    //         start: this.start,
+    //         end: this.end,
+    //         time: this.time,
+    //     };
+    // }
+}
+
+const ScrollData = DataClass<typeof _ScrollData, _ScrollData>(_ScrollData, ["start", "end", "time"]);
+type ScrollData = DataClassType<_ScrollData>;
+
+
+class _AbstractActivatingInlineObjectData extends AbstractInlineObjectData {
+    declare json: JsonActivating & AbstractInlineObjectData["json"];
 
     public readonly goto?: string;
     public readonly targetType: AddressableObjects | "auto";
     public readonly action: ActionType;
+    public readonly scroll: ScrollData;
 
-    constructor({goto, targetType, action, ...base}: DataType<AbstractActivatingInlineObjectData<T, Json>>) {
+    constructor({goto, targetType, action, scroll, ...base}: DataType<AbstractActivatingInlineObjectData>) {
         super(base);
         this.goto = goto;
         this.targetType = targetType;
         this.action = action;
+        this.scroll = scroll;
         this.onConstructionFinished(AbstractActivatingInlineObjectData);
     }
 
-    public toJSON(): { [k in keyof Pick<Json, keyof (AbstractJsonInlineObject & JsonActivating)>]: Json[k] } {
-        return {
-            ...super.toJSON(),
-            goto: this.goto,
-            targetType: this.targetType,
-            action: this.action,
-        };
-    }
-
-    public equals(other: DataType<AbstractActivatingInlineObjectData<T, Json>> | undefined | null): other is DataType<AbstractActivatingInlineObjectData<T, Json>> {
-        return super.equals(other)
-            && this.goto === other.goto
-            && this.targetType === other.targetType;
-    }
-
-    public withGoto(goto: string): this {
-        if (this.goto === goto) {
-            return this;
-        }
-        return new (this.constructor as typeof AbstractActivatingInlineObjectData)({...this, goto: goto}) as this;
-    }
-
-    public withTargetType(targetType: AddressableObjects): this {
-        if (this.targetType === targetType) {
-            return this;
-        }
-        return new (this.constructor as typeof AbstractActivatingInlineObjectData)({
-            ...this,
-            targetType: targetType,
-        }) as this;
-    }
+    // public toJSON(): { [k in keyof Pick<Json, keyof (AbstractJsonInlineObject & JsonActivating)>]: Json[k] } {
+    //     return {
+    //         ...super.toJSON(),
+    //         goto: this.goto,
+    //         targetType: this.targetType,
+    //         action: this.action,
+    //         scroll: {
+    //             start: 1,
+    //             end: 1,
+    //             time: 1,
+    //         },
+    //     };
+    // }
+    //
+    // public equals(other: DataType<AbstractActivatingInlineObjectData<T, Json>> | undefined | null): other is DataType<AbstractActivatingInlineObjectData<T, Json>> {
+    //     return super.equals(other)
+    //         && this.goto === other.goto
+    //         && this.targetType === other.targetType;
+    // }
+    //
+    // public withGoto(goto: string): this {
+    //     if (this.goto === goto) {
+    //         return this;
+    //     }
+    //     return new (this.constructor as typeof AbstractActivatingInlineObjectData)({...this, goto: goto}) as this;
+    // }
+    //
+    // public withTargetType(targetType: AddressableObjects): this {
+    //     if (this.targetType === targetType) {
+    //         return this;
+    //     }
+    //     return new (this.constructor as typeof AbstractActivatingInlineObjectData)({
+    //         ...this,
+    //         targetType: targetType,
+    //     }) as this;
+    // }
 }
 
+const AbstractActivatingInlineObjectData = DataClass<typeof _AbstractActivatingInlineObjectData, _AbstractActivatingInlineObjectData>(_AbstractActivatingInlineObjectData, ["goto", "targetType", "action", "scroll"] );
+type AbstractActivatingInlineObjectData = DataClassType<_AbstractActivatingInlineObjectData>;
+
 const InlineObjectData = {
+    CoordinateDigits: 3,
+    InitialDirectionDigits: 3,
     Types: (["clickable", "text", "custom"] as Array<InlineObjectType>),
     Positions: (["media", "page"] as Array<InlineObjectPosition>),
-    AnimationTypes: (["forward", "backward"] as Array<AnimationType>),
+    AnimationTypes: (["forward", "backward", "fade", "none"] as Array<AnimationType>),
 
     fromJSON(json: JsonInlineObject): InlineObjectData {
         switch (json.type) {
@@ -433,8 +584,8 @@ const InlineObjectData = {
 type InlineObjectData = ClickableData | CustomObjectData | TextFieldData;
 export type InlineObjectDataConstructor = typeof ClickableData | typeof CustomObjectData | typeof TextFieldData;
 
-class ClickableData extends AbstractActivatingInlineObjectData<ClickableData, JsonClickable> {
-    public declare excludeFromDataType: "excludeFromDataType";
+class _ClickableData extends AbstractActivatingInlineObjectData {
+    declare public readonly json: JsonClickable & AbstractActivatingInlineObjectData["json"];
 
     public readonly title: string;
     public readonly icon: IconType;
@@ -484,33 +635,36 @@ class ClickableData extends AbstractActivatingInlineObjectData<ClickableData, Js
         });
     }
 
-    public equals(other: DataType<ClickableData> | undefined | null): other is DataType<ClickableData> {
-        return super.equals(other)
-            && this.title === other.title
-            && this.icon === other.icon;
-    }
-
-    public toJSON(): JsonClickable {
-        return {
-            ...super.toJSON(),
-            title: this.title,
-            icon: this.icon,
-        } as JsonClickable;
-        // we need to cast here because JsonActivating is dynamic
-    }
-
-    public withIcon(icon: IconType): ClickableData {
-        return new ClickableData({...this, icon: icon});
-    }
-
-    public withTitle(title: string): ClickableData {
-        return new ClickableData({...this, title: title});
-    }
+    // public equals(other: DataType<ClickableData> | undefined | null): other is DataType<ClickableData> {
+    //     return super.equals(other)
+    //         && this.title === other.title
+    //         && this.icon === other.icon;
+    // }
+    //
+    // public toJSON(): JsonClickable {
+    //     return {
+    //         ...super.toJSON(),
+    //         title: this.title,
+    //         icon: this.icon,
+    //     } as JsonClickable;
+    //     // we need to cast here because JsonActivating is dynamic
+    // }
+    //
+    // public withIcon(icon: IconType): ClickableData {
+    //     return new ClickableData({...this, icon: icon});
+    // }
+    //
+    // public withTitle(title: string): ClickableData {
+    //     return new ClickableData({...this, title: title});
+    // }
 }
 
+const ClickableData = DataClass<typeof _ClickableData, _ClickableData>(_ClickableData,  ["title", "icon"] );
+type ClickableData = DataClassType<_ClickableData>;
+
 // interface TextFieldData extends AbstractInlineObjectData<TextFieldData, JsonTextField>{}
-class TextFieldData extends AbstractAddressableInlineObjectData<TextFieldData, JsonTextField> {
-    public declare excludeFromDataType: "excludeFromDataType";
+class _TextFieldData extends AbstractAddressableInlineObjectData {
+    declare public readonly json: JsonTextField & AbstractActivatingInlineObjectData["json"];
 
     public readonly title?: string;
     public readonly content: string;
@@ -521,9 +675,9 @@ class TextFieldData extends AbstractAddressableInlineObjectData<TextFieldData, J
     declare public readonly type: "text";
     declare public readonly animationType: TextAnimations;
 
-    constructor(
-        {title, content, cssClasses, size, ...base}: DataType<TextFieldData>,
-    ) {
+    public static readonly Sizes: TextFieldSize[] = ["small", "normal", "large", "x-large", "xx-large"];
+
+    constructor({title, content, cssClasses, size, ...base}: DataType<TextFieldData>) {
         super({...base, type: "text"});
         this.title = title;
         this.content = content;
@@ -562,44 +716,54 @@ class TextFieldData extends AbstractAddressableInlineObjectData<TextFieldData, J
         });
     }
 
-    public equals(other: DataType<TextFieldData> | undefined | null): other is DataType<TextFieldData> {
-        return super.equals(other) &&
-            this.title === other.title &&
-            this.content === other.content &&
-            this.size === other.size &&
-            // this.id === other.id &&
-            arrayEquals(this.cssClasses, other.cssClasses);
-    }
-
-    public toJSON(): JsonTextField {
-        return {
-            ...super.toJSON(),
-            title: this.title,
-            content: this.content,
-            cssClasses: this.cssClasses as Mutable<TextFieldData["cssClasses"]>,
-            size: this.size,
-        };
-    }
-
-    public withTitle(title: string): TextFieldData {
-        return new TextFieldData({...this, title: title});
-    }
-
-    public withContent(content: string): TextFieldData {
-        return new TextFieldData({...this, content: content});
-    }
-
-    public withCssClasses(cssClasses: string[]): TextFieldData {
-        return new TextFieldData({...this, cssClasses: cssClasses});
-    }
-
-    public withFooter(footer: string | undefined): TextFieldData {
-        return new TextFieldData({...this, footer: footer});
-    }
+    // public equals(other: DataType<TextFieldData> | undefined | null): other is DataType<TextFieldData> {
+    //     return super.equals(other) &&
+    //         this.title === other.title &&
+    //         this.content === other.content &&
+    //         this.size === other.size &&
+    //         // this.id === other.id &&
+    //         arrayEquals(this.cssClasses, other.cssClasses);
+    // }
+    //
+    // public toJSON(): JsonTextField {
+    //     return {
+    //         ...super.toJSON(),
+    //         title: this.title,
+    //         content: this.content,
+    //         cssClasses: this.cssClasses as Mutable<TextFieldData["cssClasses"]>,
+    //         size: this.size,
+    //     };
+    // }
+    //
+    // public withTitle(title: string): TextFieldData {
+    //     return new TextFieldData({...this, title: title});
+    // }
+    //
+    // public withContent(content: string): TextFieldData {
+    //     return new TextFieldData({...this, content: content});
+    // }
+    //
+    // public withCssClasses(cssClasses: string[]): TextFieldData {
+    //     return new TextFieldData({...this, cssClasses: cssClasses});
+    // }
+    //
+    // public withFooter(footer: string | undefined): TextFieldData {
+    //     return new TextFieldData({...this, footer: footer});
+    // }
+    //
+    // public withSize(size: TextFieldSize): TextFieldData {
+    //     if (this.size === size) {
+    //         return this;
+    //     }
+    //     return new TextFieldData({...this, size: size});
+    // }
 }
 
-class CustomObjectData extends AbstractInlineObjectData<CustomObjectData, JsonCustomObject> {
-    public declare excludeFromDataType: "excludeFromDataType";
+const TextFieldData = DataClass<typeof _TextFieldData, _TextFieldData>(_TextFieldData,  ["title", "content", "cssClasses", "size"] );
+type TextFieldData = DataClassType<_TextFieldData>;
+
+class _CustomObjectData extends AbstractInlineObjectData {
+    declare public readonly json: JsonCustomObject & AbstractActivatingInlineObjectData["json"];
 
     public readonly htmlId: string;
 
@@ -634,21 +798,24 @@ class CustomObjectData extends AbstractInlineObjectData<CustomObjectData, JsonCu
         });
     }
 
-    public equals(other: DataType<CustomObjectData> | undefined | null): other is DataType<CustomObjectData> {
-        return super.equals(other) &&
-            this.htmlId === other.htmlId;
-    }
-
-    public toJSON(): JsonCustomObject {
-        return {
-            ...super.toJSON(),
-            htmlId: this.htmlId,
-        };
-    }
+    // public equals(other: DataType<CustomObjectData> | undefined | null): other is DataType<CustomObjectData> {
+    //     return super.equals(other) &&
+    //         this.htmlId === other.htmlId;
+    // }
+    //
+    // public toJSON(): JsonCustomObject {
+    //     return {
+    //         ...super.toJSON(),
+    //         htmlId: this.htmlId,
+    //     };
+    // }
 }
 
-class FileData extends Data<FileData> {
-    public declare excludeFromDataType: "excludeFromDataType" | "outdated";
+const CustomObjectData = DataClass<typeof _CustomObjectData, _CustomObjectData>(_CustomObjectData,  ["htmlId"] );
+type CustomObjectData = DataClassType<_CustomObjectData>;
+
+class FileData extends Data {
+    declare public readonly field: keyof Omit<DataTypeWithoutFields<this>, "outdated">;
 
     public readonly name: string;
     public readonly size: number;
@@ -671,7 +838,7 @@ class FileData extends Data<FileData> {
         this.intrinsicWidth = intrinsicWidth;
         this.intrinsicHeight = intrinsicHeight;
         this.url = url;
-        this.onConstructionFinished(FileData);
+        this.onConstructionFinished(FileData, ["name", "size", "type", "file", "intrinsicWidth", "intrinsicHeight", "url"] as (keyof DataType<this>)[]);
         // this.hash = hashString(name+base64);
         // this.base64 = base64;
         // document.body.append(this.img, this.video);
@@ -750,14 +917,14 @@ class FileData extends Data<FileData> {
         // return res;
     }
 
-    public equals(other: null | undefined | DataType<FileData>): boolean {
-        return other != null && (this === other || (
-            this.name === other.name
-            && this.type === other.type
-            && this.size === other.size
-            // && this.hash === other.hash
-        ));
-    }
+    // public equals(other: null | undefined | DataType<FileData>): boolean {
+    //     return other != null && (this === other || (
+    //         this.name === other.name
+    //         && this.type === other.type
+    //         && this.size === other.size
+    //         // && this.hash === other.hash
+    //     ));
+    // }
 
     public static fromJSON(json: JsonFileData): FileData {
         const data = atob(json.data);
@@ -820,8 +987,9 @@ export type JsonFileData = {
     intrinsicHeight: number | null,
 }
 
-class SourceData extends Data<SourceData> {
-    public declare excludeFromDataType: "excludeFromDataType";
+class _SourceData extends Data {
+    declare public readonly json: JsonSource;
+    declare public readonly field: keyof DataTypeWithoutFields<this>;
 
     public readonly name: string;
     // natural width
@@ -898,7 +1066,7 @@ class SourceData extends Data<SourceData> {
         });
     }
 
-    public complete(mediaContext: MediaContextType): SourceData {
+    public complete(this: SourceData, mediaContext: MediaContextType): SourceData {
         if (this.isComplete()) {
             // if (this.height != null && this.width != null) {
             return this;
@@ -911,7 +1079,7 @@ class SourceData extends Data<SourceData> {
         }
 
         // media file not present
-        return this.withFileDoesNotExist(true);
+        return this.withFileDoesNotExist!(true);
         // return SourceData.fromFile(await SourceData.loadMedia(this.name));
     }
 
@@ -930,14 +1098,14 @@ class SourceData extends Data<SourceData> {
         ));
     }
 
-    public toJSON(): JsonSource {
-        return {
-            name: this.name,
-            type: this.type,
-            height: this.height,
-            width: this.width,
-        };
-    }
+    // public toJSON(): JsonSource {
+    //     return {
+    //         name: this.name,
+    //         type: this.type,
+    //         height: this.height,
+    //         width: this.width,
+    //     };
+    // }
 
     /**
      * Return a string which is a (valid) url to the source
@@ -949,36 +1117,42 @@ class SourceData extends Data<SourceData> {
         return SourceData.formatSrc(this.name);
     }
 
-    public withType(type: MediaType): SourceData {
-        if (this.type === type) {
-            return this;
-        }
-        return new SourceData({...this, type: type});
-    }
-
-    public withWidth(width: number | undefined): SourceData {
-        if (this.width === width) {
-            return this;
-        }
-        return new SourceData({...this, width: width});
-    }
-
-    public withHeight(height: number | undefined): SourceData {
-        if (this.height === height) {
-            return this;
-        }
-        return new SourceData({...this, height: height});
-    }
-
-    public withFileDoesNotExist(fileDoesNotExist: boolean): SourceData {
-        if (this.fileDoesNotExist === fileDoesNotExist) {
-            return this;
-        }
-        return new SourceData({...this, fileDoesNotExist: fileDoesNotExist});
-    }
+    // public withType(type: MediaType): SourceData {
+    //     if (this.type === type) {
+    //         return this;
+    //     }
+    //     return new SourceData({...this, type: type});
+    // }
+    //
+    // public withWidth(width: number | undefined): SourceData {
+    //     if (this.width === width) {
+    //         return this;
+    //     }
+    //     return new SourceData({...this, width: width});
+    // }
+    //
+    // public withHeight(height: number | undefined): SourceData {
+    //     if (this.height === height) {
+    //         return this;
+    //     }
+    //     return new SourceData({...this, height: height});
+    // }
+    //
+    // public withFileDoesNotExist(fileDoesNotExist: boolean): SourceData {
+    //     if (this.fileDoesNotExist === fileDoesNotExist) {
+    //         return this;
+    //     }
+    //     return new SourceData({...this, fileDoesNotExist: fileDoesNotExist});
+    // }
 }
 
-class MediaData extends Data<MediaData> {
+const SourceData = DataClass<typeof _SourceData, _SourceData>(_SourceData, ["name", "width", "height", "type", "file", "fileDoesNotExist"] );
+type SourceData = DataClassType<_SourceData>;
+
+class _MediaData extends Data {
+    declare public readonly json: JsonMedia;
+    declare public readonly field: keyof Omit<DataTypeWithoutFields<this>, "fileDoesNotExist">;
+
     public readonly src?: SourceData;
     public readonly srcMin?: SourceData;
     public readonly srcMax?: SourceData;
@@ -1000,11 +1174,7 @@ class MediaData extends Data<MediaData> {
     public static readonly iframeUrlEndings = ["html", "htm", "com", "org", "edu", "net", "gov", "mil", "int", "de", "en", "eu", "us", "fr", "ch", "at", "au"];
     public static readonly Types: Array<MediaType> = ["img", "video", "iframe"];
 
-    declare excludeFromDataType: "fileDoesNotExist";
-
-    constructor(
-        other: DataType<MediaData>,
-    ) {
+    constructor(other: DataType<MediaData>) {
         super();
         this.src = other.src;
         this.srcMin = other.srcMin;
@@ -1095,25 +1265,25 @@ class MediaData extends Data<MediaData> {
         return [this.src?.type, this.srcMin?.type, this.srcMax?.type].filter((value): value is MediaType => value != null);
     }
 
-    public equals(other: DataType<MediaData> | null | undefined): boolean {
-        return other != null && (this === other || (
-            this.src === other.src &&
-            this.srcMax === other.srcMax &&
-            this.srcMin === other.srcMin &&
-            this.preload === other.preload &&
-            this.autoplay === other.autoplay &&
-            this.fetchPriority === other.fetchPriority &&
-            this.loading === other.loading &&
-            this.loop === other.loop &&
-            this.muted === other.muted &&
-            this.poster === other.poster &&
-            this.type === other.type
-        ));
-    }
+    // public equals(other: DataType<MediaData> | null | undefined): boolean {
+    //     return other != null && (this === other || (
+    //         this.src === other.src &&
+    //         this.srcMax === other.srcMax &&
+    //         this.srcMin === other.srcMin &&
+    //         this.preload === other.preload &&
+    //         this.autoplay === other.autoplay &&
+    //         this.fetchPriority === other.fetchPriority &&
+    //         this.loading === other.loading &&
+    //         this.loop === other.loop &&
+    //         this.muted === other.muted &&
+    //         this.poster === other.poster &&
+    //         this.type === other.type
+    //     ));
+    // }
 
-    public withUpdate(other: Partial<DataType<MediaData>>): MediaData {
-        return new MediaData({...this, ...other});
-    }
+    // public withUpdate(other: Partial<DataType<MediaData>>): MediaData {
+    //     return new MediaData({...this, ...other});
+    // }
 
     public isComplete(): boolean {
         return (this.src?.isComplete() ?? true) &&
@@ -1121,25 +1291,31 @@ class MediaData extends Data<MediaData> {
             (this.srcMax?.isComplete() ?? true);
     }
 
-    public toJSON(): JsonMedia {
-        return {
-            type: this.type,
-            src: this.src?.toJSON(),
-            srcMin: this.srcMin?.toJSON(),
-            srcMax: this.srcMax?.toJSON(),
-            fetchPriority: this.fetchPriority,
-            loading: this.loading,
-            loop: this.loop,
-            muted: this.muted,
-            preload: this.preload,
-            poster: this.poster,
-            autoplay: this.autoplay,
-        };
-    }
+    // public toJSON(): JsonMedia {
+    //     return {
+    //         type: this.type,
+    //         src: this.src?.toJSON(),
+    //         srcMin: this.srcMin?.toJSON(),
+    //         srcMax: this.srcMax?.toJSON(),
+    //         fetchPriority: this.fetchPriority,
+    //         loading: this.loading,
+    //         loop: this.loop,
+    //         muted: this.muted,
+    //         preload: this.preload,
+    //         poster: this.poster,
+    //         autoplay: this.autoplay,
+    //     };
+    // }
 }
 
-class PageData extends AbstractAddressableObject<PageData, JsonPage> {
-    public declare excludeFromDataType: "excludeFromDataType";
+const MediaData = DataClass<typeof _MediaData, _MediaData>(_MediaData,  ["src", "srcMin", "srcMax", "loading", "type", "fetchPriority", "poster", "autoplay", "muted", "loop", "preload"] );
+type MediaData = DataClassType<_MediaData>;
+
+// @ts-ignore
+class _PageData extends AbstractAddressableObject {
+    declare public readonly json: JsonPage & AbstractAddressableObject["json"];
+    // declare public readonly field: keyof DataTypeWithoutFields<PageData>;
+
     public declare readonly animationType: PageAnimations;
 
     public readonly media: MediaData;
@@ -1153,7 +1329,7 @@ class PageData extends AbstractAddressableObject<PageData, JsonPage> {
         this.media = media;
         this.is360 = is360;
         this.isPanorama = isPanorama;
-        this.initialDirection = initialDirection;
+        this.initialDirection = Math.round(initialDirection * 10 ** InlineObjectData.InitialDirectionDigits) / 10 ** InlineObjectData.InitialDirectionDigits;
         this.inlineObjects = inlineObjects;
         this.onConstructionFinished(PageData);
     }
@@ -1190,20 +1366,21 @@ class PageData extends AbstractAddressableObject<PageData, JsonPage> {
         media: MediaData.default,
     });
 
-    public equals(other: DataType<PageData> | null | undefined): other is DataType<PageData> {
-        return super.equals(other) &&
-            this.media.equals(other.media) &&
-            this.is360 === other.is360 &&
-            this.initialDirection === other.initialDirection &&
-            this.isPanorama === other.isPanorama &&
-            //@ts-ignore
-            (this.inlineObjects.length === other.inlineObjects.length && this.inlineObjects.map(v => other.inlineObjects.find(value => value.equals(v)) !== undefined)
-                .reduce((prev, now) => prev && now, true));
-    }
+    // public equals(other: DataType<PageData> | null | undefined, ...ignore: (keyof DataType<PageData>)[]): other is DataType<PageData> {
+    //     return super.equals(other, ...ignore) &&
+    //         (ignore.includes("media") || this.media.equals(other.media)) &&
+    //         (ignore.includes("is360") || this.is360 === other.is360) &&
+    //         (ignore.includes("initialDirection") || this.initialDirection === other.initialDirection) &&
+    //         (ignore.includes("isPanorama") || this.isPanorama === other.isPanorama) &&
+    //         (ignore.includes("inlineObjects") || this.inlineObjects.length === other.inlineObjects.length
+    //             //@ts-ignore
+    //             && this.inlineObjects.map(v => other.inlineObjects.find(value => value.equals(v)) !== undefined)
+    //                 .reduce((prev, now) => prev && now, true));
+    // }
 
-    public withUpdate(other: Partial<DataType<PageData>>): PageData {
-        return new PageData({...this, ...other});
-    }
+    // public withUpdate(other: Partial<DataType<PageData>>): PageData {
+    //     return new PageData({...this, ...other});
+    // }
 
     public async complete(mediaContext: MediaContextType): Promise<PageData> {
         let media = await this.media.complete(mediaContext);
@@ -1219,52 +1396,56 @@ class PageData extends AbstractAddressableObject<PageData, JsonPage> {
         return this.media.isComplete();
     }
 
-    public toJSON(): JsonPage {
-        return {
-            ...super.toJSON(),
-            media: this.media.toJSON(),
-            inlineObjects: this.inlineObjects.map(value => value.toJSON()),
-            is_panorama: this.isPanorama,
-            is_360: this.is360,
-            initial_direction: this.initialDirection,
-        };
-    }
+    // public toJSON(): JsonPage {
+    //     return {
+    //         ...super.toJSON(),
+    //         media: this.media.toJSON(),
+    //         inlineObjects: this.inlineObjects.map(value => value.toJSON()),
+    //         is_panorama: this.isPanorama,
+    //         is_360: this.is360,
+    //         initial_direction: this.initialDirection,
+    //     };
+    // }
 
     public withInlineObjects(...inlineObjects: UnFlatArray<InlineObjectData>): PageData {
         return new PageData({...this, inlineObjects: inlineObjects.flat()});
     }
 
-    public withInitialDirection(initialDirection: number): PageData {
-        if (this.initialDirection === initialDirection) {
-            return this;
-        }
-        return new PageData({...this, initialDirection: initialDirection});
-    }
-
-    public withMedia(media: MediaData): PageData {
-        if (this.media === media) {
-            return this;
-        }
-        return new PageData({...this, media: media});
-    }
-
-    public withIs360(is360: boolean): PageData {
-        if (this.is360 === is360) {
-            return this;
-        }
-        return new PageData({...this, is360: is360, isPanorama: is360 || this.isPanorama});
-    }
-
-    public withIsPanorama(isPanorama: boolean): PageData {
-        if (this.isPanorama === isPanorama) {
-            return this;
-        }
-        return new PageData({...this, isPanorama: isPanorama, is360: isPanorama && this.is360});
-    }
+    // public withInitialDirection(initialDirection: number): PageData {
+    //     if (this.initialDirection === initialDirection) {
+    //         return this;
+    //     }
+    //     return new PageData({...this, initialDirection: initialDirection});
+    // }
+    //
+    // public withMedia(media: MediaData): PageData {
+    //     if (this.media === media) {
+    //         return this;
+    //     }
+    //     return new PageData({...this, media: media});
+    // }
+    //
+    // public withIs360(is360: boolean): PageData {
+    //     if (this.is360 === is360) {
+    //         return this;
+    //     }
+    //     return new PageData({...this, is360: is360, isPanorama: is360 || this.isPanorama});
+    // }
+    //
+    // public withIsPanorama(isPanorama: boolean): PageData {
+    //     if (this.isPanorama === isPanorama) {
+    //         return this;
+    //     }
+    //     return new PageData({...this, isPanorama: isPanorama, is360: isPanorama && this.is360});
+    // }
 }
 
-class SchulTourConfigFile extends Data<SchulTourConfigFile> {
-    public declare excludeFromDataType: "excludeFromDataType";
+const PageData = DataClass<typeof _PageData, _PageData>(_PageData, ["media", "is360", "isPanorama", "initialDirection", "inlineObjects"], ['inlineObjects']);
+type PageData = DataClassType<_PageData>;
+
+class _SchulTourConfigFile extends Data {
+    declare public readonly json: JsonSchulTourConfigFile;
+    declare public readonly field: keyof DataTypeWithoutFields<this>;
 
     public readonly pages: readonly PageData[];
     public readonly initialPage: string | undefined;
@@ -1303,40 +1484,43 @@ class SchulTourConfigFile extends Data<SchulTourConfigFile> {
         });
     }
 
-    public equals(other: null | undefined | DataType<SchulTourConfigFile>): boolean {
-        return other != null && (this === other || (
-            arrayEquals(this.pages, other.pages)
-            && this.initialPage === other.initialPage
-            && this.fullscreen === other.fullscreen
-            && this.mode === other.mode
-            && this.colorTheme === other.colorTheme
-        ));
-    }
-
-    public toJSON(): JsonSchulTourConfigFile {
-        return {
-            pages: this.pages.map(page => page.toJSON()),
-            initialPage: this.initialPage,
-            colorTheme: this.colorTheme,
-            mode: this.mode,
-            fullscreen: this.fullscreen,
-        };
-    }
-
-    public withInitialPage(initialPage: string): SchulTourConfigFile {
-        if (this.initialPage === initialPage) {
-            return this;
-        }
-        return new SchulTourConfigFile({...this, initialPage: initialPage});
-    }
-
-    public withPages(pages: readonly PageData[]): SchulTourConfigFile {
-        if (this.pages === pages) {
-            return this;
-        }
-        return new SchulTourConfigFile({...this, pages: pages});
-    }
+    // public equals(other: null | undefined | DataType<SchulTourConfigFile>): boolean {
+    //     return other != null && (this === other || (
+    //         arrayEquals(this.pages, other.pages)
+    //         && this.initialPage === other.initialPage
+    //         && this.fullscreen === other.fullscreen
+    //         && this.mode === other.mode
+    //         && this.colorTheme === other.colorTheme
+    //     ));
+    // }
+    //
+    // public toJSON(): JsonSchulTourConfigFile {
+    //     return {
+    //         pages: this.pages.map(page => page.toJSON()),
+    //         initialPage: this.initialPage,
+    //         colorTheme: this.colorTheme,
+    //         mode: this.mode,
+    //         fullscreen: this.fullscreen,
+    //     };
+    // }
+    //
+    // public withInitialPage(initialPage: string): SchulTourConfigFile {
+    //     if (this.initialPage === initialPage) {
+    //         return this;
+    //     }
+    //     return new SchulTourConfigFile({...this, initialPage: initialPage});
+    // }
+    //
+    // public withPages(pages: readonly PageData[]): SchulTourConfigFile {
+    //     if (this.pages === pages) {
+    //         return this;
+    //     }
+    //     return new SchulTourConfigFile({...this, pages: pages});
+    // }
 }
+
+const SchulTourConfigFile = DataClass<typeof _SchulTourConfigFile, _SchulTourConfigFile>(_SchulTourConfigFile, ["pages", "initialPage", "fullscreen", "colorTheme", "mode"] );
+type SchulTourConfigFile = DataClassType<_SchulTourConfigFile>;
 
 function hashString(str: string, seed = 0): number {
     // source https://github.com/bryc/code/blob/master/jshash/experimental/cyrb53.js

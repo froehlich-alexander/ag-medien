@@ -10,13 +10,13 @@ import useMedia from "./custom-hooks/Media";
 import usePages from "./custom-hooks/Pages";
 import useTemplates from "./custom-hooks/Templates";
 import useTourPreview from "./custom-hooks/TourPreviewState";
-import {ImportDialog} from "./ImportDialog";
-import InlineObjectDialog from "./InlineObjectDialog";
+import {ImportDialog} from "./dialogs/ImportDialog";
+import InlineObjectDialog from "./dialogs/InlineObjectDialog";
 import ListView from "./ListView";
-import MediaDialog from "./MediaDialog";
-import MediaPreview from "./MediaPreview";
+import MediaDialog from "./dialogs/MediaDialog";
+import MediaPreview from "./dialogs/MediaPreview";
 import {MyNavBar} from "./MyNavBar";
-import PageForm from "./PageForm";
+import PageForm from "./forms/PageForm";
 import store from "./store";
 import {
     FormContext,
@@ -27,7 +27,7 @@ import {
     TourPreviewContext,
 } from "./TourContexts";
 import TourPreview from "./TourPreview";
-import UnsavedChangesAlert from "./UnsavedChangesAlert";
+import UnsavedChangesAlert from "./dialogs/UnsavedChangesAlert";
 
 Tour.devTool = true;
 

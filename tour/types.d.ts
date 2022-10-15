@@ -98,10 +98,22 @@ interface AbstractJsonInlineObject {
 /**
  * A type that is used by everything that can target and activate (or disable) a JsonAddressableObject (like a page, a text-field, etc.)
  */
-export type JsonActivating = {
+export type JsonActivating = ({
     // the id of the target (JsonAddressableObject)
     goto?: string;
     action?: ActionType;
+    scroll: {
+        // the initial scroll after this clickable is clicked (in percent)
+        // if absent we will scroll to end without animation
+        start: number,
+
+        // the position where we will scroll to (in percent)
+        // if this is equal to start, we won't have a scroll animation, instead we will instantly scroll to this position
+        end: number,
+
+        // time in ms (scrolling speed)
+        time: number,
+    }
 } & ({
     // The Type of the target
     targetType?: "page",
@@ -114,7 +126,7 @@ export type JsonActivating = {
 } | {
     targetType: "auto";
     animationType: AnimationType;
-});
+}));
 
 /**
  * A type which represents a clickable object in the pages json file (pages.json or pages.json)
@@ -133,7 +145,8 @@ export type JsonClickable = AbstractJsonInlineObject & JsonActivating & {
 }
 
 export type JsonCustomObject = AbstractJsonInlineObject & {
-    htmlId: string; //the id of the js object (the object must be created and appended to the DOM before this js is executed)
+    // the id of the js object (the object must be created and appended to the DOM before this js is executed)
+    htmlId: string;
     type: "custom";
     animationType?: CustomAnimations;
 }

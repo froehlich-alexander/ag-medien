@@ -66,9 +66,9 @@
         },
         "y": {
           "label": "Y Koordinate",
-          "invalidFeedback": "Muss zwischen 0 und 100 sein"
+          "invalidFeedback": "Muss zwischen 0 und 100 sein",
+          "formText": "Die Koordinaten sind relativ zur Seite / Medium"
         },
-        "sizeFormText": "Die Koordinaten sind relativ zur Seite / Medium",
         "title": {
           "label": "Titel"
         },
@@ -79,8 +79,29 @@
           "label": "Ziel",
           "invalidFeedback": "Bitte wähle eine id aus der Liste aus."
         },
+        "content": {
+          "label": "Inhalt",
+          "invalidFeedback": "Bitte schreibe irgendeinen Inhalt in dieses Feld"
+        },
+        "css-classes": {
+          "label": "CSS Klassen",
+          "formText": "Trenne einzelne Klassen mit einem Leerzeichen",
+          "invalidFeedback": "Es sind nur Buchstaben, Zahlen, -_ und Leerzeichen erlaubt"
+        },
+        "size": {
+          "label": "Größe",
+          "invalidFeedback": "Bitte wähle einen Wert"
+        },
         "animationType": {
           "label": "Animation Type"
+        },
+        "hidden": {
+          "label": "Versteckt",
+          "formText": "Am Anfang versteckt oder nicht?"
+        },
+        "id": {
+          "label": "Id",
+          "invalidFeedback": "Die Id muss einzigartig sein und darf nur aus Buchstaben, Zahlen, Strichen und Unterstrichen bestehen."
         }
       },
       "addButton": "Hinzufügen"

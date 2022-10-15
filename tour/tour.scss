@@ -129,17 +129,18 @@ body {
                     }
                 }
             }
+        }
 
-            // scrolling does not apply if the inlineObjects are placed directly inside .pg_wrapper
-            & > .inlineObject {
-                position: fixed;
-            }
+        // scrolling does not apply if the inlineObjects are placed directly inside .page
+        & > .inlineObject {
+            position: fixed;
+            z-index: 1;
         }
 
         // every clickable, text field, etc. also gets this class
         .inlineObject {
             position: absolute;
-            transform: translate(-50%);
+            transform: translate(-50%, -50%);
 
             .dev-tool-edit-icon {
                 margin: 0.2rem;

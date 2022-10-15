@@ -10,6 +10,7 @@ const devTool = {
     dataTransferTypes: {
         // MUST be lowercase (because the browser will always lower it which can lead to bugs)
         inlineObject: {
+            size: "tour/inline_object/size",
             offset: "tour/inline_object/offset",
             data: "tour/inline_object/data",
             id: "tour/inline_object/id",
@@ -100,15 +101,29 @@ class Media {
                 }
             });
             /**
+             * @param type
              * @param coord relative to document
              * @param closestSize size of parent element
-             * @param closestOffset offset of parent element (space between document 0 and parent start)
+             * @param closestOffset offset of parent element (space between document 0 and parent start) (aka. parent coord)
+             * @param size the width or height of the inline Object
              */
-            const getRelativeCoordinate = (coord, closestSize, closestOffset) => {
+            const getRelativeCoordinate = (type, coord, closestSize, closestOffset, size) => {
                 // Durchmesser in rem
                 let iconDurchmesser = 3;
                 iconDurchmesser = iconDurchmesser / 2 * parseFloat($(".clickable").css("fontSize"));
-                return ((coord - closestOffset + iconDurchmesser) / closestSize) * 100;
+                // in px; wie weit das object mit translate nach links verschoben wird bzw. wie sehr wir das ausgleichen müssen
+                let translation;
+                if (type === "clickable") {
+                    translation = iconDurchmesser;
+                }
+                else {
+                    if (!size) {
+                        console.error("Size cannot be undefined or 0 if type != clickable", size);
+                    }
+                    translation = size / 2;
+                }
+                // TODO 14.10.22 try alles durch 2 statt nur trans
+                return ((coord - closestOffset + translation) / closestSize) * 100;
             };
             this.html.on("drop", (event) => {
                 console.log("drop event");
@@ -116,10 +131,25 @@ class Media {
                 const inlineObjectData = InlineObjectData.fromJSON(JSON.parse(event.originalEvent.dataTransfer.getData(devTool.dataTransferTypes.inlineObject.data)));
                 const inlineObjectId = parseInt(event.originalEvent.dataTransfer.getData(devTool.dataTransferTypes.inlineObject.id));
                 const inlineObjectOffset = event.originalEvent.dataTransfer.getData(devTool.dataTransferTypes.inlineObject.offset)
-                    .split(" ").map(v => parseInt(v));
+                    .split(" ").map(parseFloat);
+                const inlineObjectSize = event.originalEvent.dataTransfer.getData(devTool.dataTransferTypes.inlineObject.size)
+                    .split(" ").map(parseFloat);
+                let referenceHTML;
+                if (inlineObjectData.position === "media") {
+                    // inlineObject is placed in bg_container (same size as img)
+                    referenceHTML = this.html.closest(".bg_container");
+                }
+                else if (inlineObjectData.position === "page") {
+                    // inline Object is placed directly inside page_wrapper (NOT same size as img)
+                    referenceHTML = this.html.closest(".page");
+                }
+                else {
+                    console.error('Inline object has no / an unknown position property', inlineObjectData.position);
+                    return;
+                }
                 this.handleDrop(inlineObjectId, inlineObjectData.withUpdate({
-                    x: getRelativeCoordinate(event.clientX, this.html.width(), this.html.offset().left + inlineObjectOffset[0]),
-                    y: getRelativeCoordinate(event.clientY, this.html.height(), this.html.offset().top + inlineObjectOffset[1]),
+                    x: getRelativeCoordinate(inlineObjectData.type, event.clientX, referenceHTML.width(), referenceHTML.offset().left + inlineObjectOffset[0], inlineObjectSize[0]),
+                    y: getRelativeCoordinate(inlineObjectData.type, event.clientY, referenceHTML.height(), referenceHTML.offset().top + inlineObjectOffset[1], inlineObjectSize[1]),
                 }));
             });
         }
@@ -440,7 +470,10 @@ class Page extends AddressableObject() {
             .toggleClass("pg_panorama", this.is_panorama)
             .toggleClass("deg360", this.is_360)
             .append($("<div></div>")
-            .addClass("pg_wrapper"));
+            .addClass("pg_wrapper"))
+            .append(this.inlineObjects
+            .filter(v => v.data.position === "page")
+            .map(v => v.html));
         //first img
         this.html.children(".pg_wrapper")
             .append($("<div></div>")
@@ -448,10 +481,7 @@ class Page extends AddressableObject() {
             .append(this.media.html)
             .append(this.inlineObjects
             .filter(v => v.data.position === "media" && (!v.cloned))
-            .map(v => v.html)))
-            .append(this.inlineObjects
-            .filter(v => v.data.position === "page")
-            .map(v => v.html));
+            .map(v => v.html)));
         if (this.is_360) {
             console.log("is_360");
             //add second clickables for second img in 360deg IMGs
@@ -494,19 +524,24 @@ class Page extends AddressableObject() {
                     inlineObjects: newInlineObjectsData,
                 };
                 this.handleUpdate(pageData);
-                this.clickables.filter(v => uniqueId(v.originHtml) === inlineObjectId)
+                this.inlineObjects.filter(v => uniqueId(v.originHtml) === inlineObjectId)
                     .forEach(v => v.html
                     .css("left", inlineObjectData.x + "%")
                     .css("top", inlineObjectData.y + "%"));
             };
-            for (let i of this.clickables) {
+            for (let i of this.inlineObjects) {
                 i.handleEditClick = (inlineObjectId, inlineObjectData) => {
                     const index = this.clickables.findIndex(value => uniqueId(value.html) === inlineObjectId);
                     this.handleInlineObjectEditClick(index, inlineObjectData);
                 };
             }
-            this.html[0].addEventListener("scroll", () => {
-                this.onScroll?.(this.html.scrollLeft());
+            this.html.find(".pg_wrapper").on("scroll", (event) => {
+                let scrollLeft = event.target.scrollLeft;
+                if (scrollLeft > this.media.html.width()) {
+                    scrollLeft = scrollLeft - this.media.html.width();
+                }
+                console.log("original scroll event", scrollLeft, this.media.html.width());
+                this.onScroll?.(scrollLeft / this.media.html.width());
             });
         }
     }
@@ -781,6 +816,8 @@ class InlineObject {
                     event.originalEvent.dataTransfer.setData(devTool.dataTransferTypes.inlineObject.data, JSON.stringify(this.data));
                     event.originalEvent.dataTransfer.setData(devTool.dataTransferTypes.inlineObject.id, String(uniqueId(this.originHtml)));
                     event.originalEvent.dataTransfer.setData(devTool.dataTransferTypes.inlineObject.offset, [event.clientX - this.html.offset().left, event.clientY - this.html.offset().top].join(" "));
+                    event.originalEvent.dataTransfer.setData(devTool.dataTransferTypes.inlineObject.size, [this.html.outerWidth(), this.html.outerHeight()].join(" "));
+                    console.log("IO Size", this.html.outerWidth(), this.html.outerHeight());
                 });
                 // edit icon (material icons required)
                 this.html.append($("<div/>")

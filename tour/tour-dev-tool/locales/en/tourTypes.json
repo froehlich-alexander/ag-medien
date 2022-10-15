@@ -4,5 +4,18 @@
     "arrow_r": "Arrow Right",
     "arrow_u": "Arrow Up",
     "arrow_d": "Arrow Down"
+  },
+  "textFieldSizes": {
+    "normal": "Normal",
+    "small": "Small",
+    "large": "Large",
+    "x-large": "Extra Large",
+    "xx-large": "Extra Extra Large"
+  },
+  "animationTypes": {
+    "forward": "Forward",
+    "backward": "Backward",
+    "fade": "Fade",
+    "none": "No Animation"
   }
 }

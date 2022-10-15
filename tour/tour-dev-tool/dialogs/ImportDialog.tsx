@@ -2,10 +2,10 @@ import * as React from "react";
 import {ChangeEvent, useCallback, useContext, useState} from "react";
 import {Button, Col, Form, FormControl, FormText, InputGroup, Modal, Spinner} from "react-bootstrap";
 import {Trans, useTranslation} from "react-i18next";
-import {FileData, PageData, SchulTourConfigFile} from "../Data";
-import {hideDialog, showDialog} from "./store/dialog";
-import {useAppDispatch, useAppSelector} from "./store/hooks";
-import {MediaContext, PageContext} from "./TourContexts";
+import {FileData, PageData, SchulTourConfigFile} from "../../Data";
+import {hideDialog, showDialog} from "../store/dialog";
+import {useAppDispatch, useAppSelector} from "../store/hooks";
+import {MediaContext, PageContext} from "../TourContexts";
 
 type Props = {
     // show: boolean,
@@ -96,7 +96,7 @@ export function ImportDialog(
                                 <Trans ns="dialog" i18nKey="import.media.formText">
                                     The Images, Videos, etc. which are used in the tour.
                                     You can configure the media more precise in the
-                                    <a onClick={() => dispatch(showDialog("media"))} href="#">Media Dialog</a>
+                                    <a onClick={() => dispatch(showDialog("media"))} href="tour-dev-tool/dialogs/ImportDialog#">Media Dialog</a>
                                 </Trans>
                             </FormText>
                         </Col>

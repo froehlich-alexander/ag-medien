@@ -1,5 +1,5 @@
 import {useCallback, useEffect, useMemo, useState} from "react";
-import {PageData} from "../../Data";
+import {AbstractAddressableInlineObjectData, PageData} from "../../Data";
 import {renameAddressableId} from "../refactor-data";
 import {FormContextType, PageContextType} from "../TourContexts";
 
@@ -28,6 +28,23 @@ export default function useForms(pageContext: PageContextType) {
         }
     }, [pageData, currentPage, renamePageIdUsages, formIsModified]);
 
+    const idPattern: string = useMemo(() => {
+        const inlineObjectIds = pageContext.pages.map(v => v.inlineObjects).flat().filter((v) => v.isAddressable())
+            .map(v => (v as AbstractAddressableInlineObjectData<any, any>).id);
+        // https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes/pattern --- implicit surrounded by ^(?:PATTERN)$
+        // must be different from other id except own id
+        // only a-zA-Z0-9-_ are allowed
+        // ^(?!(xxx|xx)$) return false if tested with xxx or xx , BUT it does not match anything. That's because we need the [a-z...]* at the end
+        return `^(?!(${pageContext.pages.map(v => v.id).concat(inlineObjectIds).join("|")})$)[a-zA-Y0-9-_]*`;
+    }, [pageContext.pages, pageContext.currentPage?.id]);
+
+    const getIdPatter = useCallback((ownId: string | undefined) => {
+        if (ownId) {
+            return `^${ownId}$|${idPattern}`;
+        }
+        return idPattern;
+    }, [idPattern]);
+
     useEffect(() => {
         resetForm();
     }, [resetForm]);
@@ -39,7 +56,8 @@ export default function useForms(pageContext: PageContextType) {
         save: saveForm,
         reset: resetForm,
         isModified: formIsModified,
-    }), [saveForm, resetForm, pageData, formIsModified]);
+        idPattern: getIdPatter,
+    }), [saveForm, resetForm, pageData, formIsModified, getIdPatter]);
 
     return {
         page: pageData,

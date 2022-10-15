@@ -1,13 +1,13 @@
 import React, {ChangeEvent, useCallback, useContext, useState} from "react";
 import {Button, ButtonGroup, Col, Container, Form, FormControl, Modal, Row, Spinner, Table} from "react-bootstrap";
 import {useTranslation} from "react-i18next";
-import {FileData} from "../Data";
-import useSet from "./custom-hooks/SetSate";
-import {hideDialog, showDialog} from "./store/dialog";
-import {useAppDispatch, useAppSelector} from "./store/hooks";
-import {set} from "./store/mediaPreview";
-import {MediaContext} from "./TourContexts";
-import {formatFileSize, MaterialIcon} from "./utils";
+import {FileData} from "../../Data";
+import useSet from "../custom-hooks/SetSate";
+import {hideDialog, showDialog} from "../store/dialog";
+import {useAppDispatch, useAppSelector} from "../store/hooks";
+import {set} from "../store/mediaPreview";
+import {MediaContext} from "../TourContexts";
+import {formatFileSize, MaterialIcon} from "../utils";
 
 interface PropsType {
 }
@@ -77,7 +77,7 @@ function MediaDialog({}: PropsType) {
                                     </Button>
                                     <Button variant="danger" onClick={deleteAll}>{t("buttons.deleteAll.label")}</Button>
                                 </ButtonGroup>
-                                <FormControl type="file" id="add-files" onChange={handleMediaAdded} hidden={true}/>
+                                <FormControl type="file" id="add-files" onChange={handleMediaAdded} multiple hidden={true}/>
                                 <ButtonGroup>
                                     <Button onClick={selectAll}>{t("buttons.selectAll")}</Button>
                                     <Button variant="secondary"

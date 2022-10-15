@@ -1,4 +1,4 @@
-import React, {createRef, memo, useCallback, useContext, useEffect, useReducer, useState} from "react";
+import React, {createRef, memo, useCallback, useContext, useEffect, useReducer, useRef, useState} from "react";
 import {Button, Modal} from "react-bootstrap";
 import {useTranslation} from "react-i18next";
 import {arrayEquals, DataType, InlineObjectData, PageData} from "../Data";
@@ -20,6 +20,8 @@ function TourPreview({}: TourPreviewProps) {
     const visibility = useAppSelector(state => state.dialog.tourPreview);
     const dispatch = useAppDispatch();
     const [, forceUpdate] = useReducer(x => x + 1, 0);
+    const [currentPageScroll, setCurrentPageScroll] = useState<number>();
+    const [htmlPages, setHtmlPages] = useState(Tour.pages);
 
     // const [pages, setPages] = useState<Readonly<Array<PageData>>>([]);
 
@@ -35,26 +37,36 @@ function TourPreview({}: TourPreviewProps) {
     }, [save]);
 
     useEffect(() => {
-        for (let page of Tour.pages) {
+        Tour.pages = htmlPages;
+    }, [htmlPages]);
+
+    useEffect(() => {
+        for (let page of htmlPages) {
             if (pageContext.currentPage?.id === page.id) {
-                page.initialActivate(Tour.pages);
-                break
+                page.initialActivate(htmlPages);
+                break;
             }
         }
-    }, [pageContext.currentPage?.id, Tour.pages]);
+    }, [pageContext.currentPage?.id, htmlPages]);
 
     const handlePageAdd = useCallback((page: Page) => {
-        Tour.pages = [...Tour.pages, page];
+        // Tour.pages = [...Tour.pages, page];
+        setHtmlPages(v => [...v, page]);
         // Tour.pages.push(page);
         forceUpdate();
-    }, [Tour.pages]);
-
+    }, []);
 
     const handlePageRemove = useCallback((page: Page) => {
-        Tour.pages = Tour.pages.filter(v => v !== page);
+        setHtmlPages(v => v.filter(v => v !== page));
         // Tour.pages.splice(Tour.pages.findIndex(v => v.id === page.id)!, 1);
         forceUpdate();
-    }, [Tour.pages]);
+    }, []);
+
+    const handleInitialDirectionClick = useCallback(() => {
+        if (currentPageScroll !== undefined) {
+            update(pages.find(v => v.id === pageContext.currentPage?.id)!.withInitialDirection(currentPageScroll * 100));
+        }
+    }, [pages, pageContext.currentPage?.id, currentPageScroll]);
 
     return (
         <Modal onHide={hide} show={visibility} fullscreen className="TourPreviewDialog">
@@ -65,11 +77,13 @@ function TourPreview({}: TourPreviewProps) {
                 <div className="schul-tour" data-color-theme="light" data-tour-mode="inline">
                     {pages.map(pageData =>
                         <TourPage key={pageData.id} pageData={pageData} onChange={update}
-                                  addPage={handlePageAdd} removePage={handlePageRemove}/>,
+                                  addPage={handlePageAdd} removePage={handlePageRemove}
+                                  onCurrentScrollChange={pageContext.currentPage?.id === pageData.id ? setCurrentPageScroll : undefined}/>,
                     )}
                 </div>
             </Modal.Body>
             <Modal.Footer>
+                <Button variant={"info"} onClick={handleInitialDirectionClick}>Set initial Direction</Button>
                 <Button variant="success" onClick={save}>{tGlob("save")}</Button>
                 <Button variant="primary" onClick={saveAndHide}>
                     {[tGlob("save"), tGlob("and"), tGlob("exit")].join(" ")}
@@ -86,14 +100,18 @@ interface TourPageProps {
     onChange: (page: PageData) => void,
     addPage: (page: Page) => void,
     removePage: (page: Page) => void,
+    /**
+     * @param scrollPercent range 0 - 100 like initial direction for current scroll
+     */
+    onCurrentScrollChange?: (scrollPercent: number) => void;
 }
 
-const TourPage = memo(({pageData, onChange, addPage, removePage}: TourPageProps) => {
-    const pageContainerRef = createRef<HTMLDivElement>();
+const TourPage = memo(({pageData, onChange, addPage, removePage, onCurrentScrollChange}: TourPageProps) => {
+    const pageContainerRef = useRef<HTMLSpanElement>(null);
     const dispatch = useAppDispatch();
     const pageContext = useContext(PageContext);
-    const [page, setPage] = useState(Page.from(pageData));
-    const [pageScroll, setPageScroll] = useState(pageData.initialDirection);
+    const [page, setPage] = useState<Page>();
+    const [pageScroll, setPageScroll] = useState<number>();
 
     const handleChange = useCallback((changes: Partial<DataType<PageData>>) => {
         onChange(pageData.withUpdate(changes));
@@ -105,32 +123,47 @@ const TourPage = memo(({pageData, onChange, addPage, removePage}: TourPageProps)
     }, []);
 
     useEffect(() => {
-        page.handleUpdate = handleChange;
-        page.handleInlineObjectEditClick = handleInlineObjectEditClick;
-        page.onCurrentPageChange = pageContext.setCurrentPage;
-        page.onScroll = setPageScroll;
+        if (page) {
+            page.handleUpdate = handleChange;
+            page.handleInlineObjectEditClick = handleInlineObjectEditClick;
+            page.onCurrentPageChange = pageContext.setCurrentPage;
+            page.onScroll = setPageScroll;
+        }
     }, [handleChange, handleInlineObjectEditClick, pageContext.setCurrentPage, page]);
 
     useEffect(() => {
-        addPage(page);
-        return () => {
-            removePage(page);
-        };
+        if (pageScroll) {
+            onCurrentScrollChange?.(pageScroll);
+        }
+        // if (page) {
+        //     page.html.scrollLeft(pageScroll);
+        // }
+    }, [pageScroll]);
+
+    useEffect(() => {
+        console.log("add remove");
+        if (page) {
+            pageContainerRef.current!.append(page.html[0]);
+            addPage(page);
+            return () => {
+                removePage(page);
+                pageContainerRef.current?.removeChild(page.html[0]);
+            };
+        }
     }, [page, addPage, removePage]);
 
     useEffect(() => {
-        // if (!page.data.equals(pageData)) {
+        if (!page?.data.equals(pageData, "inlineObjects")) {
+            console.log("not equal");
             const page = Page.from(pageData);
             // page.initial_direction = pageScroll;
             setPage(page);
-
-            // addPage(page);
-            pageContainerRef.current!.append(page.html[0]);
-            return () => {
-                pageContainerRef.current?.removeChild(page.html[0]);
-                // removePage(page);
-            };
-        // }
+            //
+            // pageContainerRef.current!.append(page.html[0]);
+            // return () => {
+            //     pageContainerRef.current?.removeChild(page.html[0]);
+            // };
+        }
     }, [pageData]);
 
     return (

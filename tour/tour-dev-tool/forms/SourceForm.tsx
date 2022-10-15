@@ -1,11 +1,12 @@
 import React, {ChangeEvent, useCallback, useContext} from "react";
 import {Button, Col, Container, FormControl, FormSelect, InputGroup, Row} from "react-bootstrap";
 import {Trans, useTranslation} from "react-i18next";
-import {MediaData, SourceData} from "../Data";
-import {MediaType} from "../types";
-import {showDialog} from "./store/dialog";
-import {useAppDispatch} from "./store/hooks";
-import {MediaContext} from "./TourContexts";
+import {MediaData, SourceData} from "../../Data";
+import {MediaType} from "../../types";
+import {showDialog} from "../store/dialog";
+import {useAppDispatch} from "../store/hooks";
+import {MediaContext} from "../TourContexts";
+import {MaterialIcon} from "../utils";
 
 type SourceFormProps = {
     source: SourceData | undefined,
@@ -15,12 +16,13 @@ type SourceFormProps = {
 
 function SourceForm({source, onSourceChange, mediaNotExistent}: SourceFormProps) {
     const mediaContext = useContext(MediaContext);
-    const {t} = useTranslation("mainPage", {keyPrefix: 'pageForm.mediaForm.sourceForm'});
+    const {t} = useTranslation("mainPage", {keyPrefix: "pageForm.mediaForm.sourceForm"});
+    const { t: tGlob } = useTranslation("translation");
     const dispatch = useAppDispatch();
 
     const handleNameChange = useCallback((event: ChangeEvent<HTMLSelectElement>) => {
         const eventValue = event.target.value;
-        if (eventValue === 'undefined') {
+        if (eventValue === "undefined") {
             onSourceChange(undefined);
             return;
         }
@@ -55,7 +57,7 @@ function SourceForm({source, onSourceChange, mediaNotExistent}: SourceFormProps)
     }, [onSourceChange]);
 
     const setOptimalWidth = useCallback(() => {
-        console.log('optimal width', source!.file, source!.file?.intrinsicWidth, source!.width);
+        console.log("optimal width", source!.file, source!.file?.intrinsicWidth, source!.width);
         if (source!.file?.intrinsicWidth) {
             onSourceChange(source!.withWidth(source!.file.intrinsicWidth));
         }
@@ -72,9 +74,9 @@ function SourceForm({source, onSourceChange, mediaNotExistent}: SourceFormProps)
             <Row className="row-cols-12 gy-2 gx-3">
                 <Col sm={12} className="row">
                     <Col>
-                        <InputGroup>
-                            <InputGroup.Text as="label" htmlFor="source-name">{t('name.label')}</InputGroup.Text>
-                            <FormSelect value={source?.name ?? 'undefined'} id="source-name" required
+                        <InputGroup hasValidation>
+                            <InputGroup.Text as="label" htmlFor="source-name">{t("name.label")}</InputGroup.Text>
+                            <FormSelect value={source?.name ?? "undefined"} id="source-name" required
                                         onChange={handleNameChange} isInvalid={mediaNotExistent}>
                                 <option value="undefined">--- Select a file ---</option>
                                 {mediaNotExistent && <option value={source!.name} disabled>{source!.name}</option>}
@@ -82,10 +84,11 @@ function SourceForm({source, onSourceChange, mediaNotExistent}: SourceFormProps)
                                     <option key={value.name} value={value.name}>{value.name}</option>)}
                             </FormSelect>
                             <FormControl.Feedback type="invalid">{/*hidden={!mediaNotExistent}>*/}
-                                <Trans ns="mainPage" i18nKey={'pageForm.mediaForm.sourceForm.name.notFound'}>
+                                <Trans ns="mainPage" i18nKey={"pageForm.mediaForm.sourceForm.name.notFound"}>
                                     Could not find this media file: <code>{{file: source?.name}}</code>.
                                     Please add it in the &ensp;
-                                    <a className="link-primary" onClick={()=>dispatch(showDialog('media'))} href="#">Media Dialog</a>
+                                    <a className="link-primary" onClick={() => dispatch(showDialog("media"))} href="tour-dev-tool/forms/SourceForm#">Media
+                                        Dialog</a>
                                 </Trans>
                             </FormControl.Feedback>
                         </InputGroup>
@@ -93,11 +96,11 @@ function SourceForm({source, onSourceChange, mediaNotExistent}: SourceFormProps)
 
                     <Col sm="auto">
                         <InputGroup>
-                            <InputGroup.Text as="label" htmlFor="source-type">{t('type.label')}</InputGroup.Text>
+                            <InputGroup.Text as="label" htmlFor="source-type">{t("type.label")}</InputGroup.Text>
                             <FormSelect value={source?.type ?? "undefined"} id="source-type" required
                                         onChange={handleTypeChange}
                                         disabled={!source}>
-                                <option disabled value="undefined">--- {t('type.emptyOption')} ---</option>
+                                <option disabled value="undefined">--- {t("type.emptyOption")} ---</option>
                                 {MediaData.Types.map(name =>
                                     <option key={name} value={name}>{name}</option>,
                                 )}
@@ -107,7 +110,7 @@ function SourceForm({source, onSourceChange, mediaNotExistent}: SourceFormProps)
                 </Col>
 
                 <div className="text-info mt-2">
-                    <Trans ns="mainPage" i18nKey={'pageForm.mediaForm.sourceForm.sizeInfo'}>
+                    <Trans ns="mainPage" i18nKey={"pageForm.mediaForm.sourceForm.sizeInfo"}>
                         If you set the size of the media here,
                         the script will know the actual size of the media even before it's fully loaded.
                         Then the user won't see any resizing when the media is loaded.<br/>
@@ -119,13 +122,13 @@ function SourceForm({source, onSourceChange, mediaNotExistent}: SourceFormProps)
                 </div>
 
                 <Col sm={6}>
-                    <InputGroup>
-                        <InputGroup.Text as="label" htmlFor="source-width">{t('width.label')}</InputGroup.Text>
+                    <InputGroup hasValidation>
+                        <InputGroup.Text as="label" htmlFor="source-width">{t("width.label")}</InputGroup.Text>
                         <FormControl type="number" value={source?.width} id="source-width" placeholder="not set"
                                      onChange={handleWidthChange} disabled={!source}
                                      min={0} max={source?.file?.intrinsicWidth ?? undefined}/>
                         <Button variant="info" onClick={setOptimalWidth} disabled={!source?.file}>Optimal</Button>
-                        <FormControl.Feedback type="invalid">{t('width.invalidFeedback')}</FormControl.Feedback>
+                        <FormControl.Feedback type="invalid">{t("width.invalidFeedback")}</FormControl.Feedback>
                         {/*null == undefined == 0 is intended*/}
                         {source?.width != source?.file?.intrinsicWidth && <Col sm={12} className="text-warning">
                             <Trans ns="mainPage"
@@ -138,13 +141,13 @@ function SourceForm({source, onSourceChange, mediaNotExistent}: SourceFormProps)
                 </Col>
 
                 <Col sm={6}>
-                    <InputGroup>
-                        <InputGroup.Text as="label" htmlFor="source-height">{t('height.label')}</InputGroup.Text>
+                    <InputGroup hasValidation>
+                        <InputGroup.Text as="label" htmlFor="source-height">{t("height.label")}</InputGroup.Text>
                         <FormControl type="number" value={source?.height} id="source-height" placeholder="not set"
                                      onChange={handleHeightChange} disabled={!source}
                                      min={0} max={source?.file?.intrinsicWidth ?? undefined}/>
                         <Button variant="info" onClick={setOptimalHeight} disabled={!source?.file}>Optimal</Button>
-                        <FormControl.Feedback type="invalid">{t('height.invalidFeedback')}</FormControl.Feedback>
+                        <FormControl.Feedback type="invalid">{t("height.invalidFeedback")}</FormControl.Feedback>
                         {/*null == undefined == 0 is intended*/}
                         {source?.height != source?.file?.intrinsicHeight && <Col sm={12} className="text-warning">
                             <Trans ns="mainPage"
@@ -155,8 +158,11 @@ function SourceForm({source, onSourceChange, mediaNotExistent}: SourceFormProps)
                         </Col>}
                     </InputGroup>
                 </Col>
-                <Col sm={"auto"}>
-                    <Button variant="danger" disabled={!source} onClick={handleDelete}>{t("deleteButton")}</Button>
+                <Col sm={12}>
+                    <Button variant="danger" className="d-flex" disabled={!source} onClick={handleDelete}>
+                        <MaterialIcon icon="delete" color="light"/>
+                        {tGlob("delete")}
+                    </Button>
                 </Col>
             </Row>
         </Container>

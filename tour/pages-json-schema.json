@@ -166,6 +166,26 @@
                   }
                 ]
               },
+              "scroll": {
+                "type": "object",
+                "properties": {
+                  "start": {
+                    "type": "number"
+                  },
+                  "end": {
+                    "type": "number"
+                  },
+                  "time": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "start",
+                  "end",
+                  "time"
+                ],
+                "additionalProperties": false
+              },
               "targetType": {
                 "type": "string",
                 "enum": [
@@ -187,6 +207,7 @@
             "required": [
               "x",
               "y",
+              "scroll",
               "title"
             ],
             "additionalProperties": false
@@ -594,6 +615,26 @@
             "goto": {
               "type": "string"
             },
+            "scroll": {
+              "type": "object",
+              "properties": {
+                "start": {
+                  "type": "number"
+                },
+                "end": {
+                  "type": "number"
+                },
+                "time": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "start",
+                "end",
+                "time"
+              ],
+              "additionalProperties": false
+            },
             "x": {
               "type": [
                 "number",
@@ -614,6 +655,7 @@
             }
           },
           "required": [
+            "scroll",
             "title",
             "type",
             "x",
@@ -649,6 +691,26 @@
             "action": {
               "$ref": "#/definitions/ActionType"
             },
+            "scroll": {
+              "type": "object",
+              "properties": {
+                "start": {
+                  "type": "number"
+                },
+                "end": {
+                  "type": "number"
+                },
+                "time": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "start",
+                "end",
+                "time"
+              ],
+              "additionalProperties": false
+            },
             "x": {
               "type": [
                 "number",
@@ -669,6 +731,7 @@
             }
           },
           "required": [
+            "scroll",
             "title",
             "type",
             "x",
@@ -704,6 +767,26 @@
             "action": {
               "$ref": "#/definitions/ActionType"
             },
+            "scroll": {
+              "type": "object",
+              "properties": {
+                "start": {
+                  "type": "number"
+                },
+                "end": {
+                  "type": "number"
+                },
+                "time": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "start",
+                "end",
+                "time"
+              ],
+              "additionalProperties": false
+            },
             "x": {
               "type": [
                 "number",
@@ -725,6 +808,7 @@
           },
           "required": [
             "animationType",
+            "scroll",
             "targetType",
             "title",
             "type",
