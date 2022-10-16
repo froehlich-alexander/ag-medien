@@ -102,7 +102,7 @@ export type JsonActivating = ({
     // the id of the target (JsonAddressableObject)
     goto?: string;
     action?: ActionType;
-    scroll: {
+    scroll?: {
         // the initial scroll after this clickable is clicked (in percent)
         // if absent we will scroll to end without animation
         start: number,

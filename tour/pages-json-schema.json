@@ -207,7 +207,6 @@
             "required": [
               "x",
               "y",
-              "scroll",
               "title"
             ],
             "additionalProperties": false
@@ -655,7 +654,6 @@
             }
           },
           "required": [
-            "scroll",
             "title",
             "type",
             "x",
@@ -731,7 +729,6 @@
             }
           },
           "required": [
-            "scroll",
             "title",
             "type",
             "x",
@@ -808,7 +805,6 @@
           },
           "required": [
             "animationType",
-            "scroll",
             "targetType",
             "title",
             "type",

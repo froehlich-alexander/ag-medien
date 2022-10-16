@@ -43,7 +43,7 @@ function DataClass(parent, fields, noWith = []) {
             continue;
         }
         let withMethodName = `with${field[0].toUpperCase()}${field.slice(1)}`;
-        Object.defineProperty(parent, withMethodName, {
+        Object.defineProperty(parent.prototype, withMethodName, {
             value: function (value) {
                 if (value === this[field]) {
                     return this;
@@ -56,6 +56,9 @@ function DataClass(parent, fields, noWith = []) {
     return parent;
 }
 class Data {
+    constructor(placeholder) {
+        this.onConstructionFinished(Data);
+    }
     // public readonly fields: (this["field"])[] = [];
     onConstructionFinished(prototype) {
         // this.fields.push(...fields.flat());
@@ -76,8 +79,16 @@ class Data {
             Object.freeze(this.fields);
         }
     }
-    constructor(placeholder) {
-        this.onConstructionFinished(Data);
+    /**
+     * only allowed in constructor
+     * @protected
+     */
+    setFields(other) {
+        for (let [k, v] of Object.entries(other)) {
+            if (this.fields.includes(k)) {
+                this[k] = v;
+            }
+        }
     }
     equals(other, ...ignore) {
         if (other == null) {
@@ -88,29 +99,33 @@ class Data {
             return true;
         }
         for (let field of this.fields) {
-            if (!ignore.includes(field)) {
-                // @ts-ignore
-                const thisVal = this[field];
-                // @ts-ignore
-                const otherVal = other[field];
-                if (thisVal === otherVal) {
-                    continue;
+            if (ignore.includes(field)) {
+                continue;
+            }
+            // @ts-ignore
+            const thisVal = this[field];
+            // @ts-ignore
+            const otherVal = other[field];
+            if (thisVal === otherVal) {
+                continue;
+            }
+            // use equals method if available
+            if (thisVal.equals) {
+                if (!thisVal.equals(otherVal)) {
+                    return false;
                 }
-                // use equals method if available
-                if (thisVal.equals) {
-                    if (!thisVal.equals(otherVal)) {
-                        return false;
-                    }
+            }
+            else if (Array.isArray(thisVal)) {
+                //compare arrays
+                if (!Array.isArray(otherVal)) {
+                    return false;
                 }
-                else if (Array.isArray(thisVal)) {
-                    //compare arrays
-                    if (!Array.isArray(otherVal)) {
-                        return false;
-                    }
-                    if (!arrayEquals(thisVal, otherVal)) {
-                        return false;
-                    }
+                if (!arrayEquals(thisVal, otherVal)) {
+                    return false;
                 }
+            }
+            else {
+                return false;
             }
         }
         return true;
@@ -119,7 +134,13 @@ class Data {
     toJSON() {
         const jsonObj = {};
         for (let i of this.fields) {
-            jsonObj[i] = this[i].toJSON?.() ?? this[i];
+            if (typeof this[i] === "object" && "toJSON" in this[i]) {
+                jsonObj[i] = this[i].toJSON();
+            }
+            else {
+                jsonObj[i] = this[i];
+            }
+            // jsonObj[i] = this[i]?.toJSON?.() ?? this[i];
         }
         return jsonObj;
     }
@@ -138,25 +159,37 @@ class Data {
         return this.constructor.staticFields;
     }
 }
-class _AbstractAddressableObject extends Data {
+Data.staticFields = [];
+class AbstractAddressableObject extends Data {
     constructor({ id, animationType, ...base }) {
         super(base);
-        this.id = id;
-        this.animationType = animationType;
+        this.setFields({
+            id: id,
+            animationType: animationType,
+        });
+        // this.id = id;
+        // this.animationType = animationType;
         this.onConstructionFinished(AbstractAddressableObject);
     }
 }
-const AbstractAddressableObject = DataClass(_AbstractAddressableObject, ["id", "animationType"], []);
-class _AbstractInlineObjectData extends Data {
-    constructor({ x, y, animationType, position, type, hidden, }) {
+//
+// public readonly id: string;
+// public readonly animationType: AnimationType;
+(() => {
+    DataClass(AbstractAddressableObject, ["id", "animationType"], []);
+})();
+class AbstractInlineObjectData extends Data {
+    constructor({ x, y, animationType, position, type, hidden }) {
         super();
         // standard
-        this.x = Math.round(x * 10 ** InlineObjectData.CoordinateDigits) / 10 ** InlineObjectData.CoordinateDigits;
-        this.y = Math.round(y * 10 ** InlineObjectData.CoordinateDigits) / 10 ** InlineObjectData.CoordinateDigits;
-        this.type = type;
-        this.position = position;
-        this.animationType = animationType;
-        this.hidden = hidden;
+        this.setFields({
+            x: Math.round(x * 10 ** InlineObjectData.CoordinateDigits) / 10 ** InlineObjectData.CoordinateDigits,
+            y: Math.round(y * 10 ** InlineObjectData.CoordinateDigits) / 10 ** InlineObjectData.CoordinateDigits,
+            type: type,
+            position: position,
+            animationType: animationType,
+            hidden: hidden,
+        });
         this.onConstructionFinished(AbstractInlineObjectData);
     }
     // public equals(other: DataType<AbstractInlineObjectData<T, Json>> | undefined | null): other is DataType<AbstractInlineObjectData<T, Json>> {
@@ -199,91 +232,63 @@ class _AbstractInlineObjectData extends Data {
         return this instanceof AbstractAddressableInlineObjectData;
     }
 }
-const AbstractInlineObjectData = DataClass(_AbstractInlineObjectData, ["x", "y", "type", "position", "animationType", "hidden"], []);
-// function AbstractAddressable<T extends AbstractInlineObjectData<any, any> | Data<any>, Json extends JsonAddressableObject>(base: typeof AbstractInlineObjectData|typeof Data) {
-//     // let constr = base ?? Data;
 //
-//     // @ts-ignore
-//     interface AbstractAddressableObject extends Data<any>, T {
-//     }
-//
-//     class AbstractAddressableObject extends base {
-//         public declare excludeFromDataType: "excludeFromDataType";
-//
-//         public readonly id: string;
-//         public readonly animationType: AnimationType;
-//
-//         protected constructor({id, animationType, ...base}: DataType<AbstractAddressableObject>) {
-//             super(base);
-//             this.id = id;
-//             this.animationType = animationType;
-//             this.onConstructionFinished(AbstractAddressableObject);
-//         }
-//
-//         public equals(other: DataType<AbstractAddressableObject> | undefined | null): other is DataType<AbstractAddressableObject> {
-//             return super.equals(other)
-//                 && this.id === other!.id
-//                 && this.animationType === other!.animationType;
-//         }
-//
-//         public toJSON(): { [k in keyof Pick<Json, keyof (JsonAddressableObject)>]: Json[k] } {
-//             return {
-//                 ...super.toJSON(),
-//                 id: this.id,
-//                 animationType: this.animationType,
-//             };
-//         }
-//
-//         public withId(id: string): this {
-//             if (this.id === id) {
-//                 return this;
-//             }
-//             return new (this.constructor as typeof AbstractAddressableObject)({...this, id: id}) as this;
-//         }
-//
-//         public withAnimationType(animationType: AnimationType): this {
-//             if (this.animationType === animationType) {
-//                 return this;
-//             }
-//             return new (this.constructor as typeof AbstractAddressableObject)({
-//                 ...this,
-//                 animationType: animationType,
-//             }) as this;
-//         }
-//     }
-//
-//     return AbstractAddressableObject;
-// }
-export class _AbstractAddressableInlineObjectData extends AbstractInlineObjectData {
+// // standard attributes
+// public readonly x: number;
+// public readonly y: number;
+// public readonly type: InlineObjectType;
+// public readonly position: InlineObjectPosition;
+// public readonly animationType: AnimationType;
+// public readonly hidden: boolean;
+(() => {
+    DataClass(AbstractInlineObjectData, ["x", "y", "type", "position", "animationType", "hidden"], []);
+})();
+class AbstractAddressableInlineObjectData extends AbstractInlineObjectData {
+    //
+    // public readonly id: string;
     constructor({ id, ...base }) {
         super(base);
-        this.id = id;
+        this.setFields({
+            id: id,
+        });
         this.onConstructionFinished(AbstractAddressableInlineObjectData);
     }
 }
-const AbstractAddressableInlineObjectData = DataClass(_AbstractAddressableInlineObjectData, ["id"], []);
-class _ScrollData extends Data {
+DataClass(AbstractAddressableInlineObjectData, ["id"], []);
+class ScrollData extends Data {
+    // public readonly start: number;
+    // public readonly end: number;
+    // public readonly time: number;
     constructor(other) {
         super();
-        this.fields.push("start", "end", "time");
-        this.start = other.start;
-        this.end = other.end;
-        this.time = other.time;
+        this.setFields({
+            start: other.start,
+            end: other.end,
+            time: other.time,
+        });
         this.onConstructionFinished(ScrollData);
     }
 }
-const ScrollData = DataClass(_ScrollData, ["start", "end", "time"]);
-class _AbstractActivatingInlineObjectData extends AbstractInlineObjectData {
+DataClass(ScrollData, ["start", "end", "time"]);
+class AbstractActivatingInlineObjectData extends AbstractInlineObjectData {
+    //
+    // public readonly goto?: string;
+    // public readonly targetType: AddressableObjects | "auto";
+    // public readonly action: ActionType;
+    // public readonly scroll: ScrollData;
     constructor({ goto, targetType, action, scroll, ...base }) {
         super(base);
-        this.goto = goto;
-        this.targetType = targetType;
-        this.action = action;
-        this.scroll = scroll;
+        this.setFields({
+            goto: goto,
+            targetType: targetType,
+            action: action,
+            scroll: scroll,
+        });
         this.onConstructionFinished(AbstractActivatingInlineObjectData);
     }
 }
-const AbstractActivatingInlineObjectData = DataClass(_AbstractActivatingInlineObjectData, ["goto", "targetType", "action", "scroll"]);
+DataClass(AbstractActivatingInlineObjectData, ["goto", "targetType", "action", "scroll"]);
+// type AbstractActivatingInlineObjectData = DataClassType<AbstractActivatingInlineObjectData>;
 const InlineObjectData = {
     CoordinateDigits: 3,
     InitialDirectionDigits: 3,
@@ -314,11 +319,15 @@ const InlineObjectData = {
         return ClickableData.fromJSON(ClickableData.default);
     },
 };
-class _ClickableData extends AbstractActivatingInlineObjectData {
+class ClickableData extends AbstractActivatingInlineObjectData {
     constructor({ title, icon, ...r }) {
         super({ ...r, type: "clickable" });
-        this.title = title;
-        this.icon = icon;
+        this.setFields({
+            title: title,
+            icon: icon,
+        });
+        // this.title = title;
+        // this.icon = icon;
         this.onConstructionFinished(ClickableData);
     }
     static fromJSON(json) {
@@ -339,8 +348,8 @@ class _ClickableData extends AbstractActivatingInlineObjectData {
 }
 // declare public readonly animationType: PageAnimations;
 // declare public readonly goto?: string;
-_ClickableData.Icons = ["arrow_l", "arrow_u", "arrow_r", "arrow_d"];
-_ClickableData.default = {
+ClickableData.Icons = ["arrow_l", "arrow_u", "arrow_r", "arrow_d"];
+ClickableData.default = {
     icon: "arrow_l",
     title: "",
     animationType: "forward",
@@ -354,15 +363,20 @@ _ClickableData.default = {
     backward: false,
     action: "activate",
 };
-const ClickableData = DataClass(_ClickableData, ["title", "icon"]);
-// interface TextFieldData extends AbstractInlineObjectData<TextFieldData, JsonTextField>{}
-class _TextFieldData extends AbstractAddressableInlineObjectData {
+DataClass(ClickableData, ["title", "icon"]);
+class TextFieldData extends AbstractAddressableInlineObjectData {
     constructor({ title, content, cssClasses, size, ...base }) {
         super({ ...base, type: "text" });
-        this.title = title;
-        this.content = content;
-        this.cssClasses = cssClasses;
-        this.size = size;
+        this.setFields({
+            title: title,
+            content: content,
+            cssClasses: cssClasses,
+            size: size,
+        });
+        // this.title = title;
+        // this.content = content;
+        // this.cssClasses = cssClasses;
+        // this.size = size;
         this.onConstructionFinished(TextFieldData);
     }
     static fromJSON(json) {
@@ -381,8 +395,8 @@ class _TextFieldData extends AbstractAddressableInlineObjectData {
         });
     }
 }
-_TextFieldData.Sizes = ["small", "normal", "large", "x-large", "xx-large"];
-_TextFieldData.default = {
+TextFieldData.Sizes = ["small", "normal", "large", "x-large", "xx-large"];
+TextFieldData.default = {
     type: "text",
     title: "",
     position: "media",
@@ -395,11 +409,12 @@ _TextFieldData.default = {
     y: 0,
     hidden: false,
 };
-const TextFieldData = DataClass(_TextFieldData, ["title", "content", "cssClasses", "size"]);
-class _CustomObjectData extends AbstractInlineObjectData {
+DataClass(TextFieldData, ["title", "content", "cssClasses", "size"]);
+class CustomObjectData extends AbstractInlineObjectData {
     constructor({ htmlId, ...base }) {
         super({ ...base, type: "custom" });
-        this.htmlId = htmlId;
+        this.setFields({ htmlId: htmlId });
+        // this.htmlId = htmlId;
         this.onConstructionFinished(CustomObjectData);
     }
     static fromJSON(json) {
@@ -414,7 +429,7 @@ class _CustomObjectData extends AbstractInlineObjectData {
         });
     }
 }
-_CustomObjectData.default = {
+CustomObjectData.default = {
     type: "custom",
     hidden: false,
     x: 0,
@@ -423,22 +438,30 @@ _CustomObjectData.default = {
     position: "media",
     htmlId: "",
 };
-const CustomObjectData = DataClass(_CustomObjectData, ["htmlId"]);
+DataClass(CustomObjectData, ["htmlId"]);
 class FileData extends Data {
-    constructor({ name, file, size, type, intrinsicWidth, intrinsicHeight, url }) {
+    constructor(other) {
         super();
+        // public readonly name: string;
+        // public readonly size: number;
+        // public readonly type: MediaType;
+        // public readonly file: File;
+        // public readonly intrinsicWidth: number | null;
+        // public readonly intrinsicHeight: number | null;
+        // public readonly url: string;
         // we would need to get the complete file content and that need way too much time
         // public readonly hash: number;
         // public readonly base64: string;
         this._outdated = false;
-        this.name = name;
-        this.size = size;
-        this.type = type;
-        this.file = file;
-        this.intrinsicWidth = intrinsicWidth;
-        this.intrinsicHeight = intrinsicHeight;
-        this.url = url;
-        this.onConstructionFinished(FileData, ["name", "size", "type", "file", "intrinsicWidth", "intrinsicHeight", "url"]);
+        this.setFields(other);
+        // this.name = name;
+        // this.size = size;
+        // this.type = type;
+        // this.file = file;
+        // this.intrinsicWidth = intrinsicWidth;
+        // this.intrinsicHeight = intrinsicHeight;
+        // this.url = url;
+        this.onConstructionFinished(FileData);
         // this.hash = hashString(name+base64);
         // this.base64 = base64;
         // document.body.append(this.img, this.video);
@@ -566,16 +589,37 @@ class FileData extends Data {
         return this._outdated;
     }
 }
-class _SourceData extends Data {
+DataClass(FileData, ["name", "size", "type", "file", "intrinsicWidth", "intrinsicHeight", "url"]);
+class SourceData extends Data {
+    // declare public readonly field: keyof DataTypeWithoutFields<this>;
+    // public readonly name: string;
+    // // natural width
+    // public readonly width?: number;
+    // // natural height
+    // public readonly height?: number;
+    //
+    // public readonly type: MediaType;
+    //
+    // // create tool only
+    // public readonly file?: FileData;
+    // public readonly fileDoesNotExist?: boolean;
     constructor({ name, width, height, file, type, fileDoesNotExist }) {
         super();
-        this.name = name;
-        this.file = file;
-        this.fileDoesNotExist = fileDoesNotExist;
-        // const srcNotExistent: boolean = media.src != null && mediaContext.mediaFiles.find(v => v.name === media.src!.name) === undefined;
-        this.width = width;
-        this.height = height;
-        this.type = type;
+        this.setFields({
+            name: name,
+            width: width,
+            height: height,
+            file: file,
+            type: type,
+            fileDoesNotExist: fileDoesNotExist,
+        });
+        // this.name = name;
+        // this.file = file;
+        // this.fileDoesNotExist = fileDoesNotExist;
+        // // const srcNotExistent: boolean = media.src != null && mediaContext.mediaFiles.find(v => v.name === media.src!.name) === undefined;
+        // this.width = width;
+        // this.height = height;
+        // this.type = type;
         this.onConstructionFinished(SourceData);
     }
     static fromJSON(other) {
@@ -644,14 +688,14 @@ class _SourceData extends Data {
             this.type === other.type &&
             (this.file === other.file || (this.file?.equals(other.file) ?? false))));
     }
-    // public toJSON(): JsonSource {
-    //     return {
-    //         name: this.name,
-    //         type: this.type,
-    //         height: this.height,
-    //         width: this.width,
-    //     };
-    // }
+    toJSON() {
+        return {
+            name: this.name,
+            type: this.type,
+            height: this.height,
+            width: this.width,
+        };
+    }
     /**
      * Return a string which is a (valid) url to the source
      */
@@ -662,27 +706,28 @@ class _SourceData extends Data {
         return SourceData.formatSrc(this.name);
     }
 }
-_SourceData.default = new SourceData({
+SourceData.default = new SourceData({
     type: "img",
     name: "baustelle.png",
     width: undefined,
     height: undefined,
 });
-const SourceData = DataClass(_SourceData, ["name", "width", "height", "type", "file", "fileDoesNotExist"]);
-class _MediaData extends Data {
+DataClass(SourceData, ["name", "width", "height", "type", "file", "fileDoesNotExist"]);
+class MediaData extends Data {
     constructor(other) {
         super();
-        this.src = other.src;
-        this.srcMin = other.srcMin;
-        this.srcMax = other.srcMax;
-        this.loading = other.loading;
-        this.type = other.type;
-        this.fetchPriority = other.fetchPriority;
-        this.poster = other.poster;
-        this.autoplay = other.autoplay;
-        this.muted = other.muted;
-        this.loop = other.loop;
-        this.preload = other.preload;
+        this.setFields(other);
+        // this.src = other.src;
+        // this.srcMin = other.srcMin;
+        // this.srcMax = other.srcMax;
+        // this.loading = other.loading;
+        // this.type = other.type;
+        // this.fetchPriority = other.fetchPriority;
+        // this.poster = other.poster;
+        // this.autoplay = other.autoplay;
+        // this.muted = other.muted;
+        // this.loop = other.loop;
+        // this.preload = other.preload;
         this.fileDoesNotExist = (this.src?.fileDoesNotExist || this.srcMin?.fileDoesNotExist || this.srcMax?.fileDoesNotExist) ?? true;
         this.onConstructionFinished(MediaData);
     }
@@ -768,12 +813,12 @@ class _MediaData extends Data {
             (this.srcMax?.isComplete() ?? true);
     }
 }
-_MediaData.imgFileEndings = ["png", "jpeg", "jpg", "gif", "svg", "webp", "apng", "avif"];
-_MediaData.videoFileEndings = ["mp4", "webm", "ogg", "ogm", "ogv", "avi"];
+MediaData.imgFileEndings = ["png", "jpeg", "jpg", "gif", "svg", "webp", "apng", "avif"];
+MediaData.videoFileEndings = ["mp4", "webm", "ogg", "ogm", "ogv", "avi"];
 //this list is not exhaustive
-_MediaData.iframeUrlEndings = ["html", "htm", "com", "org", "edu", "net", "gov", "mil", "int", "de", "en", "eu", "us", "fr", "ch", "at", "au"];
-_MediaData.Types = ["img", "video", "iframe"];
-_MediaData.default = new MediaData({
+MediaData.iframeUrlEndings = ["html", "htm", "com", "org", "edu", "net", "gov", "mil", "int", "de", "en", "eu", "us", "fr", "ch", "at", "au"];
+MediaData.Types = ["img", "video", "iframe"];
+MediaData.default = new MediaData({
     src: SourceData.default,
     poster: undefined,
     srcMax: undefined,
@@ -786,16 +831,27 @@ _MediaData.default = new MediaData({
     loop: false,
     autoplay: false,
 });
-const MediaData = DataClass(_MediaData, ["src", "srcMin", "srcMax", "loading", "type", "fetchPriority", "poster", "autoplay", "muted", "loop", "preload"]);
-// @ts-ignore
-class _PageData extends AbstractAddressableObject {
+DataClass(MediaData, ["src", "srcMin", "srcMax", "loading", "type", "fetchPriority", "poster", "autoplay", "muted", "loop", "preload"]);
+class PageData extends AbstractAddressableObject {
+    // public readonly media: MediaData;
+    // public readonly is360: boolean;
+    // public readonly isPanorama: boolean;
+    // public readonly initialDirection: number;
+    // public readonly inlineObjects: readonly InlineObjectData[];
     constructor({ media, is360, isPanorama, initialDirection, inlineObjects, ...base }) {
         super(base);
-        this.media = media;
-        this.is360 = is360;
-        this.isPanorama = isPanorama;
-        this.initialDirection = Math.round(initialDirection * 10 ** InlineObjectData.InitialDirectionDigits) / 10 ** InlineObjectData.InitialDirectionDigits;
-        this.inlineObjects = inlineObjects;
+        this.setFields({
+            media: media,
+            is360: is360,
+            isPanorama: isPanorama,
+            initialDirection: Math.round(initialDirection * 10 ** InlineObjectData.InitialDirectionDigits) / 10 ** InlineObjectData.InitialDirectionDigits,
+            inlineObjects: inlineObjects,
+        });
+        // this.media = media;
+        // this.is360 = is360;
+        // this.isPanorama = isPanorama;
+        // this.initialDirection = Math.round(initialDirection * 10 ** InlineObjectData.InitialDirectionDigits) / 10 ** InlineObjectData.InitialDirectionDigits;
+        // this.inlineObjects = inlineObjects;
         this.onConstructionFinished(PageData);
     }
     static fromJSON(page) {
@@ -842,21 +898,50 @@ class _PageData extends AbstractAddressableObject {
     isComplete() {
         return this.media.isComplete();
     }
-    // public toJSON(): JsonPage {
-    //     return {
-    //         ...super.toJSON(),
-    //         media: this.media.toJSON(),
-    //         inlineObjects: this.inlineObjects.map(value => value.toJSON()),
-    //         is_panorama: this.isPanorama,
-    //         is_360: this.is360,
-    //         initial_direction: this.initialDirection,
-    //     };
-    // }
+    toJSON() {
+        return {
+            ...super.toJSON(),
+            media: this.media.toJSON(),
+            inlineObjects: this.inlineObjects.map(value => value.toJSON()),
+            is_panorama: this.isPanorama,
+            is_360: this.is360,
+            initial_direction: this.initialDirection,
+        };
+    }
     withInlineObjects(...inlineObjects) {
         return new PageData({ ...this, inlineObjects: inlineObjects.flat() });
     }
+    // public withInitialDirection(initialDirection: number): PageData {
+    //     if (this.initialDirection === initialDirection) {
+    //         return this;
+    //     }
+    //     return new PageData({...this, initialDirection: initialDirection});
+    // }
+    //
+    // public withMedia(media: MediaData): PageData {
+    //     if (this.media === media) {
+    //         return this;
+    //     }
+    //     return new PageData({...this, media: media});
+    // }
+    //
+    withIs360(is360) {
+        if (this.is360 === is360) {
+            return this;
+        }
+        return new PageData({ ...this, is360: is360, isPanorama: is360 || this.isPanorama });
+    }
+    withIsPanorama(isPanorama) {
+        if (this.isPanorama === isPanorama) {
+            return this;
+        }
+        return new PageData({ ...this, isPanorama: isPanorama, is360: isPanorama && this.is360 });
+    }
 }
-_PageData.default = new PageData({
+(() => {
+    DataClass(PageData, ["media", "is360", "isPanorama", "initialDirection", "inlineObjects"], ["inlineObjects", "withIsPanorama", "withIs360"]);
+})();
+PageData.default = new PageData({
     id: "badID",
     animationType: "forward",
     initialDirection: 0,
@@ -865,15 +950,20 @@ _PageData.default = new PageData({
     inlineObjects: [],
     media: MediaData.default,
 });
-const PageData = DataClass(_PageData, ["media", "is360", "isPanorama", "initialDirection", "inlineObjects"], ['inlineObjects']);
-class _SchulTourConfigFile extends Data {
+class SchulTourConfigFile extends Data {
+    // public readonly pages: readonly PageData[];
+    // public readonly initialPage: string | undefined;
+    // public readonly fullscreen: boolean;
+    // public readonly colorTheme: "dark" | "light";
+    // public readonly mode: "inline" | "normal";
     constructor(other) {
         super();
-        this.pages = other.pages;
-        this.initialPage = other.initialPage;
-        this.fullscreen = other.fullscreen;
-        this.colorTheme = other.colorTheme;
-        this.mode = other.mode;
+        this.setFields(other);
+        // this.pages = other.pages;
+        // this.initialPage = other.initialPage;
+        // this.fullscreen = other.fullscreen;
+        // this.colorTheme = other.colorTheme;
+        // this.mode = other.mode;
         this.onConstructionFinished(SchulTourConfigFile);
     }
     static default() {
@@ -896,7 +986,10 @@ class _SchulTourConfigFile extends Data {
         });
     }
 }
-const SchulTourConfigFile = DataClass(_SchulTourConfigFile, ["pages", "initialPage", "fullscreen", "colorTheme", "mode"]);
+(() => {
+    DataClass(SchulTourConfigFile, ["pages", "initialPage", "fullscreen", "colorTheme", "mode"]);
+})();
+// type SchulTourConfigFile = DataClassType<SchulTourConfigFile>;
 function hashString(str, seed = 0) {
     // source https://github.com/bryc/code/blob/master/jshash/experimental/cyrb53.js
     let h1 = 0xdeadbeef ^ seed, h2 = 0x41c6ce57 ^ seed;
@@ -909,5 +1002,5 @@ function hashString(str, seed = 0) {
     h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
     return 4294967296 * (2097151 & h2) + (h1 >>> 0);
 }
-export { Data, SchulTourConfigFile, PageData, InlineObjectData, AbstractInlineObjectData, ClickableData, CustomObjectData, TextFieldData, MediaData, SourceData, FileData, hashString, uniqueId, arrayEquals, };
+export { Data, DataClass, SchulTourConfigFile, PageData, InlineObjectData, AbstractInlineObjectData, AbstractAddressableInlineObjectData, ClickableData, CustomObjectData, TextFieldData, MediaData, SourceData, FileData, hashString, uniqueId, arrayEquals, };
 //# sourceMappingURL=Data.js.map
