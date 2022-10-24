@@ -96,8 +96,16 @@
                     "properties": {}
                   },
                   {
+                    "type": "object",
+                    "properties": {}
+                  },
+                  {
                     "type": "string",
                     "const": "none"
+                  },
+                  {
+                    "type": "object",
+                    "properties": {}
                   },
                   {
                     "type": "object",
@@ -136,8 +144,16 @@
                     "properties": {}
                   },
                   {
+                    "type": "object",
+                    "properties": {}
+                  },
+                  {
                     "type": "string",
                     "const": "backward"
+                  },
+                  {
+                    "type": "object",
+                    "properties": {}
                   }
                 ]
               },
@@ -187,11 +203,22 @@
                 "additionalProperties": false
               },
               "targetType": {
-                "type": "string",
-                "enum": [
-                  "page",
-                  "text-field",
-                  "auto"
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "const": "page"
+                  },
+                  {
+                    "type": "string",
+                    "const": "text-field"
+                  },
+                  {
+                    "$ref": "#/definitions/AddressableObjects"
+                  },
+                  {
+                    "type": "string",
+                    "const": "auto"
+                  }
                 ]
               },
               "title": {
@@ -242,18 +269,6 @@
         },
         "srcMax": {
           "$ref": "#/definitions/JsonSource"
-        },
-        "type": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/MediaType"
-            },
-            {
-              "type": "string",
-              "const": "auto"
-            }
-          ],
-          "description": "The type of this media (overriden by  {@link  JsonSource } )"
         },
         "loading": {
           "anyOf": [
@@ -318,7 +333,7 @@
                   "const": "auto"
                 }
               ],
-              "description": "The type of the source object (overrides  {@link  JsonMedia.type } )"
+              "description": "The type of the source object (overrides  {@link  JsonMedia.type  } )"
             }
           },
           "required": [
@@ -345,7 +360,7 @@
                   "const": "auto"
                 }
               ],
-              "description": "The type of the source object (overrides  {@link  JsonMedia.type } )"
+              "description": "The type of the source object (overrides  {@link  JsonMedia.type  } )"
             }
           },
           "required": [
@@ -398,6 +413,13 @@
         "activate",
         "deactivate",
         "toggle"
+      ]
+    },
+    "AddressableObjects": {
+      "type": "string",
+      "enum": [
+        "page",
+        "text-field"
       ]
     },
     "IconType": {
@@ -752,8 +774,15 @@
               "$ref": "#/definitions/InlineObjectType"
             },
             "targetType": {
-              "type": "string",
-              "const": "auto"
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/AddressableObjects"
+                },
+                {
+                  "type": "string",
+                  "const": "auto"
+                }
+              ]
             },
             "animationType": {
               "$ref": "#/definitions/AnimationType"
@@ -804,8 +833,6 @@
             }
           },
           "required": [
-            "animationType",
-            "targetType",
             "title",
             "type",
             "x",

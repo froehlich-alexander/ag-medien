@@ -1,4 +1,4 @@
-import {PageData} from "../Data";
+import {InlineObjectData, PageData} from "../Data";
 
 function renameAddressableId(oldId: string, newId: string, pages: readonly PageData[]) {
     const updated: [string, PageData][] = [];
@@ -11,7 +11,7 @@ function renameAddressableId(oldId: string, newId: string, pages: readonly PageD
             edited = true;
         }
 
-        const newInlineObjects = [];
+        const newInlineObjects: InlineObjectData[] = [];
         let changedInlineObjects = false;
         for (let o of page.inlineObjects) {
             if (o.isClickable() && o.goto === oldId) {

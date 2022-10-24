@@ -50,10 +50,6 @@ export type JsonMedia = {
     src?: JsonSource;
     srcMin?: JsonSource;
     srcMax?: JsonSource;
-    /**
-     * The type of this media (overriden by {@link JsonSource})
-     */
-    type?: MediaType | "auto";
     loading?: LoadingType | "auto";     //works for img, iframe
     fetchPriority?: FetchPriorityType;  //works for img, iframe
     //video attributes
@@ -117,15 +113,15 @@ export type JsonActivating = ({
 } & ({
     // The Type of the target
     targetType?: "page",
-    animationType?: PageAnimations,
+    animationType?: PageAnimations | "auto",
     action?: "activate",
 } | {
     // The Type of the target
     targetType?: "text-field",
-    animationType?: TextAnimations,
+    animationType?: TextAnimations | "auto",
 } | {
-    targetType: "auto";
-    animationType: AnimationType;
+    targetType?: AddressableObjects|"auto";
+    animationType?: AnimationType | "auto";
 }));
 
 /**

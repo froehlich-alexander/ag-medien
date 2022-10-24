@@ -66,7 +66,8 @@ class Media {
      * @param data
      */
     static from(data) {
-        switch (data.type) {
+        const { source } = Media.computeSourceAndLoading(data);
+        switch (source.type) {
             case "img":
                 return ImageMedia.from(data);
             case "video":
@@ -445,7 +446,13 @@ class SchulTour {
     }
 }
 class Page extends AddressableObject() {
-    constructor({ data, media, inlineObjects }) {
+    /**
+     * @param data
+     * @param media
+     * @param inlineObjects
+     * @param scrollPercent dev tool only
+     */
+    constructor({ data, media, inlineObjects, scrollPercent }) {
         super();
         this.is_panorama = false;
         this.is_360 = false;
@@ -516,6 +523,9 @@ class Page extends AddressableObject() {
             });
         }
         if (Tour.devTool) {
+            if (scrollPercent) {
+                this.initial_direction = scrollPercent;
+            }
             this.media.handleDrop = (inlineObjectId, inlineObjectData) => {
                 const newInlineObjects = this.inlineObjects.filter(v => !v.cloned);
                 const newInlineObjectsData = newInlineObjects.map(v => v.data);
@@ -540,16 +550,22 @@ class Page extends AddressableObject() {
                 if (scrollLeft > this.media.html.width()) {
                     scrollLeft = scrollLeft - this.media.html.width();
                 }
-                console.log("original scroll event", scrollLeft, this.media.html.width());
+                // console.log("original scroll event", scrollLeft, this.media.html.width()!);
                 this.onScroll?.(scrollLeft / this.media.html.width());
             });
         }
     }
-    static from(data) {
+    /**
+     * Creates a new {@link Page} instance
+     * @param data
+     * @param scrollPercent dev tool only
+     */
+    static from(data, scrollPercent) {
         return new Page({
             data: data,
             media: Media.from(data.media),
             inlineObjects: data.inlineObjects.map(InlineObject.from),
+            scrollPercent: scrollPercent,
         });
     }
     // event handler when the animation has ended

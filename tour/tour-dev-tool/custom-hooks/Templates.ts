@@ -1,18 +1,29 @@
 import {useEffect, useMemo, useState} from "react";
-import {Data, DataType, InlineObjectData} from "../../Data";
+import {Data, DataClass, DataType, DataTypeInitializer, InlineObjectData} from "../../Data";
 import {JsonInlineObject} from "../../types";
 import {TemplateContextType} from "../TourContexts";
 
 type JsonTemplate = {
     inlineObject: JsonInlineObject,
 }
-class Template extends Data<Template>{
-    public readonly inlineObject: InlineObjectData;
-    declare excludeFromDataType: 'excludeFromDataType';
 
-    constructor({inlineObject}: DataType<Template>) {
+interface TemplateType {
+    readonly inlineObject: InlineObjectData;
+}
+
+interface Template extends DataTypeInitializer<TemplateType> {
+}
+class Template extends Data<TemplateType>{
+    declare json: JsonTemplate;
+
+    constructor({inlineObject}: TemplateType) {
         super();
-        this.inlineObject = inlineObject;
+        this.setFields({
+            inlineObject: inlineObject,
+        });
+    }
+    static {
+        DataClass<typeof this, TemplateType>(this, ['inlineObject']);
     }
 
     public static fromJSON(json: JsonTemplate): Template {
@@ -20,17 +31,8 @@ class Template extends Data<Template>{
             inlineObject: InlineObjectData.fromJSON(json.inlineObject),
         })
     }
-
-    public equals(other: any): boolean {
-        return other != null && (this === other || (
-            this.inlineObject.equals(other.inlineObject)
-        ));
-    }
-
-    public toJSON(): JsonTemplate {
-        return {
-            inlineObject: this.inlineObject.toJSON(),
-        }
+    static {
+        this.makeImmutable();
     }
 }
 

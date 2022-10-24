@@ -1,4 +1,4 @@
-import {ClickableData, Data, DataClass, DataWiths} from "./Data";
+import {ClickableData, Data, DataClass, DataTypeInitializer, DataWiths} from "../../tour/Data";
 import {describe, test, expect} from "@jest/globals";
 
 describe("Test Data classes", function () {
@@ -13,14 +13,12 @@ describe("Test Data classes", function () {
         notIncludedWith: boolean,
     }
 
-    interface TestData extends TestDataType, DataWiths<Omit<TestDataType, "notIncludedWith">> {
+    interface TestData extends DataTypeInitializer<TestDataType> {
     }
 
-    class TestData<T extends TestDataType = TestDataType> extends Data<T | TestDataType> {
+    class TestData<T extends TestDataType = TestDataType, TUnion extends TestDataType = T> extends Data<T | TestDataType, TUnion&TestDataType> {
         declare json: TestDataJson;
-        static {
-            DataClass<typeof TestData, TestDataType>(TestData, testDataFields, ["notIncludedWith"]);
-        }
+        declare field: TUnion&TestDataType;
 
         constructor(other: TestDataType) {
             super();
@@ -28,7 +26,11 @@ describe("Test Data classes", function () {
             this.onConstructionFinished(TestData);
         }
 
-        public static default: TestData = new TestData({
+        static {
+            DataClass<typeof this, TestDataType>(this, testDataFields, ["notIncludedWith"]);
+        }
+
+        public static default = new TestData({
             testFieldArray: [1, 2],
             testField1: "default",
             notIncludedWith: false,
@@ -36,6 +38,10 @@ describe("Test Data classes", function () {
 
         public testMethod() {
             return 3;
+        }
+
+        static {
+            this.makeImmutable();
         }
     }
 
@@ -89,21 +95,19 @@ describe("Test Data classes", function () {
     test("Data base class WITH SUBCLASSES", () => {
         const derivedDataFields: (keyof DerivedDataType)[] = ["secondField"];
 
-        interface DerivedDataJson extends DerivedDataType {
+        interface DerivedDataJson extends Omit<DerivedDataType, 'secondField'> {
+            second_field: 7|8,
         }
 
         interface DerivedDataType extends TestDataType {
             secondField: 7 | 8,
         }
 
-        interface DerivedData extends DerivedDataType, DataWiths<Omit<DerivedDataType, "notIncludedWith">> {
+        interface DerivedData extends DataTypeInitializer<DerivedDataType, "notIncludedWith"> {
         }
 
         class DerivedData extends TestData<DerivedDataType> {
             declare json: DerivedDataJson;
-            static {
-                DataClass<typeof DerivedData, DerivedDataType>(DerivedData, derivedDataFields, ["notIncludedWith"]);
-            }
 
             constructor({secondField, ...other}: DerivedDataType) {
                 super(other);
@@ -111,15 +115,26 @@ describe("Test Data classes", function () {
                 this.onConstructionFinished(DerivedData);
             }
 
-            public static default: DerivedData = new DerivedData({
+            static {
+                DataClass<typeof DerivedData, DerivedDataType>(DerivedData, derivedDataFields, ["notIncludedWith"]);
+            }
+
+            public override toJSON(): this["json"] {
+                return {
+                    ...this.partialToJSON('secondField'),
+                    second_field: this.secondField,
+                }
+            }
+
+            public static override default: DerivedData = new DerivedData({
                 secondField: 7,
                 notIncludedWith: false,
                 testField1: "default",
                 testFieldArray: [1, 2],
             });
 
-            public testMethod() {
-                return 3;
+            static {
+                this.makeImmutable();
             }
         }
 
@@ -143,12 +158,14 @@ describe("Test Data classes", function () {
             testField1: "default",
             testFieldArray: [1, 2],
             notIncludedWith: false,
-            secondField: 7,
+            second_field: 7,
         } as DerivedDataJson);
 
         // immutable
-        expect(Object.isFrozen(DerivedData.default)).toBe(true)
-        expect(()=>DerivedData.default.secondField = 7).toThrowError();
+        expect(Object.isFrozen(DerivedData)).toBe(true);
+        expect(Object.getPrototypeOf(DerivedData.default)).toBe(DerivedData.prototype);
+        expect(Object.isFrozen(DerivedData.default)).toBe(true);
+        expect(() => DerivedData.default.secondField = 7).toThrowError();
     });
 
     test("Clickable equality", () => {

@@ -9,6 +9,8 @@
       <excludeFolder url="file://$MODULE_DIR$/node_modules" />
       <excludeFolder url="file://$MODULE_DIR$/tour/tour-dev-tool/test-environement" />
       <excludeFolder url="file://$MODULE_DIR$/tour/tour-dev-tool/test-environement-2" />
+      <excludeFolder url="file://$MODULE_DIR$/coverage" />
+      <excludeFolder url="file://$MODULE_DIR$/tour/coverage" />
     </content>
     <content url="file://$MODULE_DIR$/dist" />
     <content url="file://$MODULE_DIR$/node_modules" />

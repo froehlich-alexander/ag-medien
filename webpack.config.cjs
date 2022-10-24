@@ -6,6 +6,14 @@ const CssMinimizerPlugin = require("css-minimizer-webpack-plugin");
 // const ForkTsCheckerWebpackPlugin = require("fork-ts-checker-webpack-plugin");
 const FileManagerWebpackPlugin = require("filemanager-webpack-plugin");
 
+// import path from "path";
+// import TerserPlugin from "terser-webpack-plugin";
+// import CopyPlugin from "copy-webpack-plugin";
+// import MiniCssExtractPlugin from "mini-css-extract-plugin";
+// import CssMinimizerPlugin from "css-minimizer-webpack-plugin";
+// import FileManagerWebpackPlugin from "filemanager-webpack-plugin";
+// import * as ForkTsCheckerWebpackPlugin from "fork-ts-checker-webpack-plugin";
+
 const NODE_MODULES = "node_modules";
 const TOUR = "tour";
 const TOUR_DEV_TOOL = "tour-dev-tool";
@@ -93,6 +101,9 @@ const config = {
                         transpileOnly: true,
                     },
                 },
+                resolve: {
+                    fullySpecified: false,
+                },
                 exclude: /node_modules/,
             },
             {
@@ -116,7 +127,7 @@ const config = {
                 test: /\.s?[ca]ss$/,
                 include: /node_modules/i,
                 use: [{
-                    loader: path.resolve("webpack-loaders/EmptyCSS.js"),
+                    loader: path.resolve("webpack-loaders/EmptyCSS.cjs"),
                 }],
             },
             {
@@ -375,10 +386,11 @@ const config = {
         "react-i18next": "ReactI18next",
     },
     resolve: {
-        extensions: [".tsx", ".ts", ".js"],
+        extensions: [".ts", ".tsx", ".js", ".jsx", ".json"],
+        fullySpecified: false,
     },
     watch: true,
 };
 
-
+// export default config;
 module.exports = config;

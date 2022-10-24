@@ -69,7 +69,7 @@ export default function PageForm(
     }, [page, onChange]);
 
     const disablePanorama: boolean = useMemo(() =>
-            !(page.media.allTypes().includes("img") || page.media.allTypes().includes("video")),
+            !page.media.allTypes().includes("img"),
         [page.media]);
 
     useEffect(() => {

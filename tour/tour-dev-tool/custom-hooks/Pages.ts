@@ -17,7 +17,7 @@ function usePages(mediaContext: MediaContextType, configFile: FileSystemFileHand
     // holds the id but if currentPage is undefined it still can hold a valid id of a page that does not exist yet
     // (useful when we create new pages)
     const [currentPageId, setCurrentPageId] = useState<string|undefined>();
-    const [tourConfig, setTourConfig] = useState<SchulTourConfigFile>(SchulTourConfigFile.default());
+    const [tourConfig, setTourConfig] = useState<SchulTourConfigFile>(SchulTourConfigFile.default);
 
     const handlePagesAddUpdate = useCallback((pages: readonly PageData[]) => {
         return Promise.all(pages.map(value => value.complete(mediaContext)))

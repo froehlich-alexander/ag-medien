@@ -1,7 +1,8 @@
 import React, {createRef, memo, useCallback, useContext, useEffect, useReducer, useRef, useState} from "react";
 import {Button, Modal} from "react-bootstrap";
 import {useTranslation} from "react-i18next";
-import {arrayEquals, DataType, InlineObjectData, PageData} from "../Data";
+import {arrayEqualsContain} from "../utils";
+import {DataType, InlineObjectData, PageData} from "../Data";
 import Tour, {Page} from "../tour";
 import "./CreateTool.scss";
 import {hideDialog, showDialog} from "./store/dialog";
@@ -26,7 +27,7 @@ function TourPreview({}: TourPreviewProps) {
     // const [pages, setPages] = useState<Readonly<Array<PageData>>>([]);
 
     const hide = useCallback(() => {
-        if (arrayEquals(pageContext.pages, pages)) {
+        if (arrayEqualsContain(pageContext.pages, pages)) {
             dispatch(hideDialog("tourPreview"));
         }
     }, [pageContext.pages, pages]);
@@ -66,7 +67,7 @@ function TourPreview({}: TourPreviewProps) {
         if (currentPageScroll !== undefined) {
             update(pages.find(v => v.id === pageContext.currentPage?.id)!.withInitialDirection(currentPageScroll * 100));
         }
-    }, [pages, pageContext.currentPage?.id, currentPageScroll]);
+    }, [pages, pageContext.currentPage?.id, currentPageScroll, update]);
 
     return (
         <Modal onHide={hide} show={visibility} fullscreen className="TourPreviewDialog">
@@ -112,6 +113,7 @@ const TourPage = memo(({pageData, onChange, addPage, removePage, onCurrentScroll
     const pageContext = useContext(PageContext);
     const [page, setPage] = useState<Page>();
     const [pageScroll, setPageScroll] = useState<number>();
+    const pageScrollRef = useRef<number>();
 
     const handleChange = useCallback((changes: Partial<DataType<PageData>>) => {
         onChange(pageData.withUpdate(changes));
@@ -134,6 +136,7 @@ const TourPage = memo(({pageData, onChange, addPage, removePage, onCurrentScroll
     useEffect(() => {
         if (pageScroll) {
             onCurrentScrollChange?.(pageScroll);
+            pageScrollRef.current = pageScroll;
         }
         // if (page) {
         //     page.html.scrollLeft(pageScroll);
@@ -153,17 +156,20 @@ const TourPage = memo(({pageData, onChange, addPage, removePage, onCurrentScroll
     }, [page, addPage, removePage]);
 
     useEffect(() => {
-        if (!page?.data.equals(pageData, "inlineObjects")) {
-            console.log("not equal");
-            const page = Page.from(pageData);
-            // page.initial_direction = pageScroll;
-            setPage(page);
-            //
-            // pageContainerRef.current!.append(page.html[0]);
-            // return () => {
-            //     pageContainerRef.current?.removeChild(page.html[0]);
-            // };
-        }
+        // if (!page?.data.equalsIgnoringInlineObjectPos(pageData)) {
+        console.log("not equal");
+        const page = Page.from(pageData, pageScrollRef.current && pageScrollRef.current * 100);
+        // if (pageScrollRef.current) {
+        //     page.initial_direction = pageScrollRef.current;
+        // }
+        // page.initial_direction = pageScroll;
+        setPage(page);
+        //
+        // pageContainerRef.current!.append(page.html[0]);
+        // return () => {
+        //     pageContainerRef.current?.removeChild(page.html[0]);
+        // };
+        // }
     }, [pageData]);
 
     return (

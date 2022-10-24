@@ -112,7 +112,8 @@ class Media<T extends HTMLImageElement | HTMLVideoElement | HTMLIFrameElement = 
      * @param data
      */
     public static from(data: MediaData): Media {
-        switch (data.type) {
+        const {source} = Media.computeSourceAndLoading(data);
+        switch (source.type) {
             case "img":
                 return ImageMedia.from(data);
             case "video":
@@ -361,18 +362,18 @@ class VideoMedia extends Media<HTMLVideoElement> {
         }
     }
 
-    public static from(data: MediaData) {
+    public static override from(data: MediaData) {
         return new VideoMedia(data);
     }
 
-    protected onLoadingError(): void {
+    protected override onLoadingError(): void {
         super.onLoadingError();
 
         this.html.attr("poster", baustellenFotoUrl)
             .prop("controls", false);
     }
 
-    public pause() {
+    public override pause() {
         this._html[0].pause();
     }
 }
@@ -401,11 +402,11 @@ class ImageMedia extends Media<HTMLImageElement> {
         this.html.attr("src", this.srcUrl);
     }
 
-    public static from(data: MediaData) {
+    public static override from(data: MediaData) {
         return new ImageMedia(data);
     }
 
-    protected onLoadingError(): void {
+    protected override onLoadingError(): void {
         super.onLoadingError();
 
         this.html.attr("src", baustellenFotoUrl);
@@ -481,11 +482,11 @@ class IframeMedia extends Media<HTMLIFrameElement> {
         this.html.attr("src", this.srcUrl);
     }
 
-    public static from(data: MediaData) {
+    public static override from(data: MediaData) {
         return new IframeMedia(data);
     }
 
-    protected onLoadingError(): void {
+    protected override onLoadingError(): void {
         super.onLoadingError();
 
         //the plain html text
@@ -570,7 +571,7 @@ class SchulTour {
 }
 
 class Page extends AddressableObject() {
-    public readonly data: PageData;
+    declare public readonly data: PageData;
     public readonly id: string;
     public readonly media: Media;
     public secondaryImg?: Media;
@@ -580,7 +581,7 @@ class Page extends AddressableObject() {
     public readonly inlineObjects: InlineObject[];
     public readonly animationType: PageAnimations;
 
-    public readonly html: JQuery<HTMLDivElement>;
+    declare public readonly html: JQuery<HTMLDivElement>;
 
     // dev tool
     public handleUpdate?: (page: Partial<DataType<PageData>>) => void;
@@ -588,8 +589,14 @@ class Page extends AddressableObject() {
     public onCurrentPageChange?: (pageId: string) => void;
     public onScroll?: (scrollPercent: number) => void;
 
+    /**
+     * @param data
+     * @param media
+     * @param inlineObjects
+     * @param scrollPercent dev tool only
+     */
     constructor(
-        {data, media, inlineObjects}: { data: PageData, media: Media, inlineObjects: InlineObject[], }) {
+        {data, media, inlineObjects, scrollPercent}: { data: PageData, media: Media, inlineObjects: InlineObject[], scrollPercent?: number}) {
         super();
         this.data = data;
         this.id = data.id;
@@ -665,6 +672,9 @@ class Page extends AddressableObject() {
         }
 
         if (Tour.devTool) {
+            if (scrollPercent) {
+                this.initial_direction = scrollPercent;
+            }
             this.media.handleDrop = (inlineObjectId, inlineObjectData) => {
                 const newInlineObjects: InlineObject[] = this.inlineObjects.filter(v => !v.cloned);
                 const newInlineObjectsData = newInlineObjects.map(v => v.data);
@@ -690,22 +700,28 @@ class Page extends AddressableObject() {
                 if (scrollLeft > this.media.html.width()!) {
                     scrollLeft = scrollLeft - this.media.html.width()!;
                 }
-                console.log("original scroll event", scrollLeft, this.media.html.width()!);
+                // console.log("original scroll event", scrollLeft, this.media.html.width()!);
                 this.onScroll?.(scrollLeft / this.media.html.width()!);
             });
         }
     }
 
-    public static from(data: PageData): Page {
+    /**
+     * Creates a new {@link Page} instance
+     * @param data
+     * @param scrollPercent dev tool only
+     */
+    public static from(data: PageData, scrollPercent?: number): Page {
         return new Page({
             data: data,
             media: Media.from(data.media),
             inlineObjects: data.inlineObjects.map(InlineObject.from),
+            scrollPercent: scrollPercent,
         });
     }
 
     // event handler when the animation has ended
-    protected handleAnimationEnd(event: AnimationEvent): boolean {
+    protected override handleAnimationEnd(event: AnimationEvent): boolean {
         if (!super.handleAnimationEnd(event)) {
             return false;
         }
@@ -742,11 +758,11 @@ class Page extends AddressableObject() {
         return true;
     };
 
-    protected activateAllowed(): boolean {
+    protected override activateAllowed(): boolean {
         return finished_last && !this.activated && !this.activateRunning;
     }
 
-    public activate(animationType?: PageAnimations): boolean {
+    public override activate(animationType?: PageAnimations): boolean {
         if (!super.activate(animationType)) {
             return false;
         }
@@ -782,7 +798,7 @@ class Page extends AddressableObject() {
         return true;
     }
 
-    public deactivate(animationType?: AnimationType): boolean {
+    public override deactivate(animationType?: AnimationType): boolean {
         if (!super.deactivate(animationType)) {
             return false;
         }
@@ -1148,7 +1164,7 @@ class TextField extends AddressableObject(InlineObject) {
         // });
     }
 
-    public static from(data: TextFieldData): TextField {
+    public static override from(data: TextFieldData): TextField {
         return new TextField(data);
     }
 
@@ -1197,7 +1213,7 @@ class Clickable extends InlineObject {
         }
     }
 
-    public static from(data: ClickableData): Clickable {
+    public static override from(data: ClickableData): Clickable {
         return new Clickable(data);
     }
 

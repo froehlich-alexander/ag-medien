@@ -1,0 +1,45 @@
+{
+  "compileOnSave": true,
+  "compilerOptions": {
+    "disableSizeLimit": true,
+    "experimentalDecorators": true,
+    "sourceMap": true,
+    "rootDir": "./",
+    //    "rootDirs": [
+//      "./",
+//      "utils"
+//    ],
+    "baseUrl": "./",
+    "target": "ES2022",
+    "module": "ES2020",
+    "moduleResolution": "Node",
+    "lib": [
+      "ESNext",
+      "DOM",
+      "ESNext.AsyncIterable"
+    ],
+    "types": [
+      "react",
+      "bootstrap",
+      "react-bootstrap",
+      "jquery",
+      "wicg-file-system-access"
+    ],
+    "strict": true,
+    "useDefineForClassFields": false,
+    "allowSyntheticDefaultImports": true,
+    "noImplicitOverride": true,
+    "jsx": "react",
+    "resolveJsonModule": true,
+    "noEmitHelpers": true,
+    "esModuleInterop": true
+  },
+  "buildOptions": {
+  },
+  "exclude": [
+    "jest.config.ts",
+    "dist",
+    "coverage",
+    "node_modules",
+  ]
+}

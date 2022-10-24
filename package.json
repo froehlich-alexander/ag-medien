@@ -1,5 +1,6 @@
 {
   "private": true,
+  "type": "module",
   "dependencies": {
     "@reduxjs/toolkit": "^1.8.5",
     "bootstrap": "^5.2.0",
@@ -22,10 +23,10 @@
   },
   "devDependencies": {
     "@types/bootstrap": "^5.2.3",
-    "@types/jest": "^29.1.2",
     "@types/jquery": "^3.5.14",
     "@types/react": "^18.0.17",
     "@types/react-dom": "^18.0.6",
+    "@types/jest": "^29.2.0",
     "@types/wicg-file-system-access": "^2020.9.5",
     "copy-webpack-plugin": "^11.0.0",
     "css-loader": "^6.7.1",
@@ -48,9 +49,9 @@
     "webpack-dev-server": "^4.10.1"
   },
   "scripts": {
-    "build": "webpack -c webpack.config.js",
-    "serve": "webpack server -c webpack.config.js",
+    "build": "webpack -c webpack.config.cjs",
+    "serve": "webpack server -c webpack.config.cjs",
     "start": "npm run build & npm run serve",
-    "test": "jest --config jest.config.ts"
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --config jest.config.ts"
   }
 }

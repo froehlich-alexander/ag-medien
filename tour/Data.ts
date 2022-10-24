@@ -1,7 +1,6 @@
-import {Page} from "./tour";
-import {getAddressableIds} from "./tour-dev-tool/refactor-data";
+import {arrayEqualsContain} from "./utils.js";
 import type {MediaContextType} from "./tour-dev-tool/TourContexts";
-import type {Complete, Mutable, UnFlatArray} from "./tour-dev-tool/utils";
+import type {Complete, UnFlatArray} from "./tour-dev-tool/utils";
 import type {
     AbstractJsonInlineObject,
     ActionType,
@@ -32,41 +31,23 @@ import type {
 
 export const mediaFolder = "media";
 
-type DataTypeWithoutFields<T extends Data<any>> = { [k in keyof Omit<T, "fields" | "field" | "json"> as T[k] extends Function ? never : k]: T[k] };
-type DataType<T extends Data<any>> = Pick<T, T["field"]>;
-type JsonType<T extends Data<any>> = T["json"];
-type toJSONFunctionType<T, T1 extends Data<any> | never = never> = () => T & (T1 extends Data<any> ? JsonType<T1> : never);
-type DeepDataType<T extends Data<any>> = {
-    [k in keyof DataType<T>]: (DataType<T>[k] extends Data<any> ? DeepDataType<DataType<T>[k]> : DataType<T>[k])
-    | (DataType<T>[k] extends undefined ? undefined : never)
+type DataTypeWithoutFields<T extends Data> = { [k in keyof Omit<T, "fields" | "field" | "json"> as T[k] extends Function ? never : k]: T[k] };
+type DataType<T extends Data> = //Pick<T, T["field"]>;
+    T extends Data<infer U, infer U1> ? U1 : never;
+type JsonFromDataType<T extends { [k: string]: any }> = {
+    [k in keyof T]:
+    (T[k] extends { toJSON: () => infer JsonRet }
+        ? (JsonRet extends Record<symbol | string | number, any> ? JsonFromDataType<JsonRet> : JsonRet)
+        : (T[k] extends Array<infer AType>
+            ? Array<(AType extends Record<symbol | string | number, any> ? JsonFromDataType<AType> : AType)>
+            : T[k]))
 };
 
-/**
- * Checks if the arrays are equal<br>
- * Ignores order of the items and if one item appears more often in one array than in the other
- * @param array1
- * @param array2
- */
-function arrayEquals(array1: readonly any[] | undefined, array2: readonly any[] | undefined): array2 is typeof array1 {
-    if (array1 === array2) {
-        return true;
-    }
-    if (array1 === undefined || array2 === undefined) {
-        // s.o. they are not equal (and undefined === undefined is always true)
-        return false;
-    }
-    for (let item of array1) {
-        if (!array2.some(value => value === item || value.equals?.(item))) {
-            return false;
-        }
-    }
-    for (let item of array2) {
-        if (!array1.some(value => value === item || value.equals?.(item))) {
-            return false;
-        }
-    }
-    return true;
-}
+type JsonType<T extends Data> = T["json"];
+type DeepDataType<T extends Data> = {
+    [k in keyof DataType<T>]: (DataType<T>[k] extends Data ? DeepDataType<DataType<T>[k]> : DataType<T>[k])
+    | (DataType<T>[k] extends undefined ? undefined : never)
+};
 
 const uniqueId = (() => {
     let currentId = 0;
@@ -81,43 +62,164 @@ const uniqueId = (() => {
     };
 })();
 
-type DataWiths<T extends { [k: string]: any }> = { [k in keyof T as `with${Capitalize<k>}`]: (value: T[k]) => any };
+type DataWiths<T extends { [k: string]: any }> = { [k in keyof T as (k extends string ? `with${Capitalize<k>}` : never)]-?: (value: Exclude<T[k], undefined>) => any };
 
-type DataClassType<T extends Data<any>> = T & DataWiths<DataType<T>>;
+type DataClassType<T extends Data> = T & DataWiths<DataType<T>>;
 
-function DataClass<T extends typeof Data, T1 extends { [k: string]: any; }>(parent: T, fields: (keyof T1 & string)[], noWith: (keyof T1 & string)[] = []):
+export type DataTypeInitializer<T extends { [k: string]: any },
+    Exclude extends keyof T = never> =
+    T
+    & DataWiths<Omit<T, Exclude>>;
+
+/**
+ * Use this in a static blog of a class, but place this block BEFORE all other static methods / fields, as this function initializes the fields, etc.<br>
+ * You should also place a static blog containing {@link this.makeImmutable} AFTER all other static method / fields,
+ * because that function freezes the static part of the class. Tying to alter that static part after the execution of that function will throw an error<br>
+ * Example:
+ * <pre>
+ * class A extends Data {
+ *     normalDataField;
+ *     static anyField = [1, 2, 3]; // ok as long as you do not use this classes constructor here
+ *
+ *     static anyMethod(){
+ *         return new A({}); // ERROR because DataClass initialization is not done yet
+ *     }
+ *
+ *     constructor(other){}
+ *
+ *     static {
+ *         DataClass(this, ["normalDataField"]); // DataClass initialization
+ *     }
+ *
+ *     static anyMethod(){
+ *         return new A({}); // ok because after DataClass initialization
+ *     }
+ *
+ *     static {
+ *         this.makeImmutable();
+ *     }
+ *     static wrongStaticField = 'wrong' // this will throw an error
+ * }
+ * </pre>
+ * @param parent
+ * @param fields
+ * @param noWith
+ * @constructor
+ */
+function DataClass<T extends typeof Data<any>, T1 extends { [k: string]: any; }>(parent: T, fields: (keyof T1 & string)[], noWith: (keyof T1 & string)[] = []):
     (Omit<T, "new" | "prototype"> & { new(...args: ConstructorParameters<T>): T1 & DataWiths<T1>, prototype: T1 & DataWiths<T1> }) {
     // type dataType = { [k in keyof (typeof fields[number])]: T1[k] };
-    (parent.staticFields as Mutable<typeof parent.staticFields>) = [...(parent.prototype.constructor as typeof Data).staticFields, ...fields];
+
+    // set static fields
+    // we NEED to use Object.defineProperty here, otherwise js thinks we want to alter Data.staticFields, which would result in an error
+    Object.defineProperty(parent, "staticFields", {
+        value: [...(parent.prototype.constructor as typeof Data).staticFields, ...fields],
+        enumerable: true,
+        writable: false,
+        configurable: false,
+    });
+
     for (let field of fields) {
         if (noWith.includes(field)) {
             continue;
         }
         let withMethodName = `with${field[0].toUpperCase()}${field.slice(1)}`;
         Object.defineProperty(parent.prototype, withMethodName, {
-            value: function (this: T1, value: T1[typeof field]) {
+            value: function (this: T1, value: T1[typeof field]): T1 & typeof parent["prototype"] {
                 if (value === this[field]) {
-                    return this;
+                    return this as T1 & typeof parent["prototype"];
                 }
-                return new (this.constructor as typeof Data)({...this, [field]: value});
+                return new (this.constructor as typeof Data)({
+                    ...this,
+                    [field]: value,
+                }) as T1 & typeof parent["prototype"];
             },
             writable: false,
+            configurable: false,
         });
     }
+
+    // add default stub
+    // without this, there would be an error if a class defines static default and the parent class does that too
+    if (!Object.hasOwn(parent, "default")) {
+        Object.defineProperty(parent, "default", {
+            value: undefined,
+            writable: true,
+            configurable: false,
+        });
+    }
+
+    // add from json stub
+    // without this, there would be an error if a class defines static fromJSON and the parent class does that too
+    if (!Object.hasOwn(parent, "fromJSON")) {
+        Object.defineProperty(parent, "fromJSON", {
+            value: undefined,
+            writable: true,
+            configurable: false,
+        });
+    }
+
+    Object.freeze(parent.staticFields);
+    // Object.freeze(parent);
+    // Object.freeze(parent.prototype);
     return parent as any;
 }
 
-class Data<T extends {}> {
-    public static staticFields: string[] = [];
+class Data<T extends { [k: string]: any } = any, TUnion extends { [k: string]: any } = T> {
+    public static readonly staticFields: string[] = [];
     // these 2 will never exist at runtime
     declare public readonly json: {};
     declare public readonly field: any;
 
+    constructor(placeholder?: {}) {
+        this.onConstructionFinished(Data);
+    }
+
+    static {
+        DataClass<typeof this, {}>(this, []);
+    }
+
+    /**
+     * Place a call to this method <b>AFTER</b> all other static methods / fields,
+     * because this function freezes the static part of the class. Tying to alter that static part after the execution of that function will throw an error<br>
+     * Example:
+     * <pre>
+     * class A extends Data {
+     *     normalDataField;
+     *     static anyField = [1, 2, 3]; // ok as long as you do not use this classes constructor here
+     *
+     *     static anyMethod(){
+     *         return new A({}); // ERROR because DataClass initialization is not done yet
+     *     }
+     *
+     *     constructor(other){}
+     *
+     *     static {
+     *         DataClass(this, ["normalDataField"]); // DataClass initialization
+     *     }
+     *
+     *     static anyMethod(){
+     *         return new A({}); // ok because after DataClass initialization
+     *     }
+     *
+     *     static {
+     *         this.makeImmutable();
+     *     }
+     *     static wrongStaticField = 'wrong' // this will throw an error
+     * }
+     * </pre>
+     * @protected
+     */
+    protected static makeImmutable() {
+        Object.freeze(this);
+        Object.freeze(this.prototype);
+    }
+
     // public readonly fields: (this["field"])[] = [];
 
-    protected onConstructionFinished<T extends typeof Data>(prototype: T) {//, ...fields: UnFlatArray<this["field"], 2, true, true>) {
+    protected onConstructionFinished<T extends typeof Data<any>>(staticClass: T) {//, ...fields: UnFlatArray<this["field"], 2, true, true>) {
         // this.fields.push(...fields.flat());
-        if (prototype === Object.getPrototypeOf(this)) {
+        if (staticClass.prototype === Object.getPrototypeOf(this)) {
             // register withXxx functions
             // for (let i of this.fields as (string & keyof DataType<this>)[]) {
             //     Object.defineProperty(this, `with${i[0].toUpperCase() + i.slice(1)}`, {
@@ -131,7 +233,6 @@ class Data<T extends {}> {
             //     });
             // }
             Object.freeze(this);
-            Object.freeze(this.fields);
         }
     }
 
@@ -139,20 +240,19 @@ class Data<T extends {}> {
      * only allowed in constructor
      * @protected
      */
-    protected setFields(other: Partial<T>): void {
-        for (let [k, v] of Object.entries(other) as ([keyof DataType<this>, DataType<this>[keyof DataType<this>]])[]) {
-            if (this.fields.includes(k)) {
-                this[k] = v;
+    public setFields(other: Partial<T>): void {
+        for (let [k, v] of Object.entries(other) as ([keyof TUnion, TUnion[keyof TUnion]])[]) {
+            if (this.fields.includes(k as string)) {
+                this[k as keyof this] = v as unknown as this[keyof this];
+            } else {
+                console.warn("You tried to set a field that is not present in this.fields!!!", "Your Field:", k,
+                    "Allowed fields:", this.fields);
             }
         }
     }
 
-    constructor(placeholder?: {}) {
-        this.onConstructionFinished(Data);
-    }
-
-    public equals(other: DataType<this> | null | undefined, ...ignore: (keyof DataType<this>)[]): boolean {
-        if (other == null) {
+    public equals(other: Omit<TUnion, typeof ignore[number]> | null | undefined, ...ignore: (keyof TUnion)[]): other is TUnion {
+        if (other == null || typeof other !== "object") {
             return false;
         }
         //@ts-ignore
@@ -163,8 +263,7 @@ class Data<T extends {}> {
             if (ignore.includes(field)) {
                 continue;
             }
-            // @ts-ignore
-            const thisVal = this[field];
+            const thisVal: undefined | this[this["field"]] = this[field as keyof this];
             // @ts-ignore
             const otherVal = other[field];
 
@@ -172,7 +271,7 @@ class Data<T extends {}> {
                 continue;
             }
             // use equals method if available
-            if (thisVal.equals) {
+            if (thisVal?.equals) {
                 if (!thisVal.equals(otherVal)) {
                     return false;
                 }
@@ -181,7 +280,7 @@ class Data<T extends {}> {
                 if (!Array.isArray(otherVal)) {
                     return false;
                 }
-                if (!arrayEquals(thisVal, otherVal)) {
+                if (!arrayEqualsContain(thisVal, otherVal)) {
                     return false;
                 }
             } else {
@@ -192,21 +291,48 @@ class Data<T extends {}> {
     };
 
     public toJSON(): this["json"] {
-        const jsonObj: this["json"] = {};
-        for (let i of this.fields) {
-            if (typeof this[i] === "object" && "toJSON" in this[i]) {
-                jsonObj[i] = this[i].toJSON();
-            } else {
-                jsonObj[i] = this[i];
+        return this.partialToJSON() as this["json"];
+    };
+
+    protected partialToJSON<Keys extends keyof TUnion>(...skip: Keys[]): Omit<JsonFromDataType<TUnion>, Keys> {
+        function transformObjectToJson<T>(obj: T): any {
+            if (typeof obj === "object" && obj !== null && "toJSON" in obj) {
+                return (obj as { toJSON: () => unknown }).toJSON();
+            } else if (Array.isArray(obj)) {
+                return (obj as Array<unknown>).map(transformObjectToJson);
             }
+            return obj;
+        }
+
+        const jsonObj: JsonFromDataType<TUnion> = {} as JsonFromDataType<TUnion>;
+        for (let i of this.fields) {
+            if (skip.includes(i as Keys)) {
+                continue;
+            }
+            jsonObj[i as keyof TUnion] = transformObjectToJson(this[i as keyof this]);
+            // if (typeof this[i] === "object" && "toJSON" in this[i]) {
+            //     jsonObj[i] = this[i].toJSON();
+            // }
+            // else {
+            //     jsonObj[i] = this[i];
+            // }
             // jsonObj[i] = this[i]?.toJSON?.() ?? this[i];
         }
         return jsonObj;
-    };
+    }
 
     public withUpdate(other: Partial<T>): this {
-        // @ts-ignore
-        const updated = new (this.constructor as typeof T)({...this, ...other});
+        const thisAttrs = {} as TUnion;
+        for (let [k, v] of Object.entries(this) as [keyof TUnion, TUnion[keyof TUnion]][]) {
+            if (this.fields.includes(k as string)) {
+                thisAttrs[k] = v;
+            }
+        }
+        // a bit of performance
+        if (!Object.keys(thisAttrs).length) {
+            return this;
+        }
+        const updated = new (this.constructor as { new(other: TUnion): any; })({...thisAttrs, ...other});
         if (this.equals(updated)) {
             return this;
         } else {
@@ -214,8 +340,12 @@ class Data<T extends {}> {
         }
     }
 
-    public get fields(): this["field"][] {
+    public get fields(): (string)[] {
         return (this.constructor as typeof Data).staticFields;
+    }
+
+    static {
+        this.makeImmutable();
     }
 }
 
@@ -224,21 +354,21 @@ interface AbstractAddressableObjectType {
     readonly animationType: AnimationType,
 }
 
-interface AbstractAddressableObject<T> extends AbstractAddressableObjectType, DataWiths<AbstractAddressableObjectType> {
+interface AbstractAddressableObject<T, TUnion> extends AbstractAddressableObjectType, DataWiths<AbstractAddressableObjectType> {
 }
 
-class AbstractAddressableObject<T extends AbstractAddressableObjectType = AbstractAddressableObjectType> extends Data<T | AbstractAddressableObjectType> {
+class AbstractAddressableObject<T extends AbstractAddressableObjectType = AbstractAddressableObjectType, TUnion extends AbstractAddressableObjectType = T> extends Data<T | AbstractAddressableObjectType, TUnion & AbstractAddressableObjectType> {
     public readonly declare json: JsonAddressableObject;
-    declare public readonly field: keyof DataTypeWithoutFields<this>;
-    //
+    declare public readonly field: keyof T | keyof AbstractAddressableObjectType;
+
     // public readonly id: string;
     // public readonly animationType: AnimationType;
     static {
         DataClass<typeof AbstractAddressableObject, AbstractAddressableObjectType>(AbstractAddressableObject, ["id", "animationType"], []);
     }
 
-    constructor({id, animationType, ...base}: AbstractAddressableObjectType) {
-        super(base);
+    constructor({id, animationType}: AbstractAddressableObjectType) {
+        super();
         this.setFields({
             id: id,
             animationType: animationType,
@@ -278,6 +408,9 @@ class AbstractAddressableObject<T extends AbstractAddressableObjectType = Abstra
     //         animationType: animationType,
     //     }) as this;
     // }
+    static {
+        this.makeImmutable();
+    }
 }
 
 // type AbstractAddressableObject = DataClassType<AbstractAddressableObject>;
@@ -292,10 +425,10 @@ interface AbstractInlineObjectDataType {
     readonly hidden: boolean;
 }
 
-interface AbstractInlineObjectData<T> extends AbstractInlineObjectDataType, DataWiths<AbstractInlineObjectDataType> {
+interface AbstractInlineObjectData<T, TUnion> extends DataTypeInitializer<AbstractInlineObjectDataType> {
 }
 
-class AbstractInlineObjectData<T extends {} = AbstractInlineObjectDataType> extends Data<T | AbstractInlineObjectDataType> {
+class AbstractInlineObjectData<T extends AbstractInlineObjectDataType = AbstractInlineObjectDataType, TUnion extends AbstractInlineObjectDataType = T> extends Data<T | AbstractInlineObjectDataType, TUnion & AbstractInlineObjectDataType> {
     declare public readonly json: AbstractJsonInlineObject;
     declare public readonly field: keyof T & keyof AbstractInlineObjectDataType;
     //
@@ -311,8 +444,7 @@ class AbstractInlineObjectData<T extends {} = AbstractInlineObjectDataType> exte
         DataClass<typeof AbstractInlineObjectData, AbstractInlineObjectDataType>(AbstractInlineObjectData, ["x", "y", "type", "position", "animationType", "hidden"], []);
     }
 
-    constructor(
-        {x, y, animationType, position, type, hidden}: AbstractInlineObjectDataType) {
+    constructor({x, y, animationType, position, type, hidden}: AbstractInlineObjectDataType) {
         super();
         // standard
         this.setFields({
@@ -403,6 +535,9 @@ class AbstractInlineObjectData<T extends {} = AbstractInlineObjectDataType> exte
     //     }
     //     return new (this.constructor as typeof AbstractInlineObjectData)({...this, hidden: hidden}) as this;
     // }
+    static {
+        this.makeImmutable();
+    }
 }
 
 // const AbstractInlineObjectData = DataClass<typeof _AbstractInlineObjectData, _AbstractInlineObjectData>(_AbstractInlineObjectData, ["x", "y", "type", "position", "animationType", "hidden"], []);
@@ -470,7 +605,7 @@ interface AbstractAddressableInlineObjectDataType extends AbstractInlineObjectDa
 interface AbstractAddressableInlineObjectData<T extends AbstractAddressableInlineObjectDataType> extends AbstractAddressableInlineObjectDataType, DataWiths<AbstractAddressableInlineObjectDataType> {
 }
 
-class AbstractAddressableInlineObjectData<T extends AbstractAddressableInlineObjectDataType = AbstractAddressableInlineObjectDataType> extends AbstractInlineObjectData<T | AbstractAddressableInlineObjectDataType> {
+class AbstractAddressableInlineObjectData<T extends AbstractAddressableInlineObjectDataType = AbstractAddressableInlineObjectDataType, TUnion extends AbstractAddressableInlineObjectDataType = T> extends AbstractInlineObjectData<T | AbstractAddressableInlineObjectDataType, TUnion & AbstractAddressableInlineObjectDataType> {
     public readonly declare json: JsonAddressableObject & AbstractInlineObjectData["json"];
     //
     // public readonly id: string;
@@ -481,6 +616,10 @@ class AbstractAddressableInlineObjectData<T extends AbstractAddressableInlineObj
             id: id,
         });
         this.onConstructionFinished(AbstractAddressableInlineObjectData);
+    }
+
+    static {
+        DataClass<typeof this, AbstractAddressableInlineObjectDataType>(this, ["id"]);
     }
 
     // public equals(other: DataType<AbstractAddressableInlineObjectData<T, Json>> | undefined | null): other is DataType<AbstractAddressableInlineObjectData<T, Json>> {
@@ -499,9 +638,11 @@ class AbstractAddressableInlineObjectData<T extends AbstractAddressableInlineObj
     // public withId(id: string): this {
     //     return new (this.constructor as typeof AbstractAddressableInlineObjectData)({...this, id: id}) as this;
     // }
-}
 
-DataClass<typeof AbstractAddressableInlineObjectData, AbstractAddressableInlineObjectData>(AbstractAddressableInlineObjectData, ["id"], []);
+    static {
+        this.makeImmutable();
+    }
+}
 
 // type AbstractAddressableInlineObjectData = DataClassType<_AbstractAddressableInlineObjectData>;
 
@@ -511,9 +652,12 @@ interface ScrollDataType {
     readonly time: number;
 }
 
+interface ScrollData extends DataTypeInitializer<ScrollDataType> {
+}
+
 class ScrollData extends Data<ScrollDataType> {
     public declare field: keyof ScrollDataType;
-    public declare toJSON: toJSONFunctionType<JsonActivating["scroll"]>;
+    public declare json: NonNullable<JsonActivating["scroll"]>;
 
     // public readonly start: number;
     // public readonly end: number;
@@ -531,6 +675,10 @@ class ScrollData extends Data<ScrollDataType> {
         this.onConstructionFinished(ScrollData);
     }
 
+    static {
+        DataClass<typeof this, ScrollDataType>(this, ["start", "end", "time"]);
+    }
+
     // public equals(other: DataType<ScrollData> | null | undefined, ...ignore: (keyof DataType<ScrollData>)[]): boolean {
     //     return (other != null && (this === other || (
     //         (ignore.includes("start") || this.start === other.start)
@@ -546,12 +694,11 @@ class ScrollData extends Data<ScrollDataType> {
     //         time: this.time,
     //     };
     // }
+    static {
+        this.makeImmutable();
+    }
 }
 
-interface ScrollData extends ScrollDataType, DataWiths<ScrollDataType> {
-}
-
-DataClass<typeof ScrollData, ScrollData>(ScrollData, ["start", "end", "time"]);
 
 interface AbstractActivatingInlineObjectDataType extends AbstractInlineObjectDataType {
     readonly goto?: string;
@@ -560,10 +707,10 @@ interface AbstractActivatingInlineObjectDataType extends AbstractInlineObjectDat
     readonly scroll?: ScrollData;
 }
 
-interface AbstractActivatingInlineObjectData<T extends AbstractActivatingInlineObjectDataType> extends AbstractActivatingInlineObjectDataType, DataWiths<AbstractActivatingInlineObjectDataType> {
+interface AbstractActivatingInlineObjectData<T extends AbstractActivatingInlineObjectDataType> extends DataTypeInitializer<AbstractActivatingInlineObjectDataType> {
 }
 
-class AbstractActivatingInlineObjectData<T extends AbstractActivatingInlineObjectDataType = AbstractActivatingInlineObjectDataType> extends AbstractInlineObjectData<T | AbstractActivatingInlineObjectDataType> {
+class AbstractActivatingInlineObjectData<T extends AbstractActivatingInlineObjectDataType = AbstractActivatingInlineObjectDataType, TUnion extends AbstractActivatingInlineObjectDataType = T> extends AbstractInlineObjectData<T | AbstractActivatingInlineObjectDataType, TUnion & AbstractActivatingInlineObjectDataType> {
     declare json: JsonActivating & AbstractInlineObjectData["json"];
     //
     // public readonly goto?: string;
@@ -580,6 +727,10 @@ class AbstractActivatingInlineObjectData<T extends AbstractActivatingInlineObjec
             scroll: scroll,
         });
         this.onConstructionFinished(AbstractActivatingInlineObjectData);
+    }
+
+    static {
+        DataClass<typeof this, AbstractActivatingInlineObjectDataType>(this, ["goto", "targetType", "action", "scroll"]);
     }
 
     // public toJSON(): { [k in keyof Pick<Json, keyof (AbstractJsonInlineObject & JsonActivating)>]: Json[k] } {
@@ -618,9 +769,11 @@ class AbstractActivatingInlineObjectData<T extends AbstractActivatingInlineObjec
     //         targetType: targetType,
     //     }) as this;
     // }
+    static {
+        this.makeImmutable();
+    }
 }
 
-DataClass<typeof AbstractActivatingInlineObjectData, AbstractActivatingInlineObjectData>(AbstractActivatingInlineObjectData, ["goto", "targetType", "action", "scroll"]);
 // type AbstractActivatingInlineObjectData = DataClassType<AbstractActivatingInlineObjectData>;
 
 const InlineObjectData = {
@@ -665,10 +818,10 @@ interface ClickableDataType extends AbstractActivatingInlineObjectDataType {
     readonly icon: IconType,
 }
 
-interface ClickableData<T> extends ClickableDataType, DataWiths<ClickableDataType> {
+interface ClickableData extends ClickableDataType, DataWiths<ClickableDataType> {
 }
 
-class ClickableData<T extends ClickableDataType = ClickableDataType> extends AbstractActivatingInlineObjectData<T | ClickableDataType> {
+class ClickableData extends AbstractActivatingInlineObjectData<ClickableDataType, ClickableDataType> {
     declare public readonly json: JsonClickable & AbstractActivatingInlineObjectData["json"];
     //
     // public readonly title: string;
@@ -690,6 +843,10 @@ class ClickableData<T extends ClickableDataType = ClickableDataType> extends Abs
         // this.title = title;
         // this.icon = icon;
         this.onConstructionFinished(ClickableData);
+    }
+
+    static {
+        DataClass<typeof this, ClickableData>(this, ["title", "icon"]);
     }
 
     public static default: Complete<JsonClickable> = {
@@ -745,9 +902,11 @@ class ClickableData<T extends ClickableDataType = ClickableDataType> extends Abs
     // public withTitle(title: string): ClickableData {
     //     return new ClickableData({...this, title: title});
     // }
+    static {
+        this.makeImmutable();
+    }
 }
 
-DataClass<typeof ClickableData, ClickableData>(ClickableData, ["title", "icon"]);
 // type ClickableData = DataClassType<ClickableData>;
 
 // interface TextFieldData extends AbstractInlineObjectData<TextFieldData, JsonTextField>{}
@@ -758,11 +917,11 @@ interface TextFieldDataType extends AbstractAddressableInlineObjectDataType {
     readonly size: TextFieldSize;
 }
 
-interface TextFieldData<T> extends TextFieldDataType, DataWiths<TextFieldDataType> {
+interface TextFieldData extends DataTypeInitializer<TextFieldDataType> {
 }
 
-class TextFieldData<T extends TextFieldDataType = TextFieldDataType> extends AbstractAddressableInlineObjectData<T | TextFieldDataType> {
-    declare public readonly json: JsonTextField & AbstractActivatingInlineObjectData["json"];
+class TextFieldData extends AbstractAddressableInlineObjectData<TextFieldDataType> {
+    declare public readonly json: JsonTextField;
     //
     // public readonly title?: string;
     // public readonly content: string;
@@ -788,6 +947,10 @@ class TextFieldData<T extends TextFieldDataType = TextFieldDataType> extends Abs
         // this.cssClasses = cssClasses;
         // this.size = size;
         this.onConstructionFinished(TextFieldData);
+    }
+
+    static {
+        DataClass<typeof this, TextFieldDataType>(this, ["title", "content", "cssClasses", "size"]);
     }
 
     public static default: Complete<JsonTextField> = {
@@ -861,19 +1024,21 @@ class TextFieldData<T extends TextFieldDataType = TextFieldDataType> extends Abs
     //     }
     //     return new TextFieldData({...this, size: size});
     // }
+    static {
+        this.makeImmutable();
+    }
 }
 
-DataClass<typeof TextFieldData, TextFieldData>(TextFieldData, ["title", "content", "cssClasses", "size"]);
 
 // type TextFieldData = DataClassType<TextFieldData>;
 interface CustomObjectDataType extends AbstractInlineObjectDataType {
     readonly htmlId: string;
 }
 
-interface CustomObjectData<T> extends CustomObjectDataType, DataWiths<CustomObjectDataType> {
+interface CustomObjectData extends CustomObjectDataType, DataWiths<CustomObjectDataType> {
 }
 
-class CustomObjectData<T extends CustomObjectDataType = CustomObjectDataType> extends AbstractInlineObjectData<T | CustomObjectDataType> {
+class CustomObjectData extends AbstractInlineObjectData<CustomObjectDataType> {
     declare public readonly json: JsonCustomObject & AbstractActivatingInlineObjectData["json"];
     //
     // public readonly htmlId: string;
@@ -886,6 +1051,10 @@ class CustomObjectData<T extends CustomObjectDataType = CustomObjectDataType> ex
         this.setFields({htmlId: htmlId});
         // this.htmlId = htmlId;
         this.onConstructionFinished(CustomObjectData);
+    }
+
+    static {
+        DataClass<typeof this, CustomObjectDataType>(this, ["htmlId"]);
     }
 
     public static default: Complete<JsonCustomObject> = {
@@ -921,9 +1090,11 @@ class CustomObjectData<T extends CustomObjectDataType = CustomObjectDataType> ex
     //         htmlId: this.htmlId,
     //     };
     // }
+    static {
+        this.makeImmutable();
+    }
 }
 
-DataClass<typeof CustomObjectData, CustomObjectData>(CustomObjectData, ["htmlId"]);
 
 // type CustomObjectData = DataClassType<CustomObjectData>;
 interface FileDataType {
@@ -936,11 +1107,12 @@ interface FileDataType {
     readonly url: string;
 }
 
-interface FileData extends FileDataType, DataWiths<FileDataType> {
+interface FileData extends DataTypeInitializer<FileDataType> {
 }
 
 class FileData extends Data<FileDataType> {
     declare public readonly field: keyof Omit<DataTypeWithoutFields<this>, "outdated">;
+    declare json: Promise<JsonFileData>;
 
     // public readonly name: string;
     // public readonly size: number;
@@ -970,6 +1142,10 @@ class FileData extends Data<FileDataType> {
         // this.base64 = base64;
         // document.body.append(this.img, this.video);
         // this.file.size;
+    }
+
+    static {
+        DataClass<typeof this, FileDataType>(this, ["name", "size", "type", "file", "intrinsicWidth", "intrinsicHeight", "url"]);
     }
 
     public static async fromFile(file: File): Promise<FileData> {
@@ -1073,8 +1249,8 @@ class FileData extends Data<FileDataType> {
         URL.revokeObjectURL(this.url);
     }
 
-    public async toJSON(): Promise<JsonFileData> {
-        const stream = this.file.stream().getReader();
+    public override async toJSON(): Promise<JsonFileData> {
+        const stream = (this.file.stream() as unknown as ReadableStream).getReader();
         let binaryString = "";
         while (true) {
             const data = await stream.read();
@@ -1103,9 +1279,12 @@ class FileData extends Data<FileDataType> {
     public get outdated(): boolean {
         return this._outdated;
     }
+
+    static {
+        this.makeImmutable();
+    }
 }
 
-DataClass<typeof FileData, FileData>(FileData, ["name", "size", "type", "file", "intrinsicWidth", "intrinsicHeight", "url"]);
 // type FileData = DataClassType<FileData>;
 
 export type JsonFileData = {
@@ -1131,12 +1310,12 @@ interface SourceDataType {
     readonly fileDoesNotExist?: boolean;
 }
 
-interface SourceData extends SourceDataType, DataWiths<SourceDataType> {
+interface SourceData extends DataTypeInitializer<SourceDataType> {
 }
 
 class SourceData extends Data<SourceDataType> {
     declare public readonly json: JsonSource;
-    // declare public readonly field: keyof DataTypeWithoutFields<this>;
+    declare public readonly field: keyof SourceDataType;
 
     // public readonly name: string;
     // // natural width
@@ -1168,6 +1347,10 @@ class SourceData extends Data<SourceDataType> {
         // this.height = height;
         // this.type = type;
         this.onConstructionFinished(SourceData);
+    }
+
+    static {
+        DataClass<typeof this, SourceData>(this, ["name", "width", "height", "type", "file", "fileDoesNotExist"]);
     }
 
     public static fromJSON(other: JsonSource) {
@@ -1243,23 +1426,19 @@ class SourceData extends Data<SourceDataType> {
             && !this.file.outdated;
     }
 
-    public equals(other: undefined | null | DataType<SourceData>): other is DataType<SourceData> {
-        return other != null && (this === other || (
-            this.height === other.height &&
-            this.width === other.width &&
-            this.name === other.name &&
-            this.type === other.type &&
-            (this.file === other.file || (this.file?.equals(other.file) ?? false))
-        ));
-    }
+    //
+    // public equals(other: undefined | null | SourceDataType): other is SourceDataType {
+    //     return other != null && (this === other || (
+    //         this.height === other.height &&
+    //         this.width === other.width &&
+    //         this.name === other.name &&
+    //         this.type === other.type &&
+    //         (this.file === other.file || (this.file?.equals(other.file) ?? false))
+    //     ));
+    // }
 
-    public toJSON(): JsonSource {
-        return {
-            name: this.name,
-            type: this.type,
-            height: this.height,
-            width: this.width,
-        };
+    public override toJSON(): JsonSource {
+        return this.partialToJSON("file", "fileDoesNotExist");
     }
 
     /**
@@ -1299,22 +1478,18 @@ class SourceData extends Data<SourceDataType> {
     //     }
     //     return new SourceData({...this, fileDoesNotExist: fileDoesNotExist});
     // }
+    static {
+        this.makeImmutable();
+    }
 }
-
-DataClass<typeof SourceData, SourceData>(SourceData, ["name", "width", "height", "type", "file", "fileDoesNotExist"]);
 
 // type SourceData = DataClassType<SourceData>;
 
 interface MediaDataType {
-
-}
-
-interface MediaData extends MediaDataType, DataWiths<MediaDataType> {
     readonly src?: SourceData;
     readonly srcMin?: SourceData;
     readonly srcMax?: SourceData;
     readonly loading: LoadingType | "auto";
-    readonly type: MediaType;
     readonly fetchPriority: FetchPriorityType;
     readonly poster?: string;
     readonly autoplay: boolean;
@@ -1323,9 +1498,12 @@ interface MediaData extends MediaDataType, DataWiths<MediaDataType> {
     readonly preload: VideoPreloadType;
 }
 
+interface MediaData extends DataTypeInitializer<MediaDataType> {
+}
+
 class MediaData extends Data<MediaDataType> {
     declare public readonly json: JsonMedia;
-    declare public readonly field: MediaDataType;
+    declare public readonly field: keyof MediaDataType;
     //
     // public readonly src?: SourceData;
     // public readonly srcMin?: SourceData;
@@ -1367,6 +1545,10 @@ class MediaData extends Data<MediaDataType> {
         this.onConstructionFinished(MediaData);
     }
 
+    static {
+        DataClass<typeof this, MediaDataType>(this, ["src", "srcMin", "srcMax", "loading", "fetchPriority", "poster", "autoplay", "muted", "loop", "preload"]);
+    }
+
     public async complete(mediaContext: MediaContextType): Promise<MediaData> {
         const src = await this.src?.complete(mediaContext);
         const srcMin = await this.srcMin?.complete(mediaContext);
@@ -1391,7 +1573,7 @@ class MediaData extends Data<MediaDataType> {
             srcMin: srcMin,
             srcMax: srcMax,
             loading: media.loading ?? MediaData.default.loading,
-            type: MediaData.determineType(media.type ?? "auto", (src ?? srcMin ?? srcMax)!.name),
+            // type: MediaData.determineType(media.type ?? "auto", (src ?? srcMin ?? srcMax)!.name),
             fetchPriority: media.fetchPriority ?? MediaData.default.fetchPriority,
             poster: media.poster,
             autoplay: media.autoplay ?? MediaData.default.autoplay,
@@ -1406,7 +1588,7 @@ class MediaData extends Data<MediaDataType> {
         poster: undefined,
         srcMax: undefined,
         srcMin: undefined,
-        type: "img",
+        // type: "img",
         loading: "auto",
         muted: false,
         fetchPriority: "auto",
@@ -1481,9 +1663,10 @@ class MediaData extends Data<MediaDataType> {
     //         autoplay: this.autoplay,
     //     };
     // }
+    static {
+        this.makeImmutable();
+    }
 }
-
-DataClass<typeof MediaData, MediaData>(MediaData, ["src", "srcMin", "srcMax", "loading", "type", "fetchPriority", "poster", "autoplay", "muted", "loop", "preload"]);
 
 // type MediaData = DataClassType<MediaData>;
 
@@ -1492,10 +1675,10 @@ interface PageDataType extends AbstractAddressableObjectType {
     readonly is360: boolean;
     readonly isPanorama: boolean;
     readonly initialDirection: number;
-    readonly inlineObjects: readonly InlineObjectData[];
+    readonly inlineObjects: InlineObjectData[];
 }
 
-interface PageData extends PageDataType, DataWiths<Omit<PageDataType, "inlineObjects">> {
+interface PageData extends DataTypeInitializer<PageDataType, "inlineObjects"> {
 }
 
 class PageData extends AbstractAddressableObject<PageDataType> {
@@ -1528,9 +1711,9 @@ class PageData extends AbstractAddressableObject<PageDataType> {
     }
 
     static {
-        DataClass<typeof PageData, PageData>(PageData,
+        DataClass<typeof this, PageDataType>(this,
             ["media", "is360", "isPanorama", "initialDirection", "inlineObjects"],
-            ["inlineObjects", "withIsPanorama", "withIs360"]);
+            ["inlineObjects", "isPanorama", "is360"]);
     }
 
     static fromJSON(page: JsonPage): PageData {
@@ -1538,11 +1721,11 @@ class PageData extends AbstractAddressableObject<PageDataType> {
         inlineObjects.push(...page.clickables?.map(ClickableData.fromJSON) ?? []);
         const media = MediaData.fromJSON(page.media);
 
-        // defaults to false; iframes cannot be 360 nor panorama
-        const is360 = (page.is_360 ?? PageData.default.is360) && (media.type === "img" || media.type === "video");
+        // defaults to false; iframes and videos cannot be 360 nor panorama
+        const is360 = (page.is_360 ?? PageData.default.is360) && media.allTypes().includes("img");
 
-        // defaults to false; iframes cannot be 360 nor panorama
-        const isPanorama = is360 || ((page.is_panorama ?? PageData.default.isPanorama) && (media.type === "img" || media.type === "video"));
+        // defaults to false; iframes and videos cannot be 360 nor panorama
+        const isPanorama = is360 || ((page.is_panorama ?? PageData.default.isPanorama) && media.allTypes().includes("img"));
 
         return new PageData({
             animationType: page.animationType ?? PageData.default.animationType,
@@ -1595,15 +1778,25 @@ class PageData extends AbstractAddressableObject<PageDataType> {
         return this.media.isComplete();
     }
 
-    public toJSON(): JsonPage {
+    public override toJSON(): JsonPage {
         return {
-            ...super.toJSON(),
-            media: this.media.toJSON(),
-            inlineObjects: this.inlineObjects.map(value => value.toJSON()),
+            ...super.partialToJSON<"initialDirection" | "isPanorama" | "is360">("isPanorama", "is360", "initialDirection"),
+            // media: this.media.toJSON(),
+            // inlineObjects: this.inlineObjects.map(value => value.toJSON()),
             is_panorama: this.isPanorama,
             is_360: this.is360,
             initial_direction: this.initialDirection,
         };
+    }
+
+    public equalsIgnoringInlineObjectPos(other: PageDataType): other is PageDataType {
+        if (!this.equals(other, "inlineObjects")) {
+            return false;
+        }
+        const compare = (a: InlineObjectData, b: InlineObjectData) => {
+            return a.equals(b, "x", "y");
+        };
+        return arrayEqualsContain(this.inlineObjects, other.inlineObjects, compare);
     }
 
     public withInlineObjects(...inlineObjects: UnFlatArray<InlineObjectData>): PageData {
@@ -1636,6 +1829,10 @@ class PageData extends AbstractAddressableObject<PageDataType> {
             return this;
         }
         return new PageData({...this, isPanorama: isPanorama, is360: isPanorama && this.is360});
+    }
+
+    static {
+        this.makeImmutable();
     }
 }
 
@@ -1675,27 +1872,26 @@ class SchulTourConfigFile extends Data<SchulTourConfigFileType> {
     }
 
     static {
-        DataClass<typeof SchulTourConfigFile, SchulTourConfigFileType>(SchulTourConfigFile, ["pages", "initialPage", "fullscreen", "colorTheme", "mode"]);
+        DataClass<typeof this, SchulTourConfigFileType>(this, ["pages", "initialPage", "fullscreen", "colorTheme", "mode"]);
     }
 
-    public static default(): SchulTourConfigFile {
-        return new SchulTourConfigFile({
-            pages: [],
-            initialPage: undefined,
-            fullscreen: true,
-            colorTheme: "dark",
-            mode: "normal",
-        });
-    }
+    public static default: SchulTourConfigFile = new SchulTourConfigFile({
+        pages: [],
+        initialPage: undefined,
+        fullscreen: true,
+        colorTheme: "dark",
+        mode: "normal",
+    });
 
     public static fromJSON(json: JsonSchulTourConfigFile): SchulTourConfigFile {
         const pages = json.pages.map(PageData.fromJSON);
+        const default_ = SchulTourConfigFile.default;
         return new SchulTourConfigFile({
-            pages: pages,
-            initialPage: json.initialPage,
-            fullscreen: json.fullscreen ?? true,
-            colorTheme: json.colorTheme ?? "dark",
-            mode: json.mode ?? "normal",
+            pages: pages ?? default_.pages,
+            initialPage: json.initialPage ?? default_.initialPage,
+            fullscreen: json.fullscreen ?? default_.fullscreen,
+            colorTheme: json.colorTheme ?? default_.colorTheme,
+            mode: json.mode ?? default_.mode,
         });
     }
 
@@ -1732,6 +1928,9 @@ class SchulTourConfigFile extends Data<SchulTourConfigFileType> {
     //     }
     //     return new SchulTourConfigFile({...this, pages: pages});
     // }
+    static {
+        this.makeImmutable();
+    }
 }
 
 
@@ -1768,5 +1967,5 @@ export {
     FileData,
     hashString,
     uniqueId,
-    arrayEquals,
+
 };

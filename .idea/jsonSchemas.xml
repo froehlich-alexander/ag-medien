@@ -8,10 +8,15 @@
             <SchemaInfo>
               <option name="generatedName" value="New Schema" />
               <option name="name" value="Pages JSON Schema" />
-              <option name="relativePathToSchema" value="./tour/pages-json-schema.json" />
+              <option name="relativePathToSchema" value="tour/pages-json-schema.json" />
               <option name="schemaVersion" value="JSON Schema version 7" />
               <option name="patterns">
                 <list>
+                  <Item>
+                    <option name="pattern" value="true" />
+                    <option name="path" value="tour/**/pages.json" />
+                    <option name="mappingKind" value="Pattern" />
+                  </Item>
                   <Item>
                     <option name="path" value="tour/pages.json" />
                   </Item>

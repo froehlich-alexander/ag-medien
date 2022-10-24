@@ -76,7 +76,7 @@ export default function CreateTool() {
                 if (configJson) {
                     config = SchulTourConfigFile.fromJSON(configJson);
                 } else {
-                    config = SchulTourConfigFile.default();
+                    config = SchulTourConfigFile.default;
                 }
                 resetPages(config.pages ?? []);
                 setCurrentPage(config.pages.find(page => page.id === window.localStorage.getItem("current_page")));

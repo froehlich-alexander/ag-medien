@@ -10,10 +10,16 @@ function useTourPreview(pageContext: PageContextType) {
     }, [pages]);
 
     const updatePage = useCallback((page: PageData) => {
-        const newPages = pages.slice();
-        newPages[pages.findIndex(v => v.id === page.id)] = page;
-        setPages(newPages);
-    }, [pages]);
+        setPages(pages => {
+            const newPages = pages.slice();
+            const index = pages.findIndex(v => v.id === page.id);
+            if (index < 0) {
+                console.error("index cant be < 0", index, pages, page);
+            }
+            newPages[index] = page;
+            return newPages;
+        });
+    }, []);
 
     const reset = useCallback(() => {
         setPages(pageContext.pages);
@@ -25,8 +31,8 @@ function useTourPreview(pageContext: PageContextType) {
             save: save,
             update: updatePage,
             reset: reset,
-        }
-    }, [pages, save, updatePage]);
+        };
+    }, [pages, save, updatePage, reset]);
 
     // reset
     useEffect(() => {
@@ -38,7 +44,7 @@ function useTourPreview(pageContext: PageContextType) {
         pages,
         save,
         updatePage,
-    }
+    };
 }
 
 export default useTourPreview;

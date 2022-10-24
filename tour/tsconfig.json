@@ -1,32 +1,46 @@
 {
-  "compileOnSave": true,
   "compilerOptions": {
-    "experimentalDecorators": true,
-    "sourceMap": true,
-    "baseUrl": "./",
-    "target": "ES2021",
-    "module": "ES2020",
-    "moduleResolution": "Node",
-    "lib": [
-      "ESNext",
-      "DOM",
-      "ESNext.AsyncIterable"
-    ],
-    "types": [
-      "react",
-      "bootstrap",
-      "react-bootstrap",
-      "jquery",
-      "jest",
-      "wicg-file-system-access"
-    ],
-    "strict": true,
-    "useDefineForClassFields": false,
-    "allowSyntheticDefaultImports": true,
-    "jsx": "react",
-    "resolveJsonModule": true,
-    "incremental": true,
-    "noEmitHelpers": true,
-    "esModuleInterop": true
-  }
+    //    "rootDirs": [
+//      "./",
+//      "../utils"
+//    ]
+  },
+  //  "compileOnSave": true,
+//  "compilerOptions": {
+//    "disableSizeLimit": true,
+//    "experimentalDecorators": true,
+//    "sourceMap": true,
+//    "baseUrl": "./",
+//    "target": "ES2022",
+//    "module": "ES2020",
+//    "moduleResolution": "Node",
+//    "lib": [
+//      "ESNext",
+//      "DOM",
+//      "ESNext.AsyncIterable"
+//    ],
+//    "types": [
+//      "react",
+//      "bootstrap",
+//      "react-bootstrap",
+//      "jquery",
+//      "jest",
+//      "wicg-file-system-access"
+//    ],
+//    "strict": true,
+//    "useDefineForClassFields": false,
+//    "allowSyntheticDefaultImports": true,
+//    "noImplicitOverride": true,
+//    "jsx": "react",
+//    "resolveJsonModule": true,
+//    "incremental": true,
+//    "noEmitHelpers": true,
+//    "esModuleInterop": true,
+//  },
+//  "buildOptions": {
+//  },
+//  "exclude": [
+//    "../jest.config.ts"
+//  ]
+  "extends": "../tsconfig.json"
 }
