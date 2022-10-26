@@ -14,14 +14,14 @@
         <array />
       </option>
       <option name="outputFromStdout" value="false" />
-      <option name="program" value="sass" />
+      <option name="program" value="$PROJECT_DIR$/../../sass/dart-sass-1.50.0-windows-x64/dart-sass/sass" />
       <option name="runOnExternalChanges" value="true" />
       <option name="scopeName" value="Project Files" />
       <option name="trackOnlyRoot" value="true" />
       <option name="workingDir" value="$FileDir$" />
       <envs />
     </TaskOptions>
-    <TaskOptions isEnabled="true">
+    <TaskOptions isEnabled="false">
       <option name="arguments" value="ts-to-json-schema-runner.js" />
       <option name="checkSyntaxErrors" value="true" />
       <option name="description" />
@@ -34,7 +34,7 @@
         <array />
       </option>
       <option name="outputFromStdout" value="false" />
-      <option name="program" value="node" />
+      <option name="program" value="$PROJECT_DIR$/../../nodejs/node-v19.0.0-win-x64/node" />
       <option name="runOnExternalChanges" value="true" />
       <option name="scopeName" value="Tour" />
       <option name="trackOnlyRoot" value="false" />

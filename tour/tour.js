@@ -145,7 +145,7 @@ class Media {
                     referenceHTML = this.html.closest(".page");
                 }
                 else {
-                    console.error('Inline object has no / an unknown position property', inlineObjectData.position);
+                    console.error("Inline object has no / an unknown position property", inlineObjectData.position);
                     return;
                 }
                 this.handleDrop(inlineObjectId, inlineObjectData.withUpdate({
@@ -452,7 +452,7 @@ class Page extends AddressableObject() {
      * @param inlineObjects
      * @param scrollPercent dev tool only
      */
-    constructor({ data, media, inlineObjects, scrollPercent }) {
+    constructor({ data, media, inlineObjects, scrollPercent, }) {
         super();
         this.is_panorama = false;
         this.is_360 = false;
@@ -471,6 +471,10 @@ class Page extends AddressableObject() {
         if ((!isDesktop) && this.media.isImage()) {
             this.is_panorama = true;
         }
+        // clickables relative to media get a clickable-hint
+        this.clickableHints = this.inlineObjects
+            .filter((v) => v.data.position === "media" && v.data.isClickable())
+            .map(v => new ClickableHint(v));
         this.html
             .addClass("page")
             .attr("id", idPrefix + this.id)
@@ -480,7 +484,17 @@ class Page extends AddressableObject() {
             .addClass("pg_wrapper"))
             .append(this.inlineObjects
             .filter(v => v.data.position === "page")
-            .map(v => v.html));
+            .map(v => v.html))
+            .append(this.clickableHints.map(v => v.html));
+        // register scroll event
+        this.html.find(".pg_wrapper").on("scroll", () => {
+            for (let hint of this.clickableHints) {
+                // we want it asynchronous to prevent performance loss
+                setTimeout(() => {
+                    hint.startComputingPosition();
+                });
+            }
+        });
         //first img
         this.html.children(".pg_wrapper")
             .append($("<div></div>")
@@ -633,7 +647,7 @@ class Page extends AddressableObject() {
         // deactivate / start hide animation on prev page
         prevPage.deactivate(animationType ?? this.data.animationType);
         window.location.hash = this.id;
-        createLastestClickable(this.clickables.filter(v => v.data.goto === prevPage.id));
+        createLatestClickable(this.clickables.filter(v => v.data.goto === prevPage.id));
         this.onCurrentPageChange?.(this.id);
         return true;
     }
@@ -701,7 +715,7 @@ class Page extends AddressableObject() {
             }
         }
         // since the user did not really come from the page which is now the lastest we could skip this ???
-        createLastestClickable(this.clickables.filter(value => value.data.goto === lastest));
+        createLatestClickable(this.clickables.filter(value => value.data.goto === lastest));
     }
 }
 function AddressableObject(baseClass) {
@@ -987,6 +1001,181 @@ class Clickable extends InlineObject {
         }
     }
 }
+/**
+ * This class represents the small hints, that are displayed at the border of the screen,
+ * when a {@link Clickable} is not in the viewport (because of scroll)<br>
+ * - They move depending on the position of the clickable<br>
+ * - They must be placed directly inside the page element (or some other element that does <b>not</b> scroll)
+ * - They rotate according to the position of the clickable
+ */
+class ClickableHint {
+    constructor(clickable) {
+        // own visibility
+        this.visible = false;
+        this.clickable = clickable;
+        this.html = $("<div/>");
+        this.html.addClass("clickable-hint");
+        this.observer = new IntersectionObserver((event) => {
+            if (event[0].isIntersecting) {
+                this.onClickableVisible();
+            }
+            else {
+                this.onClickableHidden();
+            }
+        }, {
+            root: null,
+            threshold: 0.1,
+        });
+        this.observer.observe(clickable.html[0]);
+    }
+    /**
+     * Called when the clickable is scrolled
+     */
+    startComputingPosition() {
+        if (!this.visible) {
+            return;
+        }
+        const clickablePosAbsolute = this.clickable.html.offset();
+        const pageElement = this.clickable.html.closest(".page");
+        const pagePos = pageElement.offset();
+        const pageSize = { x: pageElement.outerWidth(), y: pageElement.outerHeight() };
+        // position of the middle of the clickable relative to the page element
+        const clickablePosRelative = {
+            x: (clickablePosAbsolute.left - pagePos.left) + (this.clickable.html.width() / 2),
+            y: (clickablePosAbsolute.top - pagePos.top) + (this.clickable.html.height() / 2),
+        };
+        // in px; distance to border
+        const distance = {
+            x: 20,
+            y: 20,
+        };
+        // compute optimal position ignoring other hints
+        // negative values mean from the right
+        let optimalX = clickablePosRelative.x;
+        let optimalY = clickablePosRelative.y;
+        // Also compute importance of this hint (since we do not allow multiple hints on the same position, we need to move some of them)
+        const importance = {
+            x: 0,
+            y: 0,
+        };
+        if (clickablePosRelative.x < 0) {
+            optimalX = distance.x;
+            importance.x = -clickablePosRelative.x;
+        }
+        else if (clickablePosRelative.x > pageSize.x) {
+            optimalX = -distance.x;
+            importance.x = clickablePosRelative.x - pageSize.x;
+        }
+        if (clickablePosRelative.y < 0) {
+            optimalY = distance.y;
+            importance.y = -clickablePosRelative.y;
+        }
+        else if (clickablePosRelative.y > pageSize.y) {
+            optimalY = -distance.y;
+            importance.y = clickablePosRelative.y - pageSize.y;
+        }
+        console.log(this.clickable.data.title, clickablePosRelative, pageSize, optimalX, optimalY);
+        // transform to percentage values
+        optimalX = (optimalX / pageSize.x) * 100;
+        optimalY = (optimalY / pageSize.y) * 100;
+        clickablePosRelative.x = (clickablePosRelative.x / pageSize.x) * 100;
+        clickablePosRelative.y = (clickablePosRelative.y / pageSize.y) * 100;
+        this.setPosition(optimalX, optimalY, clickablePosRelative);
+    }
+    /**
+     * This method computes the real positions of all current visible hints
+     * @private
+     */
+    static computeRealPositions() {
+    }
+    /**
+     * Sets the position and the rotation of the clickable-hint
+     * @param x real x coordinate of this hint
+     * @param y real y coordinate of this hint
+     * @param clickablePos coordinates of the clickable relative to wrapper
+     * @private
+     */
+    setPosition(x, y, clickablePos) {
+        if (x > 0) {
+            this.html.css("left", x + "%");
+        }
+        else {
+            this.html.css("right", -x + "%");
+        }
+        if (y > 0) {
+            this.html.css("top", y + "%");
+        }
+        else {
+            this.html.css("bottom", -y + "%");
+        }
+        const rotation = ClickableHint.computeRotation({ x: x, y: y }, clickablePos);
+        this.html.css("transform", `rotate(${rotation}rad)`);
+        // console.log("set pos of hints", x, y, rotation);
+    }
+    static computeRotation(hintPos, clickablePos) {
+        // koordinaten der position der hint - die der clickables
+        const dx = hintPos.x - clickablePos.x; // 1900  -   1000
+        const dy = hintPos.y - clickablePos.y; // 100   -   1000
+        // vertikal nach rechts entspricht 0 Grad
+        // gleiche Breite
+        if (dx === 0) {
+            // clickable ist oben
+            if (dy > 0) {
+                return -0.5 * Math.PI;
+            }
+            // clickable ist unten
+            else {
+                return 0.5 * Math.PI;
+            }
+        }
+        // gleiche Höhe
+        else if (dy === 0) {
+            // clickable ist links
+            if (dx > 0) {
+                return Math.PI;
+            }
+            // clickable ist rechts
+            else {
+                return 0;
+            }
+        }
+        else {
+            const ret = Math.atan(dy / dx);
+            // wir messen den winkel rechts, wenn das clickable links ist, muss alles gedreht werden
+            if (dx > 0) {
+                return ret + Math.PI;
+            }
+            return ret;
+        }
+    }
+    /**
+     * this computes the final positions of the clickable hints
+     * @private
+     */
+    static mergePositions() {
+    }
+    /**
+     * Called when the clickable gets visible
+     */
+    onClickableVisible() {
+        this.html.removeClass("show");
+        this.visible = false;
+    }
+    ;
+    /**
+     * Called when the clickable gets hidden
+     */
+    onClickableHidden() {
+        // Do not show hint if clickable is always hidden
+        if (this.clickable.data.hidden) {
+            return;
+        }
+        this.html.addClass("show");
+        this.visible = true;
+        this.startComputingPosition();
+    }
+    ;
+}
 window.addEventListener("resize", function () {
     let bgImgs = $(".bg");
     bgImgs.removeClass("fill-width");
@@ -1041,7 +1230,7 @@ function adjust_clickables() {
 /**
  * @param clickables {Clickable[]}
  */
-function createLastestClickable(clickables) {
+function createLatestClickable(clickables) {
     $(".clickable").removeClass("lastest-clickable");
     for (let i of clickables) {
         console.log("lastest lclickable", i.data.goto, i.data.goto === lastest, i);
@@ -1117,6 +1306,7 @@ const Tour = {
     TextField,
     Clickable,
     CustomObject,
+    ClickableHint,
     pages: [],
     // the page which is shown at the beginning
     startPage: undefined,
@@ -1130,6 +1320,6 @@ Object.defineProperty(window, "Tour", {
     value: Tour,
 });
 export default Tour;
-export { init, Page, ImageMedia, VideoMedia, IframeMedia, TextField, Clickable, CustomObject };
+export { init, Page, ImageMedia, VideoMedia, IframeMedia, TextField, Clickable, ClickableHint, CustomObject };
 // init("pages.json");
 //# sourceMappingURL=tour.js.map

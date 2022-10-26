@@ -3,6 +3,7 @@
  * Do NOT include it (or it's .js - file) in production
  */
 
+
 export type MediaType = "img" | "video" | "iframe";
 export type IconType = "arrow_l" | "arrow_r" | "arrow_u" | "arrow_d";
 export type VideoPreloadType = "metadata" | "auto"; //cannot use "none" because then we won't get the loadmetadata event

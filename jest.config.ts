@@ -9,9 +9,9 @@ const config: JestConfigWithTsJest = {
         "**/*.tsx",
     ],
     extensionsToTreatAsEsm: [".ts", ".tsx"],
-    testRegex: ".*\\.test\\.(ts|tsx)$",
+    testRegex: "__tests__\\\\.+\\.test\\.(ts|tsx)$",
     // preset: "ts-jest",
-    testEnvironment: "node",
+    testEnvironment: "jsdom",
     transform: {
         "^.+\\.(ts|tsx)": [
             "ts-jest",
@@ -20,6 +20,11 @@ const config: JestConfigWithTsJest = {
             },
         ],
     },
-    testTimeout: 30000,
+    // language=file-reference
+    setupFiles: ["__tests__/setupFile.ts"],
+    // language=file-reference
+    setupFilesAfterEnv: ["__tests__/setupFilesAfterEnv.ts"],
 };
+config.setupFiles = config.setupFiles!.map(v => "<rootDir>" + v);
+config.setupFilesAfterEnv = config.setupFilesAfterEnv!.map(v => "<rootDir>" + v);
 export default config;

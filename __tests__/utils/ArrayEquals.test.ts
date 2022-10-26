@@ -1,4 +1,4 @@
-import {arrayEqualsContain} from "../../tour/ArrayEquals";
+import {arrayEqualsContain} from "../../tour/utils";
 import {describe, test, expect} from "@jest/globals";
 
 describe("Array Equals", function () {
