@@ -3,6 +3,10 @@
     {
       "id": "hof_mitte",
       "animationType": "forward",
+      "initialScroll": {
+        "start": 0,
+        "destination": 85.5
+      },
       "media": {
         "src": {
           "name": "hof_mitte x.jpg",
@@ -124,7 +128,7 @@
           "y": 50,
           "type": "clickable",
           "position": "media",
-          "animationType": "forward",
+          "animationType": "backward",
           "hidden": false,
           "goto": "hof_mitte",
           "targetType": "auto",
@@ -160,7 +164,7 @@
           "y": 60,
           "type": "clickable",
           "position": "media",
-          "animationType": "forward",
+          "animationType": "backward",
           "hidden": false,
           "goto": "hof_mitte",
           "targetType": "auto",

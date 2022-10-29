@@ -192,6 +192,7 @@ class Data {
                 continue;
             }
             // use equals method if available
+            // @ts-ignore
             if (thisVal?.equals) {
                 if (!thisVal.equals(otherVal)) {
                     return false;
@@ -230,6 +231,10 @@ class Data {
         const jsonObj = {};
         for (let i of this.fields) {
             if (skip.includes(i)) {
+                continue;
+            }
+            // skip undefined values
+            if (this[i] === undefined) {
                 continue;
             }
             jsonObj[i] = transformObjectToJson(this[i]);
@@ -453,41 +458,6 @@ class AbstractAddressableInlineObjectData extends AbstractInlineObjectData {
         this.makeImmutable();
     }
 }
-class ScrollData extends Data {
-    // public readonly start: number;
-    // public readonly end: number;
-    // public readonly time: number;
-    constructor(other) {
-        super();
-        this.setFields({
-            start: other.start,
-            end: other.end,
-            time: other.time,
-        });
-        this.onConstructionFinished(ScrollData);
-    }
-    static {
-        DataClass(this, ["start", "end", "time"]);
-    }
-    // public equals(other: DataType<ScrollData> | null | undefined, ...ignore: (keyof DataType<ScrollData>)[]): boolean {
-    //     return (other != null && (this === other || (
-    //         (ignore.includes("start") || this.start === other.start)
-    //         && (ignore.includes("end") || this.end === other.end)
-    //         && (ignore.includes("time") || this.end === other.end)
-    //     )));
-    // }
-    //
-    // public toJSON(): JsonActivating["scroll"] {
-    //     return {
-    //         start: this.start,
-    //         end: this.end,
-    //         time: this.time,
-    //     };
-    // }
-    static {
-        this.makeImmutable();
-    }
-}
 class AbstractActivatingInlineObjectData extends AbstractInlineObjectData {
     //
     // public readonly goto?: string;
@@ -575,15 +545,16 @@ const InlineObjectData = {
         }
     },
     default() {
-        return ClickableData.fromJSON(ClickableData.default);
+        return ClickableData.default;
     },
 };
 class ClickableData extends AbstractActivatingInlineObjectData {
-    constructor({ title, icon, ...r }) {
+    constructor({ title, icon, destinationScroll, ...r }) {
         super({ ...r, type: "clickable" });
         this.setFields({
             title: title,
             icon: icon,
+            destinationScroll: destinationScroll,
         });
         // this.title = title;
         // this.icon = icon;
@@ -593,9 +564,9 @@ class ClickableData extends AbstractActivatingInlineObjectData {
     // declare public readonly goto?: string;
     static { this.Icons = ["arrow_l", "arrow_u", "arrow_r", "arrow_d"]; }
     static {
-        DataClass(this, ["title", "icon"]);
+        DataClass(this, ["title", "icon", "destinationScroll"]);
     }
-    static { this.default = {
+    static { this.default = new ClickableData({
         icon: "arrow_l",
         title: "",
         animationType: "forward",
@@ -606,9 +577,9 @@ class ClickableData extends AbstractActivatingInlineObjectData {
         type: "clickable",
         position: "media",
         hidden: false,
-        backward: false,
         action: "activate",
-    }; }
+        destinationScroll: "auto",
+    }); }
     static fromJSON(json) {
         return new ClickableData({
             type: "clickable",
@@ -622,8 +593,15 @@ class ClickableData extends AbstractActivatingInlineObjectData {
             position: json.position ?? ClickableData.default.position,
             animationType: json.animationType ?? ClickableData.default.animationType,
             hidden: json.hidden ?? ClickableData.default.hidden,
+            destinationScroll: json.destinationScroll ?? ClickableData.default.destinationScroll,
         });
     }
+    // public override toJSON(): this["json"] {
+    //     return {
+    //         ...super.partialToJSON(),
+    //         destinationScroll: this.destinationScroll
+    //     }
+    // }
     // public equals(other: DataType<ClickableData> | undefined | null): other is DataType<ClickableData> {
     //     return super.equals(other)
     //         && this.title === other.title
@@ -1234,13 +1212,39 @@ class MediaData extends Data {
         this.makeImmutable();
     }
 }
+class ScrollData extends Data {
+    constructor(other) {
+        super();
+        this.setFields({
+            start: other.start,
+            destination: other.destination,
+        });
+        this.onConstructionFinished(ScrollData);
+    }
+    static {
+        DataClass(this, ["start", "destination"]);
+    }
+    static fromJSON(json) {
+        return new ScrollData({
+            destination: json.destination,
+            start: json.start,
+        });
+    }
+    static { this.default = new ScrollData({
+        destination: undefined,
+        start: undefined,
+    }); }
+    static {
+        this.makeImmutable();
+    }
+}
 class PageData extends AbstractAddressableObject {
     // public readonly media: MediaData;
     // public readonly is360: boolean;
     // public readonly isPanorama: boolean;
     // public readonly initialDirection: number;
     // public readonly inlineObjects: readonly InlineObjectData[];
-    constructor({ media, is360, isPanorama, initialDirection, inlineObjects, ...base }) {
+    constructor({ media, is360, isPanorama, initialDirection, inlineObjects, initialScroll, ...base }) {
         super(base);
         this.setFields({
             media: media,
@@ -1248,6 +1252,7 @@ class PageData extends AbstractAddressableObject {
             isPanorama: isPanorama,
             initialDirection: Math.round(initialDirection * 10 ** InlineObjectData.InitialDirectionDigits) / 10 ** InlineObjectData.InitialDirectionDigits,
             inlineObjects: inlineObjects,
+            initialScroll: initialScroll,
         });
         // this.media = media;
         // this.is360 = is360;
@@ -1257,7 +1262,7 @@ class PageData extends AbstractAddressableObject {
         this.onConstructionFinished(PageData);
     }
     static {
-        DataClass(this, ["media", "is360", "isPanorama", "initialDirection", "inlineObjects"], ["inlineObjects", "isPanorama", "is360"]);
+        DataClass(this, ["media", "is360", "isPanorama", "initialDirection", "inlineObjects", "initialScroll"], ["inlineObjects", "isPanorama", "is360"]);
     }
     static fromJSON(page) {
         const inlineObjects = page.inlineObjects?.map(InlineObjectData.fromJSON) ?? PageData.default.inlineObjects.slice();
@@ -1267,6 +1272,7 @@ class PageData extends AbstractAddressableObject {
         const is360 = (page.is_360 ?? PageData.default.is360) && media.allTypes().includes("img");
         // defaults to false; iframes and videos cannot be 360 nor panorama
         const isPanorama = is360 || ((page.is_panorama ?? PageData.default.isPanorama) && media.allTypes().includes("img"));
+        const initialScroll = page.initialScroll ? ScrollData.fromJSON(page.initialScroll) : ScrollData.default;
         return new PageData({
             animationType: page.animationType ?? PageData.default.animationType,
             id: page.id,
@@ -1275,6 +1281,7 @@ class PageData extends AbstractAddressableObject {
             isPanorama: isPanorama,
             initialDirection: page.initial_direction ?? PageData.default.initialDirection,
             inlineObjects: inlineObjects,
+            initialScroll: initialScroll,
         });
     }
     static { this.default = new PageData({
@@ -1285,6 +1292,7 @@ class PageData extends AbstractAddressableObject {
         is360: false,
         inlineObjects: [],
         media: MediaData.default,
+        initialScroll: ScrollData.default,
     }); }
     // public equals(other: DataType<PageData> | null | undefined, ...ignore: (keyof DataType<PageData>)[]): other is DataType<PageData> {
     //     return super.equals(other, ...ignore) &&
@@ -1320,6 +1328,7 @@ class PageData extends AbstractAddressableObject {
             is_panorama: this.isPanorama,
             is_360: this.is360,
             initial_direction: this.initialDirection,
+            initialScroll: this.initialScroll.toJSON(),
         };
     }
     equalsIgnoringInlineObjectPos(other) {

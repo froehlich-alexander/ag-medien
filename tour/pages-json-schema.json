@@ -53,6 +53,18 @@
         "initial_direction": {
           "type": "number"
         },
+        "initialScroll": {
+          "type": "object",
+          "properties": {
+            "start": {
+              "type": "number"
+            },
+            "destination": {
+              "type": "number"
+            }
+          },
+          "additionalProperties": false
+        },
         "clickables": {
           "type": "array",
           "items": {
@@ -182,26 +194,6 @@
                   }
                 ]
               },
-              "scroll": {
-                "type": "object",
-                "properties": {
-                  "start": {
-                    "type": "number"
-                  },
-                  "end": {
-                    "type": "number"
-                  },
-                  "time": {
-                    "type": "number"
-                  }
-                },
-                "required": [
-                  "start",
-                  "end",
-                  "time"
-                ],
-                "additionalProperties": false
-              },
               "targetType": {
                 "anyOf": [
                   {
@@ -227,8 +219,16 @@
               "icon": {
                 "$ref": "#/definitions/IconType"
               },
-              "backward": {
-                "type": "boolean"
+              "destinationScroll": {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "string",
+                    "const": "auto"
+                  }
+                ]
               }
             },
             "required": [
@@ -617,8 +617,16 @@
             "icon": {
               "$ref": "#/definitions/IconType"
             },
-            "backward": {
-              "type": "boolean"
+            "destinationScroll": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "string",
+                  "const": "auto"
+                }
+              ]
             },
             "type": {
               "$ref": "#/definitions/InlineObjectType"
@@ -636,26 +644,6 @@
             "goto": {
               "type": "string"
             },
-            "scroll": {
-              "type": "object",
-              "properties": {
-                "start": {
-                  "type": "number"
-                },
-                "end": {
-                  "type": "number"
-                },
-                "time": {
-                  "type": "number"
-                }
-              },
-              "required": [
-                "start",
-                "end",
-                "time"
-              ],
-              "additionalProperties": false
-            },
             "x": {
               "type": [
                 "number",
@@ -692,8 +680,16 @@
             "icon": {
               "$ref": "#/definitions/IconType"
             },
-            "backward": {
-              "type": "boolean"
+            "destinationScroll": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "string",
+                  "const": "auto"
+                }
+              ]
             },
             "type": {
               "$ref": "#/definitions/InlineObjectType"
@@ -711,26 +707,6 @@
             "action": {
               "$ref": "#/definitions/ActionType"
             },
-            "scroll": {
-              "type": "object",
-              "properties": {
-                "start": {
-                  "type": "number"
-                },
-                "end": {
-                  "type": "number"
-                },
-                "time": {
-                  "type": "number"
-                }
-              },
-              "required": [
-                "start",
-                "end",
-                "time"
-              ],
-              "additionalProperties": false
-            },
             "x": {
               "type": [
                 "number",
@@ -767,8 +743,16 @@
             "icon": {
               "$ref": "#/definitions/IconType"
             },
-            "backward": {
-              "type": "boolean"
+            "destinationScroll": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "string",
+                  "const": "auto"
+                }
+              ]
             },
             "type": {
               "$ref": "#/definitions/InlineObjectType"
@@ -792,26 +776,6 @@
             },
             "action": {
               "$ref": "#/definitions/ActionType"
-            },
-            "scroll": {
-              "type": "object",
-              "properties": {
-                "start": {
-                  "type": "number"
-                },
-                "end": {
-                  "type": "number"
-                },
-                "time": {
-                  "type": "number"
-                }
-              },
-              "required": [
-                "start",
-                "end",
-                "time"
-              ],
-              "additionalProperties": false
             },
             "x": {
               "type": [

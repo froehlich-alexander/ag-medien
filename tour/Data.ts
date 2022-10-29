@@ -271,6 +271,7 @@ class Data<T extends { [k: string]: any } = any, TUnion extends { [k: string]: a
                 continue;
             }
             // use equals method if available
+            // @ts-ignore
             if (thisVal?.equals) {
                 if (!thisVal.equals(otherVal)) {
                     return false;
@@ -297,7 +298,7 @@ class Data<T extends { [k: string]: any } = any, TUnion extends { [k: string]: a
     protected partialToJSON<Keys extends keyof TUnion>(...skip: Keys[]): Omit<JsonFromDataType<TUnion>, Keys> {
         function transformObjectToJson<T>(obj: T): any {
             if (typeof obj === "object" && obj !== null && "toJSON" in obj) {
-                return (obj as { toJSON: () => unknown }).toJSON();
+                return (obj as unknown as { toJSON: () => unknown }).toJSON();
             } else if (Array.isArray(obj)) {
                 return (obj as Array<unknown>).map(transformObjectToJson);
             }
@@ -307,6 +308,10 @@ class Data<T extends { [k: string]: any } = any, TUnion extends { [k: string]: a
         const jsonObj: JsonFromDataType<TUnion> = {} as JsonFromDataType<TUnion>;
         for (let i of this.fields) {
             if (skip.includes(i as Keys)) {
+                continue;
+            }
+            // skip undefined values
+            if (this[i as keyof this] === undefined) {
                 continue;
             }
             jsonObj[i as keyof TUnion] = transformObjectToJson(this[i as keyof this]);
@@ -646,60 +651,6 @@ class AbstractAddressableInlineObjectData<T extends AbstractAddressableInlineObj
 
 // type AbstractAddressableInlineObjectData = DataClassType<_AbstractAddressableInlineObjectData>;
 
-interface ScrollDataType {
-    readonly start: number;
-    readonly end: number;
-    readonly time: number;
-}
-
-interface ScrollData extends DataTypeInitializer<ScrollDataType> {
-}
-
-class ScrollData extends Data<ScrollDataType> {
-    public declare field: keyof ScrollDataType;
-    public declare json: NonNullable<JsonActivating["scroll"]>;
-
-    // public readonly start: number;
-    // public readonly end: number;
-    // public readonly time: number;
-
-    constructor(other: ScrollDataType) {
-        super();
-        this.setFields(
-            {
-                start: other.start,
-                end: other.end,
-                time: other.time,
-            },
-        );
-        this.onConstructionFinished(ScrollData);
-    }
-
-    static {
-        DataClass<typeof this, ScrollDataType>(this, ["start", "end", "time"]);
-    }
-
-    // public equals(other: DataType<ScrollData> | null | undefined, ...ignore: (keyof DataType<ScrollData>)[]): boolean {
-    //     return (other != null && (this === other || (
-    //         (ignore.includes("start") || this.start === other.start)
-    //         && (ignore.includes("end") || this.end === other.end)
-    //         && (ignore.includes("time") || this.end === other.end)
-    //     )));
-    // }
-    //
-    // public toJSON(): JsonActivating["scroll"] {
-    //     return {
-    //         start: this.start,
-    //         end: this.end,
-    //         time: this.time,
-    //     };
-    // }
-    static {
-        this.makeImmutable();
-    }
-}
-
-
 interface AbstractActivatingInlineObjectDataType extends AbstractInlineObjectDataType {
     readonly goto?: string;
     readonly targetType: AddressableObjects | "auto";
@@ -806,7 +757,7 @@ const InlineObjectData = {
     },
 
     default(): InlineObjectData {
-        return ClickableData.fromJSON(ClickableData.default);
+        return ClickableData.default;
     },
 };
 
@@ -816,6 +767,8 @@ export type InlineObjectDataConstructor = typeof ClickableData | typeof CustomOb
 interface ClickableDataType extends AbstractActivatingInlineObjectDataType {
     readonly title: string,
     readonly icon: IconType,
+    // the scroll (percentage) where we arrive at the target
+    readonly destinationScroll: number | "auto",
 }
 
 interface ClickableData extends ClickableDataType, DataWiths<ClickableDataType> {
@@ -834,11 +787,12 @@ class ClickableData extends AbstractActivatingInlineObjectData<ClickableDataType
 
     public static readonly Icons: Array<IconType> = ["arrow_l", "arrow_u", "arrow_r", "arrow_d"];
 
-    constructor({title, icon, ...r}: ClickableDataType) {
+    constructor({title, icon, destinationScroll, ...r}: ClickableDataType) {
         super({...r, type: "clickable"});
         this.setFields({
             title: title,
             icon: icon,
+            destinationScroll: destinationScroll,
         });
         // this.title = title;
         // this.icon = icon;
@@ -846,10 +800,10 @@ class ClickableData extends AbstractActivatingInlineObjectData<ClickableDataType
     }
 
     static {
-        DataClass<typeof this, ClickableData>(this, ["title", "icon"]);
+        DataClass<typeof this, ClickableData>(this, ["title", "icon", "destinationScroll"]);
     }
 
-    public static default: Complete<JsonClickable> = {
+    public static default: ClickableData = new ClickableData({
         icon: "arrow_l",
         title: "",
         animationType: "forward",
@@ -860,9 +814,9 @@ class ClickableData extends AbstractActivatingInlineObjectData<ClickableDataType
         type: "clickable",
         position: "media",
         hidden: false,
-        backward: false,
         action: "activate",
-    };
+        destinationScroll: "auto",
+    });
 
     public static fromJSON(json: Omit<JsonClickable, "type">): ClickableData {
         return new ClickableData({
@@ -877,8 +831,16 @@ class ClickableData extends AbstractActivatingInlineObjectData<ClickableDataType
             position: json.position ?? ClickableData.default.position,
             animationType: json.animationType ?? ClickableData.default.animationType,
             hidden: json.hidden ?? ClickableData.default.hidden,
+            destinationScroll: json.destinationScroll ?? ClickableData.default.destinationScroll,
         });
     }
+
+    // public override toJSON(): this["json"] {
+    //     return {
+    //         ...super.partialToJSON(),
+    //         destinationScroll: this.destinationScroll
+    //     }
+    // }
 
     // public equals(other: DataType<ClickableData> | undefined | null): other is DataType<ClickableData> {
     //     return super.equals(other)
@@ -1668,7 +1630,49 @@ class MediaData extends Data<MediaDataType> {
     }
 }
 
-// type MediaData = DataClassType<MediaData>;
+
+interface ScrollDataType {
+    readonly start?: number;
+    readonly destination?: number;
+}
+
+interface ScrollData extends DataTypeInitializer<ScrollDataType> {
+}
+
+class ScrollData extends Data<ScrollDataType> {
+    public declare field: keyof ScrollDataType;
+    public declare json: NonNullable<JsonPage["initialScroll"]>;
+
+    constructor(other: ScrollDataType) {
+        super();
+        this.setFields({
+            start: other.start,
+            destination: other.destination,
+        });
+        this.onConstructionFinished(ScrollData);
+    }
+
+    static {
+        DataClass<typeof this, ScrollDataType>(this, ["start", "destination"]);
+    }
+
+    public static fromJSON(json: ScrollData["json"]): ScrollData {
+        return new ScrollData({
+            destination: json.destination,
+            start: json.start,
+        });
+    }
+
+    public static default: ScrollData = new ScrollData({
+        destination: undefined,
+        start: undefined,
+    });
+
+    static {
+        this.makeImmutable();
+    }
+}
+
 
 interface PageDataType extends AbstractAddressableObjectType {
     readonly media: MediaData;
@@ -1676,6 +1680,7 @@ interface PageDataType extends AbstractAddressableObjectType {
     readonly isPanorama: boolean;
     readonly initialDirection: number;
     readonly inlineObjects: InlineObjectData[];
+    readonly initialScroll: ScrollData;
 }
 
 interface PageData extends DataTypeInitializer<PageDataType, "inlineObjects"> {
@@ -1693,7 +1698,8 @@ class PageData extends AbstractAddressableObject<PageDataType> {
     // public readonly initialDirection: number;
     // public readonly inlineObjects: readonly InlineObjectData[];
 
-    constructor({media, is360, isPanorama, initialDirection, inlineObjects, ...base}: DataType<PageData>) {
+    constructor({media, is360, isPanorama, initialDirection, inlineObjects, initialScroll, ...base}:
+                    DataType<PageData>) {
         super(base);
         this.setFields({
             media: media,
@@ -1701,6 +1707,7 @@ class PageData extends AbstractAddressableObject<PageDataType> {
             isPanorama: isPanorama,
             initialDirection: Math.round(initialDirection * 10 ** InlineObjectData.InitialDirectionDigits) / 10 ** InlineObjectData.InitialDirectionDigits,
             inlineObjects: inlineObjects,
+            initialScroll: initialScroll,
         });
         // this.media = media;
         // this.is360 = is360;
@@ -1712,7 +1719,7 @@ class PageData extends AbstractAddressableObject<PageDataType> {
 
     static {
         DataClass<typeof this, PageDataType>(this,
-            ["media", "is360", "isPanorama", "initialDirection", "inlineObjects"],
+            ["media", "is360", "isPanorama", "initialDirection", "inlineObjects", "initialScroll"],
             ["inlineObjects", "isPanorama", "is360"]);
     }
 
@@ -1727,6 +1734,7 @@ class PageData extends AbstractAddressableObject<PageDataType> {
         // defaults to false; iframes and videos cannot be 360 nor panorama
         const isPanorama = is360 || ((page.is_panorama ?? PageData.default.isPanorama) && media.allTypes().includes("img"));
 
+        const initialScroll = page.initialScroll ? ScrollData.fromJSON(page.initialScroll) : ScrollData.default;
         return new PageData({
             animationType: page.animationType ?? PageData.default.animationType,
             id: page.id,
@@ -1735,6 +1743,7 @@ class PageData extends AbstractAddressableObject<PageDataType> {
             isPanorama: isPanorama,
             initialDirection: page.initial_direction ?? PageData.default.initialDirection,
             inlineObjects: inlineObjects,
+            initialScroll: initialScroll,
         });
     }
 
@@ -1746,6 +1755,7 @@ class PageData extends AbstractAddressableObject<PageDataType> {
         is360: false,
         inlineObjects: [],
         media: MediaData.default,
+        initialScroll: ScrollData.default,
     }) as PageData;
 
     // public equals(other: DataType<PageData> | null | undefined, ...ignore: (keyof DataType<PageData>)[]): other is DataType<PageData> {
@@ -1786,6 +1796,7 @@ class PageData extends AbstractAddressableObject<PageDataType> {
             is_panorama: this.isPanorama,
             is_360: this.is360,
             initial_direction: this.initialDirection,
+            initialScroll: this.initialScroll.toJSON(),
         };
     }
 

@@ -36,6 +36,10 @@ export type JsonPage = JsonAddressableObject & {
     is_360?: boolean,
     is_panorama?: boolean,
     initial_direction?: number,
+    initialScroll?: {
+        start?: number,
+        destination?: number,
+    }
     clickables?: Omit<JsonClickable, "type">[],
     inlineObjects?: JsonInlineObject[];
     animationType?: PageAnimations,
@@ -99,18 +103,18 @@ export type JsonActivating = ({
     // the id of the target (JsonAddressableObject)
     goto?: string;
     action?: ActionType;
-    scroll?: {
-        // the initial scroll after this clickable is clicked (in percent)
-        // if absent we will scroll to end without animation
-        start: number,
-
-        // the position where we will scroll to (in percent)
-        // if this is equal to start, we won't have a scroll animation, instead we will instantly scroll to this position
-        end: number,
-
-        // time in ms (scrolling speed)
-        time: number,
-    }
+    // scroll?: {
+    //     // the initial scroll after this clickable is clicked (in percent)
+    //     // if absent we will scroll to end without animation
+    //     start: number,
+    //
+    //     // the position where we will scroll to (in percent)
+    //     // if this is equal to start, we won't have a scroll animation, instead we will instantly scroll to this position
+    //     end: number,
+    //
+    //     // time in ms (scrolling speed)
+    //     time: number,
+    // }
 } & ({
     // The Type of the target
     targetType?: "page",
@@ -121,7 +125,7 @@ export type JsonActivating = ({
     targetType?: "text-field",
     animationType?: TextAnimations | "auto",
 } | {
-    targetType?: AddressableObjects|"auto";
+    targetType?: AddressableObjects | "auto";
     animationType?: AnimationType | "auto";
 }));
 
@@ -132,10 +136,8 @@ export type JsonClickable = AbstractJsonInlineObject & JsonActivating & {
     title: string;
     // goto?: string;
     icon?: IconType;
-    /**
-     * @depreciated
-     */
-    backward?: boolean; //depreciated use animationType instead
+    // the scroll percent where we arrive at the destination
+    destinationScroll?: number | "auto",
     type: "clickable";
     // animationType?: PageAnimations;
     // targetType?: ClickableType; //on what kind of object this clickable points
