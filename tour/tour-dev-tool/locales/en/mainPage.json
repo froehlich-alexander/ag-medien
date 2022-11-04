@@ -102,6 +102,12 @@
         "id": {
           "label": "Id",
           "invalidFeedback": "The Id must be unique and only contain letters, numbers dashes or underscore."
+        },
+        "destinationScroll": {
+          "label": "Destination scroll",
+          "formText": "The scroll position on the target page to arrive",
+          "automatic": "Automatic",
+          "targetNotPanorama": "Panorama is disabled on the target page!"
         }
       },
       "addButton": "Add Inline Object"

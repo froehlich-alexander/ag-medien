@@ -30,6 +30,9 @@
             "dark",
             "light"
           ]
+        },
+        "includeClickableHints": {
+          "type": "boolean"
         }
       },
       "required": [
@@ -38,223 +41,711 @@
       "additionalProperties": false
     },
     "JsonPage": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "media": {
-          "$ref": "#/definitions/JsonMedia"
-        },
-        "is_360": {
-          "type": "boolean"
-        },
-        "is_panorama": {
-          "type": "boolean"
-        },
-        "initial_direction": {
-          "type": "number"
-        },
-        "initialScroll": {
+      "anyOf": [
+        {
           "type": "object",
+          "additionalProperties": false,
           "properties": {
-            "start": {
+            "is_360": {
+              "type": "boolean",
+              "const": true
+            },
+            "secondBeginning": {
               "type": "number"
             },
-            "destination": {
-              "type": "number"
-            }
-          },
-          "additionalProperties": false
-        },
-        "clickables": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "x": {
-                "type": [
-                  "number",
-                  "string"
-                ]
-              },
-              "y": {
-                "type": [
-                  "number",
-                  "string"
-                ]
-              },
-              "position": {
-                "$ref": "#/definitions/InlineObjectPosition"
-              },
-              "animationType": {
-                "anyOf": [
-                  {
-                    "type": "string",
-                    "const": "fade"
-                  },
-                  {
-                    "type": "object",
-                    "properties": {}
-                  },
-                  {
-                    "type": "object",
-                    "properties": {}
-                  },
-                  {
-                    "type": "object",
-                    "properties": {}
-                  },
-                  {
-                    "type": "object",
-                    "properties": {}
-                  },
-                  {
-                    "type": "object",
-                    "properties": {}
-                  },
-                  {
-                    "type": "string",
-                    "const": "none"
-                  },
-                  {
-                    "type": "object",
-                    "properties": {}
-                  },
-                  {
-                    "type": "object",
-                    "properties": {}
-                  },
-                  {
-                    "type": "object",
-                    "properties": {}
-                  },
-                  {
-                    "type": "object",
-                    "properties": {}
-                  },
-                  {
-                    "type": "object",
-                    "properties": {}
-                  },
-                  {
-                    "type": "string",
-                    "const": "forward"
-                  },
-                  {
-                    "type": "object",
-                    "properties": {}
-                  },
-                  {
-                    "type": "object",
-                    "properties": {}
-                  },
-                  {
-                    "type": "object",
-                    "properties": {}
-                  },
-                  {
-                    "type": "object",
-                    "properties": {}
-                  },
-                  {
-                    "type": "object",
-                    "properties": {}
-                  },
-                  {
-                    "type": "string",
-                    "const": "backward"
-                  },
-                  {
-                    "type": "object",
-                    "properties": {}
-                  }
-                ]
-              },
-              "hidden": {
-                "type": "boolean"
-              },
-              "goto": {
-                "type": "string"
-              },
-              "action": {
-                "anyOf": [
-                  {
-                    "type": "string",
-                    "const": "activate"
-                  },
-                  {
-                    "type": "object",
-                    "properties": {}
-                  },
-                  {
-                    "type": "object",
-                    "properties": {}
-                  },
-                  {
-                    "$ref": "#/definitions/ActionType"
-                  }
-                ]
-              },
-              "targetType": {
-                "anyOf": [
-                  {
-                    "type": "string",
-                    "const": "page"
-                  },
-                  {
-                    "type": "string",
-                    "const": "text-field"
-                  },
-                  {
-                    "$ref": "#/definitions/AddressableObjects"
-                  },
-                  {
-                    "type": "string",
-                    "const": "auto"
-                  }
-                ]
-              },
-              "title": {
-                "type": "string"
-              },
-              "icon": {
-                "$ref": "#/definitions/IconType"
-              },
-              "destinationScroll": {
-                "anyOf": [
-                  {
+            "is_panorama": {
+              "type": "boolean",
+              "const": true
+            },
+            "media": {
+              "$ref": "#/definitions/JsonMedia"
+            },
+            "centralPositions": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "array",
+                  "items": {
                     "type": "number"
-                  },
-                  {
-                    "type": "string",
-                    "const": "auto"
                   }
-                ]
+                }
+              ]
+            },
+            "initialScroll": {
+              "type": "object",
+              "properties": {
+                "start": {
+                  "type": "number"
+                },
+                "destination": {
+                  "type": "number"
+                }
+              },
+              "additionalProperties": false
+            },
+            "clickables": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "x": {
+                    "type": [
+                      "number",
+                      "string"
+                    ]
+                  },
+                  "y": {
+                    "type": [
+                      "number",
+                      "string"
+                    ]
+                  },
+                  "position": {
+                    "$ref": "#/definitions/InlineObjectPosition"
+                  },
+                  "animationType": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "const": "fade"
+                      },
+                      {
+                        "type": "object",
+                        "properties": {}
+                      },
+                      {
+                        "type": "object",
+                        "properties": {}
+                      },
+                      {
+                        "type": "object",
+                        "properties": {}
+                      },
+                      {
+                        "type": "object",
+                        "properties": {}
+                      },
+                      {
+                        "type": "object",
+                        "properties": {}
+                      },
+                      {
+                        "type": "string",
+                        "const": "none"
+                      },
+                      {
+                        "type": "object",
+                        "properties": {}
+                      },
+                      {
+                        "type": "object",
+                        "properties": {}
+                      },
+                      {
+                        "type": "object",
+                        "properties": {}
+                      },
+                      {
+                        "type": "object",
+                        "properties": {}
+                      },
+                      {
+                        "type": "object",
+                        "properties": {}
+                      },
+                      {
+                        "type": "string",
+                        "const": "forward"
+                      },
+                      {
+                        "type": "object",
+                        "properties": {}
+                      },
+                      {
+                        "type": "object",
+                        "properties": {}
+                      },
+                      {
+                        "type": "object",
+                        "properties": {}
+                      },
+                      {
+                        "type": "object",
+                        "properties": {}
+                      },
+                      {
+                        "type": "object",
+                        "properties": {}
+                      },
+                      {
+                        "type": "string",
+                        "const": "backward"
+                      },
+                      {
+                        "type": "object",
+                        "properties": {}
+                      }
+                    ]
+                  },
+                  "hidden": {
+                    "type": "boolean"
+                  },
+                  "goto": {
+                    "type": "string"
+                  },
+                  "action": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "const": "activate"
+                      },
+                      {
+                        "type": "object",
+                        "properties": {}
+                      },
+                      {
+                        "type": "object",
+                        "properties": {}
+                      },
+                      {
+                        "$ref": "#/definitions/ActionType"
+                      }
+                    ]
+                  },
+                  "targetType": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "const": "page"
+                      },
+                      {
+                        "type": "string",
+                        "const": "text-field"
+                      },
+                      {
+                        "$ref": "#/definitions/AddressableObjects"
+                      },
+                      {
+                        "type": "string",
+                        "const": "auto"
+                      }
+                    ]
+                  },
+                  "title": {
+                    "type": "string"
+                  },
+                  "icon": {
+                    "$ref": "#/definitions/IconType"
+                  },
+                  "destinationScroll": {
+                    "anyOf": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "string",
+                        "const": "auto"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "x",
+                  "y",
+                  "title"
+                ],
+                "additionalProperties": false
               }
             },
-            "required": [
-              "x",
-              "y",
-              "title"
-            ],
-            "additionalProperties": false
-          }
+            "inlineObjects": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/JsonInlineObject"
+              }
+            },
+            "animationType": {
+              "$ref": "#/definitions/AnimationType"
+            },
+            "id": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "id",
+            "is_360",
+            "media"
+          ]
         },
-        "inlineObjects": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/JsonInlineObject"
-          }
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "is_360": {
+              "type": "boolean",
+              "const": false
+            },
+            "is_panorama": {
+              "type": "boolean"
+            },
+            "secondBeginning": {
+              "not": {}
+            },
+            "media": {
+              "$ref": "#/definitions/JsonMedia"
+            },
+            "centralPositions": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  }
+                }
+              ]
+            },
+            "initialScroll": {
+              "type": "object",
+              "properties": {
+                "start": {
+                  "type": "number"
+                },
+                "destination": {
+                  "type": "number"
+                }
+              },
+              "additionalProperties": false
+            },
+            "clickables": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "x": {
+                    "type": [
+                      "number",
+                      "string"
+                    ]
+                  },
+                  "y": {
+                    "type": [
+                      "number",
+                      "string"
+                    ]
+                  },
+                  "position": {
+                    "$ref": "#/definitions/InlineObjectPosition"
+                  },
+                  "animationType": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "const": "fade"
+                      },
+                      {
+                        "type": "object",
+                        "properties": {}
+                      },
+                      {
+                        "type": "object",
+                        "properties": {}
+                      },
+                      {
+                        "type": "object",
+                        "properties": {}
+                      },
+                      {
+                        "type": "object",
+                        "properties": {}
+                      },
+                      {
+                        "type": "object",
+                        "properties": {}
+                      },
+                      {
+                        "type": "string",
+                        "const": "none"
+                      },
+                      {
+                        "type": "object",
+                        "properties": {}
+                      },
+                      {
+                        "type": "object",
+                        "properties": {}
+                      },
+                      {
+                        "type": "object",
+                        "properties": {}
+                      },
+                      {
+                        "type": "object",
+                        "properties": {}
+                      },
+                      {
+                        "type": "object",
+                        "properties": {}
+                      },
+                      {
+                        "type": "string",
+                        "const": "forward"
+                      },
+                      {
+                        "type": "object",
+                        "properties": {}
+                      },
+                      {
+                        "type": "object",
+                        "properties": {}
+                      },
+                      {
+                        "type": "object",
+                        "properties": {}
+                      },
+                      {
+                        "type": "object",
+                        "properties": {}
+                      },
+                      {
+                        "type": "object",
+                        "properties": {}
+                      },
+                      {
+                        "type": "string",
+                        "const": "backward"
+                      },
+                      {
+                        "type": "object",
+                        "properties": {}
+                      }
+                    ]
+                  },
+                  "hidden": {
+                    "type": "boolean"
+                  },
+                  "goto": {
+                    "type": "string"
+                  },
+                  "action": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "const": "activate"
+                      },
+                      {
+                        "type": "object",
+                        "properties": {}
+                      },
+                      {
+                        "type": "object",
+                        "properties": {}
+                      },
+                      {
+                        "$ref": "#/definitions/ActionType"
+                      }
+                    ]
+                  },
+                  "targetType": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "const": "page"
+                      },
+                      {
+                        "type": "string",
+                        "const": "text-field"
+                      },
+                      {
+                        "$ref": "#/definitions/AddressableObjects"
+                      },
+                      {
+                        "type": "string",
+                        "const": "auto"
+                      }
+                    ]
+                  },
+                  "title": {
+                    "type": "string"
+                  },
+                  "icon": {
+                    "$ref": "#/definitions/IconType"
+                  },
+                  "destinationScroll": {
+                    "anyOf": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "string",
+                        "const": "auto"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "x",
+                  "y",
+                  "title"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "inlineObjects": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/JsonInlineObject"
+              }
+            },
+            "animationType": {
+              "$ref": "#/definitions/AnimationType"
+            },
+            "id": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "id",
+            "is_360",
+            "media"
+          ]
         },
-        "animationType": {
-          "$ref": "#/definitions/AnimationType"
-        },
-        "id": {
-          "type": "string"
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "is_360": {
+              "not": {}
+            },
+            "is_panorama": {
+              "not": {}
+            },
+            "secondBeginning": {
+              "not": {}
+            },
+            "media": {
+              "$ref": "#/definitions/JsonMedia"
+            },
+            "centralPositions": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  }
+                }
+              ]
+            },
+            "initialScroll": {
+              "type": "object",
+              "properties": {
+                "start": {
+                  "type": "number"
+                },
+                "destination": {
+                  "type": "number"
+                }
+              },
+              "additionalProperties": false
+            },
+            "clickables": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "x": {
+                    "type": [
+                      "number",
+                      "string"
+                    ]
+                  },
+                  "y": {
+                    "type": [
+                      "number",
+                      "string"
+                    ]
+                  },
+                  "position": {
+                    "$ref": "#/definitions/InlineObjectPosition"
+                  },
+                  "animationType": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "const": "fade"
+                      },
+                      {
+                        "type": "object",
+                        "properties": {}
+                      },
+                      {
+                        "type": "object",
+                        "properties": {}
+                      },
+                      {
+                        "type": "object",
+                        "properties": {}
+                      },
+                      {
+                        "type": "object",
+                        "properties": {}
+                      },
+                      {
+                        "type": "object",
+                        "properties": {}
+                      },
+                      {
+                        "type": "string",
+                        "const": "none"
+                      },
+                      {
+                        "type": "object",
+                        "properties": {}
+                      },
+                      {
+                        "type": "object",
+                        "properties": {}
+                      },
+                      {
+                        "type": "object",
+                        "properties": {}
+                      },
+                      {
+                        "type": "object",
+                        "properties": {}
+                      },
+                      {
+                        "type": "object",
+                        "properties": {}
+                      },
+                      {
+                        "type": "string",
+                        "const": "forward"
+                      },
+                      {
+                        "type": "object",
+                        "properties": {}
+                      },
+                      {
+                        "type": "object",
+                        "properties": {}
+                      },
+                      {
+                        "type": "object",
+                        "properties": {}
+                      },
+                      {
+                        "type": "object",
+                        "properties": {}
+                      },
+                      {
+                        "type": "object",
+                        "properties": {}
+                      },
+                      {
+                        "type": "string",
+                        "const": "backward"
+                      },
+                      {
+                        "type": "object",
+                        "properties": {}
+                      }
+                    ]
+                  },
+                  "hidden": {
+                    "type": "boolean"
+                  },
+                  "goto": {
+                    "type": "string"
+                  },
+                  "action": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "const": "activate"
+                      },
+                      {
+                        "type": "object",
+                        "properties": {}
+                      },
+                      {
+                        "type": "object",
+                        "properties": {}
+                      },
+                      {
+                        "$ref": "#/definitions/ActionType"
+                      }
+                    ]
+                  },
+                  "targetType": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "const": "page"
+                      },
+                      {
+                        "type": "string",
+                        "const": "text-field"
+                      },
+                      {
+                        "$ref": "#/definitions/AddressableObjects"
+                      },
+                      {
+                        "type": "string",
+                        "const": "auto"
+                      }
+                    ]
+                  },
+                  "title": {
+                    "type": "string"
+                  },
+                  "icon": {
+                    "$ref": "#/definitions/IconType"
+                  },
+                  "destinationScroll": {
+                    "anyOf": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "string",
+                        "const": "auto"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "x",
+                  "y",
+                  "title"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "inlineObjects": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/JsonInlineObject"
+              }
+            },
+            "animationType": {
+              "$ref": "#/definitions/AnimationType"
+            },
+            "id": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "id",
+            "media"
+          ]
         }
-      },
-      "required": [
-        "id",
-        "media"
       ],
       "description": "Type for the Page-Objects in pages.json (or pages.json)"
     },

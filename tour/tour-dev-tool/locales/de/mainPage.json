@@ -102,6 +102,12 @@
         "id": {
           "label": "Id",
           "invalidFeedback": "Die Id muss einzigartig sein und darf nur aus Buchstaben, Zahlen, Strichen und Unterstrichen bestehen."
+        },
+        "destinationScroll": {
+          "label": "Ziel Scroll Position",
+          "formText": "Die Scroll-Position auf der Ziel Seite, wo man ankommt",
+          "automatic": "Automatisch",
+          "targetNotPanorama": "Die Ziel Seite ist keine Panorama Seite!"
         }
       },
       "addButton": "Hinzufügen"

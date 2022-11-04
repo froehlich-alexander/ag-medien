@@ -103,7 +103,7 @@
       ],
       "is_panorama": true,
       "is_360": false,
-      "initial_direction": 19.844
+      "centralPositions": 19.844
     },
     {
       "id": "05_sporthalle",
@@ -139,7 +139,7 @@
       ],
       "is_panorama": false,
       "is_360": false,
-      "initial_direction": 0
+      "centralPositions": 0
     },
     {
       "id": "15_eingang",
@@ -188,7 +188,7 @@
       ],
       "is_panorama": false,
       "is_360": false,
-      "initial_direction": 0
+      "centralPositions": 0
     },
     {
       "id": "15_flur_eg",
@@ -263,7 +263,7 @@
       ],
       "is_panorama": true,
       "is_360": true,
-      "initial_direction": 0
+      "centralPositions": 0
     },
     {
       "id": "15_glaskasten",
@@ -312,7 +312,7 @@
       ],
       "is_panorama": false,
       "is_360": false,
-      "initial_direction": 0
+      "centralPositions": 0
     },
     {
       "id": "16_sekretariat",
@@ -348,7 +348,7 @@
       ],
       "is_panorama": false,
       "is_360": false,
-      "initial_direction": 0
+      "centralPositions": 0
     },
     {
       "id": "flur_0_nw_foyer",
@@ -410,7 +410,7 @@
       ],
       "is_panorama": true,
       "is_360": true,
-      "initial_direction": 99.958
+      "centralPositions": 99.958
     },
     {
       "id": "25_lehrerzimmer",
@@ -446,7 +446,7 @@
       ],
       "is_panorama": false,
       "is_360": false,
-      "initial_direction": 0
+      "centralPositions": 0
     },
     {
       "id": "flur_1_nw_foyer",
@@ -521,7 +521,7 @@
       ],
       "is_panorama": true,
       "is_360": true,
-      "initial_direction": 6.655
+      "centralPositions": 6.655
     },
     {
       "id": "30_vor_physik_raum",
@@ -583,7 +583,7 @@
       ],
       "is_panorama": false,
       "is_360": false,
-      "initial_direction": 0
+      "centralPositions": 0
     },
     {
       "id": "30_physik_raum",
@@ -625,7 +625,7 @@
       ],
       "is_panorama": false,
       "is_360": false,
-      "initial_direction": 0
+      "centralPositions": 0
     },
     {
       "id": "30_flur",
@@ -661,7 +661,7 @@
       ],
       "is_panorama": false,
       "is_360": false,
-      "initial_direction": 0
+      "centralPositions": 0
     },
     {
       "id": "30_aula_foyer",
@@ -710,7 +710,7 @@
       ],
       "is_panorama": false,
       "is_360": false,
-      "initial_direction": 0
+      "centralPositions": 0
     },
     {
       "id": "klassenraum_s",
@@ -746,7 +746,7 @@
       ],
       "is_panorama": false,
       "is_360": false,
-      "initial_direction": 0
+      "centralPositions": 0
     },
     {
       "id": "30_Dachboden",
@@ -795,7 +795,7 @@
       ],
       "is_panorama": false,
       "is_360": false,
-      "initial_direction": 0
+      "centralPositions": 0
     },
     {
       "id": "40_Turm",
@@ -844,7 +844,7 @@
       ],
       "is_panorama": false,
       "is_360": false,
-      "initial_direction": 0
+      "centralPositions": 0
     },
     {
       "id": "60_turm",
@@ -893,7 +893,7 @@
       ],
       "is_panorama": false,
       "is_360": false,
-      "initial_direction": 0
+      "centralPositions": 0
     },
     {
       "id": "Hof_von_oben",
@@ -968,7 +968,7 @@
       ],
       "is_panorama": false,
       "is_360": false,
-      "initial_direction": 0
+      "centralPositions": 0
     },
     {
       "id": "hof_sw",
@@ -1017,7 +1017,7 @@
       ],
       "is_panorama": true,
       "is_360": false,
-      "initial_direction": 48.34
+      "centralPositions": 48.34
     },
     {
       "id": "balkon",
@@ -1066,7 +1066,7 @@
       ],
       "is_panorama": true,
       "is_360": true,
-      "initial_direction": 89.021
+      "centralPositions": 89.021
     },
     {
       "id": "schultor",
@@ -1115,7 +1115,7 @@
       ],
       "is_panorama": false,
       "is_360": false,
-      "initial_direction": 0
+      "centralPositions": 0
     },
     {
       "id": "flur_2_nw_foyer",
@@ -1184,7 +1184,7 @@
       ],
       "is_panorama": true,
       "is_360": true,
-      "initial_direction": 0
+      "centralPositions": 0
     },
     {
       "id": "flur_3_nw_foyer",
@@ -1253,7 +1253,7 @@
       ],
       "is_panorama": true,
       "is_360": true,
-      "initial_direction": 99.733
+      "centralPositions": 99.733
     },
     {
       "id": "flur_2_sw",
@@ -1296,7 +1296,7 @@
       ],
       "is_panorama": false,
       "is_360": false,
-      "initial_direction": 31.462
+      "centralPositions": 31.462
     },
     {
       "id": "flur_3_n_360_beispiel_klassenzimmer",
@@ -1326,7 +1326,7 @@
       ],
       "is_panorama": false,
       "is_360": false,
-      "initial_direction": 0
+      "centralPositions": 0
     },
     {
       "id": "flur_3_n_kunstraum",
@@ -1356,7 +1356,7 @@
       ],
       "is_panorama": false,
       "is_360": false,
-      "initial_direction": 27.367
+      "centralPositions": 27.367
     },
     {
       "id": "flur_3_w_kunst_flur",
@@ -1399,7 +1399,7 @@
       ],
       "is_panorama": true,
       "is_360": true,
-      "initial_direction": 7.657
+      "centralPositions": 7.657
     },
     {
       "id": "flur_3_sw_kunst_flur_hinten",
@@ -1442,7 +1442,7 @@
       ],
       "is_panorama": true,
       "is_360": true,
-      "initial_direction": 12.318
+      "centralPositions": 12.318
     },
     {
       "id": "flur_2_no_musik",
@@ -1485,7 +1485,7 @@
       ],
       "is_panorama": false,
       "is_360": false,
-      "initial_direction": 43.07
+      "centralPositions": 43.07
     },
     {
       "id": "flur_1_nw",
@@ -1541,7 +1541,7 @@
       ],
       "is_panorama": true,
       "is_360": true,
-      "initial_direction": 91.901
+      "centralPositions": 91.901
     },
     {
       "id": "flur_1_n_bio",
@@ -1584,7 +1584,7 @@
       ],
       "is_panorama": true,
       "is_360": false,
-      "initial_direction": 6.605
+      "centralPositions": 6.605
     }
   ],
   "initialPage": "schultor",

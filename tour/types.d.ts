@@ -33,9 +33,8 @@ interface JsonAddressableObject {
  */
 export type JsonPage = JsonAddressableObject & {
     media: JsonMedia,
-    is_360?: boolean,
-    is_panorama?: boolean,
-    initial_direction?: number,
+    // is_panorama?: boolean,
+    centralPositions?: number|number[],
     initialScroll?: {
         start?: number,
         destination?: number,
@@ -43,7 +42,19 @@ export type JsonPage = JsonAddressableObject & {
     clickables?: Omit<JsonClickable, "type">[],
     inlineObjects?: JsonInlineObject[];
     animationType?: PageAnimations,
-}
+} & ({
+    is_360: true,
+    secondBeginning?: number,
+    is_panorama?: true,
+} | {
+    is_360: false,
+    is_panorama?: boolean,
+    secondBeginning?: undefined,
+} | {
+    is_360?: undefined,
+    is_panorama?: undefined,
+    secondBeginning?: undefined,
+})
 export type JsonMedia = {
     //see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/video for video
     //and https://developer.mozilla.org/en-US/docs/Web/HTML/Element/img for img
@@ -167,4 +178,5 @@ export type JsonSchulTourConfigFile = {
     fullscreen?: boolean,
     mode?: "normal" | "inline",
     colorTheme?: "dark" | "light",
+    includeClickableHints?: boolean,
 }

@@ -16,7 +16,7 @@ import ListView from "./ListView";
 import MediaDialog from "./dialogs/MediaDialog";
 import MediaPreview from "./dialogs/MediaPreview";
 import {MyNavBar} from "./MyNavBar";
-import PageForm from "./forms/PageForm";
+import PageForm from "./forms/page/PageForm";
 import store from "./store";
 import {
     FormContext,

@@ -192,14 +192,15 @@ class Media {
         }
     }
     /**
-     * This method gets called when the media gets visible the first time or when the page is resized or when the visibility changes<br>
-     * {@link SourceData.width} and {@link SourceData.height} will available here
+     * This method gets called when the media gets visible or when the page is resized<br>
+     * {@link SourceData.width}, {@link SourceData.height} and {@link this.page} will available here
      * You can override this method
      * @protected
      */
     onResize() {
         console.log("on Resize", this.page?.id);
         this.applyRatio();
+        this.page.onShowOrResize();
     }
     triggerResize() {
         // console.log('trigger resize', this.page?.id);
@@ -360,31 +361,36 @@ class ImageMedia extends Media {
                 return;
             }
             let scrollStart = this.page.data.initialScroll.start;
-            let scrollDestination = this.page.data.initialScroll.destination ?? this.page.initial_direction;
             if (scrollStart != null) {
-                // scroll 0 is not good in 360 because then the user cannot scroll to left and
-                // the scroll event cannot be triggered
-                if (this.page.is_360 && scrollStart === 0) {
-                    scrollStart = 100;
-                }
+                // if (this.page.is_360 && scrollStart === 0) {
+                //     scrollStart = 100;
+                // }
                 this.page.scroll(scrollStart);
                 // pgWrapper.scrollTo({
                 //     left: scrollStart * 0.01 * mediaWidth,
                 // });
             }
-            if (scrollDestination != null) {
-                // siehe oben
-                if (this.page.is_360 && scrollDestination === 0) {
-                    scrollDestination = 100;
-                }
-                setTimeout(() => {
+            setTimeout(() => {
+                let scrollDestination = this.page.data.initialScroll.destination;
+                if (scrollDestination != null) {
+                    // scroll 0 is not good in 360 because then the user cannot scroll to left and
+                    // the scroll event cannot be triggered
+                    if (this.page.is_360 && scrollDestination === 0) {
+                        scrollDestination = 100;
+                    }
                     this.page.scroll(scrollDestination, true);
                     // pgWrapper.scrollTo({
                     //     left: scrollDestination * 0.01 * mediaWidth,
                     //     behavior: "smooth",
                     // });
-                }, 500);
-            }
+                }
+                else if (this.page.centralPositionLeftAbsolute != null) {
+                    pgWrapper.scrollTo({
+                        left: this.page.centralPositionLeftAbsolute,
+                        behavior: "smooth",
+                    });
+                }
+            }, 500);
             // let initialDirection = (this.page!.initial_direction / 100) * this.html.width()!;
             // console.log("init dir", this.page!.initial_direction, initialDirection);
             // if (this.page!.is_360 && initialDirection === 0) {
@@ -442,7 +448,7 @@ class SchulTour {
             .attr("data-tour-mode", data.mode)
             .toggleClass("fullscreen", data.fullscreen);
         for (let pageData of data.pages) {
-            let page = Page.from(pageData);
+            let page = Page.from(pageData, this.data);
             this.pages.push(page);
             this.html.append(page.html);
         }
@@ -489,18 +495,20 @@ class Page extends AddressableObject() {
      * @param media
      * @param inlineObjects
      * @param scrollPercent dev tool only
+     * @param config
      */
-    constructor({ data, media, inlineObjects, scrollPercent, }) {
+    constructor({ data, media, inlineObjects, scrollPercent, }, config) {
         super();
         this.is_panorama = false;
         this.is_360 = false;
+        this.centralPositionLeftAbsolute = undefined;
         this.data = data;
+        this.config = config;
         this.id = data.id;
         this.media = media;
         this.media.page = this;
         this.is_360 = data.is360;
         this.is_panorama = data.isPanorama;
-        this.initial_direction = data.initialDirection;
         this.animationType = data.animationType;
         this.inlineObjects = inlineObjects.slice();
         this.html = $("<div></div>");
@@ -509,10 +517,15 @@ class Page extends AddressableObject() {
         if ((!isDesktop) && this.media.isImage()) {
             this.is_panorama = true;
         }
-        // clickables relative to media get a clickable-hint
-        this.clickableHints = this.inlineObjects
-            .filter((v) => v.data.position === "media" && v.data.isClickable())
-            .map(v => new ClickableHint(v));
+        if (this.config.includeClickableHints) {
+            // clickables relative to media get a clickable-hint
+            this.clickableHints = this.inlineObjects
+                .filter((v) => v.data.position === "media" && v.data.isClickable())
+                .map(v => new ClickableHint(v));
+        }
+        else {
+            this.clickableHints = [];
+        }
         this.html
             .addClass("page")
             .attr("id", idPrefix + this.id)
@@ -524,15 +537,17 @@ class Page extends AddressableObject() {
             .filter(v => v.data.position === "page")
             .map(v => v.html))
             .append(this.clickableHints.map(v => v.html));
-        // register scroll event
-        this.html.find(".pg_wrapper").on("scroll", () => {
-            for (let hint of this.clickableHints) {
-                // we want it asynchronous to prevent performance loss
-                setTimeout(() => {
-                    hint.startComputingPosition();
-                });
-            }
-        });
+        if (this.config.includeClickableHints) {
+            // register scroll event
+            this.html.find(".pg_wrapper").on("scroll", () => {
+                for (let hint of this.clickableHints) {
+                    // we want it asynchronous to prevent performance loss
+                    setTimeout(() => {
+                        hint.startComputingPosition();
+                    });
+                }
+            });
+        }
         //first img
         this.html.children(".pg_wrapper")
             .append($("<div></div>")
@@ -611,15 +626,57 @@ class Page extends AddressableObject() {
     /**
      * Creates a new {@link Page} instance
      * @param data
+     * @param config
      * @param scrollPercent dev tool only
      */
-    static from(data, scrollPercent) {
+    static from(data, config, scrollPercent) {
         return new Page({
             data: data,
             media: Media.from(data.media),
             inlineObjects: data.inlineObjects.map(InlineObject.from),
             scrollPercent: scrollPercent,
-        });
+        }, config);
+    }
+    computeCentralPosition() {
+        const tourWidth = this.html.closest(".schul-tour").width();
+        const imgWidth = this.media.html.width();
+        // convert to absolute positions
+        const positions = this.data.centralPositions.map(v => v * 0.01 * imgWidth);
+        let res = {
+            scrollLeft: 0,
+            posCount: 0,
+        };
+        for (let pos of positions) {
+            // range where positions can be
+            const start = pos;
+            const end = start + tourWidth;
+            const matchingPositions = positions.filter(v => 
+            // pos between start and end
+            (v >= start && v <= end) ||
+                // 360 deg => pos can also be lower than end - imgWidth, because that part of the img is also showed
+                (this.is_360 && v <= end - imgWidth));
+            if (matchingPositions.length > res.posCount) {
+                // the distance between the last position and the end
+                const paddingEnd = end - matchingPositions.reduce((a, b) => a > b ? a : b, 0);
+                res = {
+                    // split the paddingEnd to end and start
+                    scrollLeft: start + paddingEnd / 2,
+                    posCount: matchingPositions.length,
+                };
+            }
+        }
+        if (res.posCount) {
+            if (res.scrollLeft === 0 && this.is_360) {
+                this.centralPositionLeftAbsolute = imgWidth;
+            }
+            this.centralPositionLeftAbsolute = res.scrollLeft;
+        }
+        else {
+            this.centralPositionLeftAbsolute = null;
+        }
+    }
+    onShowOrResize() {
+        this.computeCentralPosition();
     }
     /**
      * This method scrolls to a given point (only if media is an img and panorama is enabled)
@@ -700,7 +757,13 @@ class Page extends AddressableObject() {
         if (this.activated) {
             const wrapper = this.html.find(".pg_wrapper")[0];
             setTimeout(() => {
-                this.scroll(this.data.initialDirection, true);
+                if (this.centralPositionLeftAbsolute != null) {
+                    wrapper.scrollTo({
+                        left: this.centralPositionLeftAbsolute,
+                        behavior: "smooth",
+                    });
+                }
+                // this.scroll(this.data.centralPositions, true);
                 // wrapper.scrollTo({
                 //     left: this.data.initialDirection * 0.01 * this.html.width()!,
                 //     behavior: "smooth",
@@ -1067,13 +1130,14 @@ class Clickable extends InlineObject {
                         const currentPage = Tour.pages.find(v => v.activated);
                         // the clickable that is the opposite of this clickable
                         const clickable = destinationPage.data.inlineObjects.find(v => v.isClickable() && v.goto === currentPage.id);
-                        console.log("dest scroll clickable", destinationScroll, clickable);
+                        // console.log("dest scroll clickable", destinationScroll, clickable);
+                        const pictureWidthUntilRepeat = destinationPage.data.secondBeginning;
                         if (clickable) {
                             switch (this.data.animationType) {
                                 case "forward":
                                     // we take the position of the clickable (in percent)
                                     // then we add 50 to it to get the position one would look at when coming from that clickable
-                                    destinationScroll = clickable.x + 50;
+                                    destinationScroll = clickable.x + pictureWidthUntilRepeat / 2;
                                     break;
                                 case "backward":
                                     destinationScroll = clickable.x;
@@ -1083,14 +1147,15 @@ class Clickable extends InlineObject {
                                     destinationScroll = undefined;
                                     break;
                             }
-                            if (destinationScroll !== undefined && destinationScroll > 100) {
-                                destinationScroll -= 100;
+                            if (destinationScroll !== undefined && destinationScroll > pictureWidthUntilRepeat) {
+                                destinationScroll -= pictureWidthUntilRepeat;
                             }
                         }
                         else {
                             destinationScroll = undefined;
                         }
                     }
+                    console.assert(destinationScroll === this.destinationScroll, "destination scroll not equal", destinationScroll, this.destinationScroll);
                     destinationPage.activate(this.data.animationType, { destinationScroll: destinationScroll });
                     break;
                 }
@@ -1123,6 +1188,54 @@ class Clickable extends InlineObject {
     static from(data) {
         return new Clickable(data);
     }
+    computeDestinationPosition() {
+        if (this.data.targetType !== "page") {
+            return;
+        }
+        for (let destinationPage of Tour.pages) {
+            // clickable addresses a page obj
+            if (destinationPage.id === this.data.goto) {
+                // the position on the next page where the user will arrive
+                let destinationScroll = this.data.destinationScroll ?? "auto";
+                // we do not need to compute anything on non panorama pages
+                if (!destinationPage.is_panorama) {
+                    destinationScroll = undefined;
+                }
+                // if destinationScroll is not explicitly set, compute it
+                else if (destinationScroll === "auto") {
+                    const currentPage = Tour.pages.find(v => v.activated);
+                    // the clickable that is the opposite of this clickable
+                    const clickable = destinationPage.data.inlineObjects.find(v => v.isClickable() && v.goto === currentPage.id);
+                    // console.log("dest scroll clickable", destinationScroll, clickable);
+                    const pictureWidthUntilRepeat = destinationPage.data.secondBeginning;
+                    if (clickable) {
+                        switch (this.data.animationType) {
+                            case "forward":
+                                // we take the position of the clickable (in percent)
+                                // then we add 50 to it to get the position one would look at when coming from that clickable
+                                destinationScroll = clickable.x + pictureWidthUntilRepeat / 2;
+                                break;
+                            case "backward":
+                                destinationScroll = clickable.x;
+                                break;
+                            case "fade":
+                            case "none":
+                                destinationScroll = undefined;
+                                break;
+                        }
+                        if (destinationScroll !== undefined && destinationScroll > pictureWidthUntilRepeat) {
+                            destinationScroll -= pictureWidthUntilRepeat;
+                        }
+                    }
+                    else {
+                        destinationScroll = undefined;
+                    }
+                }
+                this.destinationScroll = destinationScroll;
+                break;
+            }
+        }
+    }
     /**
      * This is called when the user clicks this clickable<br>
      * Currently only applies to text-fields!
@@ -1151,7 +1264,7 @@ class Clickable extends InlineObject {
  * - They rotate according to the position of the clickable
  */
 class ClickableHint {
-    constructor(clickable) {
+    constructor(clickable, clonedClickable) {
         // own visibility
         this.visible = false;
         this.clickable = clickable;

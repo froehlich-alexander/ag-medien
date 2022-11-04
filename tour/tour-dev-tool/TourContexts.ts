@@ -6,7 +6,7 @@ export interface PageContextType {
     currentPage: PageData | undefined,
     setCurrentPage: (page: string | undefined) => void,
 
-    tourConfig: SchulTourConfigFile | undefined,
+    tourConfig: SchulTourConfigFile,
     setTourConfig: (config: SchulTourConfigFile) => void,
 
     pages: readonly PageData[],
@@ -46,6 +46,7 @@ export interface ListViewContextType {
 }
 
 export interface TourPreviewContextType {
+    currentPage: PageData|undefined,
     pages: readonly PageData[],
     save: () => void,
     update: (page: PageData) => void,

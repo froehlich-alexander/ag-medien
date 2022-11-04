@@ -7,7 +7,7 @@ import {InlineObjectType} from "../../../types";
 import {PageContext} from "../../TourContexts";
 import {MaterialIcon} from "../../utils";
 import {Id} from "./AddressableInlineObjectInputs";
-import {Goto, Icon} from "./ClickableInputs";
+import {DestinationScroll, Goto, Icon} from "./ClickableInputs";
 import {AnimationTypeInput, Hidden, Position, Title, Type, XCoordinate, YCoordinate} from "./GeneralInlineObjectInputs";
 import {Content, CSSClasses, Size} from "./TextFIeldInputs";
 
@@ -48,7 +48,8 @@ export default function InlineObjectForm(
                 {inlineObject.isClickable() && <>
                     <Col sm={6}><Title inlineObject={inlineObject} onChange={onChange}/></Col>
                     <Col sm={6}><Icon inlineObject={inlineObject} onChange={onChange}/></Col>
-                    <Col><Goto inlineObject={inlineObject} onChange={onChange}/></Col>
+                    <Col sm={'auto'}><DestinationScroll inlineObject={inlineObject} onChange={onChange}/></Col>
+                    <Col sm={12}><Goto inlineObject={inlineObject} onChange={onChange}/></Col>
                 </>}
 
                 {inlineObject.isTextField() && <>

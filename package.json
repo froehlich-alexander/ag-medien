@@ -53,6 +53,7 @@
     "build": "webpack -c webpack.config.cjs",
     "serve": "webpack server -c webpack.config.cjs",
     "start": "npm run build & npm run serve",
-    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --config jest.config.ts"
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --config jest.config.ts",
+    "json-schema": "node ts-to-json-schema-runner.js"
   }
 }

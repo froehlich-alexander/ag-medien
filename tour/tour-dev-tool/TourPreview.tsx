@@ -5,6 +5,7 @@ import {arrayEqualsContain} from "../utils";
 import {DataType, InlineObjectData, PageData} from "../Data";
 import Tour, {Page} from "../tour";
 import "./CreateTool.scss";
+import {useCentralPositions} from "./forms/page/inputs/CentralPositions";
 import {hideDialog, showDialog} from "./store/dialog";
 import {set} from "./store/editInlineObject";
 import {useAppDispatch, useAppSelector} from "./store/hooks";
@@ -17,12 +18,13 @@ function TourPreview({}: TourPreviewProps) {
     const {t} = useTranslation("dialog", {keyPrefix: "tourPreview"});
     const {t: tGlob} = useTranslation("translation");
     const pageContext = useContext(PageContext);
-    const {pages, save, reset, update} = useContext(TourPreviewContext);
+    const {pages, save, reset, update, currentPage} = useContext(TourPreviewContext);
     const visibility = useAppSelector(state => state.dialog.tourPreview);
     const dispatch = useAppDispatch();
     const [, forceUpdate] = useReducer(x => x + 1, 0);
     const [currentPageScroll, setCurrentPageScroll] = useState<number>();
     const [htmlPages, setHtmlPages] = useState(Tour.pages);
+    const [centralPositionsEditModeOn, setCentralPositionsEditModeOn] = useState(false);
 
     // const [pages, setPages] = useState<Readonly<Array<PageData>>>([]);
 
@@ -69,6 +71,12 @@ function TourPreview({}: TourPreviewProps) {
         }
     }, [pages, pageContext.currentPage?.id, currentPageScroll, update]);
 
+    const {
+        handleCentralPositionsAddClick,
+        handleCentralPositionRemove,
+        handleCentralPositionChange,
+    } = useCentralPositions(currentPage, update);
+
     return (
         <Modal onHide={hide} show={visibility} fullscreen className="TourPreviewDialog">
             <Modal.Header>
@@ -107,7 +115,7 @@ interface TourPageProps {
     onCurrentScrollChange?: (scrollPercent: number) => void;
 }
 
-const TourPage = memo(({pageData, onChange, addPage, removePage, onCurrentScrollChange}: TourPageProps) => {
+const TourPage = memo(function ({pageData, onChange, addPage, removePage, onCurrentScrollChange}: TourPageProps) {
     const pageContainerRef = useRef<HTMLSpanElement>(null);
     const dispatch = useAppDispatch();
     const pageContext = useContext(PageContext);
@@ -158,7 +166,7 @@ const TourPage = memo(({pageData, onChange, addPage, removePage, onCurrentScroll
     useEffect(() => {
         // if (!page?.data.equalsIgnoringInlineObjectPos(pageData)) {
         console.log("not equal");
-        const page = Page.from(pageData, pageScrollRef.current && pageScrollRef.current * 100);
+        const page = Page.from(pageData, pageContext.tourConfig, pageScrollRef.current && pageScrollRef.current * 100);
         // if (pageScrollRef.current) {
         //     page.initial_direction = pageScrollRef.current;
         // }

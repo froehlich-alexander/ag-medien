@@ -520,7 +520,8 @@ class AbstractActivatingInlineObjectData extends AbstractInlineObjectData {
 // type AbstractActivatingInlineObjectData = DataClassType<AbstractActivatingInlineObjectData>;
 const InlineObjectData = {
     CoordinateDigits: 3,
-    InitialDirectionDigits: 3,
+    CentralPositionDigits: 3,
+    DestinationScrollDigits: 3,
     Types: ["clickable", "text", "custom"],
     Positions: ["media", "page"],
     AnimationTypes: ["forward", "backward", "fade", "none"],
@@ -554,7 +555,8 @@ class ClickableData extends AbstractActivatingInlineObjectData {
         this.setFields({
             title: title,
             icon: icon,
-            destinationScroll: destinationScroll,
+            destinationScroll: typeof destinationScroll === "string" ? destinationScroll
+                : Math.round(destinationScroll * 10 ** InlineObjectData.DestinationScrollDigits) / 10 ** InlineObjectData.DestinationScrollDigits,
         });
         // this.title = title;
         // this.icon = icon;
@@ -1244,15 +1246,16 @@ class PageData extends AbstractAddressableObject {
     // public readonly isPanorama: boolean;
     // public readonly initialDirection: number;
     // public readonly inlineObjects: readonly InlineObjectData[];
-    constructor({ media, is360, isPanorama, initialDirection, inlineObjects, initialScroll, ...base }) {
+    constructor({ media, is360, isPanorama, centralPositions, inlineObjects, initialScroll, secondBeginning, ...base }) {
         super(base);
         this.setFields({
             media: media,
             is360: is360,
             isPanorama: isPanorama,
-            initialDirection: Math.round(initialDirection * 10 ** InlineObjectData.InitialDirectionDigits) / 10 ** InlineObjectData.InitialDirectionDigits,
+            centralPositions: centralPositions.map(v => Math.round(v * 10 ** InlineObjectData.CentralPositionDigits) / 10 ** InlineObjectData.CentralPositionDigits),
             inlineObjects: inlineObjects,
             initialScroll: initialScroll,
+            secondBeginning: secondBeginning,
         });
         // this.media = media;
         // this.is360 = is360;
@@ -1262,7 +1265,7 @@ class PageData extends AbstractAddressableObject {
         this.onConstructionFinished(PageData);
     }
     static {
-        DataClass(this, ["media", "is360", "isPanorama", "initialDirection", "inlineObjects", "initialScroll"], ["inlineObjects", "isPanorama", "is360"]);
+        DataClass(this, ["media", "is360", "isPanorama", "centralPositions", "inlineObjects", "initialScroll", "secondBeginning"], ["inlineObjects", "isPanorama", "is360"]);
     }
     static fromJSON(page) {
         const inlineObjects = page.inlineObjects?.map(InlineObjectData.fromJSON) ?? PageData.default.inlineObjects.slice();
@@ -1273,26 +1276,35 @@ class PageData extends AbstractAddressableObject {
         // defaults to false; iframes and videos cannot be 360 nor panorama
         const isPanorama = is360 || ((page.is_panorama ?? PageData.default.isPanorama) && media.allTypes().includes("img"));
         const initialScroll = page.initialScroll ? ScrollData.fromJSON(page.initialScroll) : ScrollData.default;
+        let centralPositions;
+        if (typeof page.centralPositions === "number") {
+            centralPositions = [page.centralPositions];
+        }
+        else {
+            centralPositions = page.centralPositions;
+        }
         return new PageData({
             animationType: page.animationType ?? PageData.default.animationType,
             id: page.id,
             media: media,
             is360: is360,
             isPanorama: isPanorama,
-            initialDirection: page.initial_direction ?? PageData.default.initialDirection,
+            centralPositions: centralPositions ?? PageData.default.centralPositions,
             inlineObjects: inlineObjects,
             initialScroll: initialScroll,
+            secondBeginning: page.secondBeginning ?? PageData.default.secondBeginning,
         });
     }
     static { this.default = new PageData({
         id: "badID",
         animationType: "forward",
-        initialDirection: 0,
+        centralPositions: [],
         isPanorama: false,
         is360: false,
         inlineObjects: [],
         media: MediaData.default,
         initialScroll: ScrollData.default,
+        secondBeginning: 100,
     }); }
     // public equals(other: DataType<PageData> | null | undefined, ...ignore: (keyof DataType<PageData>)[]): other is DataType<PageData> {
     //     return super.equals(other, ...ignore) &&
@@ -1322,13 +1334,9 @@ class PageData extends AbstractAddressableObject {
     }
     toJSON() {
         return {
-            ...super.partialToJSON("isPanorama", "is360", "initialDirection"),
-            // media: this.media.toJSON(),
-            // inlineObjects: this.inlineObjects.map(value => value.toJSON()),
+            ...this.partialToJSON("isPanorama", "is360"),
             is_panorama: this.isPanorama,
             is_360: this.is360,
-            initial_direction: this.initialDirection,
-            initialScroll: this.initialScroll.toJSON(),
         };
     }
     equalsIgnoringInlineObjectPos(other) {
@@ -1390,7 +1398,7 @@ class SchulTourConfigFile extends Data {
         this.onConstructionFinished(SchulTourConfigFile);
     }
     static {
-        DataClass(this, ["pages", "initialPage", "fullscreen", "colorTheme", "mode"]);
+        DataClass(this, ["pages", "initialPage", "fullscreen", "colorTheme", "mode", "includeClickableHints"]);
     }
     static { this.default = new SchulTourConfigFile({
         pages: [],
@@ -1398,6 +1406,7 @@ class SchulTourConfigFile extends Data {
         fullscreen: true,
         colorTheme: "dark",
         mode: "normal",
+        includeClickableHints: false,
     }); }
     static fromJSON(json) {
         const pages = json.pages.map(PageData.fromJSON);
@@ -1408,6 +1417,7 @@ class SchulTourConfigFile extends Data {
             fullscreen: json.fullscreen ?? default_.fullscreen,
             colorTheme: json.colorTheme ?? default_.colorTheme,
             mode: json.mode ?? default_.mode,
+            includeClickableHints: json.includeClickableHints ?? default_.includeClickableHints,
         });
     }
     // public equals(other: null | undefined | DataType<SchulTourConfigFile>): boolean {

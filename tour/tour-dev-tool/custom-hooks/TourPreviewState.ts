@@ -21,6 +21,10 @@ function useTourPreview(pageContext: PageContextType) {
         });
     }, []);
 
+    const currentPage = useMemo(() => {
+        return pages.find(v => v.id === pageContext.currentPage?.id);
+    }, [pages, pageContext.currentPage?.id]);
+
     const reset = useCallback(() => {
         setPages(pageContext.pages);
     }, [pageContext.pages]);
@@ -28,6 +32,7 @@ function useTourPreview(pageContext: PageContextType) {
     const tourPreviewContext: TourPreviewContextType = useMemo(() => {
         return {
             pages: pages,
+            currentPage: currentPage,
             save: save,
             update: updatePage,
             reset: reset,

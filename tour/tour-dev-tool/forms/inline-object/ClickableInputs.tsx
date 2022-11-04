@@ -1,7 +1,7 @@
 import React, {ChangeEvent, useCallback, useContext, useMemo} from "react";
-import {FormControl, FormSelect, InputGroup} from "react-bootstrap";
+import {FormControl, FormSelect, FormText, InputGroup} from "react-bootstrap";
 import {useTranslation} from "react-i18next";
-import {ClickableData} from "../../../Data";
+import {ClickableData, InlineObjectData} from "../../../Data";
 import {IconType} from "../../../types";
 import {getAddressableIds} from "../../refactor-data";
 import {PageContext} from "../../TourContexts";
@@ -39,7 +39,7 @@ export function Goto({onChange, inlineObject}: InputElementProps<ClickableData>)
 
 export function Icon({onChange, inlineObject}: InputElementProps<ClickableData>) {
     const {t} = useTranslation("mainPage", {keyPrefix: "pageForm.inlineObjectContainerForm.inlineObjectForm.icon"});
-    const { t : tIconTypes} = useTranslation("tourTypes", { keyPrefix: 'IconType'});
+    const {t: tIconTypes} = useTranslation("tourTypes", {keyPrefix: "IconType"});
 
     const handleIconChange = useCallback((event: ChangeEvent<HTMLSelectElement>) => {
         onChange(inlineObject.withIcon(event.target.value as IconType));
@@ -57,3 +57,38 @@ export function Icon({onChange, inlineObject}: InputElementProps<ClickableData>)
         </InputGroup>
     );
 }
+
+
+export function DestinationScroll({onChange, inlineObject}: InputElementProps<ClickableData>) {
+    const {t} = useTranslation("mainPage", {keyPrefix: "pageForm.inlineObjectContainerForm.inlineObjectForm.destinationScroll"});
+    const pageContext = useContext(PageContext);
+
+    const targetPageCanBePanorama = useMemo(() => {
+        for (let page of pageContext.pages) {
+            if (page.id === inlineObject.goto) {
+                return page.isPanorama;
+            }
+        }
+        return true;
+    }, [pageContext.pages]);
+
+    const handleDestinationScrollChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
+        let value: ClickableData["destinationScroll"] = parseFloat(event.target.value);
+        if (Number.isNaN(value)) {
+            value = "auto";
+        }
+        onChange(inlineObject.withDestinationScroll(value));
+    }, [inlineObject, onChange]);
+
+    return (<>
+        <InputGroup>
+            <InputGroup.Text as="label" htmlFor="object-destination-scroll">{t("label")}</InputGroup.Text>
+            <FormControl value={inlineObject.destinationScroll ?? null} id="object-destination-scroll"
+                         onChange={handleDestinationScrollChange} type={"number"}
+                         min={0} max={100} step={InlineObjectData.DestinationScrollDigits} placeholder={t("automatic")}/>
+        </InputGroup>
+        <FormText>{t("formText")}</FormText>
+        {targetPageCanBePanorama && <FormText color={"warning"}>{t("targetNotPanorama")}</FormText>}
+    </>);
+}
+

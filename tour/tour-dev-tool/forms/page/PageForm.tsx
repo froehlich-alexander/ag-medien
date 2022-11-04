@@ -2,11 +2,12 @@ import classNames from "classnames";
 import React, {ChangeEvent, useCallback, useContext, useEffect, useMemo} from "react";
 import {Button, ButtonGroup, Col, Form, FormControl, FormText, InputGroup, Row} from "react-bootstrap";
 import {useTranslation} from "react-i18next";
-import {InlineObjectData, MediaData, PageData} from "../../Data";
-import InlineObjectContainerForm from "./inline-object/InlineObjectContainerForm";
-import {MediaForm} from "./MediaForm";
-import {FormContext, PageContext} from "../TourContexts";
-import {DefaultProps} from "../utils";
+import {InlineObjectData, MediaData, PageData} from "../../../Data";
+import InlineObjectContainerForm from "../inline-object/InlineObjectContainerForm";
+import {MediaForm} from "../MediaForm";
+import {FormContext, PageContext} from "../../TourContexts";
+import {DefaultProps} from "../../utils";
+import CentralPositions from "./inputs/CentralPositions";
 
 interface PageFormProps extends DefaultProps {
     onChange: (page: PageData) => void,
@@ -42,14 +43,6 @@ export default function PageForm(
         onRenamePageIdUsagesChange(event.target.checked);
     }, []);
 
-    const handleInitialDirection = useCallback((event: ChangeEvent<HTMLInputElement>) => {
-        let value = parseFloat(event.target.value);
-        if (Number.isNaN(value)) {
-            value = 0;
-        }
-        onChange(page.withInitialDirection(Math.max(0, Math.min(value, 100))));
-    }, [page, onChange]);
-
     const handle360 = useCallback((event: ChangeEvent<HTMLInputElement>) => {
         const value = event.target.checked;
         onChange(page.withIs360(value));
@@ -83,35 +76,38 @@ export default function PageForm(
             <Form className={"gy-3 gx-4 row row-cols-12"} validated={true} onSubmit={formContext.save}
                   action="javascript:void(0)">
                 <h3 className="mx-auto">{page.id}</h3>
-                <InputGroup hasValidation>
-                    <InputGroup.Text as="label"
-                                     htmlFor="i-id">{t("id.label")}</InputGroup.Text>
-                    <Form.Control id="i-id" type="text" value={page.id} onChange={handleId}
-                                  pattern={formContext.idPattern(pageContext.currentPage?.id)}/>
-                    <InputGroup.Text>{t("id.renameUsages")}</InputGroup.Text>
-                    <InputGroup.Checkbox checked={formContext.renamePageIdUsages}
-                                         onChange={handleRenamePageIdUsagesChange}/>
-                    <FormControl.Feedback type="invalid">{t("id.invalidFeedback")}</FormControl.Feedback>
-                </InputGroup>
                 <Col sm={12}>
-                    <Row>
-                        <Col sm={3}>
-                            <InputGroup>
-                                <InputGroup.Text as="label"
-                                                 htmlFor="i-initial-direction">{t("initialDirection")}</InputGroup.Text>
-                                <Form.Control id="i-initial-direction" min={0} max={100}
-                                              type="number" disabled={!page.isPanorama}
-                                              step={10 ** -InlineObjectData.InitialDirectionDigits}
-                                              value={page.initialDirection} onChange={handleInitialDirection}/>
-                            </InputGroup>
-                        </Col>
-                        <Col className="d-flex align-items-center">
-                            <Form.Range id="i-initial-direction-range" min={0} max={100}
-                                        step={10 ** -InlineObjectData.InitialDirectionDigits}
-                                        className="col align-self-center" disabled={!page.isPanorama}
-                                        value={page.initialDirection} onChange={handleInitialDirection}/>
-                        </Col>
-                    </Row>
+                    <InputGroup hasValidation>
+                        <InputGroup.Text as="label"
+                                         htmlFor="i-id">{t("id.label")}</InputGroup.Text>
+                        <Form.Control id="i-id" type="text" value={page.id} onChange={handleId}
+                                      pattern={formContext.idPattern(pageContext.currentPage?.id)}/>
+                        <InputGroup.Text>{t("id.renameUsages")}</InputGroup.Text>
+                        <InputGroup.Checkbox checked={formContext.renamePageIdUsages}
+                                             onChange={handleRenamePageIdUsagesChange}/>
+                        <FormControl.Feedback type="invalid">{t("id.invalidFeedback")}</FormControl.Feedback>
+                    </InputGroup>
+                </Col>
+                <Col sm={12}>
+                    {/*<Row>*/}
+                    {/*    <Col sm={'auto'}>*/}
+                    {/*        <InputGroup>*/}
+                    {/*            <InputGroup.Text as="label"*/}
+                    {/*                             htmlFor="i-initial-direction">{t("initialDirection")}</InputGroup.Text>*/}
+                    {/*            <Form.Control id="i-initial-direction" min={0} max={100}*/}
+                    {/*                          type="number" disabled={!page.isPanorama}*/}
+                    {/*                          step={10 ** -InlineObjectData.CentralPositionDigits}*/}
+                    {/*                          value={page.initialDirection} onChange={handleInitialDirection}/>*/}
+                    {/*        </InputGroup>*/}
+                    {/*    </Col>*/}
+                    {/*    <Col className="d-flex align-items-center">*/}
+                    {/*        <Form.Range id="i-initial-direction-range" min={0} max={100}*/}
+                    {/*                    step={10 ** -InlineObjectData.CentralPositionDigits}*/}
+                    {/*                    className="col align-self-center" disabled={!page.isPanorama}*/}
+                    {/*                    value={page.initialDirection} onChange={handleInitialDirection}/>*/}
+                    {/*    </Col>*/}
+                    {/*</Row>*/}
+                    <CentralPositions page={page} onChange={onChange}/>
                 </Col>
                 <Col sm="auto">
                     <InputGroup>
