@@ -42,7 +42,7 @@ const config = {
             },
         },
         liveReload: false,
-        hot: false,
+        hot: true,
         port: 9000,
         client: {
             progress: false,

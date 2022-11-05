@@ -3,13 +3,13 @@ import {InlineObjectData, PageData} from "../../../../Data";
 import {Accordion, Button, Col, FormControl, InputGroup, Row} from "react-bootstrap";
 import {MaterialIcon} from "../../../utils";
 
-export function useCentralPositions(page: PageData|undefined, onChange: (page: PageData) => void) {
-    const handleCentralPositionsAddClick = useCallback(() => {
-        onChange(page!.withCentralPositions([...page!.centralPositions, 0]));
+export function useCentralPositions(page: PageData | undefined, onChange: (page: PageData) => void) {
+    const handleCentralPositionsAdd = useCallback((newPosition: number = 0) => {
+        onChange(page!.withCentralPositions([...page!.centralPositions, newPosition]));
     }, [page, onChange]);
 
-    const handleCentralPositionChange = useCallback((event: ChangeEvent<HTMLInputElement>, index: number) => {
-        let value = parseFloat(event.target.value);
+    const handleCentralPositionChange = useCallback((event: ChangeEvent<HTMLInputElement> | number, index: number) => {
+        let value = typeof event === "number" ? event : parseFloat(event.target.value);
         if (Number.isNaN(value)) {
             return;
         }
@@ -25,7 +25,7 @@ export function useCentralPositions(page: PageData|undefined, onChange: (page: P
     }, [page, onChange]);
 
     return {
-        handleCentralPositionsAddClick,
+        handleCentralPositionsAdd: handleCentralPositionsAdd,
         handleCentralPositionChange,
         handleCentralPositionRemove,
     };
@@ -38,7 +38,7 @@ type PropType = {
 
 function CentralPositions({page, onChange}: PropType) {
     const {
-        handleCentralPositionsAddClick,
+        handleCentralPositionsAdd,
         handleCentralPositionRemove,
         handleCentralPositionChange,
     } = useCentralPositions(page, onChange);
@@ -67,7 +67,7 @@ function CentralPositions({page, onChange}: PropType) {
                             </Col>);
                         })}
                         <Col sm={12}>
-                            <Button variant={"success"} onClick={handleCentralPositionsAddClick}><MaterialIcon
+                            <Button variant={"success"} onClick={() => handleCentralPositionsAdd()}><MaterialIcon
                                 icon="add"/> Add</Button>
                         </Col>
                     </Row>

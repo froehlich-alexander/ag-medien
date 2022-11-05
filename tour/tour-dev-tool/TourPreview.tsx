@@ -10,6 +10,7 @@ import {hideDialog, showDialog} from "./store/dialog";
 import {set} from "./store/editInlineObject";
 import {useAppDispatch, useAppSelector} from "./store/hooks";
 import {PageContext, TourPreviewContext} from "./TourContexts";
+import {MaterialIcon} from "./utils";
 
 interface TourPreviewProps {
 }
@@ -25,6 +26,7 @@ function TourPreview({}: TourPreviewProps) {
     const [currentPageScroll, setCurrentPageScroll] = useState<number>();
     const [htmlPages, setHtmlPages] = useState(Tour.pages);
     const [centralPositionsEditModeOn, setCentralPositionsEditModeOn] = useState(false);
+    const [selectedCentralPosition, setSelectedCentralPosition] = useState<number>();
 
     // const [pages, setPages] = useState<Readonly<Array<PageData>>>([]);
 
@@ -38,6 +40,11 @@ function TourPreview({}: TourPreviewProps) {
         save();
         dispatch(hideDialog("tourPreview"));
     }, [save]);
+
+    // reset selected central position if current page changes
+    useEffect(() => {
+        setSelectedCentralPosition(undefined);
+    }, [pageContext.currentPage?.id]);
 
     useEffect(() => {
         Tour.pages = htmlPages;
@@ -65,17 +72,26 @@ function TourPreview({}: TourPreviewProps) {
         forceUpdate();
     }, []);
 
-    const handleInitialDirectionClick = useCallback(() => {
-        if (currentPageScroll !== undefined) {
-            update(pages.find(v => v.id === pageContext.currentPage?.id)!.withInitialDirection(currentPageScroll * 100));
-        }
-    }, [pages, pageContext.currentPage?.id, currentPageScroll, update]);
+    // const handleInitialDirectionClick = useCallback(() => {
+    //     if (currentPageScroll !== undefined) {
+    //         update(pages.find(v => v.id === pageContext.currentPage?.id)!.withInitialDirection(currentPageScroll * 100));
+    //     }
+    // }, [pages, pageContext.currentPage?.id, currentPageScroll, update]);
+
+    const handleCentralPositionsModeClick = useCallback(() => {
+        setCentralPositionsEditModeOn(!centralPositionsEditModeOn);
+    }, [centralPositionsEditModeOn]);
 
     const {
-        handleCentralPositionsAddClick,
+        handleCentralPositionsAdd,
         handleCentralPositionRemove,
         handleCentralPositionChange,
     } = useCentralPositions(currentPage, update);
+
+    const handleCentralPositionsAddWithValue = useCallback(() => {
+        const currentHtmlPage = htmlPages.find(v => v.id === pageContext.currentPage!.id)!;
+        handleCentralPositionsAdd(currentHtmlPage.getCurrentScroll());
+    }, [handleCentralPositionsAdd, htmlPages]);
 
     return (
         <Modal onHide={hide} show={visibility} fullscreen className="TourPreviewDialog">
@@ -87,12 +103,29 @@ function TourPreview({}: TourPreviewProps) {
                     {pages.map(pageData =>
                         <TourPage key={pageData.id} pageData={pageData} onChange={update}
                                   addPage={handlePageAdd} removePage={handlePageRemove}
+                                  centralPositionsMode={centralPositionsEditModeOn}
+                                  onCentralPositionSelect={setSelectedCentralPosition}
+                                  handleCentralPositionChange={handleCentralPositionChange}
                                   onCurrentScrollChange={pageContext.currentPage?.id === pageData.id ? setCurrentPageScroll : undefined}/>,
                     )}
                 </div>
             </Modal.Body>
             <Modal.Footer>
-                <Button variant={"info"} onClick={handleInitialDirectionClick}>Set initial Direction</Button>
+                {centralPositionsEditModeOn && <>
+                    <Button variant={"primary"} className={"d-flex"} onClick={handleCentralPositionsAddWithValue}>
+                        <MaterialIcon icon="add"/>
+                        New Central Position
+                    </Button>
+                    {selectedCentralPosition !== undefined &&
+                        <Button className={"d-flex"} variant={"danger"}
+                                onClick={() => handleCentralPositionRemove(selectedCentralPosition)}>
+                            <MaterialIcon icon="delete"/>
+                            {tGlob("delete")} selected Central Position
+                        </Button>
+                    }
+                </>}
+
+                <Button variant={"info"} className={'ms-auto'} onClick={handleCentralPositionsModeClick}>Edit Central Positions</Button>
                 <Button variant="success" onClick={save}>{tGlob("save")}</Button>
                 <Button variant="primary" onClick={saveAndHide}>
                     {[tGlob("save"), tGlob("and"), tGlob("exit")].join(" ")}
@@ -113,9 +146,16 @@ interface TourPageProps {
      * @param scrollPercent range 0 - 100 like initial direction for current scroll
      */
     onCurrentScrollChange?: (scrollPercent: number) => void;
+    centralPositionsMode: boolean;
+    onCentralPositionSelect: (index: number) => void,
+    handleCentralPositionChange: (value: number, index: number) => void,
 }
 
-const TourPage = memo(function ({pageData, onChange, addPage, removePage, onCurrentScrollChange}: TourPageProps) {
+const TourPage = function (
+    {
+        pageData, onChange, addPage, removePage,
+        onCurrentScrollChange, centralPositionsMode, onCentralPositionSelect, handleCentralPositionChange,
+    }: TourPageProps) {
     const pageContainerRef = useRef<HTMLSpanElement>(null);
     const dispatch = useAppDispatch();
     const pageContext = useContext(PageContext);
@@ -138,6 +178,8 @@ const TourPage = memo(function ({pageData, onChange, addPage, removePage, onCurr
             page.handleInlineObjectEditClick = handleInlineObjectEditClick;
             page.onCurrentPageChange = pageContext.setCurrentPage;
             page.onScroll = setPageScroll;
+            page.onCentralPositionsSelect = onCentralPositionSelect;
+            page.onCentralPositionChange = handleCentralPositionChange;
         }
     }, [handleChange, handleInlineObjectEditClick, pageContext.setCurrentPage, page]);
 
@@ -180,9 +222,16 @@ const TourPage = memo(function ({pageData, onChange, addPage, removePage, onCurr
         // }
     }, [pageData]);
 
+    useEffect(() => {
+        if (page) {
+            page.centralPositionsEditMode = centralPositionsMode;
+        }
+    }, [centralPositionsMode, page]);
+
     return (
         <span ref={pageContainerRef}></span>
     );
-}, (props, prevProps) => props.pageData.equals(prevProps.pageData));
+};
+//, (props, prevProps) => props.pageData.equals(prevProps.pageData));
 
 export default TourPreview;

@@ -8,12 +8,16 @@ const isDesktop = window.innerWidth > 768;
 const scrollSensitivity = 10;
 const devTool = {
     dataTransferTypes: {
-        // MUST be lowercase (because the browser will always lower it which can lead to bugs)
+        // values MUST be lowercase (because the browser will always lower it which can lead to bugs)
         inlineObject: {
             size: "tour/inline_object/size",
             offset: "tour/inline_object/offset",
             data: "tour/inline_object/data",
             id: "tour/inline_object/id",
+        },
+        centralPositionMarker: {
+            index: "tour/central_position_marker/index",
+            position: "tour/central_position_marker/position",
         },
     },
 };
@@ -97,7 +101,9 @@ class Media {
         this.html.addClass("bg");
         if (Tour.devTool) {
             this.html.on("dragover", (event) => {
-                if (event.originalEvent.dataTransfer.types.includes(devTool.dataTransferTypes.inlineObject.data)) {
+                const transferTypes = event.originalEvent.dataTransfer.types;
+                if (transferTypes.includes(devTool.dataTransferTypes.inlineObject.data)
+                    || transferTypes.includes(devTool.dataTransferTypes.centralPositionMarker.index)) {
                     event.preventDefault();
                 }
             });
@@ -123,35 +129,47 @@ class Media {
                     }
                     translation = size / 2;
                 }
-                // TODO 14.10.22 try alles durch 2 statt nur trans
                 return ((coord - closestOffset + translation) / closestSize) * 100;
             };
             this.html.on("drop", (event) => {
                 console.log("drop event");
                 event.preventDefault();
-                const inlineObjectData = InlineObjectData.fromJSON(JSON.parse(event.originalEvent.dataTransfer.getData(devTool.dataTransferTypes.inlineObject.data)));
-                const inlineObjectId = parseInt(event.originalEvent.dataTransfer.getData(devTool.dataTransferTypes.inlineObject.id));
-                const inlineObjectOffset = event.originalEvent.dataTransfer.getData(devTool.dataTransferTypes.inlineObject.offset)
-                    .split(" ").map(parseFloat);
-                const inlineObjectSize = event.originalEvent.dataTransfer.getData(devTool.dataTransferTypes.inlineObject.size)
-                    .split(" ").map(parseFloat);
-                let referenceHTML;
-                if (inlineObjectData.position === "media") {
-                    // inlineObject is placed in bg_container (same size as img)
-                    referenceHTML = this.html.closest(".bg_container");
+                const transferTypes = event.originalEvent.dataTransfer.types;
+                if (transferTypes.includes(devTool.dataTransferTypes.inlineObject.data)) {
+                    const inlineObjectData = InlineObjectData.fromJSON(JSON.parse(event.originalEvent.dataTransfer.getData(devTool.dataTransferTypes.inlineObject.data)));
+                    const inlineObjectId = parseInt(event.originalEvent.dataTransfer.getData(devTool.dataTransferTypes.inlineObject.id));
+                    const inlineObjectOffset = event.originalEvent.dataTransfer.getData(devTool.dataTransferTypes.inlineObject.offset)
+                        .split(" ").map(parseFloat);
+                    const inlineObjectSize = event.originalEvent.dataTransfer.getData(devTool.dataTransferTypes.inlineObject.size)
+                        .split(" ").map(parseFloat);
+                    let referenceHTML;
+                    if (inlineObjectData.position === "media") {
+                        // inlineObject is placed in bg_container (same size as img)
+                        referenceHTML = this.html.closest(".bg_container");
+                    }
+                    else if (inlineObjectData.position === "page") {
+                        // inline Object is placed directly inside page_wrapper (NOT same size as img)
+                        referenceHTML = this.html.closest(".page");
+                    }
+                    else {
+                        console.error("Inline object has no / an unknown position property", inlineObjectData.position);
+                        return;
+                    }
+                    this.handleDrop(inlineObjectId, inlineObjectData.withUpdate({
+                        x: getRelativeCoordinate(inlineObjectData.type, event.clientX, referenceHTML.width(), referenceHTML.offset().left + inlineObjectOffset[0], inlineObjectSize[0]),
+                        y: getRelativeCoordinate(inlineObjectData.type, event.clientY, referenceHTML.height(), referenceHTML.offset().top + inlineObjectOffset[1], inlineObjectSize[1]),
+                    }));
                 }
-                else if (inlineObjectData.position === "page") {
-                    // inline Object is placed directly inside page_wrapper (NOT same size as img)
-                    referenceHTML = this.html.closest(".page");
+                else if (transferTypes.includes(devTool.dataTransferTypes.centralPositionMarker.index)) {
+                    const index = parseInt(event.originalEvent.dataTransfer.getData(devTool.dataTransferTypes.centralPositionMarker.index));
+                    const referenceHtml = this.html.closest(".bg_container");
+                    const absolutePosition = event.clientX - referenceHtml.offset().left;
+                    const relativePosition = absolutePosition / this.html.width();
+                    this.page.onCentralPositionChange(relativePosition * 100, index);
                 }
                 else {
-                    console.error("Inline object has no / an unknown position property", inlineObjectData.position);
-                    return;
+                    throw new Error("unknown transfer type");
                 }
-                this.handleDrop(inlineObjectId, inlineObjectData.withUpdate({
-                    x: getRelativeCoordinate(inlineObjectData.type, event.clientX, referenceHTML.width(), referenceHTML.offset().left + inlineObjectOffset[0], inlineObjectSize[0]),
-                    y: getRelativeCoordinate(inlineObjectData.type, event.clientY, referenceHTML.height(), referenceHTML.offset().top + inlineObjectOffset[1], inlineObjectSize[1]),
-                }));
             });
         }
     }
@@ -384,11 +402,12 @@ class ImageMedia extends Media {
                     //     behavior: "smooth",
                     // });
                 }
-                else if (this.page.centralPositionLeftAbsolute != null) {
-                    pgWrapper.scrollTo({
-                        left: this.page.centralPositionLeftAbsolute,
-                        behavior: "smooth",
-                    });
+                else if (this.page.centralPositionAbsolute != null) {
+                    this.page.scrollAbsolute(this.page.centralPositionAbsolute, true);
+                    // pgWrapper.scrollTo({
+                    //     left: this.page!.centralPositionAbsolute,
+                    //     behavior: "smooth",
+                    // });
                 }
             }, 500);
             // let initialDirection = (this.page!.initial_direction / 100) * this.html.width()!;
@@ -501,7 +520,8 @@ class Page extends AddressableObject() {
         super();
         this.is_panorama = false;
         this.is_360 = false;
-        this.centralPositionLeftAbsolute = undefined;
+        // the position (middle of page) which is our current absolute central position
+        this.centralPositionAbsolute = undefined;
         this.data = data;
         this.config = config;
         this.id = data.id;
@@ -591,6 +611,7 @@ class Page extends AddressableObject() {
         }
         if (Tour.devTool) {
             this.devToolScrollPercent = scrollPercent;
+            const wrapper = this.html.find(".pg_wrapper");
             // if (scrollPercent) {
             //     this.initial_direction = scrollPercent;
             // }
@@ -609,11 +630,11 @@ class Page extends AddressableObject() {
             };
             for (let i of this.inlineObjects) {
                 i.handleEditClick = (inlineObjectId, inlineObjectData) => {
-                    const index = this.clickables.findIndex(value => uniqueId(value.html) === inlineObjectId);
+                    const index = this.inlineObjects.findIndex(value => uniqueId(value.html) === inlineObjectId);
                     this.handleInlineObjectEditClick(index, inlineObjectData);
                 };
             }
-            this.html.find(".pg_wrapper").on("scroll", (event) => {
+            wrapper.on("scroll", (event) => {
                 let scrollLeft = event.target.scrollLeft;
                 if (scrollLeft > this.media.html.width()) {
                     scrollLeft = scrollLeft - this.media.html.width();
@@ -621,6 +642,30 @@ class Page extends AddressableObject() {
                 // console.log("original scroll event", scrollLeft, this.media.html.width()!);
                 this.onScroll?.(scrollLeft / this.media.html.width());
             });
+            // central-positions-edit-mode
+            for (let bg_container of wrapper.find(".bg_container")) {
+                let index = 0;
+                for (let position of this.data.centralPositions) {
+                    const centralPositionMarker = new CentralPositionMarker(position, index);
+                    centralPositionMarker.onCentralPositionsSelect = (index) => {
+                        this.onCentralPositionsSelect(index);
+                    };
+                    centralPositionMarker.html.appendTo(bg_container);
+                    // const index = i;
+                    // $("<div/>")
+                    //     .addClass("central-position-marker")
+                    //     .css("left", `${position}%`)
+                    //     .attr('index', index)
+                    //     .prop('draggable', true)
+                    //     .on("click", () => {
+                    //         this.html.find(`.central-position-marker`).removeClass("selected")
+                    //             .filter(`.central-position-marker[index=${index}]`).addClass("selected");
+                    //         this.onCentralPositionsSelect!(index);
+                    //     })
+                    //     .appendTo(bg_container);
+                    index++;
+                }
+            }
         }
     }
     /**
@@ -637,6 +682,9 @@ class Page extends AddressableObject() {
             scrollPercent: scrollPercent,
         }, config);
     }
+    /**
+     * computes and sets {@link this.centralPositionAbsolute}
+     */
     computeCentralPosition() {
         const tourWidth = this.html.closest(".schul-tour").width();
         const imgWidth = this.media.html.width();
@@ -660,19 +708,29 @@ class Page extends AddressableObject() {
                 const paddingEnd = end - matchingPositions.reduce((a, b) => a > b ? a : b, 0);
                 res = {
                     // split the paddingEnd to end and start
-                    scrollLeft: start + paddingEnd / 2,
+                    scrollLeft: start - paddingEnd / 2,
                     posCount: matchingPositions.length,
                 };
             }
         }
         if (res.posCount) {
-            if (res.scrollLeft === 0 && this.is_360) {
-                this.centralPositionLeftAbsolute = imgWidth;
+            if (this.is_360) {
+                if (res.scrollLeft <= 0) {
+                    res.scrollLeft += imgWidth;
+                }
+                else if (res.scrollLeft > imgWidth) {
+                    res.scrollLeft -= imgWidth;
+                }
             }
-            this.centralPositionLeftAbsolute = res.scrollLeft;
+            else {
+                if (res.scrollLeft < 0) {
+                    res.scrollLeft = 0;
+                }
+            }
+            this.centralPositionAbsolute = res.scrollLeft + tourWidth / 2;
         }
         else {
-            this.centralPositionLeftAbsolute = null;
+            this.centralPositionAbsolute = null;
         }
     }
     onShowOrResize() {
@@ -680,22 +738,36 @@ class Page extends AddressableObject() {
     }
     /**
      * This method scrolls to a given point (only if media is an img and panorama is enabled)
-     * @param positionPercent the position we want to scroll to <b>in percent</b>
+     * @param relativePosition the position we want to scroll to <b>in percent</b>
      * @param smooth
      */
-    scroll(positionPercent, smooth = false) {
+    scroll(relativePosition, smooth = false) {
+        let absolutePosition = relativePosition * 0.01 * this.media.html.width();
+        return this.scrollAbsolute(absolutePosition, smooth);
+    }
+    /**
+     * This method scrolls to a given point (only if media is an img and panorama is enabled)
+     * @param absolutePosition the position we want to scroll to <b>in pixel</b>
+     * @param smooth
+     */
+    scrollAbsolute(absolutePosition, smooth = false) {
         if (!this.is_panorama) {
             console.error("cannot scroll on non panorama pages");
             return;
         }
         const wrapper = this.html.find(".pg_wrapper")[0];
         // scrollWidth = this.media.html.width()!;
-        let absolutePosition = positionPercent * 0.01 * this.media.html.width();
         // minus half screen width = scroll element to middle of screen
         const halfScreen = wrapper.closest(".schul-tour").clientWidth / 2;
+        const imgWidth = this.media.html.width();
         console.log("scroll meth", halfScreen);
-        if (this.is_360 && absolutePosition < scrollSensitivity) {
-            absolutePosition += this.media.html.width();
+        if (this.is_360) {
+            if (absolutePosition < scrollSensitivity) {
+                absolutePosition += imgWidth;
+            }
+            else if (absolutePosition > imgWidth + scrollSensitivity) {
+                absolutePosition -= imgWidth;
+            }
         }
         wrapper.scrollTo({
             left: absolutePosition - halfScreen,
@@ -703,9 +775,10 @@ class Page extends AddressableObject() {
         });
     }
     /**
-     * Returns the current scroll position in percent <br>
+     * Returns the current scroll position in percent. <br>
+     * The returned position is the position in the middle of the screen.<br>
      * Opposite to {@link scroll}<br>
-     * This is used by the dev tool<br>
+     * This is used by the dev tool.<br>
      */
     getCurrentScroll() {
         if (!this.is_panorama) {
@@ -755,13 +828,14 @@ class Page extends AddressableObject() {
         finished_last = Tour.pages.map(page => !page.activateRunning && !page.deactivateRunning)
             .reduce((p, c) => p && c);
         if (this.activated) {
-            const wrapper = this.html.find(".pg_wrapper")[0];
+            // const wrapper = this.html.find(".pg_wrapper")[0];
             setTimeout(() => {
-                if (this.centralPositionLeftAbsolute != null) {
-                    wrapper.scrollTo({
-                        left: this.centralPositionLeftAbsolute,
-                        behavior: "smooth",
-                    });
+                if (this.centralPositionAbsolute != null) {
+                    this.scrollAbsolute(this.centralPositionAbsolute, true);
+                    //     wrapper.scrollTo({
+                    //         left: this.centralPositionAbsolute,
+                    //         behavior: "smooth",
+                    //     });
                 }
                 // this.scroll(this.data.centralPositions, true);
                 // wrapper.scrollTo({
@@ -878,6 +952,40 @@ class Page extends AddressableObject() {
         }
         // since the user did not really come from the page which is now the lastest we could skip this ???
         createLatestClickable(this.clickables.filter(value => value.data.goto === lastest));
+    }
+    /**
+     * Dev tool
+     */
+    get centralPositionsEditMode() {
+        return this.html.hasClass("central-position-edit-mode");
+    }
+    /**
+     * Dev tool
+     * @param value
+     */
+    set centralPositionsEditMode(value) {
+        this.html.toggleClass("central-position-edit-mode", value);
+    }
+}
+class CentralPositionMarker {
+    constructor(position, index) {
+        this.position = position;
+        this.index = index;
+        this.html = $("<div/>")
+            .addClass("central-position-marker")
+            .css("left", `${position}%`)
+            .attr("index", index)
+            .prop("draggable", true)
+            .on("click", () => {
+            this.html.closest(".page").find(`.central-position-marker`).removeClass("selected")
+                .filter(`.central-position-marker[index=${index}]`).addClass("selected");
+            this.onCentralPositionsSelect(index);
+        })
+            .on("dragstart", (event) => {
+            event.originalEvent.dataTransfer.dropEffect = "move";
+            event.originalEvent.dataTransfer.setData(devTool.dataTransferTypes.centralPositionMarker.index, String(this.index));
+            event.originalEvent.dataTransfer.setData(devTool.dataTransferTypes.centralPositionMarker.position, String(this.position));
+        });
     }
 }
 function AddressableObject(baseClass) {

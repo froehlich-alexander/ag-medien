@@ -42,18 +42,16 @@ export type JsonPage = JsonAddressableObject & {
     clickables?: Omit<JsonClickable, "type">[],
     inlineObjects?: JsonInlineObject[];
     animationType?: PageAnimations,
+    secondBeginning?: number,
 } & ({
     is_360: true,
-    secondBeginning?: number,
     is_panorama?: true,
 } | {
     is_360: false,
     is_panorama?: boolean,
-    secondBeginning?: undefined,
 } | {
     is_360?: undefined,
     is_panorama?: undefined,
-    secondBeginning?: undefined,
 })
 export type JsonMedia = {
     //see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/video for video

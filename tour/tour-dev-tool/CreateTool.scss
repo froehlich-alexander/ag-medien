@@ -68,6 +68,33 @@
 
 .TourPreviewDialog {
     .Body {
+        .schul-tour {
+            .page {
+                .central-position-marker {
+                    display: none;
+                    height: 100%;
+                    top: 0;
+                    width: 7px;
+                    z-index: 1;
+                    //background-image: linear-gradient(90deg, yellowgreen, #c526f1, yellowgreen);
+                    background-color: #c526f1;
+                    //border: 1px solid black;
+                    user-select: none;
+                    cursor: pointer;
+                    position: absolute;
+
+                    &.selected {
+                        background-color: blueviolet;
+                    }
+                }
+
+                &.central-position-edit-mode {
+                    .central-position-marker {
+                        display: block;
+                    }
+                }
+            }
+        }
     }
 }
 

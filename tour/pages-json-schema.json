@@ -50,9 +50,6 @@
               "type": "boolean",
               "const": true
             },
-            "secondBeginning": {
-              "type": "number"
-            },
             "is_panorama": {
               "type": "boolean",
               "const": true
@@ -268,6 +265,9 @@
             "animationType": {
               "$ref": "#/definitions/AnimationType"
             },
+            "secondBeginning": {
+              "type": "number"
+            },
             "id": {
               "type": "string"
             }
@@ -289,9 +289,6 @@
             "is_panorama": {
               "type": "boolean"
             },
-            "secondBeginning": {
-              "not": {}
-            },
             "media": {
               "$ref": "#/definitions/JsonMedia"
             },
@@ -502,6 +499,9 @@
             },
             "animationType": {
               "$ref": "#/definitions/AnimationType"
+            },
+            "secondBeginning": {
+              "type": "number"
             },
             "id": {
               "type": "string"
@@ -523,9 +523,6 @@
             "is_panorama": {
               "not": {}
             },
-            "secondBeginning": {
-              "not": {}
-            },
             "media": {
               "$ref": "#/definitions/JsonMedia"
             },
@@ -736,6 +733,9 @@
             },
             "animationType": {
               "$ref": "#/definitions/AnimationType"
+            },
+            "secondBeginning": {
+              "type": "number"
             },
             "id": {
               "type": "string"

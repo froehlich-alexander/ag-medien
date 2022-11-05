@@ -6,6 +6,7 @@
         <entryData>
           <resourceRoots>
             <path value="file://$PROJECT_DIR$/tour/dev-tool/locales" />
+            <path value="file://$PROJECT_DIR$/tour/tour-dev-tool/locales" />
           </resourceRoots>
         </entryData>
       </entry>
