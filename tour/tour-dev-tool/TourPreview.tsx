@@ -91,7 +91,7 @@ function TourPreview({}: TourPreviewProps) {
     const handleCentralPositionsAddWithValue = useCallback(() => {
         const currentHtmlPage = htmlPages.find(v => v.id === pageContext.currentPage!.id)!;
         handleCentralPositionsAdd(currentHtmlPage.getCurrentScroll());
-    }, [handleCentralPositionsAdd, htmlPages]);
+    }, [handleCentralPositionsAdd, htmlPages, pageContext.currentPage?.id]);
 
     return (
         <Modal onHide={hide} show={visibility} fullscreen className="TourPreviewDialog">
@@ -181,7 +181,7 @@ const TourPage = function (
             page.onCentralPositionsSelect = onCentralPositionSelect;
             page.onCentralPositionChange = handleCentralPositionChange;
         }
-    }, [handleChange, handleInlineObjectEditClick, pageContext.setCurrentPage, page]);
+    }, [handleChange, handleInlineObjectEditClick, pageContext.setCurrentPage, onCentralPositionSelect, handleCentralPositionChange, page]);
 
     useEffect(() => {
         if (pageScroll) {

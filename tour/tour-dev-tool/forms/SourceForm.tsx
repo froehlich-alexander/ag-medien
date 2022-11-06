@@ -145,7 +145,7 @@ function SourceForm({source, onSourceChange, mediaNotExistent}: SourceFormProps)
                         <InputGroup.Text as="label" htmlFor="source-height">{t("height.label")}</InputGroup.Text>
                         <FormControl type="number" value={source?.height} id="source-height" placeholder="not set"
                                      onChange={handleHeightChange} disabled={!source}
-                                     min={0} max={source?.file?.intrinsicWidth ?? undefined}/>
+                                     min={0} max={source?.file?.intrinsicHeight ?? undefined}/>
                         <Button variant="info" onClick={setOptimalHeight} disabled={!source?.file}>Optimal</Button>
                         <FormControl.Feedback type="invalid">{t("height.invalidFeedback")}</FormControl.Feedback>
                         {/*null == undefined == 0 is intended*/}

@@ -221,8 +221,12 @@ class Media<T extends HTMLImageElement | HTMLVideoElement | HTMLIFrameElement = 
                     const index = parseInt(event.originalEvent!.dataTransfer!.getData(devTool.dataTransferTypes.centralPositionMarker.index));
                     const referenceHtml = this.html.closest(".bg_container");
                     const absolutePosition = event.clientX! - referenceHtml.offset()!.left;
-                    const relativePosition = absolutePosition / this.html.width()!;
-                    this.page!.onCentralPositionChange!(relativePosition * 100, index);
+                    let relativePosition = (absolutePosition / this.html.width()!) * 100;
+                    if (relativePosition > 100) {
+                        relativePosition %= 100;
+                    }
+
+                    this.page!.onCentralPositionChange!(relativePosition, index);
                 } else {
                     throw new Error("unknown transfer type");
                 }

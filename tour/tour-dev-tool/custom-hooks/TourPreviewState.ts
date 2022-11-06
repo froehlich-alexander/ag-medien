@@ -37,7 +37,7 @@ function useTourPreview(pageContext: PageContextType) {
             update: updatePage,
             reset: reset,
         };
-    }, [pages, save, updatePage, reset]);
+    }, [pages, save, updatePage, reset, currentPage]);
 
     // reset
     useEffect(() => {
