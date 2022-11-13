@@ -90,6 +90,19 @@
           "title": "Grünes Klassenzimmer",
           "icon": "arrow_l",
           "destinationScroll": "auto"
+        },
+        {
+          "x": 38.275,
+          "y": 56.667,
+          "type": "text",
+          "position": "media",
+          "animationType": "fade",
+          "hidden": false,
+          "id": "scroll-explaination-text",
+          "title": "Willkommen!",
+          "content": "Hier kann nach rechts und links gescrollt werden, um das ganze Bild sehen zu können",
+          "cssClasses": [],
+          "size": "normal"
         }
       ],
       "initialScroll": {
@@ -118,7 +131,7 @@
         "preload": "auto"
       },
       "centralPositions": [
-        0
+        50.698
       ],
       "inlineObjects": [
         {
@@ -982,15 +995,15 @@
           "destinationScroll": "auto"
         },
         {
-          "x": 0,
-          "y": 0,
+          "x": 39.492,
+          "y": 21.406,
           "type": "text",
           "position": "media",
           "animationType": "fade",
           "hidden": true,
           "id": "jump-to-schulhof",
-          "title": "test",
-          "content": "Hier fehlt ein direkter Weg nach unten (Video)",
+          "title": "Freier Fall",
+          "content": "Hier fehlt ein direkter Weg nach unten (Video in Arbeit)",
           "cssClasses": [],
           "size": "small"
         },
@@ -1082,7 +1095,7 @@
       "initialScroll": {},
       "secondBeginning": 100,
       "is_panorama": true,
-      "is_360": false
+      "is_360": true
     },
     {
       "id": "balkon",
@@ -1745,12 +1758,12 @@
       "initialScroll": {},
       "secondBeginning": 100,
       "is_panorama": true,
-      "is_360": false
+      "is_360": true
     }
   ],
   "initialPage": "schultor",
   "fullscreen": true,
   "colorTheme": "dark",
   "mode": "normal",
-  "includeClickableHints": false
+  "includeClickableHints": true
 }

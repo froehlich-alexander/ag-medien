@@ -25,6 +25,8 @@ import type {
     PageAnimations,
 } from "./types";
 
+declare var $: JQueryStatic;
+
 let finished_last = true;
 const idPrefix = "tour_pg_";
 const baustellenFotoUrl = mediaFolder + "/baustelle.png";
@@ -518,7 +520,7 @@ class ImageMedia extends Media<HTMLImageElement> {
                     //     behavior: "smooth",
                     // });
                 }
-            }, 500);
+            }, 200);
 
             // let initialDirection = (this.page!.initial_direction / 100) * this.html.width()!;
             // console.log("init dir", this.page!.initial_direction, initialDirection);
@@ -679,14 +681,9 @@ class Page extends AddressableObject() {
      * @param scrollPercent dev tool only
      * @param config
      */
-    constructor(
-        {
-            data,
-            media,
-            inlineObjects,
-            scrollPercent,
-        }: { data: PageData, media: Media, inlineObjects: InlineObject[], scrollPercent?: number },
-        config: SchulTourConfigFile) {
+    constructor({data, media, inlineObjects, scrollPercent}:
+                    { data: PageData, media: Media, inlineObjects: InlineObject[], scrollPercent?: number },
+                config: SchulTourConfigFile) {
         super();
         this.data = data;
         this.config = config;
@@ -940,11 +937,11 @@ class Page extends AddressableObject() {
             console.error("cannot scroll on non panorama pages");
             return;
         }
-        const wrapper = this.html.find(".pg_wrapper")[0];
+        const wrapper = this.html.find(".pg_wrapper");
         // scrollWidth = this.media.html.width()!;
 
         // minus half screen width = scroll element to middle of screen
-        const halfScreen = wrapper.closest(".schul-tour")!.clientWidth / 2;
+        const halfScreen = wrapper[0].closest(".schul-tour")!.clientWidth / 2;
         const imgWidth = this.media.html.width()!;
         console.log("scroll meth", halfScreen);
 
@@ -956,10 +953,16 @@ class Page extends AddressableObject() {
             }
         }
 
-        wrapper.scrollTo({
-            left: absolutePosition - halfScreen,
-            behavior: smooth ? "smooth" : "auto",
-        });
+        const scrollLeft = absolutePosition - halfScreen;
+
+        if (!smooth) {
+            wrapper[0].scrollTo({
+                left: scrollLeft,
+                behavior: "auto",
+            });
+        } else {
+            wrapper.animate({scrollLeft: scrollLeft}, {duration: 1000, easing: 'swing'});
+        }
     }
 
     /**
@@ -1023,7 +1026,7 @@ class Page extends AddressableObject() {
 
         if (this.activated) {
             // const wrapper = this.html.find(".pg_wrapper")[0];
-            setTimeout(() => {
+            // setTimeout(() => {
                 if (this.centralPositionAbsolute != null) {
                     this.scrollAbsolute(this.centralPositionAbsolute, true);
                     //     wrapper.scrollTo({
@@ -1036,7 +1039,7 @@ class Page extends AddressableObject() {
                 //     left: this.data.initialDirection * 0.01 * this.html.width()!,
                 //     behavior: "smooth",
                 // });
-            }, 500);
+            // }, 500);
         }
 
         return true;

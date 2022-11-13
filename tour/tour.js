@@ -412,7 +412,7 @@ class ImageMedia extends Media {
                     //     behavior: "smooth",
                     // });
                 }
-            }, 500);
+            }, 200);
             // let initialDirection = (this.page!.initial_direction / 100) * this.html.width()!;
             // console.log("init dir", this.page!.initial_direction, initialDirection);
             // if (this.page!.is_360 && initialDirection === 0) {
@@ -519,7 +519,7 @@ class Page extends AddressableObject() {
      * @param scrollPercent dev tool only
      * @param config
      */
-    constructor({ data, media, inlineObjects, scrollPercent, }, config) {
+    constructor({ data, media, inlineObjects, scrollPercent }, config) {
         super();
         this.is_panorama = false;
         this.is_360 = false;
@@ -758,10 +758,10 @@ class Page extends AddressableObject() {
             console.error("cannot scroll on non panorama pages");
             return;
         }
-        const wrapper = this.html.find(".pg_wrapper")[0];
+        const wrapper = this.html.find(".pg_wrapper");
         // scrollWidth = this.media.html.width()!;
         // minus half screen width = scroll element to middle of screen
-        const halfScreen = wrapper.closest(".schul-tour").clientWidth / 2;
+        const halfScreen = wrapper[0].closest(".schul-tour").clientWidth / 2;
         const imgWidth = this.media.html.width();
         console.log("scroll meth", halfScreen);
         if (this.is_360) {
@@ -772,10 +772,16 @@ class Page extends AddressableObject() {
                 absolutePosition -= imgWidth;
             }
         }
-        wrapper.scrollTo({
-            left: absolutePosition - halfScreen,
-            behavior: smooth ? "smooth" : "auto",
-        });
+        const scrollLeft = absolutePosition - halfScreen;
+        if (!smooth) {
+            wrapper[0].scrollTo({
+                left: scrollLeft,
+                behavior: "auto",
+            });
+        }
+        else {
+            wrapper.animate({ scrollLeft: scrollLeft }, { duration: 1000, easing: 'swing' });
+        }
     }
     /**
      * Returns the current scroll position in percent. <br>
@@ -832,20 +838,20 @@ class Page extends AddressableObject() {
             .reduce((p, c) => p && c);
         if (this.activated) {
             // const wrapper = this.html.find(".pg_wrapper")[0];
-            setTimeout(() => {
-                if (this.centralPositionAbsolute != null) {
-                    this.scrollAbsolute(this.centralPositionAbsolute, true);
-                    //     wrapper.scrollTo({
-                    //         left: this.centralPositionAbsolute,
-                    //         behavior: "smooth",
-                    //     });
-                }
-                // this.scroll(this.data.centralPositions, true);
-                // wrapper.scrollTo({
-                //     left: this.data.initialDirection * 0.01 * this.html.width()!,
-                //     behavior: "smooth",
-                // });
-            }, 500);
+            // setTimeout(() => {
+            if (this.centralPositionAbsolute != null) {
+                this.scrollAbsolute(this.centralPositionAbsolute, true);
+                //     wrapper.scrollTo({
+                //         left: this.centralPositionAbsolute,
+                //         behavior: "smooth",
+                //     });
+            }
+            // this.scroll(this.data.centralPositions, true);
+            // wrapper.scrollTo({
+            //     left: this.data.initialDirection * 0.01 * this.html.width()!,
+            //     behavior: "smooth",
+            // });
+            // }, 500);
         }
         return true;
     }

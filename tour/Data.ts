@@ -67,9 +67,9 @@ type DataWiths<T extends { [k: string]: any }> = { [k in keyof T as (k extends s
 type DataClassType<T extends Data> = T & DataWiths<DataType<T>>;
 
 export type DataTypeInitializer<T extends { [k: string]: any },
-    Exclude extends keyof T = never> =
+    Exclude extends keyof T = never, ParentType extends Data = Data<{}>> =
     T
-    & DataWiths<Omit<T, Exclude>>;
+    & DataWiths<Omit<T, Exclude | (ParentType extends Data<infer DataType> ? keyof DataType : never)>>;
 
 /**
  * Use this in a static blog of a class, but place this block BEFORE all other static methods / fields, as this function initializes the fields, etc.<br>
@@ -430,23 +430,15 @@ interface AbstractInlineObjectDataType {
     readonly hidden: boolean;
 }
 
-interface AbstractInlineObjectData<T, TUnion> extends DataTypeInitializer<AbstractInlineObjectDataType> {
+interface AbstractInlineObjectData<T, TUnion> extends DataTypeInitializer<AbstractInlineObjectDataType, "type"> {
 }
 
 class AbstractInlineObjectData<T extends AbstractInlineObjectDataType = AbstractInlineObjectDataType, TUnion extends AbstractInlineObjectDataType = T> extends Data<T | AbstractInlineObjectDataType, TUnion & AbstractInlineObjectDataType> {
     declare public readonly json: AbstractJsonInlineObject;
     declare public readonly field: keyof T & keyof AbstractInlineObjectDataType;
-    //
-    // // standard attributes
-    // public readonly x: number;
-    // public readonly y: number;
-    // public readonly type: InlineObjectType;
-    // public readonly position: InlineObjectPosition;
-    // public readonly animationType: AnimationType;
-    // public readonly hidden: boolean;
 
     static {
-        DataClass<typeof AbstractInlineObjectData, AbstractInlineObjectDataType>(AbstractInlineObjectData, ["x", "y", "type", "position", "animationType", "hidden"], []);
+        DataClass<typeof AbstractInlineObjectData, AbstractInlineObjectDataType>(AbstractInlineObjectData, ["x", "y", "type", "position", "animationType", "hidden"], ['type']);
     }
 
     constructor({x, y, animationType, position, type, hidden}: AbstractInlineObjectDataType) {
@@ -462,34 +454,6 @@ class AbstractInlineObjectData<T extends AbstractInlineObjectDataType = Abstract
         });
         this.onConstructionFinished(AbstractInlineObjectData);
     }
-
-    // public equals(other: DataType<AbstractInlineObjectData<T, Json>> | undefined | null): other is DataType<AbstractInlineObjectData<T, Json>> {
-    //     return other != null && (this === other || (
-    //         this.x === (Math.round(other.x * 10 ** InlineObjectData.CoordinateDigits) / 10 ** InlineObjectData.CoordinateDigits) &&
-    //         this.y === (Math.round(other.y * 10 ** InlineObjectData.CoordinateDigits) / 10 ** InlineObjectData.CoordinateDigits) &&
-    //         this.type === other.type &&
-    //         this.position === other.position &&
-    //         this.animationType === other.animationType &&
-    //         this.hidden === other.hidden
-    //     ));
-    // }
-    //
-    // public toJSON(): { [k in keyof Pick<Json, keyof AbstractJsonInlineObject>]: Json[k] } {
-    //     return {
-    //         x: this.x,
-    //         y: this.y,
-    //         type: this.type,
-    //         position: this.position,
-    //         animationType: this.animationType,
-    //         hidden: this.hidden,
-    //         // title: this.title,
-    //         // icon: this.icon,
-    //         // content: this.content,
-    //         // footer: this.footer,
-    //         // cssClasses: this.cssClasses,
-    //         // htmlId: this.htmlId,
-    //     };
-    // }
 
     public isClickable(): this is ClickableData {
         return this.type === "clickable";
@@ -507,47 +471,16 @@ class AbstractInlineObjectData<T extends AbstractInlineObjectDataType = Abstract
         return this instanceof AbstractAddressableInlineObjectData;
     }
 
-    // public withType(type: this["type"]): this {
-    //     return new (this.constructor as typeof AbstractInlineObjectData)({...this, type: type}) as this;
-    // }
-    //
-    // public withPosition(position: InlineObjectPosition): this {
-    //     return new (this.constructor as typeof AbstractInlineObjectData)({...this, position: position}) as this;
-    // }
-    //
-    // public withX(x: number): this {
-    //     return new (this.constructor as typeof AbstractInlineObjectData)({...this, x: x}) as this;
-    // }
-    //
-    // public withY(y: number): this {
-    //     return new (this.constructor as typeof AbstractInlineObjectData)({...this, y: y}) as this;
-    // }
-    //
-    // public withAnimationType(animationType: AnimationType): this {
-    //     return new (this.constructor as typeof AbstractInlineObjectData)({
-    //         ...this,
-    //         animationType: animationType,
-    //     }) as this;
-    // }
-    //
-    // public withGoto(goto: string): this {
-    //     return new (this.constructor as typeof AbstractInlineObjectData)({...this, goto: goto}) as this;
-    // }
-    //
-    // public withHidden(hidden: boolean): this {
-    //     if (this.hidden === hidden) {
-    //         return this;
-    //     }
-    //     return new (this.constructor as typeof AbstractInlineObjectData)({...this, hidden: hidden}) as this;
-    // }
+    public withType(type: InlineObjectType): InlineObjectData {
+        const constr = InlineObjectData.constructorFromType(type);
+        return new constr(constr.default.withUpdate(this) as any);
+        // return new (this.constructor as typeof AbstractInlineObjectData)({...this, type: type}) as this;
+    }
+
     static {
         this.makeImmutable();
     }
 }
-
-// const AbstractInlineObjectData = DataClass<typeof _AbstractInlineObjectData, _AbstractInlineObjectData>(_AbstractInlineObjectData, ["x", "y", "type", "position", "animationType", "hidden"], []);
-// type AbstractInlineObjectData = DataClassType<_AbstractInlineObjectData>;
-
 
 // function AbstractAddressable<T extends AbstractInlineObjectData<any, any> | Data<any>, Json extends JsonAddressableObject>(base: typeof AbstractInlineObjectData|typeof Data) {
 //     // let constr = base ?? Data;
@@ -603,11 +536,12 @@ class AbstractInlineObjectData<T extends AbstractInlineObjectDataType = Abstract
 //
 //     return AbstractAddressableObject;
 // }
+
 interface AbstractAddressableInlineObjectDataType extends AbstractInlineObjectDataType {
     readonly id: string,
 }
 
-interface AbstractAddressableInlineObjectData<T extends AbstractAddressableInlineObjectDataType> extends AbstractAddressableInlineObjectDataType, DataWiths<AbstractAddressableInlineObjectDataType> {
+interface AbstractAddressableInlineObjectData<T extends AbstractAddressableInlineObjectDataType> extends DataTypeInitializer<AbstractAddressableInlineObjectDataType, never, AbstractInlineObjectData> {
 }
 
 class AbstractAddressableInlineObjectData<T extends AbstractAddressableInlineObjectDataType = AbstractAddressableInlineObjectDataType, TUnion extends AbstractAddressableInlineObjectDataType = T> extends AbstractInlineObjectData<T | AbstractAddressableInlineObjectDataType, TUnion & AbstractAddressableInlineObjectDataType> {
@@ -658,7 +592,7 @@ interface AbstractActivatingInlineObjectDataType extends AbstractInlineObjectDat
     readonly scroll?: ScrollData;
 }
 
-interface AbstractActivatingInlineObjectData<T extends AbstractActivatingInlineObjectDataType> extends DataTypeInitializer<AbstractActivatingInlineObjectDataType> {
+interface AbstractActivatingInlineObjectData<T extends AbstractActivatingInlineObjectDataType> extends DataTypeInitializer<AbstractActivatingInlineObjectDataType, never, AbstractInlineObjectData> {
 }
 
 class AbstractActivatingInlineObjectData<T extends AbstractActivatingInlineObjectDataType = AbstractActivatingInlineObjectDataType, TUnion extends AbstractActivatingInlineObjectDataType = T> extends AbstractInlineObjectData<T | AbstractActivatingInlineObjectDataType, TUnion & AbstractActivatingInlineObjectDataType> {
@@ -773,19 +707,13 @@ interface ClickableDataType extends AbstractActivatingInlineObjectDataType {
     readonly destinationScroll: number | "auto",
 }
 
-interface ClickableData extends ClickableDataType, DataWiths<ClickableDataType> {
+interface ClickableData extends DataTypeInitializer<ClickableDataType, never, AbstractActivatingInlineObjectData> {
 }
 
 class ClickableData extends AbstractActivatingInlineObjectData<ClickableDataType, ClickableDataType> {
     declare public readonly json: JsonClickable & AbstractActivatingInlineObjectData["json"];
-    //
-    // public readonly title: string;
-    // public readonly icon: IconType;
 
     declare public readonly type: "clickable";
-    // declare public readonly animationType: PageAnimations;
-    // declare public readonly goto?: string;
-
 
     public static readonly Icons: Array<IconType> = ["arrow_l", "arrow_u", "arrow_r", "arrow_d"];
 
@@ -797,8 +725,6 @@ class ClickableData extends AbstractActivatingInlineObjectData<ClickableDataType
             destinationScroll: typeof destinationScroll === "string" ? destinationScroll
                 : Math.round(destinationScroll * 10 ** InlineObjectData.DestinationScrollDigits) / 10 ** InlineObjectData.DestinationScrollDigits,
         });
-        // this.title = title;
-        // this.icon = icon;
         this.onConstructionFinished(ClickableData);
     }
 
@@ -882,7 +808,7 @@ interface TextFieldDataType extends AbstractAddressableInlineObjectDataType {
     readonly size: TextFieldSize;
 }
 
-interface TextFieldData extends DataTypeInitializer<TextFieldDataType> {
+interface TextFieldData extends DataTypeInitializer<TextFieldDataType, never, AbstractAddressableInlineObjectData> {
 }
 
 class TextFieldData extends AbstractAddressableInlineObjectData<TextFieldDataType> {
@@ -918,7 +844,7 @@ class TextFieldData extends AbstractAddressableInlineObjectData<TextFieldDataTyp
         DataClass<typeof this, TextFieldDataType>(this, ["title", "content", "cssClasses", "size"]);
     }
 
-    public static default: Complete<JsonTextField> = {
+    public static default: TextFieldData = new TextFieldData({
         type: "text",
         title: "",
         position: "media",
@@ -930,7 +856,7 @@ class TextFieldData extends AbstractAddressableInlineObjectData<TextFieldDataTyp
         x: 0,
         y: 0,
         hidden: false,
-    };
+    });
 
     public static fromJSON(json: Omit<JsonTextField, "type">): TextFieldData {
         return new TextFieldData({
@@ -1000,7 +926,7 @@ interface CustomObjectDataType extends AbstractInlineObjectDataType {
     readonly htmlId: string;
 }
 
-interface CustomObjectData extends CustomObjectDataType, DataWiths<CustomObjectDataType> {
+interface CustomObjectData extends DataTypeInitializer<CustomObjectDataType, never, AbstractInlineObjectData>{
 }
 
 class CustomObjectData extends AbstractInlineObjectData<CustomObjectDataType> {
@@ -1022,7 +948,7 @@ class CustomObjectData extends AbstractInlineObjectData<CustomObjectDataType> {
         DataClass<typeof this, CustomObjectDataType>(this, ["htmlId"]);
     }
 
-    public static default: Complete<JsonCustomObject> = {
+    public static default: CustomObjectData = new CustomObjectData({
         type: "custom",
         hidden: false,
         x: 0,
@@ -1030,7 +956,7 @@ class CustomObjectData extends AbstractInlineObjectData<CustomObjectDataType> {
         animationType: "fade",
         position: "media",
         htmlId: "",
-    };
+    });
 
     public static fromJSON(json: Omit<JsonCustomObject, "type">): CustomObjectData {
         return new CustomObjectData({
@@ -1710,7 +1636,7 @@ class PageData extends AbstractAddressableObject<PageDataType> {
             media: media,
             is360: is360,
             isPanorama: isPanorama,
-            centralPositions: centralPositions.map(v=>Math.round(v * 10 ** InlineObjectData.CentralPositionDigits) / 10 ** InlineObjectData.CentralPositionDigits),
+            centralPositions: centralPositions.map(v => Math.round(v * 10 ** InlineObjectData.CentralPositionDigits) / 10 ** InlineObjectData.CentralPositionDigits),
             inlineObjects: inlineObjects,
             initialScroll: initialScroll,
             secondBeginning: secondBeginning,
@@ -1742,7 +1668,7 @@ class PageData extends AbstractAddressableObject<PageDataType> {
 
         const initialScroll = page.initialScroll ? ScrollData.fromJSON(page.initialScroll) : ScrollData.default;
 
-        let centralPositions: number[]|undefined;
+        let centralPositions: number[] | undefined;
         if (typeof page.centralPositions === "number") {
             centralPositions = [page.centralPositions];
         } else {

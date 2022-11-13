@@ -3,13 +3,14 @@ import type {JestConfigWithTsJest} from "ts-jest";
 const config: JestConfigWithTsJest = {
     clearMocks: true,
     collectCoverage: true,
-    coverageProvider: "v8",
     collectCoverageFrom: [
         "**/*.ts",
         "**/*.tsx",
     ],
+    coverageDirectory: 'coverage',
     extensionsToTreatAsEsm: [".ts", ".tsx"],
-    testRegex: "__tests__\\\\.+\\.test\\.(ts|tsx)$",
+    // testRegex: "__tests__\\\\.+\\.test\\.(ts|tsx)$",
+    testRegex: "__tests__/.+\\.test\\.(ts|tsx)$",
     // preset: "ts-jest",
     testEnvironment: "jsdom",
     transform: {

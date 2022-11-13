@@ -338,44 +338,9 @@ class AbstractInlineObjectData extends Data {
         });
         this.onConstructionFinished(AbstractInlineObjectData);
     }
-    //
-    // // standard attributes
-    // public readonly x: number;
-    // public readonly y: number;
-    // public readonly type: InlineObjectType;
-    // public readonly position: InlineObjectPosition;
-    // public readonly animationType: AnimationType;
-    // public readonly hidden: boolean;
     static {
-        DataClass(AbstractInlineObjectData, ["x", "y", "type", "position", "animationType", "hidden"], []);
+        DataClass(AbstractInlineObjectData, ["x", "y", "type", "position", "animationType", "hidden"], ['type']);
     }
-    // public equals(other: DataType<AbstractInlineObjectData<T, Json>> | undefined | null): other is DataType<AbstractInlineObjectData<T, Json>> {
-    //     return other != null && (this === other || (
-    //         this.x === (Math.round(other.x * 10 ** InlineObjectData.CoordinateDigits) / 10 ** InlineObjectData.CoordinateDigits) &&
-    //         this.y === (Math.round(other.y * 10 ** InlineObjectData.CoordinateDigits) / 10 ** InlineObjectData.CoordinateDigits) &&
-    //         this.type === other.type &&
-    //         this.position === other.position &&
-    //         this.animationType === other.animationType &&
-    //         this.hidden === other.hidden
-    //     ));
-    // }
-    //
-    // public toJSON(): { [k in keyof Pick<Json, keyof AbstractJsonInlineObject>]: Json[k] } {
-    //     return {
-    //         x: this.x,
-    //         y: this.y,
-    //         type: this.type,
-    //         position: this.position,
-    //         animationType: this.animationType,
-    //         hidden: this.hidden,
-    //         // title: this.title,
-    //         // icon: this.icon,
-    //         // content: this.content,
-    //         // footer: this.footer,
-    //         // cssClasses: this.cssClasses,
-    //         // htmlId: this.htmlId,
-    //     };
-    // }
     isClickable() {
         return this.type === "clickable";
     }
@@ -388,39 +353,11 @@ class AbstractInlineObjectData extends Data {
     isAddressable() {
         return this instanceof AbstractAddressableInlineObjectData;
     }
-    // public withType(type: this["type"]): this {
-    //     return new (this.constructor as typeof AbstractInlineObjectData)({...this, type: type}) as this;
-    // }
-    //
-    // public withPosition(position: InlineObjectPosition): this {
-    //     return new (this.constructor as typeof AbstractInlineObjectData)({...this, position: position}) as this;
-    // }
-    //
-    // public withX(x: number): this {
-    //     return new (this.constructor as typeof AbstractInlineObjectData)({...this, x: x}) as this;
-    // }
-    //
-    // public withY(y: number): this {
-    //     return new (this.constructor as typeof AbstractInlineObjectData)({...this, y: y}) as this;
-    // }
-    //
-    // public withAnimationType(animationType: AnimationType): this {
-    //     return new (this.constructor as typeof AbstractInlineObjectData)({
-    //         ...this,
-    //         animationType: animationType,
-    //     }) as this;
-    // }
-    //
-    // public withGoto(goto: string): this {
-    //     return new (this.constructor as typeof AbstractInlineObjectData)({...this, goto: goto}) as this;
-    // }
-    //
-    // public withHidden(hidden: boolean): this {
-    //     if (this.hidden === hidden) {
-    //         return this;
-    //     }
-    //     return new (this.constructor as typeof AbstractInlineObjectData)({...this, hidden: hidden}) as this;
-    // }
+    withType(type) {
+        const constr = InlineObjectData.constructorFromType(type);
+        return new constr(constr.default.withUpdate(this));
+        // return new (this.constructor as typeof AbstractInlineObjectData)({...this, type: type}) as this;
+    }
     static {
         this.makeImmutable();
     }
@@ -558,12 +495,8 @@ class ClickableData extends AbstractActivatingInlineObjectData {
             destinationScroll: typeof destinationScroll === "string" ? destinationScroll
                 : Math.round(destinationScroll * 10 ** InlineObjectData.DestinationScrollDigits) / 10 ** InlineObjectData.DestinationScrollDigits,
         });
-        // this.title = title;
-        // this.icon = icon;
         this.onConstructionFinished(ClickableData);
     }
-    // declare public readonly animationType: PageAnimations;
-    // declare public readonly goto?: string;
     static { this.Icons = ["arrow_l", "arrow_u", "arrow_r", "arrow_d"]; }
     static {
         DataClass(this, ["title", "icon", "destinationScroll"]);
@@ -649,7 +582,7 @@ class TextFieldData extends AbstractAddressableInlineObjectData {
     static {
         DataClass(this, ["title", "content", "cssClasses", "size"]);
     }
-    static { this.default = {
+    static { this.default = new TextFieldData({
         type: "text",
         title: "",
         position: "media",
@@ -661,7 +594,7 @@ class TextFieldData extends AbstractAddressableInlineObjectData {
         x: 0,
         y: 0,
         hidden: false,
-    }; }
+    }); }
     static fromJSON(json) {
         return new TextFieldData({
             type: "text",
@@ -732,7 +665,7 @@ class CustomObjectData extends AbstractInlineObjectData {
     static {
         DataClass(this, ["htmlId"]);
     }
-    static { this.default = {
+    static { this.default = new CustomObjectData({
         type: "custom",
         hidden: false,
         x: 0,
@@ -740,7 +673,7 @@ class CustomObjectData extends AbstractInlineObjectData {
         animationType: "fade",
         position: "media",
         htmlId: "",
-    }; }
+    }); }
     static fromJSON(json) {
         return new CustomObjectData({
             type: "custom",

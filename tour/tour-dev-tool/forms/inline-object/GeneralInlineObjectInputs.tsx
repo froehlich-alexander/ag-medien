@@ -70,8 +70,9 @@ export function Type({onChange, inlineObject}: InputElementProps<InlineObjectDat
 
     const handleChange = useCallback((event: ChangeEvent<HTMLSelectElement>) => {
         const value = event.target.value;
-        // @ts-ignore
-        onChange(new (InlineObjectData.constructorFromType(value as InlineObjectType))(inlineObject.withType(value)));
+        onChange(inlineObject.withType(value as InlineObjectType));
+        //// @ts-ignore
+        // onChange(new (InlineObjectData.constructorFromType(value as InlineObjectType))(inlineObject.withType(value)));
     }, [inlineObject, onChange]);
 
     return (

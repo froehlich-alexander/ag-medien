@@ -192,20 +192,35 @@ body {
   max-width: 160rem;
 }
 .schul-tour .page .clickable-hint {
-  transform: translate(-50%, -50%);
   content: url("svg/arrow_right.svg");
   position: absolute;
-  background-color: red;
-  width: 20px;
-  height: 20px;
-  border-radius: 1rem;
+  background-color: rgba(0, 0, 0, 0.75);
+  width: 3rem;
+  height: 3rem;
+  padding: 0.5rem;
+  border-radius: 3rem;
+  border: black 1px solid;
+  animation-duration: 1s;
+  animation-name: clickable-hint-movement;
+  animation-timing-function: ease;
+  animation-iteration-count: infinite;
+  animation-delay: 2s;
+  animation-direction: alternate;
+}
+@keyframes clickable-hint-movement {
+  0% {
+    scale: 1;
+  }
+  80% {
+    background-color: rgba(0, 0, 0, 0.75);
+  }
+  100% {
+    scale: 1.5;
+    border-color: #c526f1;
+  }
 }
 .schul-tour .page .clickable-hint:not(.show) {
   display: none !important;
-}
-.schul-tour .page .clickable-hint > img {
-  width: 100%;
-  height: 100%;
 }
 .schul-tour .page iframe.bg {
   width: 100%;
