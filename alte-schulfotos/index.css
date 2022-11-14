@@ -1,0 +1,64 @@
+body, html, div {
+    box-sizing: border-box;
+    /*margin: 0;*/
+    /*padding: 0;*/
+}
+
+.bild-overflow-container {
+    height: fit-content;
+    overflow: hidden;
+    position: relative;
+}
+
+.bild-overflow-container img {
+    display: block;
+    user-select: none;
+    pointer-events: none;
+    width: initial;
+    height: initial;
+    max-width: initial;
+}
+.bild-overflow-container .slider-button {
+    border-radius: 3rem;
+    width: 3rem;
+    height: 3rem;
+    z-index: 2;
+    background-color: green;
+    top: 50%;
+    translate: -50% -50%;
+    position: absolute;
+}
+
+.bild-overflow-container .left-img-container {
+    width: fit-content;
+    height: fit-content;
+    /*left: 0;*/
+    /*top: 0;*/
+    overflow: hidden;
+    position: relative;
+    z-index: 1;
+    display: block;
+}
+
+.bild-overflow-container .right-img-container {
+    width: fit-content;
+    height: fit-content;
+    position: absolute;
+    left: 0;
+    top: 0;
+    display: block;
+}
+
+.bild-overflow-container .left-img-container img {
+    width: 1000px;
+    height: 500px;
+    background-color: RED;
+    /*display: block;*/
+}
+
+.bild-overflow-container .right-img-container img {
+    width: 1000px;
+    height: 500px;
+    background-color: blue;
+    /*display: block;*/
+}

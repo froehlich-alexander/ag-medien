@@ -171,7 +171,7 @@ class Media<T extends HTMLImageElement | HTMLVideoElement | HTMLIFrameElement = 
              * @param size the width or height of the inline Object
              */
             const getRelativeCoordinate = (type: InlineObjectType, coord: number, closestSize: number, closestOffset: number, size?: number): number => {
-                // Durchmesser in rem
+                // Durchmesser in em
                 let iconDurchmesser = 3;
                 iconDurchmesser = iconDurchmesser / 2 * parseFloat($(".clickable").css("fontSize"));
 

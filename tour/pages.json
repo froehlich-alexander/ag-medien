@@ -636,7 +636,7 @@
           "y": 85.875,
           "type": "clickable",
           "position": "media",
-          "animationType": "forward",
+          "animationType": "backward",
           "hidden": false,
           "goto": "flur_2_nw_foyer",
           "targetType": "auto",
@@ -1487,9 +1487,7 @@
         "loop": false,
         "preload": "auto"
       },
-      "centralPositions": [
-        31.682
-      ],
+      "centralPositions": [],
       "inlineObjects": [
         {
           "x": 79.645,
@@ -1765,5 +1763,5 @@
   "fullscreen": true,
   "colorTheme": "dark",
   "mode": "normal",
-  "includeClickableHints": true
+  "includeClickableHints": false
 }

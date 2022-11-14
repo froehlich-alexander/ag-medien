@@ -115,7 +115,7 @@ class Media {
              * @param size the width or height of the inline Object
              */
             const getRelativeCoordinate = (type, coord, closestSize, closestOffset, size) => {
-                // Durchmesser in rem
+                // Durchmesser in em
                 let iconDurchmesser = 3;
                 iconDurchmesser = iconDurchmesser / 2 * parseFloat($(".clickable").css("fontSize"));
                 // in px; wie weit das object mit translate nach links verschoben wird bzw. wie sehr wir das ausgleichen müssen
