@@ -98,10 +98,10 @@ function DataClass(parent, fields, noWith = []) {
     return parent;
 }
 class Data {
+    static { this.staticFields = []; }
     constructor(placeholder) {
         this.onConstructionFinished(Data);
     }
-    static { this.staticFields = []; }
     static {
         DataClass(this, []);
     }
@@ -275,6 +275,11 @@ class Data {
     }
 }
 class AbstractAddressableObject extends Data {
+    // public readonly id: string;
+    // public readonly animationType: AnimationType;
+    static {
+        DataClass(AbstractAddressableObject, ["id", "animationType"], []);
+    }
     constructor({ id, animationType }) {
         super();
         this.setFields({
@@ -284,11 +289,6 @@ class AbstractAddressableObject extends Data {
         // this.id = id;
         // this.animationType = animationType;
         this.onConstructionFinished(AbstractAddressableObject);
-    }
-    // public readonly id: string;
-    // public readonly animationType: AnimationType;
-    static {
-        DataClass(AbstractAddressableObject, ["id", "animationType"], []);
     }
     // public equals(other: DataType<AbstractAddressableObject<T, Json>> | undefined | null, ...ignore: (keyof T)[]): other is DataType<AbstractAddressableObject<T, Json>> {
     //     return other != null && (this === other || (
@@ -325,6 +325,9 @@ class AbstractAddressableObject extends Data {
     }
 }
 class AbstractInlineObjectData extends Data {
+    static {
+        DataClass(AbstractInlineObjectData, ["x", "y", "type", "position", "animationType", "hidden"], ['type']);
+    }
     constructor({ x, y, animationType, position, type, hidden }) {
         super();
         // standard
@@ -337,9 +340,6 @@ class AbstractInlineObjectData extends Data {
             hidden: hidden,
         });
         this.onConstructionFinished(AbstractInlineObjectData);
-    }
-    static {
-        DataClass(AbstractInlineObjectData, ["x", "y", "type", "position", "animationType", "hidden"], ['type']);
     }
     isClickable() {
         return this.type === "clickable";
@@ -487,6 +487,7 @@ const InlineObjectData = {
     },
 };
 class ClickableData extends AbstractActivatingInlineObjectData {
+    static { this.Icons = ["arrow_l", "arrow_u", "arrow_r", "arrow_d"]; }
     constructor({ title, icon, destinationScroll, ...r }) {
         super({ ...r, type: "clickable" });
         this.setFields({
@@ -497,7 +498,6 @@ class ClickableData extends AbstractActivatingInlineObjectData {
         });
         this.onConstructionFinished(ClickableData);
     }
-    static { this.Icons = ["arrow_l", "arrow_u", "arrow_r", "arrow_d"]; }
     static {
         DataClass(this, ["title", "icon", "destinationScroll"]);
     }
@@ -564,6 +564,7 @@ class ClickableData extends AbstractActivatingInlineObjectData {
     }
 }
 class TextFieldData extends AbstractAddressableInlineObjectData {
+    static { this.Sizes = ["small", "normal", "large", "x-large", "xx-large"]; }
     constructor({ title, content, cssClasses, size, ...base }) {
         super({ ...base, type: "text" });
         this.setFields({
@@ -578,7 +579,6 @@ class TextFieldData extends AbstractAddressableInlineObjectData {
         // this.size = size;
         this.onConstructionFinished(TextFieldData);
     }
-    static { this.Sizes = ["small", "normal", "large", "x-large", "xx-large"]; }
     static {
         DataClass(this, ["title", "content", "cssClasses", "size"]);
     }
@@ -1009,6 +1009,11 @@ class SourceData extends Data {
     }
 }
 class MediaData extends Data {
+    static { this.imgFileEndings = ["png", "jpeg", "jpg", "gif", "svg", "webp", "apng", "avif"]; }
+    static { this.videoFileEndings = ["mp4", "webm", "ogg", "ogm", "ogv", "avi"]; }
+    //this list is not exhaustive
+    static { this.iframeUrlEndings = ["html", "htm", "com", "org", "edu", "net", "gov", "mil", "int", "de", "en", "eu", "us", "fr", "ch", "at", "au"]; }
+    static { this.Types = ["img", "video", "iframe"]; }
     constructor(other) {
         super();
         this.setFields(other);
@@ -1026,11 +1031,6 @@ class MediaData extends Data {
         this.fileDoesNotExist = (this.src?.fileDoesNotExist || this.srcMin?.fileDoesNotExist || this.srcMax?.fileDoesNotExist) ?? true;
         this.onConstructionFinished(MediaData);
     }
-    static { this.imgFileEndings = ["png", "jpeg", "jpg", "gif", "svg", "webp", "apng", "avif"]; }
-    static { this.videoFileEndings = ["mp4", "webm", "ogg", "ogm", "ogv", "avi"]; }
-    //this list is not exhaustive
-    static { this.iframeUrlEndings = ["html", "htm", "com", "org", "edu", "net", "gov", "mil", "int", "de", "en", "eu", "us", "fr", "ch", "at", "au"]; }
-    static { this.Types = ["img", "video", "iframe"]; }
     static {
         DataClass(this, ["src", "srcMin", "srcMax", "loading", "fetchPriority", "poster", "autoplay", "muted", "loop", "preload"]);
     }

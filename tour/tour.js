@@ -1,8 +1,7 @@
-// import * as $ from "jquery";
 import { InlineObjectData, MediaData, mediaFolder, SchulTourConfigFile, uniqueId, } from "./Data.js";
 let finished_last = true;
 const idPrefix = "tour_pg_";
-const baustellenFotoUrl = mediaFolder + "/baustelle.png";
+const baustellenFotoUrl = mediaFolder + "/baustelle.webp";
 let lastest = "";
 const isDesktop = window.innerWidth > 768;
 const scrollSensitivity = 10;
@@ -25,6 +24,7 @@ const devTool = {
  * This class holds the media element for the page. This could be an image, a video, etc. (see {@link MediaType} for more options)<br>
  */
 class Media {
+    static { this.initialized = false; }
     constructor(data, htmlTag) {
         this.loadingErrorOccurred = false;
         const { source, loading } = Media.computeSourceAndLoading(data);
@@ -41,7 +41,6 @@ class Media {
             threshold: 0,
         });
     }
-    static { this.initialized = false; }
     /**
      * Computes the source and the loading type depending on the platform of the client (desktop or mobile)
      * @param data
@@ -86,12 +85,13 @@ class Media {
      */
     prepareHTML() {
         // Error logging
-        this.html.on("error", () => {
-            console.error("Error loading Media", this);
+        this.html.on("error", (err) => {
+            console.error("Error loading Media", this, err);
             if (!this.loadingErrorOccurred) {
                 this.onLoadingError();
             }
-        });
+        })
+            .attr("draggable", "false");
         // add width and height from json
         if (this.src.width && this.src.height) {
             this.html.attr("width", this.src.width);
@@ -540,11 +540,15 @@ class Page extends AddressableObject() {
         if ((!isDesktop) && this.media.isImage()) {
             this.is_panorama = true;
         }
+        if (this.is_360) {
+            //add second inline objects for second img in 360deg IMGs
+            this.addInlineObjects(...this.inlineObjects.filter(v => v.data.position === "media" && (!v.cloned)).map(v => v.clone()));
+        }
         if (this.config.includeClickableHints) {
             // clickables relative to media get a clickable-hint
             this.clickableHints = this.inlineObjects
-                .filter((v) => v.data.position === "media" && v.data.isClickable())
-                .map(v => new ClickableHint(v));
+                .filter((v) => v.data.position === "media" && v.data.isClickable() && !v.cloned)
+                .map((v) => new ClickableHint(v, this.clickables.find(v1 => v1.cloned && v1.originHtml[0] === v.html[0])));
         }
         else {
             this.clickableHints = [];
@@ -580,9 +584,6 @@ class Page extends AddressableObject() {
             .filter(v => v.data.position === "media" && (!v.cloned))
             .map(v => v.html)));
         if (this.is_360) {
-            console.log("is_360");
-            //add second clickables for second img in 360deg IMGs
-            this.addInlineObjects(...this.clickables.filter(v => v.data.position === "media" && (!v.cloned)).map(v => v.clone()));
             this.secondaryImg = this.media.clone();
             //second img
             let bgContainer1 = $("<div></div>")
@@ -780,7 +781,7 @@ class Page extends AddressableObject() {
             });
         }
         else {
-            wrapper.animate({ scrollLeft: scrollLeft }, { duration: 1000, easing: 'swing' });
+            wrapper.animate({ scrollLeft: scrollLeft }, { duration: 1000, easing: "swing" });
         }
     }
     /**
@@ -921,7 +922,7 @@ class Page extends AddressableObject() {
      * In 360deg IMGs there exists always 2 similar clickables and all of them will be returned
      */
     get clickables() {
-        return this.inlineObjects.filter((v) => v.data.type === "clickable");
+        return this.inlineObjects.filter((v) => v.data.isClickable());
     }
     /**
      * Add {@link InlineObject}<br>
@@ -1381,24 +1382,65 @@ class Clickable extends InlineObject {
  * - They rotate according to the position of the clickable
  */
 class ClickableHint {
-    constructor(clickable, clonedClickable) {
+    // private static optimalPositions: {k : {x: number, y: number, clickablePos: {x: number, y: number}}} = {};
+    constructor(clickable, clonedClickable = null) {
+        // public readonly clickable: Clickable;
+        // public readonly clonedClickable: Clickable | null;
+        this.observers = [];
+        this.clickables = [];
+        this.clickableVisibilities = [];
         // own visibility
         this.visible = false;
-        this.clickable = clickable;
+        // this.clickable = clickable;
+        // this.clonedClickable = clonedClickable;
+        this.clickables.push(clickable);
         this.html = $("<div/>");
         this.html.addClass("clickable-hint");
-        this.observer = new IntersectionObserver((event) => {
+        this.clickableVisibilities[0] = clickable.html.is(":visible");
+        const firstObserver = this.createObserver(0);
+        firstObserver.observe(clickable.html[0]);
+        this.observers.push(firstObserver);
+        if (clonedClickable) {
+            this.clickables.push(clonedClickable);
+            this.clickableVisibilities[1] = clonedClickable.html.is(":visible");
+            const secondObserver = this.createObserver(1);
+            secondObserver.observe(clonedClickable.html[0]);
+            this.observers.push(secondObserver);
+        }
+    }
+    createObserver(index) {
+        return new IntersectionObserver((event) => {
             if (event[0].isIntersecting) {
-                this.onClickableVisible();
+                this.onClickableVisible(index);
+                console.log(event);
             }
             else {
-                this.onClickableHidden();
+                this.onClickableHidden(index);
             }
         }, {
             root: null,
-            threshold: 0.1,
+            threshold: 0.0,
         });
-        this.observer.observe(clickable.html[0]);
+    }
+    /**
+     * finds the clickable in {@link clickables} that is the closest one relative to the viewport
+     * @private
+     */
+    findClosest() {
+        const ref = this.clickables[0].html.closest(".schul-tour");
+        let lowestDistance = Infinity;
+        let res;
+        for (let i of this.clickables) {
+            // distances to the school-tour if the clickable is left or right out of vision
+            const leftDist = i.html.offset().left + i.html.outerWidth(false) - ref.offset().left;
+            const rightDist = i.html.offset().left - (ref.offset().left + ref.outerWidth(false));
+            let distance = Math.min(Math.abs(leftDist), Math.abs(rightDist));
+            if (distance < lowestDistance) {
+                lowestDistance = distance;
+                res = i;
+            }
+        }
+        return res;
     }
     /**
      * Called when the clickable is scrolled
@@ -1407,14 +1449,15 @@ class ClickableHint {
         if (!this.visible) {
             return;
         }
-        const clickablePosAbsolute = this.clickable.html.offset();
-        const pageElement = this.clickable.html.closest(".page");
+        const clickable = this.findClosest();
+        const clickablePosAbsolute = clickable.html.offset();
+        const pageElement = clickable.html.closest(".page");
         const pagePos = pageElement.offset();
         const pageSize = { x: pageElement.outerWidth(), y: pageElement.outerHeight() };
         // position of the middle of the clickable relative to the page element
         const clickablePosRelative = {
-            x: (clickablePosAbsolute.left - pagePos.left) + (this.clickable.html.width() / 2),
-            y: (clickablePosAbsolute.top - pagePos.top) + (this.clickable.html.height() / 2),
+            x: (clickablePosAbsolute.left - pagePos.left) + (clickable.html.width() / 2),
+            y: (clickablePosAbsolute.top - pagePos.top) + (clickable.html.height() / 2),
         };
         // in px; distance to border
         const distance = {
@@ -1458,8 +1501,9 @@ class ClickableHint {
      * This method computes the real positions of all current visible hints
      * @private
      */
-    static computeRealPositions() {
-    }
+    // private static computeRealPositions() {
+    //
+    // }
     /**
      * Sets the position and the rotation of the clickable-hint
      * @param x real x coordinate of this hint
@@ -1469,16 +1513,20 @@ class ClickableHint {
      */
     setPosition(x, y, clickablePos) {
         if (x > 0) {
-            this.html.css("left", x + "%");
+            this.html.css("left", x + "%")
+                .css('right', '');
         }
         else {
-            this.html.css("right", -x + "%");
+            this.html.css("right", -x + "%")
+                .css('left', '');
         }
         if (y > 0) {
-            this.html.css("top", y + "%");
+            this.html.css("top", y + "%")
+                .css('bottom', '');
         }
         else {
-            this.html.css("bottom", -y + "%");
+            this.html.css("bottom", -y + "%")
+                .css('top', '');
         }
         const rotation = ClickableHint.computeRotation({ x: x, y: y }, clickablePos);
         this.html.css("transform", `rotate(${rotation}rad)`);
@@ -1529,22 +1577,27 @@ class ClickableHint {
     /**
      * Called when the clickable gets visible
      */
-    onClickableVisible() {
+    onClickableVisible(index) {
         this.html.removeClass("show");
         this.visible = false;
+        this.clickableVisibilities[index] = true;
     }
     ;
     /**
      * Called when the clickable gets hidden
      */
-    onClickableHidden() {
+    onClickableHidden(index) {
+        this.clickableVisibilities[index] = false;
         // Do not show hint if clickable is always hidden
-        if (this.clickable.data.hidden) {
+        if (this.clickables[0].data.hidden) {
             return;
         }
-        this.html.addClass("show");
-        this.visible = true;
-        this.startComputingPosition();
+        // if any clickable (the original or the cloned) is still visible
+        if (!this.clickableVisibilities.reduce((p, c) => p || c, false)) {
+            this.html.addClass("show");
+            this.visible = true;
+            this.startComputingPosition();
+        }
     }
     ;
 }
