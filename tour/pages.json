@@ -935,8 +935,8 @@
       "animationType": "forward",
       "media": {
         "src": {
-          "name": "turm4.webp",
-          "width": 1645,
+          "name": "rgs_turm.webp",
+          "width": 7407,
           "height": 800,
           "type": "img"
         },
@@ -948,13 +948,12 @@
         "preload": "auto"
       },
       "centralPositions": [
-        29.237,
-        45.816
+        18.987
       ],
       "inlineObjects": [
         {
-          "x": 6,
-          "y": 50,
+          "x": 15.131,
+          "y": 88.699,
           "type": "clickable",
           "position": "media",
           "animationType": "forward",
@@ -967,8 +966,8 @@
           "destinationScroll": "auto"
         },
         {
-          "x": 80,
-          "y": 50,
+          "x": 25.524,
+          "y": 90.294,
           "type": "clickable",
           "position": "media",
           "animationType": "forward",
@@ -983,8 +982,8 @@
       ],
       "initialScroll": {},
       "secondBeginning": 100,
-      "is_panorama": false,
-      "is_360": false
+      "is_panorama": true,
+      "is_360": true
     },
     {
       "id": "60_turm",
