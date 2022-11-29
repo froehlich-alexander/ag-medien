@@ -326,7 +326,7 @@ class AbstractAddressableObject extends Data {
 }
 class AbstractInlineObjectData extends Data {
     static {
-        DataClass(AbstractInlineObjectData, ["x", "y", "type", "position", "animationType", "hidden"], ['type']);
+        DataClass(AbstractInlineObjectData, ["x", "y", "type", "position", "animationType", "hidden"], ["type"]);
     }
     constructor({ x, y, animationType, position, type, hidden }) {
         super();
@@ -745,7 +745,10 @@ class FileData extends Data {
         // }
         const type = MediaData.determineType("auto", file.name);
         const url = URL.createObjectURL(file);
-        const [width, height] = await FileData.computeWidthHeight(url, type);
+        let width = null, height = null;
+        if (type === "img" || type === "video") {
+            [width, height] = await FileData.computeWidthHeight(url, type);
+        }
         return new FileData({
             name: file.name,
             size: file.size,
@@ -790,7 +793,7 @@ class FileData extends Data {
             }
             else {
                 // cleanup();
-                reject();
+                reject("computeWidth Height rejected, because type didnt match, Allowed types: img, video; actual type: " + type);
             }
         });
         // clean up

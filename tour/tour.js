@@ -781,7 +781,7 @@ class Page extends AddressableObject() {
             });
         }
         else {
-            wrapper.animate({ scrollLeft: scrollLeft }, { duration: 1000, easing: "swing" });
+            wrapper.animate({ scrollLeft: scrollLeft }, { duration: 2000, easing: "swing" });
         }
     }
     /**

@@ -438,7 +438,7 @@ class AbstractInlineObjectData<T extends AbstractInlineObjectDataType = Abstract
     declare public readonly field: keyof T & keyof AbstractInlineObjectDataType;
 
     static {
-        DataClass<typeof AbstractInlineObjectData, AbstractInlineObjectDataType>(AbstractInlineObjectData, ["x", "y", "type", "position", "animationType", "hidden"], ['type']);
+        DataClass<typeof AbstractInlineObjectData, AbstractInlineObjectDataType>(AbstractInlineObjectData, ["x", "y", "type", "position", "animationType", "hidden"], ["type"]);
     }
 
     constructor({x, y, animationType, position, type, hidden}: AbstractInlineObjectDataType) {
@@ -926,7 +926,7 @@ interface CustomObjectDataType extends AbstractInlineObjectDataType {
     readonly htmlId: string;
 }
 
-interface CustomObjectData extends DataTypeInitializer<CustomObjectDataType, never, AbstractInlineObjectData>{
+interface CustomObjectData extends DataTypeInitializer<CustomObjectDataType, never, AbstractInlineObjectData> {
 }
 
 class CustomObjectData extends AbstractInlineObjectData<CustomObjectDataType> {
@@ -1053,7 +1053,10 @@ class FileData extends Data<FileDataType> {
         // }
         const type = MediaData.determineType("auto", file.name);
         const url = URL.createObjectURL(file);
-        const [width, height] = await FileData.computeWidthHeight(url, type);
+        let width = null, height = null;
+        if (type === "img" || type === "video") {
+            [width, height] = await FileData.computeWidthHeight(url, type);
+        }
         return new FileData({
             name: file.name,
             size: file.size,
@@ -1101,7 +1104,7 @@ class FileData extends Data<FileDataType> {
                 // res = [this.video.videoWidth, this.video.videoHeight]
             } else {
                 // cleanup();
-                reject();
+                reject("computeWidth Height rejected, because type didnt match, Allowed types: img, video; actual type: " + type);
             }
         });
         // clean up
