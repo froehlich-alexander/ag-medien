@@ -57,7 +57,7 @@ export type JsonMedia = {
     //see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/video for video
     //and https://developer.mozilla.org/en-US/docs/Web/HTML/Element/img for img
     /*
-    normal src paths can be absolute OR
+    Normal src paths can be absolute OR
     they can be relative to document root (e.g. '/images/img.jpg' -> 'https://rheingau-gymnasium.de/images/img.jpg') OR
     they can be relative to img1 (e.g. 'test.jpg' -> 'img1/test.jpg' -> 'https://rheingau-gymnasium.de/current-path/img1/test.jpg').
     */

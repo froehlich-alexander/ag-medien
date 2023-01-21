@@ -62,7 +62,7 @@ const uniqueId = (() => {
     };
 })();
 
-type DataWiths<T extends { [k: string]: any }> = { [k in keyof T as (k extends string ? `with${Capitalize<k>}` : never)]-?: (value: Exclude<T[k], undefined>) => any };
+type DataWiths<T extends { [k: string]: any }> = { [k in keyof T as (k extends string ? `with${Capitalize<k>}` : never)]-?: (value: T[k]) => any };
 
 type DataClassType<T extends Data> = T & DataWiths<DataType<T>>;
 
@@ -383,6 +383,10 @@ class AbstractAddressableObject<T extends AbstractAddressableObjectType = Abstra
         this.onConstructionFinished(AbstractAddressableObject);
     }
 
+    public isAddressable() {
+        return true;
+    }
+
     // public equals(other: DataType<AbstractAddressableObject<T, Json>> | undefined | null, ...ignore: (keyof T)[]): other is DataType<AbstractAddressableObject<T, Json>> {
     //     return other != null && (this === other || (
     //         (this.id === other!.id || ignore.includes("id"))
@@ -426,7 +430,10 @@ interface AbstractInlineObjectDataType {
     readonly y: number;
     readonly type: InlineObjectType;
     readonly position: InlineObjectPosition;
-    readonly animationType: AnimationType;
+
+    // undefined is allowed for things like clickable because we always have a fallback value from the Addressable Object itself
+    // (therefore undefined is NOT allowed for addressable object - see AbstractAddressableInlineObjectDataType)
+    readonly animationType: AnimationType | undefined;
     readonly hidden: boolean;
 }
 
@@ -539,15 +546,15 @@ class AbstractInlineObjectData<T extends AbstractInlineObjectDataType = Abstract
 
 interface AbstractAddressableInlineObjectDataType extends AbstractInlineObjectDataType {
     readonly id: string,
+    readonly animationType: AnimationType,
 }
 
+// @ts-ignore
 interface AbstractAddressableInlineObjectData<T extends AbstractAddressableInlineObjectDataType> extends DataTypeInitializer<AbstractAddressableInlineObjectDataType, never, AbstractInlineObjectData> {
 }
 
 class AbstractAddressableInlineObjectData<T extends AbstractAddressableInlineObjectDataType = AbstractAddressableInlineObjectDataType, TUnion extends AbstractAddressableInlineObjectDataType = T> extends AbstractInlineObjectData<T | AbstractAddressableInlineObjectDataType, TUnion & AbstractAddressableInlineObjectDataType> {
     public readonly declare json: JsonAddressableObject & AbstractInlineObjectData["json"];
-    //
-    // public readonly id: string;
 
     constructor({id, ...base}: AbstractAddressableInlineObjectDataType) {
         super(base);
@@ -561,22 +568,9 @@ class AbstractAddressableInlineObjectData<T extends AbstractAddressableInlineObj
         DataClass<typeof this, AbstractAddressableInlineObjectDataType>(this, ["id"]);
     }
 
-    // public equals(other: DataType<AbstractAddressableInlineObjectData<T, Json>> | undefined | null): other is DataType<AbstractAddressableInlineObjectData<T, Json>> {
-    //     return super.equals(other)
-    //         && this.id === other.id
-    //         && this.hidden === other.hidden;
-    // }
-    //
-    // public toJSON(): { [k in keyof Pick<Json, keyof (AbstractJsonInlineObject & JsonAddressableObject)>]: Json[k] } {
-    //     return {
-    //         ...super.toJSON(),
-    //         id: this.id,
-    //     };
-    // }
-    //
-    // public withId(id: string): this {
-    //     return new (this.constructor as typeof AbstractAddressableInlineObjectData)({...this, id: id}) as this;
-    // }
+    // this is because AbstractInlineObject allows undefined on animationType - see AbstractInlineObjectDataType
+    // @ts-ignore
+    declare withAnimationType: (value: AnimationType) => AbstractAddressableInlineObjectData;
 
     static {
         this.makeImmutable();
@@ -735,7 +729,7 @@ class ClickableData extends AbstractActivatingInlineObjectData<ClickableDataType
     public static default: ClickableData = new ClickableData({
         icon: "arrow_l",
         title: "",
-        animationType: "forward",
+        animationType: undefined,
         goto: "",
         targetType: "auto",
         x: 0,

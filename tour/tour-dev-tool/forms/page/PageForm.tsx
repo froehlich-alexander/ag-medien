@@ -3,6 +3,7 @@ import React, {ChangeEvent, useCallback, useContext, useEffect, useMemo} from "r
 import {Button, ButtonGroup, Col, Form, FormControl, FormText, InputGroup, Row} from "react-bootstrap";
 import {useTranslation} from "react-i18next";
 import {InlineObjectData, MediaData, PageData} from "../../../Data";
+import {AnimationTypeInput} from "../inline-object/GeneralInlineObjectInputs";
 import InlineObjectContainerForm from "../inline-object/InlineObjectContainerForm";
 import {MediaForm} from "../MediaForm";
 import {FormContext, PageContext} from "../../TourContexts";
@@ -21,7 +22,6 @@ export default function PageForm(
         onRenamePageIdUsagesChange,
     }: PageFormProps,
 ) {
-
     const pageContext = useContext(PageContext);
     const formContext = useContext(FormContext);
     const {t} = useTranslation("mainPage", {keyPrefix: "pageForm"});
@@ -126,6 +126,13 @@ export default function PageForm(
                                              disabled={disablePanorama}/>
                     </InputGroup>
                 </Col>
+
+
+                <Col sm={'auto'}>
+                    <AnimationTypeInput inlineObject={page} onChange={onChange}/>
+                </Col>
+
+                {/* Panorama info text */}
                 <FormText hidden={!disablePanorama} className="text-info">{t("360Deg.text")}</FormText>
 
                 <MediaForm media={page.media} onMediaChange={handleMediaChange}/>

@@ -1560,60 +1560,62 @@ class Clickable extends InlineObject {
         return new Clickable(data);
     }
 
-    public computeDestinationPosition() {
-        if (this.data.targetType !== "page") {
-            return;
-        }
-
-        for (let destinationPage of Tour.pages) {
-            // clickable addresses a page obj
-            if (destinationPage.id === this.data.goto) {
-                // the position on the next page where the user will arrive
-                let destinationScroll: number | "auto" | undefined = this.data.destinationScroll ?? "auto";
-
-                // we do not need to compute anything on non panorama pages
-                if (!destinationPage.is_panorama) {
-                    destinationScroll = undefined;
-                }
-                // if destinationScroll is not explicitly set, compute it
-                else if (destinationScroll === "auto") {
-                    const currentPage = Tour.pages.find(v => v.activated)!;
-                    // the clickable that is the opposite of this clickable
-                    const clickable = destinationPage.data.inlineObjects.find(v => v.isClickable() && v.goto === currentPage.id);
-                    // console.log("dest scroll clickable", destinationScroll, clickable);
-                    const pictureWidthUntilRepeat = destinationPage.data.secondBeginning;
-                    if (clickable) {
-                        switch (this.data.animationType) {
-                            case "forward":
-                                // we take the position of the clickable (in percent)
-                                // then we add 50 to it to get the position one would look at when coming from that clickable
-                                destinationScroll = clickable.x + pictureWidthUntilRepeat / 2;
-                                break;
-                            case "backward":
-                                destinationScroll = clickable.x;
-                                break;
-                            case "fade":
-                            case "none":
-                                destinationScroll = undefined;
-                                break;
-                        }
-                        if (destinationScroll !== undefined && destinationScroll > pictureWidthUntilRepeat) {
-                            destinationScroll -= pictureWidthUntilRepeat;
-                        }
-                    } else {
-                        destinationScroll = undefined;
-                    }
-                }
-                (this.destinationScroll as Mutable<typeof this.destinationScroll>) = destinationScroll;
-                break;
-            }
-        }
-    }
+    // public computeDestinationPosition() {
+    //     if (this.data.targetType !== "page") {
+    //         return;
+    //     }
+    //
+    //     for (let destinationPage of Tour.pages) {
+    //         // clickable addresses a page obj
+    //         if (destinationPage.id === this.data.goto) {
+    //             // the position on the next page where the user will arrive
+    //             let destinationScroll: number | "auto" | undefined = this.data.destinationScroll ?? "auto";
+    //
+    //             // we do not need to compute anything on non panorama pages
+    //             if (!destinationPage.is_panorama) {
+    //                 destinationScroll = undefined;
+    //             }
+    //             // if destinationScroll is not explicitly set, compute it
+    //             else if (destinationScroll === "auto") {
+    //                 const currentPage = Tour.pages.find(v => v.activated)!;
+    //                 // the clickable that is the opposite of this clickable
+    //                 const clickable = destinationPage.data.inlineObjects.find(v => v.isClickable() && v.goto === currentPage.id);
+    //                 // console.log("dest scroll clickable", destinationScroll, clickable);
+    //                 const pictureWidthUntilRepeat = destinationPage.data.secondBeginning;
+    //                 if (clickable) {
+    //                     switch (this.data.animationType) {
+    //                         case "forward":
+    //                             // we take the position of the clickable (in percent)
+    //                             // then we add 50 to it to get the position one would look at when coming from that clickable
+    //                             destinationScroll = clickable.x + pictureWidthUntilRepeat / 2;
+    //                             break;
+    //                         case "backward":
+    //                             destinationScroll = clickable.x;
+    //                             break;
+    //                         case "fade":
+    //                         case "none":
+    //                             destinationScroll = undefined;
+    //                             break;
+    //                     }
+    //                     if (destinationScroll !== undefined && destinationScroll > pictureWidthUntilRepeat) {
+    //                         destinationScroll -= pictureWidthUntilRepeat;
+    //                     }
+    //                 } else {
+    //                     destinationScroll = undefined;
+    //                 }
+    //             }
+    //             (this.destinationScroll as Mutable<typeof this.destinationScroll>) = destinationScroll;
+    //             break;
+    //         }
+    //     }
+    // }
 
     private handleClick = () => {
         for (let destinationPage of Tour.pages) {
             // clickable addresses a page obj
             if (destinationPage.id === this.data.goto) {
+                const animationType = this.data.animationType ?? destinationPage.animationType;
+
                 // the position on the next page where the user will arrive
                 let destinationScroll: number | "auto" | undefined = this.data.destinationScroll ?? "auto";
 
@@ -1629,7 +1631,7 @@ class Clickable extends InlineObject {
                     // console.log("dest scroll clickable", destinationScroll, clickable);
                     const pictureWidthUntilRepeat = destinationPage.data.secondBeginning;
                     if (clickable) {
-                        switch (this.data.animationType) {
+                        switch (animationType) {
                             case "forward":
                                 // we take the position of the clickable (in percent)
                                 // then we add 50 to it to get the position one would look at when coming from that clickable
@@ -1652,13 +1654,13 @@ class Clickable extends InlineObject {
                 }
                 console.assert(destinationScroll === this.destinationScroll, "destination scroll not equal", destinationScroll, this.destinationScroll);
 
-                destinationPage.activate(this.data.animationType, {destinationScroll: destinationScroll});
+                destinationPage.activate(animationType, {destinationScroll: destinationScroll});
                 break;
             }
             let done = false;
-            // clickable addresses a text-field
+            // clickable addresses a addressable
             for (let iObject of destinationPage.inlineObjects) {
-                if (iObject.data.isTextField() && iObject.data.id === this.data.goto) {
+                if (iObject.data.isAddressable() && iObject.data.id === this.data.goto) {
                     this.performAction(iObject as TextField);
                     done = true;
                     break;

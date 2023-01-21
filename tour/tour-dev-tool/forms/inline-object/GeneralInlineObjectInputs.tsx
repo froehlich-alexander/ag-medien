@@ -1,8 +1,15 @@
 import React, {ChangeEvent, useCallback} from "react";
 import {Form, FormControl, FormSelect, FormText, InputGroup} from "react-bootstrap";
 import {useTranslation} from "react-i18next";
-import {ClickableData, InlineObjectData, TextFieldData} from "../../../Data";
+import {
+    AbstractAddressableInlineObjectData,
+    ClickableData,
+    InlineObjectData,
+    PageData,
+    TextFieldData,
+} from "../../../Data";
 import {AnimationType, InlineObjectPosition, InlineObjectType} from "../../../types";
+import type PageForm from '../page/PageForm';
 
 export type InputElementProps<T> = {
     inlineObject: T,
@@ -110,12 +117,17 @@ export function Position({onChange, inlineObject}: InputElementProps<InlineObjec
     </>);
 }
 
-export function AnimationTypeInput({onChange, inlineObject}: InputElementProps<InlineObjectData>) {
+/**
+ * This is also used by {@link PageForm}
+ */
+export function AnimationTypeInput<T extends InlineObjectData|PageData>({onChange, inlineObject}: InputElementProps<T>) {
     const {t} = useTranslation("mainPage", {keyPrefix: "pageForm.inlineObjectContainerForm.inlineObjectForm.animationType"});
     const {t: tAnimations} = useTranslation("tourTypes", {keyPrefix: "animationTypes"});
+    const { t :tGlob} = useTranslation("translation");
 
     const handleChange = useCallback((event: ChangeEvent<HTMLSelectElement>) => {
         const value = event.target.value;
+        // This can actually also be undefined (e.g. if inlineObject is a Clickable
         onChange(inlineObject.withAnimationType(value as AnimationType));
     }, [inlineObject, onChange]);
 
@@ -123,11 +135,12 @@ export function AnimationTypeInput({onChange, inlineObject}: InputElementProps<I
         <InputGroup>
             <InputGroup.Text as="label"
                              htmlFor="object-animation">{t("label")}</InputGroup.Text>
-            <FormSelect value={inlineObject.animationType ?? "forward"} id="object-animation" required
+            <FormSelect value={inlineObject.animationType} id="object-animation" required
                         onChange={handleChange}>
                 {InlineObjectData.AnimationTypes.map(animationType =>
                     <option key={animationType} value={animationType}>{tAnimations(animationType)}</option>,
                 )}
+                {!inlineObject.isAddressable() && <option key={'undefined'} value={undefined}>{tGlob('notSet')}</option>}
             </FormSelect>
         </InputGroup>
     );

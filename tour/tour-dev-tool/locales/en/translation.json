@@ -10,5 +10,6 @@
   "notAvailable": "Not Available",
   "close": "Close",
   "previous": "Previous",
-  "next": "Next"
+  "next": "Next",
+  "notSet": "not set"
 }

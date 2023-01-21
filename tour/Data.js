@@ -290,6 +290,9 @@ class AbstractAddressableObject extends Data {
         // this.animationType = animationType;
         this.onConstructionFinished(AbstractAddressableObject);
     }
+    isAddressable() {
+        return true;
+    }
     // public equals(other: DataType<AbstractAddressableObject<T, Json>> | undefined | null, ...ignore: (keyof T)[]): other is DataType<AbstractAddressableObject<T, Json>> {
     //     return other != null && (this === other || (
     //         (this.id === other!.id || ignore.includes("id"))
@@ -363,8 +366,6 @@ class AbstractInlineObjectData extends Data {
     }
 }
 class AbstractAddressableInlineObjectData extends AbstractInlineObjectData {
-    //
-    // public readonly id: string;
     constructor({ id, ...base }) {
         super(base);
         this.setFields({
@@ -375,22 +376,6 @@ class AbstractAddressableInlineObjectData extends AbstractInlineObjectData {
     static {
         DataClass(this, ["id"]);
     }
-    // public equals(other: DataType<AbstractAddressableInlineObjectData<T, Json>> | undefined | null): other is DataType<AbstractAddressableInlineObjectData<T, Json>> {
-    //     return super.equals(other)
-    //         && this.id === other.id
-    //         && this.hidden === other.hidden;
-    // }
-    //
-    // public toJSON(): { [k in keyof Pick<Json, keyof (AbstractJsonInlineObject & JsonAddressableObject)>]: Json[k] } {
-    //     return {
-    //         ...super.toJSON(),
-    //         id: this.id,
-    //     };
-    // }
-    //
-    // public withId(id: string): this {
-    //     return new (this.constructor as typeof AbstractAddressableInlineObjectData)({...this, id: id}) as this;
-    // }
     static {
         this.makeImmutable();
     }
@@ -504,7 +489,7 @@ class ClickableData extends AbstractActivatingInlineObjectData {
     static { this.default = new ClickableData({
         icon: "arrow_l",
         title: "",
-        animationType: "forward",
+        animationType: undefined,
         goto: "",
         targetType: "auto",
         x: 0,
