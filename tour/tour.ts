@@ -1233,6 +1233,9 @@ function AddressableObject<T extends { new(...args: any[]): {} }>(baseClass?: T)
         declare public readonly html: JQuery;
         declare public readonly data: { animationType: AnimationType };
 
+        // see InlineObject
+        declare protected readonly similar?: AddressableObject[];
+
         public activated: boolean = false;
         protected activateRunning = false;
         protected deactivateRunning = false;
@@ -1283,6 +1286,13 @@ function AddressableObject<T extends { new(...args: any[]): {} }>(baseClass?: T)
             this.activated = true;
             this.activateRunning = true;
 
+            // we want all clones to do the same
+            if (this.similar) {
+                for (let clone of this.similar) {
+                    clone.activate(animationType, options);
+                }
+            }
+
             if (animationType !== undefined && animationType !== this.data.animationType) {
                 this.html.attr("data-tour-animation-onetime", animationType);
             }
@@ -1300,6 +1310,13 @@ function AddressableObject<T extends { new(...args: any[]): {} }>(baseClass?: T)
             }
             this.activated = false;
             this.deactivateRunning = true;
+
+            // we want all clones to do the same
+            if (this.similar) {
+                for (let clone of this.similar) {
+                    clone.deactivate(animationType, options);
+                }
+            }
 
             if (animationType !== undefined && animationType !== this.data.animationType) {
                 this.html.attr("data-tour-animation-onetime", animationType);
@@ -1335,6 +1352,9 @@ class InlineObject {
     // if this._cloned == true, it holds the html it was cloned from
     // if this._cloned == false, it holds the same value as this._html
     public readonly originHtml: JQuery;
+
+    // This array holds all other IO which belong to this IO (e.g. clones)
+    public readonly similar: this[] = [];
     private readonly _html: JQuery;
 
     // dev tool
@@ -1347,9 +1367,11 @@ class InlineObject {
         this._cloned = isClone;
 
         if (typeof htmlTag === "string") {
+            // original IO
             this._html = $(`<${htmlTag}/>`);
             this.originHtml = this._html;
         } else {
+            // this is a cloned IO
             this.originHtml = htmlTag;
             if (isClone) {
                 this._html = htmlTag.clone(true);
@@ -1407,7 +1429,10 @@ class InlineObject {
     public clone(): this {
         type T = this;
         const constructor = (this.constructor as { new(data: InlineObjectData, html?: JQuery<HTMLElement>): T });
-        return new constructor(this.data, this.html);
+        const newIO = new constructor(this.data, this.html);
+        this.similar.push(newIO);
+        newIO.similar.push(this);
+        return newIO;
         // return new constructor(this.data, this._html.clone(true));
     }
 
@@ -1461,25 +1486,27 @@ class TextField extends AddressableObject(InlineObject) {
         super(data, html ?? "div", html !== undefined);
 
         this.activated = !data.hidden;
-        let title: string | JQuery = "";
 
-        if (data.title) {
-            title = $("<div>")
-                .addClass("text-field-title")
-                .text(data.title);
-        }
-        const content = $("<div>")
-            .addClass("text-field-content")
-            .text(data.content);
+        if (!this.cloned) {
+            let title: string | JQuery = "";
+            if (data.title) {
+                title = $("<div>")
+                    .addClass("text-field-title")
+                    .text(data.title);
+            }
+            const content = $("<div>")
+                .addClass("text-field-content")
+                .text(data.content);
 
-        this.html.addClass("text-field")
-            .addClass(data.size)
-            .append(title, content);
+            this.html.addClass("text-field")
+                .addClass(data.size)
+                .append(title, content);
 
-        // add css classes
+            // add css classes
 
-        for (let i of data.cssClasses) {
-            this.html.addClass(i);
+            for (let i of data.cssClasses) {
+                this.html.addClass(i);
+            }
         }
 
         this.prepareHTML();
@@ -1545,7 +1572,7 @@ class Clickable extends InlineObject {
 
         if (!this.cloned) {
             this.html.addClass("clickable")
-                .attr("goto", this.data.goto!)//todo redundant
+                .attr("goto", this.data.goto!) // todo redundant
                 .append($("<div></div>")
                     .addClass("title")
                     .text(this.data.title))
@@ -1838,7 +1865,6 @@ class ClickableHint {
         clickablePosRelative.y = (clickablePosRelative.y / pageSize.y) * 100;
 
 
-
         this.setPosition(optimalX, optimalY, clickablePosRelative);
     }
 
@@ -1860,7 +1886,7 @@ class ClickableHint {
     private setPosition(x: number, y: number, clickablePos: { x: number, y: number }) {
         if (x > 0) {
             this.html.css("left", x + "%")
-                .css('right', '')
+                .css('right', '');
         } else {
             this.html.css("right", -x + "%")
                 .css('left', '');

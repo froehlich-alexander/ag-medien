@@ -503,8 +503,8 @@
       ],
       "inlineObjects": [
         {
-          "x": 50,
-          "y": 50,
+          "x": 51.326,
+          "y": 61.542,
           "type": "clickable",
           "position": "media",
           "animationType": "backward",
@@ -513,7 +513,7 @@
           "targetType": "auto",
           "action": "activate",
           "title": "EG - Flur Lehrerzimmer",
-          "icon": "arrow_r",
+          "icon": "arrow_d",
           "destinationScroll": "auto"
         }
       ],
@@ -1217,6 +1217,7 @@
           "y": 64.225,
           "type": "text",
           "position": "media",
+          "animationType": "fade",
           "hidden": false,
           "id": "willkommen_text",
           "title": "Willkommen!",

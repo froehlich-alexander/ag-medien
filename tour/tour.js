@@ -1051,6 +1051,12 @@ function AddressableObject(baseClass) {
             }
             this.activated = true;
             this.activateRunning = true;
+            // we want all clones to do the same
+            if (this.similar) {
+                for (let clone of this.similar) {
+                    clone.activate(animationType, options);
+                }
+            }
             if (animationType !== undefined && animationType !== this.data.animationType) {
                 this.html.attr("data-tour-animation-onetime", animationType);
             }
@@ -1065,6 +1071,12 @@ function AddressableObject(baseClass) {
             }
             this.activated = false;
             this.deactivateRunning = true;
+            // we want all clones to do the same
+            if (this.similar) {
+                for (let clone of this.similar) {
+                    clone.deactivate(animationType, options);
+                }
+            }
             if (animationType !== undefined && animationType !== this.data.animationType) {
                 this.html.attr("data-tour-animation-onetime", animationType);
             }
@@ -1090,13 +1102,17 @@ function AddressableObject(baseClass) {
  */
 class InlineObject {
     constructor(data, htmlTag, isClone = false) {
+        // This array holds all other IO which belong to this IO (e.g. clones)
+        this.similar = [];
         this.data = data;
         this._cloned = isClone;
         if (typeof htmlTag === "string") {
+            // original IO
             this._html = $(`<${htmlTag}/>`);
             this.originHtml = this._html;
         }
         else {
+            // this is a cloned IO
             this.originHtml = htmlTag;
             if (isClone) {
                 this._html = htmlTag.clone(true);
@@ -1145,7 +1161,10 @@ class InlineObject {
      */
     clone() {
         const constructor = this.constructor;
-        return new constructor(this.data, this.html);
+        const newIO = new constructor(this.data, this.html);
+        this.similar.push(newIO);
+        newIO.similar.push(this);
+        return newIO;
         // return new constructor(this.data, this._html.clone(true));
     }
     get html() {
@@ -1188,21 +1207,23 @@ class TextField extends AddressableObject(InlineObject) {
     constructor(data, html) {
         super(data, html ?? "div", html !== undefined);
         this.activated = !data.hidden;
-        let title = "";
-        if (data.title) {
-            title = $("<div>")
-                .addClass("text-field-title")
-                .text(data.title);
-        }
-        const content = $("<div>")
-            .addClass("text-field-content")
-            .text(data.content);
-        this.html.addClass("text-field")
-            .addClass(data.size)
-            .append(title, content);
-        // add css classes
-        for (let i of data.cssClasses) {
-            this.html.addClass(i);
+        if (!this.cloned) {
+            let title = "";
+            if (data.title) {
+                title = $("<div>")
+                    .addClass("text-field-title")
+                    .text(data.title);
+            }
+            const content = $("<div>")
+                .addClass("text-field-content")
+                .text(data.content);
+            this.html.addClass("text-field")
+                .addClass(data.size)
+                .append(title, content);
+            // add css classes
+            for (let i of data.cssClasses) {
+                this.html.addClass(i);
+            }
         }
         this.prepareHTML();
         //animations
@@ -1343,7 +1364,7 @@ class Clickable extends InlineObject {
         };
         if (!this.cloned) {
             this.html.addClass("clickable")
-                .attr("goto", this.data.goto) //todo redundant
+                .attr("goto", this.data.goto) // todo redundant
                 .append($("<div></div>")
                 .addClass("title")
                 .text(this.data.title))
