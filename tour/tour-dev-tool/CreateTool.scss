@@ -1,0 +1,125 @@
+
+.CreateTool {
+    $navbar-height: 3.5rem;
+
+    ::-webkit-scrollbar {
+        width: 5px;
+        height: 5px;
+        //background-color: gray;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background-color: #c526f1;
+    }
+
+    .NavBar {
+        max-height: $navbar-height;
+    }
+
+    .MediaForm {
+        .SrcTable {
+            caption {
+                border-top-width: 0;
+            }
+        }
+    }
+
+    .PageForm {
+        overflow-y: auto;
+        overflow-x: hidden;
+        scroll-behavior: smooth;
+        max-height: calc(100vh - $navbar-height);
+
+        .InlineObjectContainerForm {
+            .InlineObjectForm {
+                border-color: var(--bs-accordion-border-color);
+                border-width: var(--bs-accordion-border-width);
+            }
+        }
+    }
+
+    .ListView {
+        scroll-behavior: smooth;
+        overflow-y: auto;
+        max-height: calc(100vh - $navbar-height - 1.5rem);
+
+        .SelectControls {
+            border-color: var(--bs-gray-500);
+        }
+
+        .PageItem {
+            cursor: pointer;
+
+            .MainLabel {
+                font-size: larger;
+            }
+        }
+    }
+}
+
+.UnsavedChangesAlert {
+}
+
+.MediaDialog {
+    .MediaTable {
+
+    }
+}
+
+.TourPreviewDialog {
+    .Body {
+        .schul-tour {
+            .page {
+                .central-position-marker {
+                    display: none;
+                    height: 100%;
+                    top: 0;
+                    width: 7px;
+                    z-index: 1;
+                    //background-image: linear-gradient(90deg, yellowgreen, #c526f1, yellowgreen);
+                    background-color: #c526f1;
+                    //border: 1px solid black;
+                    user-select: none;
+                    cursor: pointer;
+                    position: absolute;
+
+                    &.selected {
+                        background-color: blueviolet;
+                    }
+                }
+
+                &.central-position-edit-mode {
+                    .central-position-marker {
+                        display: block;
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+.material-icons {
+    cursor: pointer;
+
+    &.md-18 {
+        font-size: 18px;
+    }
+
+    &.md-24 {
+        font-size: 24px;
+    }
+
+    &.md-36 {
+        font-size: 36px;
+    }
+
+    &.md-48 {
+        font-size: 48px;
+    }
+
+    &.disabled {
+        --bs-text-opacity: 0.3;
+        cursor: default;
+    }
+}

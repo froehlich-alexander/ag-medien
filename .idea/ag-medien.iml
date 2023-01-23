@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="JAVA_MODULE" version="4">
+  <component name="NewModuleRootManager" inherit-compiler-output="true">
+    <exclude-output />
+    <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$/tour" isTestSource="false" />
+      <excludeFolder url="file://$MODULE_DIR$/widgets" />
+      <excludeFolder url="file://$MODULE_DIR$/dist" />
+      <excludeFolder url="file://$MODULE_DIR$/node_modules" />
+      <excludeFolder url="file://$MODULE_DIR$/tour/tour-dev-tool/test-environement-2" />
+      <excludeFolder url="file://$MODULE_DIR$/coverage" />
+      <excludeFolder url="file://$MODULE_DIR$/tour/coverage" />
+      <excludeFolder url="file://$MODULE_DIR$/tour/dev-tool/test-environement" />
+    </content>
+    <content url="file://$MODULE_DIR$/dist" />
+    <content url="file://$MODULE_DIR$/node_modules" />
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+  </component>
+</module>

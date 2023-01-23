@@ -1,0 +1,116 @@
+{
+  "navBar": {
+    "language": {
+      "label": "Sprache"
+    },
+    "importPages": "Importiere Pages",
+    "media": "Medien",
+    "tourPreview": "Tour Vorschau"
+  },
+
+  "pageForm": {
+    "id": {
+      "label": "Id",
+      "invalidFeedback": "Die Id muss einzigartig sein und darf nur aus Buchstaben, Zahlen, Strichen und Unterstrichen bestehen.",
+      "renameUsages": "Verwendungen Umbenennen"
+    },
+    "initialDirection": "Scroll am Anfang",
+    "panorama": "Panorama",
+    "360Deg": {
+      "label": "360 Grad",
+      "text": "Nur Bilder und Videos können als Panorama oder 360 Grad Medium dargestellt werden."
+    },
+    "mediaForm": {
+      "title": "Medien",
+      "normalSource": "Normal aufgelöste Datei",
+      "srcMin": "Schlecht aufgelöste Datei (Für Mobile)",
+      "srcMax": "Gut aufgelöste Datei (Für Desktop)",
+      "sourceForm": {
+        "name": {
+          "label": "Name",
+          "notFound": "Die Datei <1>{{file}}</1> konnte nicht gefunden werden. Bitte füge es im <3>Medien Dialog</3> hinzu."
+        },
+        "type": {
+          "label": "Type",
+          "emptyOption": "Wähle einen Media Typ"
+        },
+        "sizeInfo": "Wenn du hier die Größe eines Mediums setzt, weiß das script später die Maße des Medium, BEVOR es vollständig geladen ist. Das kann die User Experience verbessern.",
+        "width": {
+          "label": "Breite",
+          "invalidFeedback": "Die Breite muss zwischen 0 und der natürlichen Breite des Bildes sein",
+          "notEqualsInitialWarning": "<0>{{width, number}}</0> ist ungleich der natürlichen Breite <2>{{intrinsicWidth, number}}</2>"
+        },
+        "height": {
+          "label": "Höhe",
+          "invalidFeedback": "Die Höhe muss zwischen 0 und der natürlichen Höhe des Bildes sein",
+          "notEqualsInitialWarning": "<0>{{height, number}}</0> ist ungleich der natürlichen Höhe <2>{{intrinsicHeight, number}}</2>"
+        },
+        "deleteButton": "Löschen"
+      }
+    },
+    "inlineObjectContainerForm": {
+      "title": "Inline Objects",
+      "inlineObjectForm": {
+        "type": {
+          "label": "Type"
+        },
+        "position": {
+          "label": "Position",
+          "text": "Wie das $t(translation:inlineObject) positioniert ist.",
+          "text_media": "Das $t(translation:inlineObject) ist relativ zum Medium positioniert (bewegt sich beim scrollen mit)",
+          "text_page": "Das $t(translation:inlineObject) ist relativ zur Seite positioniert (Scrolling spiel keine Rolle)"
+        },
+        "x": {
+          "label": "X Koordinate",
+          "invalidFeedback": "Muss zwischen 0 und 100 sein"
+        },
+        "y": {
+          "label": "Y Koordinate",
+          "invalidFeedback": "Muss zwischen 0 und 100 sein",
+          "formText": "Die Koordinaten sind relativ zur Seite / Medium"
+        },
+        "title": {
+          "label": "Titel"
+        },
+        "icon": {
+          "label": "Pfeil"
+        },
+        "goto": {
+          "label": "Ziel",
+          "invalidFeedback": "Bitte wähle eine id aus der Liste aus."
+        },
+        "content": {
+          "label": "Inhalt",
+          "invalidFeedback": "Bitte schreibe irgendeinen Inhalt in dieses Feld"
+        },
+        "css-classes": {
+          "label": "CSS Klassen",
+          "formText": "Trenne einzelne Klassen mit einem Leerzeichen",
+          "invalidFeedback": "Es sind nur Buchstaben, Zahlen, -_ und Leerzeichen erlaubt"
+        },
+        "size": {
+          "label": "Größe",
+          "invalidFeedback": "Bitte wähle einen Wert"
+        },
+        "animationType": {
+          "label": "Animation Type"
+        },
+        "hidden": {
+          "label": "Versteckt",
+          "formText": "Am Anfang versteckt oder nicht?"
+        },
+        "id": {
+          "label": "Id",
+          "invalidFeedback": "Die Id muss einzigartig sein und darf nur aus Buchstaben, Zahlen, Strichen und Unterstrichen bestehen."
+        },
+        "destinationScroll": {
+          "label": "Ziel Scroll Position",
+          "formText": "Die Scroll-Position auf der Ziel Seite, wo man ankommt",
+          "automatic": "Automatisch",
+          "targetNotPanorama": "Die Ziel Seite ist keine Panorama Seite!"
+        }
+      },
+      "addButton": "Hinzufügen"
+    }
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "closeButton": "Schließen",
+
+  "import": {
+    "modal": {
+      "importButton": "Import",
+      "header": "Import Tour Configuration",
+      "closeButton": "Schließen"
+    },
+    "takeEffectInfo": "Alle Änderung treten erst nach pressen des <1>Import</1> buttons in Kraft",
+    "configFile": {
+      "spinner": "Vorbereiten der Config dateien...",
+      "formText": "Das Tour Config File sollte <1>{{filename}}</1> heißen"
+    },
+    "media": {
+      "spinner": "Vorbereiten der media dateien...",
+      "reset": {
+        "spinner": "Setze Medien Dateien zurück...",
+        "label": "Zurücksetzen"
+      },
+      "formText": "Die Bilder, Videos, etc. für die Tour. Im <1>Medien Dialog</1> können die einzelnen Dateien genauer bearbeitet werden."
+    },
+    "cleanImport": {
+      "label": "Lösche Altes",
+      "formText": "Aktiviere, um alle alten Medien Dateien und Pages zu löschen"
+    }
+  },
+
+  "media": {
+    "buttons": {
+      "addAll": {
+        "label": "Füge Dateien hinzu",
+        "spinner": "Bereite die media dateien vor..."
+      },
+      "deleteAll": {
+        "label": "Lösche alles"
+      },
+      "selectAll": "Markiere Alles",
+      "unselectAll": "Entferne alle Markierungen",
+      "deleteSelected": "Lösche alles markierte"
+    },
+    "table": {
+      "caption": "Media Tabelle",
+      "name": "Name",
+      "type": "Type",
+      "size": "Größe",
+      "actions": "Aktionen"
+    },
+    "closeButton": "Schließen"
+  },
+
+  "unsavedChangesAlert": {
+    "text": "Die Seite <1>{{pageName}}</1> wurde verändert. Willst du die Änderungen <3>$t(translation:save)</3> oder <5>$t(translation:discard)</5>"
+  },
+
+  "mediaPreview": {
+    "title": "Medien Vorschau"
+  },
+  "tourPreview": {
+    "title": "Tour Vorschau"
+  },
+
+  "inlineObject": {
+    "title": "$t(translation:inlineObject)"
+  }
+}

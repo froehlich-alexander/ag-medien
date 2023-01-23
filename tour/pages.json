@@ -1,0 +1,2238 @@
+{
+  "pages": [
+    {
+      "id": "hof_mitte",
+      "media": {
+        "src": {
+          "name": "hof_mitte x.webp",
+          "width": 4024,
+          "height": 800,
+          "type": "img"
+        },
+        "loading": "auto",
+        "fetchPriority": "auto",
+        "autoplay": false,
+        "muted": false,
+        "loop": false,
+        "preload": "auto"
+      },
+      "centralPositions": [
+        24.989,
+        49.045
+      ],
+      "inlineObjects": [
+        {
+          "x": 55.382,
+          "y": 28.891,
+          "type": "clickable",
+          "position": "media",
+          "animationType": "fade",
+          "hidden": true,
+          "goto": "text-test",
+          "targetType": "text-field",
+          "action": "toggle",
+          "title": "???",
+          "icon": "arrow_l",
+          "destinationScroll": "auto"
+        },
+        {
+          "x": 52,
+          "y": 10,
+          "type": "text",
+          "position": "media",
+          "animationType": "fade",
+          "hidden": false,
+          "id": "text-test",
+          "title": "Turm",
+          "content": "Findest du den weg hier hoch???",
+          "cssClasses": [],
+          "size": "normal"
+        },
+        {
+          "x": 25.93,
+          "y": 78.448,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "15_eingang",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "Haupteingang",
+          "icon": "arrow_l",
+          "destinationScroll": "auto"
+        },
+        {
+          "x": 73.313,
+          "y": 33.369,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "05_sporthalle",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "Sporthalle",
+          "icon": "arrow_l",
+          "destinationScroll": "auto"
+        },
+        {
+          "x": 1.865,
+          "y": 36.354,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "hof_sw",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "Grünes Klassenzimmer",
+          "icon": "arrow_l",
+          "destinationScroll": "auto"
+        },
+        {
+          "x": 38.275,
+          "y": 56.667,
+          "type": "text",
+          "position": "media",
+          "animationType": "fade",
+          "hidden": false,
+          "id": "scroll-explaination-text",
+          "title": "Willkommen!",
+          "content": "Hier kann nach rechts und links gescrollt werden, um das ganze Bild sehen zu können",
+          "cssClasses": [],
+          "size": "normal"
+        },
+        {
+          "x": 90,
+          "y": 28.853,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "schultor",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "Schultor",
+          "icon": "arrow_u",
+          "destinationScroll": "auto"
+        },
+        {
+          "x": 50.72,
+          "y": 75.062,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "flur_0_nno",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "Eingang Turm",
+          "icon": "arrow_l",
+          "destinationScroll": "auto"
+        }
+      ],
+      "initialScroll": {
+        "start": 0,
+        "destination": 85.5
+      },
+      "secondBeginning": 100,
+      "is_panorama": true,
+      "is_360": true
+    },
+    {
+      "id": "05_sporthalle",
+      "media": {
+        "src": {
+          "name": "05_sporthalle.webp",
+          "width": 1203,
+          "height": 800,
+          "type": "img"
+        },
+        "loading": "auto",
+        "fetchPriority": "auto",
+        "autoplay": false,
+        "muted": false,
+        "loop": false,
+        "preload": "auto"
+      },
+      "centralPositions": [
+        50.698
+      ],
+      "inlineObjects": [
+        {
+          "x": 10,
+          "y": 50,
+          "type": "clickable",
+          "position": "media",
+          "animationType": "backward",
+          "hidden": false,
+          "goto": "hof_mitte",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "Zum Hof",
+          "icon": "arrow_l",
+          "destinationScroll": "auto"
+        }
+      ],
+      "initialScroll": {},
+      "secondBeginning": 100,
+      "is_panorama": false,
+      "is_360": false
+    },
+    {
+      "id": "15_eingang",
+      "media": {
+        "src": {
+          "name": "flur_1_w_w.webp",
+          "width": 388,
+          "height": 800,
+          "type": "img"
+        },
+        "loading": "auto",
+        "fetchPriority": "auto",
+        "autoplay": false,
+        "muted": false,
+        "loop": false,
+        "preload": "auto"
+      },
+      "centralPositions": [],
+      "inlineObjects": [
+        {
+          "x": 30,
+          "y": 60,
+          "type": "clickable",
+          "position": "media",
+          "animationType": "backward",
+          "hidden": false,
+          "goto": "hof_mitte",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "Hof",
+          "icon": "arrow_d",
+          "destinationScroll": "auto"
+        },
+        {
+          "x": 30,
+          "y": 50,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "15_flur_eg",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "EG - Flur Sekretariat",
+          "icon": "arrow_u",
+          "destinationScroll": "auto"
+        },
+        {
+          "x": 9.563,
+          "y": 81.497,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "cafeteteria",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "Cafeteria",
+          "icon": "arrow_l",
+          "destinationScroll": "auto"
+        }
+      ],
+      "initialScroll": {},
+      "secondBeginning": 100,
+      "is_panorama": false,
+      "is_360": false
+    },
+    {
+      "id": "15_flur_eg",
+      "media": {
+        "src": {
+          "name": "flur_0_w_360 x.webp",
+          "width": 4484,
+          "height": 800,
+          "type": "img"
+        },
+        "loading": "auto",
+        "fetchPriority": "auto",
+        "autoplay": false,
+        "muted": false,
+        "loop": false,
+        "preload": "auto"
+      },
+      "centralPositions": [
+        36.491,
+        56.244
+      ],
+      "inlineObjects": [
+        {
+          "x": 11.552,
+          "y": 64.257,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "16_sekretariat",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "Sekretariat",
+          "icon": "arrow_u",
+          "destinationScroll": "auto"
+        },
+        {
+          "x": 61.552,
+          "y": 66.112,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "15_eingang",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "Ausgang",
+          "icon": "arrow_u",
+          "destinationScroll": "auto"
+        },
+        {
+          "x": 36.614,
+          "y": 70.848,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "flur_0_nw_foyer",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "EG - Foyer - Treppe Fahrstuhl",
+          "icon": "arrow_u",
+          "destinationScroll": "auto"
+        },
+        {
+          "x": 86.717,
+          "y": 61.106,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "15_glaskasten",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "Glaskasten",
+          "icon": "arrow_u",
+          "destinationScroll": "auto"
+        }
+      ],
+      "initialScroll": {},
+      "secondBeginning": 100,
+      "is_panorama": true,
+      "is_360": true
+    },
+    {
+      "id": "15_glaskasten",
+      "media": {
+        "src": {
+          "name": "Glaskasten.webp",
+          "width": 1622,
+          "height": 800,
+          "type": "img"
+        },
+        "loading": "auto",
+        "fetchPriority": "auto",
+        "autoplay": false,
+        "muted": false,
+        "loop": false,
+        "preload": "auto"
+      },
+      "centralPositions": [],
+      "inlineObjects": [
+        {
+          "x": 5.053,
+          "y": 73.65,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "15_flur_eg",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "EG - Flur",
+          "icon": "arrow_l",
+          "destinationScroll": "auto"
+        },
+        {
+          "x": 46.069,
+          "y": 60.499,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "balkon",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "Balkon",
+          "icon": "arrow_u",
+          "destinationScroll": "auto"
+        }
+      ],
+      "initialScroll": {},
+      "secondBeginning": 100,
+      "is_panorama": false,
+      "is_360": false
+    },
+    {
+      "id": "16_sekretariat",
+      "media": {
+        "src": {
+          "name": "16_sekretariat.webp",
+          "width": 388,
+          "height": 800,
+          "type": "img"
+        },
+        "loading": "auto",
+        "fetchPriority": "auto",
+        "autoplay": false,
+        "muted": false,
+        "loop": false,
+        "preload": "auto"
+      },
+      "centralPositions": [
+        0
+      ],
+      "inlineObjects": [
+        {
+          "x": 10,
+          "y": 10,
+          "type": "clickable",
+          "position": "media",
+          "animationType": "backward",
+          "hidden": false,
+          "goto": "15_flur_eg",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "EG - Flur",
+          "icon": "arrow_l",
+          "destinationScroll": "auto"
+        }
+      ],
+      "initialScroll": {},
+      "secondBeginning": 100,
+      "is_panorama": false,
+      "is_360": false
+    },
+    {
+      "id": "flur_0_nw_foyer",
+      "media": {
+        "src": {
+          "name": "flur_0_nw_360 x.webp",
+          "width": 4225,
+          "height": 800,
+          "type": "img"
+        },
+        "loading": "auto",
+        "fetchPriority": "auto",
+        "autoplay": false,
+        "muted": false,
+        "loop": false,
+        "preload": "auto"
+      },
+      "centralPositions": [
+        41.85,
+        16.936
+      ],
+      "inlineObjects": [
+        {
+          "x": 14.837,
+          "y": 51.066,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "flur_1_nw_foyer",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "1.OG Treppe Fahrstuhl",
+          "icon": "arrow_u",
+          "destinationScroll": "auto"
+        },
+        {
+          "x": 40.07,
+          "y": 61.62,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "15_flur_eg",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "EG Flur - Sekretariat, Haupteingang, Glaskasten",
+          "icon": "arrow_u",
+          "destinationScroll": "auto"
+        },
+        {
+          "x": 7.691,
+          "y": 59.488,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "flur_0_n",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "EG - Flur Lehrerzimmer",
+          "icon": "arrow_u",
+          "destinationScroll": "auto"
+        }
+      ],
+      "initialScroll": {},
+      "secondBeginning": 100,
+      "is_panorama": true,
+      "is_360": true
+    },
+    {
+      "id": "25_lehrerzimmer",
+      "media": {
+        "src": {
+          "name": "25_lehrerzimmer.webp",
+          "width": 1203,
+          "height": 800,
+          "type": "img"
+        },
+        "loading": "auto",
+        "fetchPriority": "auto",
+        "autoplay": false,
+        "muted": false,
+        "loop": false,
+        "preload": "auto"
+      },
+      "centralPositions": [
+        0
+      ],
+      "inlineObjects": [
+        {
+          "x": 51.326,
+          "y": 61.542,
+          "type": "clickable",
+          "position": "media",
+          "animationType": "backward",
+          "hidden": false,
+          "goto": "flur_0_n",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "EG - Flur Lehrerzimmer",
+          "icon": "arrow_d",
+          "destinationScroll": "auto"
+        }
+      ],
+      "initialScroll": {},
+      "secondBeginning": 100,
+      "is_panorama": false,
+      "is_360": false
+    },
+    {
+      "id": "flur_1_nw_foyer",
+      "media": {
+        "src": {
+          "name": "flur_1_nw_360 x.webp",
+          "width": 4308,
+          "height": 800,
+          "type": "img"
+        },
+        "loading": "auto",
+        "fetchPriority": "auto",
+        "autoplay": false,
+        "muted": false,
+        "loop": false,
+        "preload": "auto"
+      },
+      "centralPositions": [
+        43.179,
+        18.788,
+        12.69
+      ],
+      "inlineObjects": [
+        {
+          "x": 10.964,
+          "y": 67.904,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "flur_1_n_bio",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "1.OG - Flur Biologie - Aula",
+          "icon": "arrow_u",
+          "destinationScroll": "auto"
+        },
+        {
+          "x": 31.255,
+          "y": 68.442,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "flur_0_nw_foyer",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "EG - Foyer - Treppe Fahrstuhl",
+          "icon": "arrow_d",
+          "destinationScroll": "auto"
+        },
+        {
+          "x": 43.078,
+          "y": 63.005,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "flur_1_nw",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "1.OG - Flur - Klassenräume",
+          "icon": "arrow_u",
+          "destinationScroll": "auto"
+        },
+        {
+          "x": 24.552,
+          "y": 51.812,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "flur_2_nw_foyer",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "2. OG - Treppe Fahrstuhl",
+          "icon": "arrow_u",
+          "destinationScroll": "auto"
+        }
+      ],
+      "initialScroll": {},
+      "secondBeginning": 100,
+      "is_panorama": true,
+      "is_360": true
+    },
+    {
+      "id": "30_vor_physik_raum",
+      "media": {
+        "src": {
+          "name": "30_vor_physik_raum.webp",
+          "width": 8436,
+          "height": 3852,
+          "type": "img"
+        },
+        "loading": "auto",
+        "fetchPriority": "auto",
+        "autoplay": false,
+        "muted": false,
+        "loop": false,
+        "preload": "auto"
+      },
+      "centralPositions": [
+        50.433
+      ],
+      "inlineObjects": [
+        {
+          "x": 45,
+          "y": 43,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "flur_2_no_musik",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "2. OG - Musik",
+          "icon": "arrow_u",
+          "destinationScroll": "auto"
+        },
+        {
+          "x": 75,
+          "y": 65,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "30_physik_raum",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "Physik-Raum",
+          "icon": "arrow_r",
+          "destinationScroll": "auto"
+        },
+        {
+          "x": 44.005,
+          "y": 85.875,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "flur_2_nw_foyer",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "2. OG - Treppe Fahrstuhl",
+          "icon": "arrow_d",
+          "destinationScroll": "auto"
+        }
+      ],
+      "initialScroll": {},
+      "secondBeginning": 100,
+      "is_panorama": false,
+      "is_360": false
+    },
+    {
+      "id": "30_physik_raum",
+      "media": {
+        "srcMin": {
+          "name": "fb_physik_s.webm",
+          "width": 960,
+          "height": 540,
+          "type": "video"
+        },
+        "srcMax": {
+          "name": "fb_physik.webm",
+          "width": 1920,
+          "height": 1080,
+          "type": "video"
+        },
+        "loading": "auto",
+        "fetchPriority": "auto",
+        "autoplay": false,
+        "muted": false,
+        "loop": false,
+        "preload": "auto"
+      },
+      "centralPositions": [],
+      "inlineObjects": [
+        {
+          "x": 3,
+          "y": 3,
+          "type": "clickable",
+          "position": "page",
+          "animationType": "backward",
+          "hidden": false,
+          "goto": "30_vor_physik_raum",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "Zurück",
+          "icon": "arrow_l",
+          "destinationScroll": "auto"
+        }
+      ],
+      "initialScroll": {},
+      "secondBeginning": 100,
+      "is_panorama": false,
+      "is_360": false
+    },
+    {
+      "id": "30_aula_foyer",
+      "media": {
+        "src": {
+          "name": "flur_1_no_360 (1) x.webp",
+          "width": 4411,
+          "height": 800,
+          "type": "img"
+        },
+        "loading": "auto",
+        "fetchPriority": "auto",
+        "autoplay": false,
+        "muted": false,
+        "loop": false,
+        "preload": "auto"
+      },
+      "centralPositions": [
+        42.477
+      ],
+      "inlineObjects": [
+        {
+          "x": 56.364,
+          "y": 52.255,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "flur_1_n_bio",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "1.OG - Biologie",
+          "icon": "arrow_l",
+          "destinationScroll": "auto"
+        },
+        {
+          "x": 80.459,
+          "y": 26.702,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "flur_2_no_musik",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "2.OG - Musik Physik",
+          "icon": "arrow_u",
+          "destinationScroll": "auto"
+        },
+        {
+          "x": 40.101,
+          "y": 63.739,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "flur_01_no",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "Treppenaufgang Aula - Ausgang - Lehrerzimmer",
+          "icon": "arrow_d",
+          "destinationScroll": "auto"
+        }
+      ],
+      "initialScroll": {},
+      "secondBeginning": 100,
+      "is_panorama": true,
+      "is_360": true
+    },
+    {
+      "id": "klassenraum_x",
+      "media": {
+        "src": {
+          "name": "klassenraum x.webp",
+          "width": 4424,
+          "height": 800,
+          "type": "img"
+        },
+        "loading": "auto",
+        "fetchPriority": "auto",
+        "autoplay": false,
+        "muted": false,
+        "loop": false,
+        "preload": "auto"
+      },
+      "centralPositions": [
+        0
+      ],
+      "inlineObjects": [
+        {
+          "x": 4.031,
+          "y": 84.696,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "flur_1_nw",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "Zurück",
+          "icon": "arrow_u",
+          "destinationScroll": "auto"
+        }
+      ],
+      "initialScroll": {},
+      "secondBeginning": 100,
+      "is_panorama": true,
+      "is_360": true
+    },
+    {
+      "id": "30_Dachboden",
+      "media": {
+        "src": {
+          "name": "Dachboden.webp",
+          "width": 1712,
+          "height": 800,
+          "type": "img"
+        },
+        "loading": "auto",
+        "fetchPriority": "auto",
+        "autoplay": false,
+        "muted": false,
+        "loop": false,
+        "preload": "auto"
+      },
+      "centralPositions": [
+        53.125
+      ],
+      "inlineObjects": [
+        {
+          "x": 48.311,
+          "y": 75.963,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "flur_3_nw_foyer",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "3. OG - Foyer",
+          "icon": "arrow_d",
+          "destinationScroll": "auto"
+        },
+        {
+          "x": 50,
+          "y": 40,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "40_Turm",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "Turm",
+          "icon": "arrow_u",
+          "destinationScroll": "auto"
+        },
+        {
+          "x": 6.427,
+          "y": 78.92,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "flur_3_no",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "3. OG Flur Musik Kunst",
+          "icon": "arrow_d",
+          "destinationScroll": "auto"
+        },
+        {
+          "x": 79.623,
+          "y": 76.163,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "flur_3_sw_kunst_flur_hinten",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "3. OG - Kleine Treppe",
+          "icon": "arrow_d",
+          "destinationScroll": "auto"
+        }
+      ],
+      "initialScroll": {},
+      "secondBeginning": 100,
+      "is_panorama": false,
+      "is_360": false
+    },
+    {
+      "id": "40_Turm",
+      "media": {
+        "src": {
+          "name": "rgs_turm.webp",
+          "width": 7407,
+          "height": 800,
+          "type": "img"
+        },
+        "loading": "auto",
+        "fetchPriority": "auto",
+        "autoplay": false,
+        "muted": false,
+        "loop": false,
+        "preload": "auto"
+      },
+      "centralPositions": [
+        18.987
+      ],
+      "inlineObjects": [
+        {
+          "x": 15.131,
+          "y": 88.699,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "60_turm",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "unser team",
+          "icon": "arrow_l",
+          "destinationScroll": "auto"
+        },
+        {
+          "x": 25.524,
+          "y": 90.294,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "30_Dachboden",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "zurück zum Dachboden",
+          "icon": "arrow_d",
+          "destinationScroll": "auto"
+        }
+      ],
+      "initialScroll": {},
+      "secondBeginning": 100,
+      "is_panorama": true,
+      "is_360": true
+    },
+    {
+      "id": "60_turm",
+      "media": {
+        "src": {
+          "name": "60_turm.webp",
+          "width": 1072,
+          "height": 800,
+          "type": "img"
+        },
+        "loading": "auto",
+        "fetchPriority": "auto",
+        "autoplay": false,
+        "muted": false,
+        "loop": false,
+        "preload": "auto"
+      },
+      "centralPositions": [
+        51.723
+      ],
+      "inlineObjects": [
+        {
+          "x": 80,
+          "y": 50,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "40_Turm",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "Zurück",
+          "icon": "arrow_r",
+          "destinationScroll": "auto"
+        },
+        {
+          "x": 10,
+          "y": 50,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "Hof_von_oben",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "weiter am Turm",
+          "icon": "arrow_l",
+          "destinationScroll": "auto"
+        }
+      ],
+      "initialScroll": {},
+      "secondBeginning": 100,
+      "is_panorama": false,
+      "is_360": false
+    },
+    {
+      "id": "Hof_von_oben",
+      "media": {
+        "src": {
+          "name": "schulhof_vom_turm.webp",
+          "width": 406,
+          "height": 800,
+          "type": "img"
+        },
+        "loading": "auto",
+        "fetchPriority": "auto",
+        "autoplay": false,
+        "muted": false,
+        "loop": false,
+        "preload": "auto"
+      },
+      "centralPositions": [
+        56.618
+      ],
+      "inlineObjects": [
+        {
+          "x": 40,
+          "y": 90,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "jump-to-schulhof",
+          "targetType": "text-field",
+          "action": "toggle",
+          "title": "Freier Fall",
+          "icon": "arrow_d",
+          "destinationScroll": "auto"
+        },
+        {
+          "x": 39.492,
+          "y": 21.406,
+          "type": "text",
+          "position": "media",
+          "animationType": "fade",
+          "hidden": true,
+          "id": "jump-to-schulhof",
+          "title": "Freier Fall",
+          "content": "Hier fehlt ein direkter Weg nach unten (Video in Arbeit)",
+          "cssClasses": [],
+          "size": "small"
+        },
+        {
+          "x": 9.381,
+          "y": 52.405,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "40_Turm",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "zum Ausgangspunkt",
+          "icon": "arrow_l",
+          "destinationScroll": "auto"
+        },
+        {
+          "x": 47.925,
+          "y": 67.194,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "60_turm",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "zum Team",
+          "icon": "arrow_r",
+          "destinationScroll": "auto"
+        }
+      ],
+      "initialScroll": {},
+      "secondBeginning": 100,
+      "is_panorama": false,
+      "is_360": false
+    },
+    {
+      "id": "hof_sw",
+      "media": {
+        "src": {
+          "name": "hof_sw x.webp",
+          "width": 4395,
+          "height": 800,
+          "type": "img"
+        },
+        "loading": "auto",
+        "fetchPriority": "auto",
+        "autoplay": false,
+        "muted": false,
+        "loop": false,
+        "preload": "auto"
+      },
+      "centralPositions": [
+        53.56,
+        75.43
+      ],
+      "inlineObjects": [
+        {
+          "x": 88.296,
+          "y": 51.706,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "hof_mitte",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "Schulhof",
+          "icon": "arrow_r",
+          "destinationScroll": "auto"
+        },
+        {
+          "x": 76.476,
+          "y": 53.302,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "balkon",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "Balkon",
+          "icon": "arrow_u",
+          "destinationScroll": "auto"
+        }
+      ],
+      "initialScroll": {},
+      "secondBeginning": 100,
+      "is_panorama": true,
+      "is_360": true
+    },
+    {
+      "id": "balkon",
+      "media": {
+        "src": {
+          "name": "glaskasten_balkon x.webp",
+          "width": 4058,
+          "height": 800,
+          "type": "img"
+        },
+        "loading": "auto",
+        "fetchPriority": "auto",
+        "autoplay": false,
+        "muted": false,
+        "loop": false,
+        "preload": "auto"
+      },
+      "centralPositions": [
+        6.473
+      ],
+      "inlineObjects": [
+        {
+          "x": 55,
+          "y": 61.514,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "15_glaskasten",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "Zum Glaskasten",
+          "icon": "arrow_u",
+          "destinationScroll": "auto"
+        },
+        {
+          "x": 3.174,
+          "y": 55.65,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "hof_mitte",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "Zum Hof",
+          "icon": "arrow_d",
+          "destinationScroll": "auto"
+        }
+      ],
+      "initialScroll": {},
+      "secondBeginning": 100,
+      "is_panorama": true,
+      "is_360": true
+    },
+    {
+      "id": "schultor",
+      "media": {
+        "src": {
+          "name": "Schultor.webp",
+          "width": 1485,
+          "height": 800,
+          "type": "img"
+        },
+        "loading": "auto",
+        "fetchPriority": "auto",
+        "autoplay": false,
+        "muted": false,
+        "loop": false,
+        "preload": "auto"
+      },
+      "centralPositions": [
+        0
+      ],
+      "inlineObjects": [
+        {
+          "x": 49.967,
+          "y": 64.225,
+          "type": "text",
+          "position": "media",
+          "animationType": "fade",
+          "hidden": false,
+          "id": "willkommen_text",
+          "title": "Willkommen!",
+          "content": "Willkommen bei der virtuellen Schultour des Rheingau Gymnasiums",
+          "cssClasses": [],
+          "size": "normal"
+        },
+        {
+          "x": 45.763,
+          "y": 92.651,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "hof_mitte",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "Start",
+          "icon": "arrow_u",
+          "destinationScroll": "auto"
+        }
+      ],
+      "initialScroll": {},
+      "secondBeginning": 100,
+      "is_panorama": false,
+      "is_360": false
+    },
+    {
+      "id": "flur_2_nw_foyer",
+      "media": {
+        "src": {
+          "name": "flur_2_nw_360 x.webp",
+          "width": 4504,
+          "height": 800,
+          "type": "img"
+        },
+        "loading": "auto",
+        "fetchPriority": "auto",
+        "autoplay": false,
+        "muted": false,
+        "loop": false,
+        "preload": "auto"
+      },
+      "centralPositions": [
+        10.416,
+        27.97
+      ],
+      "inlineObjects": [
+        {
+          "x": 8.554,
+          "y": 62.675,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "30_vor_physik_raum",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "2.OG - Flur Physik Musik",
+          "icon": "arrow_u",
+          "destinationScroll": "auto"
+        },
+        {
+          "x": 16.164,
+          "y": 42.847,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "flur_3_nw_foyer",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "3. OG - Treppe Fahrstuhl",
+          "icon": "arrow_u",
+          "destinationScroll": "auto"
+        },
+        {
+          "x": 26.763,
+          "y": 62.677,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "flur_1_nw_foyer",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "1. OG - Treppe Fahrstuhl",
+          "icon": "arrow_d",
+          "destinationScroll": "auto"
+        },
+        {
+          "x": 40.517,
+          "y": 72.346,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "flur_2_sw",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "2. OG - Kleine Treppe",
+          "icon": "arrow_u",
+          "destinationScroll": "auto"
+        }
+      ],
+      "initialScroll": {},
+      "secondBeginning": 100,
+      "is_panorama": true,
+      "is_360": true
+    },
+    {
+      "id": "flur_3_nw_foyer",
+      "media": {
+        "src": {
+          "name": "flur_3_nw_360 x.webp",
+          "width": 4155,
+          "height": 800,
+          "type": "img"
+        },
+        "loading": "auto",
+        "fetchPriority": "auto",
+        "autoplay": false,
+        "muted": false,
+        "loop": false,
+        "preload": "auto"
+      },
+      "centralPositions": [
+        41.074,
+        25.125
+      ],
+      "inlineObjects": [
+        {
+          "x": 25.908,
+          "y": 56.657,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "flur_2_nw_foyer",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "2.OG - Treppe Fahrstuhl",
+          "icon": "arrow_d",
+          "destinationScroll": "auto"
+        },
+        {
+          "x": 39.271,
+          "y": 59.134,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "flur_3_w_kunst_flur",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "3. OG - Kunstflur",
+          "icon": "arrow_u",
+          "destinationScroll": "auto"
+        },
+        {
+          "x": 10.329,
+          "y": 53.114,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "flur_3_n_kunstraum",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "Kunstraum",
+          "icon": "arrow_u",
+          "destinationScroll": "auto"
+        },
+        {
+          "x": 21.852,
+          "y": 32.224,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "30_Dachboden",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "Dachboden - Turm",
+          "icon": "arrow_u",
+          "destinationScroll": "auto"
+        }
+      ],
+      "initialScroll": {},
+      "secondBeginning": 100,
+      "is_panorama": true,
+      "is_360": true
+    },
+    {
+      "id": "flur_2_sw",
+      "media": {
+        "src": {
+          "name": "flur_2_sw_360 (1) x.webp",
+          "width": 4504,
+          "height": 800,
+          "type": "img"
+        },
+        "loading": "auto",
+        "fetchPriority": "auto",
+        "autoplay": false,
+        "muted": false,
+        "loop": false,
+        "preload": "auto"
+      },
+      "centralPositions": [],
+      "inlineObjects": [
+        {
+          "x": 39.888,
+          "y": 69.006,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "flur_2_nw_foyer",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "2.OG - Treppe Fahrstuhl",
+          "icon": "arrow_u",
+          "destinationScroll": "auto"
+        },
+        {
+          "x": 71.334,
+          "y": 54.808,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "flur_3_sw_kunst_flur_hinten",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "3. OG - Kleine Treppe",
+          "icon": "arrow_u",
+          "destinationScroll": "auto"
+        },
+        {
+          "x": -18.68,
+          "y": 76.839,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "flur_1_sw",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "1. OG - Kleine Treppe",
+          "icon": "arrow_d",
+          "destinationScroll": "auto"
+        }
+      ],
+      "initialScroll": {},
+      "secondBeginning": 100,
+      "is_panorama": true,
+      "is_360": true
+    },
+    {
+      "id": "flur_3_n_kunstraum",
+      "media": {
+        "src": {
+          "name": "flur_3_n_360 x.webp",
+          "width": 4302,
+          "height": 800,
+          "type": "img"
+        },
+        "loading": "auto",
+        "fetchPriority": "auto",
+        "autoplay": false,
+        "muted": false,
+        "loop": false,
+        "preload": "auto"
+      },
+      "centralPositions": [
+        67.126
+      ],
+      "inlineObjects": [
+        {
+          "x": 68.378,
+          "y": 68.016,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "flur_3_nw_foyer",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "Zur Treppe",
+          "icon": "arrow_u",
+          "destinationScroll": "auto"
+        },
+        {
+          "x": 13.466,
+          "y": 70.822,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "flur_3_no",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "3. OG - Flur Musik Kunst",
+          "icon": "arrow_u",
+          "destinationScroll": 0
+        }
+      ],
+      "initialScroll": {},
+      "secondBeginning": 100,
+      "is_panorama": true,
+      "is_360": true
+    },
+    {
+      "id": "flur_3_w_kunst_flur",
+      "media": {
+        "src": {
+          "name": "flur_3_w_360 x.webp",
+          "width": 4469,
+          "height": 800,
+          "type": "img"
+        },
+        "loading": "auto",
+        "fetchPriority": "auto",
+        "autoplay": false,
+        "muted": false,
+        "loop": false,
+        "preload": "auto"
+      },
+      "centralPositions": [],
+      "inlineObjects": [
+        {
+          "x": 79.645,
+          "y": 78.781,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "flur_3_sw_kunst_flur_hinten",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "3.OG - Kleine Treppe",
+          "icon": "arrow_u",
+          "destinationScroll": "auto"
+        },
+        {
+          "x": 30.318,
+          "y": 75.51,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "flur_3_nw_foyer",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "3. OG - Treppe Fahrstuhl",
+          "icon": "arrow_u",
+          "destinationScroll": "auto"
+        }
+      ],
+      "initialScroll": {},
+      "secondBeginning": 100,
+      "is_panorama": true,
+      "is_360": true
+    },
+    {
+      "id": "flur_3_sw_kunst_flur_hinten",
+      "media": {
+        "src": {
+          "name": "flur_3_sw_360 x.webp",
+          "width": 4241,
+          "height": 800,
+          "type": "img"
+        },
+        "loading": "auto",
+        "fetchPriority": "auto",
+        "autoplay": false,
+        "muted": false,
+        "loop": false,
+        "preload": "auto"
+      },
+      "centralPositions": [],
+      "inlineObjects": [
+        {
+          "x": 18.647,
+          "y": 87.855,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "flur_3_w_kunst_flur",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "3. OG - Kunst Flur",
+          "icon": "arrow_u",
+          "destinationScroll": "auto"
+        },
+        {
+          "x": 70.291,
+          "y": 59.538,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "flur_2_sw",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "2.OG - Kleine Treppe",
+          "icon": "arrow_d",
+          "destinationScroll": "auto"
+        },
+        {
+          "x": 11.322,
+          "y": 64.093,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "30_Dachboden",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "Dachboden - Turm",
+          "icon": "arrow_l",
+          "destinationScroll": "auto"
+        }
+      ],
+      "initialScroll": {},
+      "secondBeginning": 100,
+      "is_panorama": true,
+      "is_360": true
+    },
+    {
+      "id": "flur_2_no_musik",
+      "media": {
+        "src": {
+          "name": "flur_2_no_360 x.webp",
+          "width": 4500,
+          "height": 800,
+          "type": "img"
+        },
+        "loading": "auto",
+        "fetchPriority": "auto",
+        "autoplay": false,
+        "muted": false,
+        "loop": false,
+        "preload": "auto"
+      },
+      "centralPositions": [],
+      "inlineObjects": [
+        {
+          "x": 90.185,
+          "y": 69.001,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "30_aula_foyer",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "1.OG - Aula",
+          "icon": "arrow_d",
+          "destinationScroll": "auto"
+        },
+        {
+          "x": 50.789,
+          "y": 61.706,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "30_vor_physik_raum",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "2.OG - Flur Physik",
+          "icon": "arrow_u",
+          "destinationScroll": "auto"
+        }
+      ],
+      "initialScroll": {},
+      "secondBeginning": 100,
+      "is_panorama": true,
+      "is_360": true
+    },
+    {
+      "id": "flur_1_nw",
+      "media": {
+        "src": {
+          "name": "flur_1_w_360 x.webp",
+          "width": 4334,
+          "height": 800,
+          "type": "img"
+        },
+        "loading": "auto",
+        "fetchPriority": "auto",
+        "autoplay": false,
+        "muted": false,
+        "loop": false,
+        "preload": "auto"
+      },
+      "centralPositions": [],
+      "inlineObjects": [
+        {
+          "x": 34.307,
+          "y": 70.167,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "klassenraum_x",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "Klassenraum",
+          "icon": "arrow_u",
+          "destinationScroll": "auto"
+        },
+        {
+          "x": 59.733,
+          "y": 61.919,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "flur_1_nw_foyer",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "1.OG - Treppe Fahrstuhl",
+          "icon": "arrow_u",
+          "destinationScroll": "auto"
+        },
+        {
+          "x": 8.171,
+          "y": 64.612,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "flur_1_sw",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "1. OG - Kleine Treppe",
+          "icon": "arrow_u",
+          "destinationScroll": "auto"
+        }
+      ],
+      "initialScroll": {},
+      "secondBeginning": 100,
+      "is_panorama": true,
+      "is_360": true
+    },
+    {
+      "id": "flur_1_n_bio",
+      "media": {
+        "src": {
+          "name": "flur_1_n_360 x.webp",
+          "width": 4306,
+          "height": 800,
+          "type": "img"
+        },
+        "loading": "auto",
+        "fetchPriority": "auto",
+        "autoplay": false,
+        "muted": false,
+        "loop": false,
+        "preload": "auto"
+      },
+      "centralPositions": [],
+      "inlineObjects": [
+        {
+          "x": 17.599,
+          "y": 72.061,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "30_aula_foyer",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "1.OG - Foyer Aula",
+          "icon": "arrow_u",
+          "destinationScroll": "auto"
+        },
+        {
+          "x": 66.874,
+          "y": 70.111,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "flur_1_nw_foyer",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "1. OG - Treppe Fahrstuhl",
+          "icon": "arrow_u",
+          "destinationScroll": "auto"
+        }
+      ],
+      "initialScroll": {},
+      "secondBeginning": 100,
+      "is_panorama": true,
+      "is_360": true
+    },
+    {
+      "id": "flur_1_sw",
+      "media": {
+        "src": {
+          "name": "flur_1_sw_360 (2) x.webp",
+          "width": 4537,
+          "height": 800,
+          "type": "img"
+        },
+        "loading": "auto",
+        "fetchPriority": "auto",
+        "autoplay": false,
+        "muted": false,
+        "loop": false,
+        "preload": "auto"
+      },
+      "centralPositions": [],
+      "inlineObjects": [
+        {
+          "x": 45.924,
+          "y": 75.777,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "flur_1_nw",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "1. OG - Klassenräume",
+          "icon": "arrow_u",
+          "destinationScroll": "auto"
+        },
+        {
+          "x": 85.399,
+          "y": 40.185,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "flur_2_sw",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "2. OG - Kleine Treppe",
+          "icon": "arrow_u",
+          "destinationScroll": "auto"
+        },
+        {
+          "x": 1.342,
+          "y": 75.241,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "flur_-1_w",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "UG - Spinte und Bibliothek - Cafeteria",
+          "icon": "arrow_d",
+          "destinationScroll": "auto"
+        }
+      ],
+      "initialScroll": {},
+      "secondBeginning": 100,
+      "is_panorama": true,
+      "is_360": true
+    },
+    {
+      "id": "flur_-1_w",
+      "media": {
+        "src": {
+          "name": "flur_-1_w_360 x.webp",
+          "width": 4170,
+          "height": 800,
+          "type": "img"
+        },
+        "loading": "auto",
+        "fetchPriority": "auto",
+        "autoplay": false,
+        "muted": false,
+        "loop": false,
+        "preload": "auto"
+      },
+      "centralPositions": [],
+      "inlineObjects": [
+        {
+          "x": 65.794,
+          "y": 58.248,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "flur_1_sw",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "1. OG - Kleine Treppe",
+          "icon": "arrow_u",
+          "destinationScroll": "auto"
+        },
+        {
+          "x": 39.47,
+          "y": 76.839,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "cafeteteria",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "Cafeteria",
+          "icon": "arrow_u",
+          "destinationScroll": "auto"
+        }
+      ],
+      "initialScroll": {},
+      "secondBeginning": 100,
+      "is_panorama": true,
+      "is_360": true
+    },
+    {
+      "id": "cafeteteria",
+      "media": {
+        "src": {
+          "name": "cafeteria x.webp",
+          "width": 4242,
+          "height": 800,
+          "type": "img"
+        },
+        "loading": "auto",
+        "fetchPriority": "auto",
+        "autoplay": false,
+        "muted": false,
+        "loop": false,
+        "preload": "auto"
+      },
+      "centralPositions": [],
+      "inlineObjects": [
+        {
+          "x": 57.398,
+          "y": 58.426,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "flur_-1_w",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "UG - Spinte und Bibliothek",
+          "icon": "arrow_u",
+          "destinationScroll": "auto"
+        },
+        {
+          "x": -1.904,
+          "y": 48.865,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "15_eingang",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "Haupteingang",
+          "icon": "arrow_l",
+          "destinationScroll": "auto"
+        }
+      ],
+      "initialScroll": {},
+      "secondBeginning": 100,
+      "is_panorama": true,
+      "is_360": true
+    },
+    {
+      "id": "flur_0_n",
+      "media": {
+        "src": {
+          "name": "flur_0_n_360 x.webp",
+          "width": 4453,
+          "height": 800,
+          "type": "img"
+        },
+        "loading": "auto",
+        "fetchPriority": "auto",
+        "autoplay": false,
+        "muted": false,
+        "loop": false,
+        "preload": "auto"
+      },
+      "centralPositions": [],
+      "inlineObjects": [
+        {
+          "x": 34.766,
+          "y": 67.28,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "25_lehrerzimmer",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "Lehrerzimmer",
+          "icon": "arrow_u",
+          "destinationScroll": "auto"
+        },
+        {
+          "x": 60.054,
+          "y": 72.767,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "flur_0_nw_foyer",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "EG - Foyer - Treppe Fahrstuhl",
+          "icon": "arrow_u",
+          "destinationScroll": "auto"
+        },
+        {
+          "x": 10.529,
+          "y": 54.176,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "flur_0_nno",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "EG - Flur Ausgang - Aula",
+          "icon": "arrow_d",
+          "destinationScroll": "auto"
+        }
+      ],
+      "initialScroll": {},
+      "secondBeginning": 100,
+      "is_panorama": true,
+      "is_360": true
+    },
+    {
+      "id": "flur_0_nno",
+      "media": {
+        "src": {
+          "name": "flur_0_no2_360 x.webp",
+          "width": 4502,
+          "height": 800,
+          "type": "img"
+        },
+        "loading": "auto",
+        "fetchPriority": "auto",
+        "autoplay": false,
+        "muted": false,
+        "loop": false,
+        "preload": "auto"
+      },
+      "centralPositions": [],
+      "inlineObjects": [
+        {
+          "x": 60.484,
+          "y": 61.433,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "flur_0_n",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "EG - Flur Lehrerzimmer",
+          "icon": "arrow_u",
+          "destinationScroll": "auto"
+        },
+        {
+          "x": 36.339,
+          "y": 75.602,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "hof_mitte",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "Hof",
+          "icon": "arrow_u",
+          "destinationScroll": "auto"
+        },
+        {
+          "x": 13.246,
+          "y": 75.071,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "flur_0_no",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "EG - Aufgang Aula",
+          "icon": "arrow_u",
+          "destinationScroll": "auto"
+        }
+      ],
+      "initialScroll": {},
+      "secondBeginning": 100,
+      "is_panorama": true,
+      "is_360": true
+    },
+    {
+      "id": "flur_0_no",
+      "media": {
+        "src": {
+          "name": "flur_0_no_360 x.webp",
+          "width": 4484,
+          "height": 800,
+          "type": "img"
+        },
+        "loading": "auto",
+        "fetchPriority": "auto",
+        "autoplay": false,
+        "muted": false,
+        "loop": false,
+        "preload": "auto"
+      },
+      "centralPositions": [
+        46.231
+      ],
+      "inlineObjects": [
+        {
+          "x": 40.528,
+          "y": 52.404,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "flur_01_no",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "Treppenaufgang Aula",
+          "icon": "arrow_u",
+          "destinationScroll": "auto"
+        },
+        {
+          "x": 51.837,
+          "y": 54.356,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "flur_0_nno",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "EG - Flur Ausgang - Lehrerzimmer",
+          "icon": "arrow_l",
+          "destinationScroll": "auto"
+        }
+      ],
+      "initialScroll": {},
+      "secondBeginning": 100,
+      "is_panorama": true,
+      "is_360": true
+    },
+    {
+      "id": "flur_01_no",
+      "media": {
+        "src": {
+          "name": "flur_0_no2_360 (2) x.webp",
+          "width": 4372,
+          "height": 800,
+          "type": "img"
+        },
+        "loading": "auto",
+        "fetchPriority": "auto",
+        "autoplay": false,
+        "muted": false,
+        "loop": false,
+        "preload": "auto"
+      },
+      "centralPositions": [
+        37.241
+      ],
+      "inlineObjects": [
+        {
+          "x": 40.724,
+          "y": 48.688,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "30_aula_foyer",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "1. OG - Foyer Aula",
+          "icon": "arrow_u",
+          "destinationScroll": "auto"
+        },
+        {
+          "x": 29.384,
+          "y": 56.303,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "flur_0_no",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "EG - Aufgang Aula - Ausgang - Lehrerzimmer",
+          "icon": "arrow_d",
+          "destinationScroll": "auto"
+        }
+      ],
+      "initialScroll": {},
+      "secondBeginning": 100,
+      "is_panorama": true,
+      "is_360": true
+    },
+    {
+      "id": "flur_3_no",
+      "media": {
+        "src": {
+          "name": "flur_3_no_360 (2) x.webp",
+          "width": 4226,
+          "height": 800,
+          "type": "img"
+        },
+        "loading": "auto",
+        "fetchPriority": "auto",
+        "autoplay": false,
+        "muted": false,
+        "loop": false,
+        "preload": "auto"
+      },
+      "centralPositions": [],
+      "inlineObjects": [
+        {
+          "x": 13.272,
+          "y": 54.705,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "flur_2_sw",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "2. OG - Flur Physik Musik",
+          "icon": "arrow_d",
+          "destinationScroll": "auto"
+        },
+        {
+          "x": 59.694,
+          "y": 47.444,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "30_Dachboden",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "Dachboden - Turm",
+          "icon": "arrow_u",
+          "destinationScroll": "auto"
+        },
+        {
+          "x": 59.594,
+          "y": 57.011,
+          "type": "clickable",
+          "position": "media",
+          "hidden": false,
+          "goto": "flur_3_n_kunstraum",
+          "targetType": "auto",
+          "action": "activate",
+          "title": "Kunstraum",
+          "icon": "arrow_r",
+          "destinationScroll": "auto"
+        }
+      ],
+      "initialScroll": {},
+      "secondBeginning": 100,
+      "is_panorama": true,
+      "is_360": true
+    }
+  ],
+  "initialPage": "schultor",
+  "fullscreen": true,
+  "colorTheme": "dark",
+  "mode": "normal",
+  "includeClickableHints": false
+}

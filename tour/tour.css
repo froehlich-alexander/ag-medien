@@ -1,0 +1,382 @@
+body {
+  margin: 0;
+  overflow: hidden;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.schul-tour {
+  font-family: sans-serif;
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+@media (max-width: 768px) {
+  .schul-tour {
+    font-size: 1.2rem;
+  }
+}
+.schul-tour button {
+  font-size: 1em;
+}
+.schul-tour[data-color-theme=dark] {
+  background-color: rgb(50, 50, 50);
+}
+.schul-tour[data-tour-mode=inline] {
+  border-radius: 1rem;
+  transition: border-radius 500ms;
+}
+.schul-tour[data-tour-mode=inline]:has(.page.show.pg_panorama), .schul-tour[data-tour-mode=inline]:has(.page.show.deg360) {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+.schul-tour[data-tour-mode=inline] .page {
+  border-radius: 1rem;
+  transition: border-radius 500ms;
+}
+.schul-tour[data-tour-mode=inline] .page .pg_wrapper .bg_container .bg {
+  border-radius: 0.5rem;
+  transition: border-radius 500ms;
+}
+.schul-tour[data-tour-mode=inline] .page.pg_panorama, .schul-tour[data-tour-mode=inline] .page.deg360 {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+.schul-tour[data-tour-mode=inline] .page.pg_panorama .pg_wrapper .bg_container .bg, .schul-tour[data-tour-mode=inline] .page.deg360 .pg_wrapper .bg_container .bg {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+.schul-tour.fullscreen {
+  width: 100vw;
+  height: 100vh;
+}
+.schul-tour .page {
+  height: 100%;
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+  display: none;
+  user-select: none;
+  touch-action: none;
+}
+.schul-tour .page.show {
+  display: flex;
+}
+.schul-tour .page .pg_wrapper {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  flex-wrap: nowrap;
+}
+.schul-tour .page .pg_wrapper .bg_container {
+  position: relative;
+}
+.schul-tour .page .pg_wrapper .bg_container .bg {
+  display: block;
+  user-select: none;
+}
+.schul-tour .page .pg_wrapper .bg_container.fill-width {
+  width: 100%;
+  height: auto;
+  margin-top: auto;
+  margin-bottom: auto;
+}
+.schul-tour .page .pg_wrapper .bg_container.fill-width > .bg {
+  width: 100%;
+  height: auto;
+}
+.schul-tour .page .pg_wrapper .bg_container.fill-height {
+  height: 100%;
+  width: auto;
+  margin-left: auto;
+  margin-right: auto;
+}
+.schul-tour .page .pg_wrapper .bg_container.fill-height > .bg {
+  height: 100%;
+  width: auto;
+}
+.schul-tour .page > .inlineObject {
+  position: fixed;
+  z-index: 1;
+}
+.schul-tour .page .inlineObject {
+  position: absolute;
+  transform: translate(-50%, -50%);
+}
+.schul-tour .page .inlineObject .dev-tool-edit-icon {
+  margin: 0.2em;
+  align-self: start;
+}
+.schul-tour .page .inlineObject.show {
+  opacity: 1;
+}
+.schul-tour .page .inlineObject:not(.show) {
+  opacity: 0;
+}
+.schul-tour .page .inlineObject.clickable {
+  background-color: rgba(0, 0, 0, 0.5);
+  color: white;
+  border-radius: 2em 0.5em 0.5em 2em;
+  display: flex;
+  align-items: center;
+  flex-flow: row-reverse;
+  transform: translate(-1.5em, -1.5em);
+}
+.schul-tour .page .inlineObject.clickable .title {
+  padding: 0.5em 1em;
+  font-weight: bold;
+}
+.schul-tour .page .inlineObject.clickable .icon {
+  border: none;
+  outline: none;
+  border-radius: 2em;
+  width: 3em;
+  height: 3em;
+  background-color: rgba(0, 0, 0, 0.5);
+  position: relative;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.schul-tour .page .inlineObject.clickable.right {
+  flex-flow: row;
+  transform: translateX(calc((100% - 1.5em) * -1));
+  border-radius: 0.5em 2em 2em 0.5em;
+}
+.schul-tour .page .inlineObject.clickable .icon::after {
+  content: "";
+  position: absolute;
+  top: 0.5em;
+  left: 0.5em;
+  width: 2em;
+  height: 2em;
+  background-image: url("svg/arrow_left.svg");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  display: inline-block;
+}
+.schul-tour .page .inlineObject.clickable .icon.arrow_r::after {
+  background-image: url("svg/arrow_right.svg");
+}
+.schul-tour .page .inlineObject.clickable .icon.arrow_u::after {
+  background-image: url("svg/arrow_up.svg");
+}
+.schul-tour .page .inlineObject.clickable .icon.arrow_d::after {
+  background-image: url("svg/arrow_down.svg");
+}
+.schul-tour .page .inlineObject.text-field {
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  border-radius: 1em;
+  padding: 1em;
+  max-width: 20em;
+}
+.schul-tour .page .inlineObject.text-field .text-field-title {
+  text-align: center;
+  font-weight: bold;
+  margin-bottom: 1em;
+}
+.schul-tour .page .inlineObject.text-field .text-field-content {
+  display: inline-block;
+  white-space: normal;
+}
+.schul-tour .page .inlineObject.text-field.normal {
+  max-width: 20em;
+}
+.schul-tour .page .inlineObject.text-field.small {
+  max-width: 10em;
+}
+.schul-tour .page .inlineObject.text-field.large {
+  max-width: 40em;
+}
+.schul-tour .page .inlineObject.text-field.x-large {
+  max-width: 80em;
+}
+.schul-tour .page .inlineObject.text-field.xx-large {
+  max-width: 160em;
+}
+.schul-tour .page .clickable-hint {
+  content: url("svg/arrow_right.svg");
+  position: absolute;
+  background-color: rgba(0, 0, 0, 0.75);
+  width: 3em;
+  height: 3em;
+  padding: 0.5em;
+  border-radius: 2em;
+  border: black 1px solid;
+  animation-duration: 1s;
+  animation-name: clickable-hint-movement;
+  animation-timing-function: ease;
+  animation-iteration-count: infinite;
+  animation-delay: 2s;
+  animation-direction: alternate;
+}
+@keyframes clickable-hint-movement {
+  0% {
+    scale: 1;
+  }
+  80% {
+    background-color: rgba(0, 0, 0, 0.75);
+  }
+  100% {
+    scale: 1.5;
+    border-color: #c526f1;
+  }
+}
+.schul-tour .page .clickable-hint:not(.show) {
+  display: none !important;
+}
+.schul-tour .page iframe.bg {
+  width: 100%;
+  height: 100%;
+}
+.schul-tour .page.pg_panorama .pg_wrapper, .schul-tour .page.deg360 .pg_wrapper {
+  overflow-x: auto;
+}
+.schul-tour .page.pg_panorama .pg_wrapper .bg_container, .schul-tour .page.deg360 .pg_wrapper .bg_container {
+  height: 100%;
+  width: auto;
+  width: -moz-available;
+}
+.schul-tour .page.pg_panorama .pg_wrapper .bg_container > .bg, .schul-tour .page.deg360 .pg_wrapper .bg_container > .bg {
+  height: 100%;
+  width: inherit;
+}
+.schul-tour .page.deg360 .pg_wrapper {
+  /*Hide scrollbar because of infinite scrolling*/
+}
+.schul-tour .page.show.before-show, .schul-tour .page.show.before-hide {
+  z-index: 1;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+}
+.schul-tour .addressable {
+  /* mixin ("prototype") for a new animation
+   * Usage:
+   *      @include animation(my-name, (0: (opacity: 0), 100: (opacity: 1))) {
+   *          // set any other things e.g.:
+   *          animation-duration: 500ms;
+   *      }
+   * generates the following keyframes:
+   *      @keyframe activate-my-name {
+   *          0% { opacity: 0; }
+   *          100% {opacity: 1: }
+   *      }
+   *      @keyframe deactivate-my-name {
+   *          100% { opacity: 0; }
+   *          0% {opacity: 1: }
+   *      }
+   * Please use 0 and 100 instead of 'from' and 'to'
+   */
+}
+@keyframes activate-none {}
+@keyframes deactivate-none {}
+.schul-tour .addressable[data-tour-animation=none]:not([data-tour-animation-onetime]).show, .schul-tour .addressable[data-tour-animation-onetime=none].show {
+  animation-name: none;
+  animation-duration: 500ms;
+  animation-duration: 0ms;
+}
+.schul-tour .addressable[data-tour-animation=none]:not([data-tour-animation-onetime]).show.before-show, .schul-tour .addressable[data-tour-animation-onetime=none].show.before-show {
+  animation-name: activate-none;
+}
+.schul-tour .addressable[data-tour-animation=none]:not([data-tour-animation-onetime]).show.before-hide, .schul-tour .addressable[data-tour-animation-onetime=none].show.before-hide {
+  animation-name: deactivate-none;
+}
+@keyframes activate-fade {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+@keyframes deactivate-fade {
+  100% {
+    opacity: 0;
+  }
+  0% {
+    opacity: 1;
+  }
+}
+.schul-tour .addressable[data-tour-animation=fade]:not([data-tour-animation-onetime]).show, .schul-tour .addressable[data-tour-animation-onetime=fade].show {
+  animation-name: none;
+  animation-duration: 500ms;
+}
+.schul-tour .addressable[data-tour-animation=fade]:not([data-tour-animation-onetime]).show.before-show, .schul-tour .addressable[data-tour-animation-onetime=fade].show.before-show {
+  animation-name: activate-fade;
+}
+.schul-tour .addressable[data-tour-animation=fade]:not([data-tour-animation-onetime]).show.before-hide, .schul-tour .addressable[data-tour-animation-onetime=fade].show.before-hide {
+  animation-name: deactivate-fade;
+}
+@keyframes activate-forward {
+  0% {
+    transform: scale(0.75);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+@keyframes deactivate-forward {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.25);
+    opacity: 0;
+  }
+}
+.schul-tour .addressable[data-tour-animation=forward]:not([data-tour-animation-onetime]).show, .schul-tour .addressable[data-tour-animation-onetime=forward].show {
+  animation-name: none;
+  animation-duration: 500ms;
+  animation-timing-function: ease;
+}
+.schul-tour .addressable[data-tour-animation=forward]:not([data-tour-animation-onetime]).show.before-show, .schul-tour .addressable[data-tour-animation-onetime=forward].show.before-show {
+  animation-name: activate-forward;
+}
+.schul-tour .addressable[data-tour-animation=forward]:not([data-tour-animation-onetime]).show.before-hide, .schul-tour .addressable[data-tour-animation-onetime=forward].show.before-hide {
+  animation-name: deactivate-forward;
+}
+@keyframes activate-backward {
+  0% {
+    transform: scale(1.25);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+@keyframes deactivate-backward {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.75);
+    opacity: 0;
+  }
+}
+.schul-tour .addressable[data-tour-animation=backward]:not([data-tour-animation-onetime]).show, .schul-tour .addressable[data-tour-animation-onetime=backward].show {
+  animation-name: none;
+  animation-duration: 500ms;
+  animation-timing-function: ease;
+}
+.schul-tour .addressable[data-tour-animation=backward]:not([data-tour-animation-onetime]).show.before-show, .schul-tour .addressable[data-tour-animation-onetime=backward].show.before-show {
+  animation-name: activate-backward;
+}
+.schul-tour .addressable[data-tour-animation=backward]:not([data-tour-animation-onetime]).show.before-hide, .schul-tour .addressable[data-tour-animation-onetime=backward].show.before-hide {
+  animation-name: deactivate-backward;
+}
+
+/*# sourceMappingURL=tour.css.map */

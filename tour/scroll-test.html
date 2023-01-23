@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style>
+        #wrapper {
+            overflow-x: scroll;
+            overflow-y: hidden;
+            display: block;
+        }
+
+        .inner-wrapper {
+            gap: 1px;
+            background-color: red;
+            display: flex;
+            width: fit-content;
+        }
+
+        .element {
+            height: 70vh;
+            width: 500px;
+            background-color: black;
+        }
+
+        .element-1 {
+            height: 70vh;
+            width: 500px;
+            background-color: green;
+        }
+    </style>
+</head>
+<body>
+<div id="wrapper">
+    <div class="inner-wrapper">
+        <div class="element-1"></div>
+        <div class="element"></div>
+        <div class="element-1"></div>
+        <div class="element"></div>
+        <div class="element-1"></div>
+    </div>
+</div>
+<script src="jquery.js"></script>
+<script>
+    const wrapper = document.getElementById("wrapper");
+    const count = $(".element").length + $(".element-1").length;
+    const completeWidth = count * 500 + count - 1;
+
+    console.log('complete', completeWidth);
+    console.log("scrollWidth", wrapper.scrollWidth);
+
+    wrapper.scrollTo({
+        left: wrapper.scrollWidth * 0.6,
+    });
+</script>
+</body>
+</html>

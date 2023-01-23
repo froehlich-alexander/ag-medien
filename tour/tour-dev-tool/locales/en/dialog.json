@@ -1,0 +1,66 @@
+{
+  "closeButton": "Close",
+
+  "import": {
+    "modal": {
+      "importButton": "Import",
+      "header": "Import Tour Configuration",
+      "closeButton": "Close"
+    },
+    "takeEffectInfo": "All Changes will take effect after pressing the <1>Import</1> button",
+    "configFile": {
+      "spinner": "Preparing config files...",
+      "formText": "The Tour Config File should be named <1>{{filename}}</1>"
+    },
+    "media": {
+      "spinner": "Preparing the media files...",
+      "reset": {
+        "spinner": "Resetting media input...",
+        "label": "Reset"
+      },
+      "formText": "The Images, Videos, etc. which are used in the tour. You can configure the media more precise in the <1>Media Dialog</1>"
+    },
+    "cleanImport": {
+      "label": "Remove old",
+      "formText": "Whether you want to remove the old page, media, etc. or keep them"
+    }
+  },
+
+  "media": {
+    "buttons": {
+        "addAll": {
+          "label": "Add Files",
+          "spinner": "Preparing the media files..."
+        },
+        "deleteAll": {
+          "label": "Delete all"
+        },
+      "selectAll": "Select All",
+      "unselectAll": "Unselect All",
+      "deleteSelected": "Delete Selected"
+    },
+    "table": {
+      "caption": "Media Table",
+      "name": "Name",
+      "type": "Type",
+      "size": "Size",
+      "actions": "Actions"
+    },
+    "closeButton": "Close"
+  },
+
+  "unsavedChangesAlert": {
+    "text": "You have modified <1>{{pageName}}</1>. Do you want to <3>$t(translation:save)</3> or <5>$t(translation:discard)</5> the changes?"
+  },
+
+  "mediaPreview": {
+    "title": "Media Preview"
+  },
+  "tourPreview": {
+    "title": "Tour Preview"
+  },
+
+  "inlineObject": {
+    "title": "$t(translation:inlineObject)"
+  }
+}

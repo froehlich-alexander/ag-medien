@@ -1,0 +1,450 @@
+@use "sass:math" as math;
+@use "sass:map" as map;
+
+body {
+    margin: 0;
+    overflow: hidden;
+    //background-color: rgb(50, 50, 50);
+    //display: flex;
+    //justify-content: center;
+    //align-items: center;
+    //font-family: sans-serif;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+.schul-tour {
+    $page-animation-duration: 500ms;
+
+    font-family: sans-serif;
+    overflow: hidden;
+    position: relative;
+
+    width: 100%;
+    height: 100%;
+
+    @media (max-width: 768px) {
+        font-size: 1rem * 1.2;
+    }
+
+    button {
+        font-size: 1em;
+    }
+
+    &[data-color-theme=dark] {
+        background-color: rgb(50, 50, 50);
+    }
+
+    &[data-tour-mode=inline] {
+        $page-border-radius: 1rem;
+        $img-border-radius: 0.5rem;
+
+        border-radius: $page-border-radius;
+        transition: border-radius $page-animation-duration;
+
+        &:has(.page.show.pg_panorama), &:has(.page.show.deg360) {
+            border-bottom-left-radius: 0;
+            border-bottom-right-radius: 0;
+        }
+
+        .page {
+            border-radius: $page-border-radius;
+            transition: border-radius $page-animation-duration;
+
+            .pg_wrapper .bg_container .bg {
+                border-radius: $img-border-radius;
+                transition: border-radius $page-animation-duration;
+            }
+
+            &.pg_panorama, &.deg360 {
+                border-bottom-left-radius: 0;
+                border-bottom-right-radius: 0;
+
+                .pg_wrapper .bg_container .bg {
+                    border-bottom-left-radius: 0;
+                    border-bottom-right-radius: 0;
+
+                }
+            }
+        }
+    }
+
+    &.fullscreen {
+        width: 100vw;
+        height: 100vh;
+    }
+
+    .page {
+        height: 100%;
+        width: 100%;
+        position: relative;
+        overflow: hidden;
+        display: none;
+        user-select: none;
+        touch-action: none;
+
+        &.show {
+            display: flex;
+        }
+
+        .pg_wrapper {
+            display: flex;
+            //align-items: center;
+            //justify-content: center;
+            width: 100%;
+            height: 100%;
+            position: relative;
+            flex-wrap: nowrap;
+            //white-space: nowrap;
+
+            .bg_container {
+                //object-fit: contain;
+                position: relative;
+
+                .bg {
+                    display: block;
+                    //object-fit: contain;
+                    user-select: none;
+                }
+
+                &.fill-width {
+                    width: 100%;
+                    height: auto;
+                    margin: {
+                        top: auto;
+                        bottom: auto;
+                    }
+
+                    & > .bg {
+                        width: 100%;
+                        height: auto;
+                    }
+                }
+
+                &.fill-height {
+                    height: 100%;
+                    width: auto;
+                    margin: {
+                        left: auto;
+                        right: auto;
+                    }
+
+                    & > .bg {
+                        height: 100%;
+                        width: auto;
+                    }
+                }
+            }
+        }
+
+        // scrolling does not apply if the inlineObjects are placed directly inside .page
+        & > .inlineObject {
+            position: fixed;
+            z-index: 1;
+        }
+
+        // every clickable, text field, etc. also gets this class
+        .inlineObject {
+            position: absolute;
+            transform: translate(-50%, -50%);
+
+            .dev-tool-edit-icon {
+                margin: 0.2em;
+                align-self: start;
+            }
+
+            &.show {
+                opacity: 1;
+            }
+
+            &:not(.show) {
+                //display: none !important;
+                opacity: 0;
+            }
+
+            &.clickable {
+                $icon-border-radius: 2em;
+                $text-border-radius: 0.5em;
+
+                background-color: rgba(0, 0, 0, 0.5);
+                color: white;
+                border-radius: $icon-border-radius $text-border-radius $text-border-radius $icon-border-radius;
+                display: flex;
+                align-items: center;
+                flex-flow: row-reverse;
+                // only move 50% of button width
+                $btn-durchmesser: 3em;
+                transform: translate(- math.div($btn-durchmesser, 2), - math.div($btn-durchmesser, 2));
+
+                .title {
+                    padding: 0.5em 1em;
+                    font-weight: bold;
+                }
+
+                .icon {
+                    border: none;
+                    outline: none;
+                    border-radius: $icon-border-radius;
+                    width: $btn-durchmesser;
+                    height: $btn-durchmesser;
+                    background-color: rgba(0, 0, 0, 0.5);
+                    position: relative;
+                    cursor: pointer;
+                    flex-shrink: 0;
+                }
+
+                // button right
+                &.right {
+                    flex-flow: row;
+                    transform: translateX(calc((100% - 1.5em) * -1));
+                    border-radius: $text-border-radius $icon-border-radius $icon-border-radius $text-border-radius;
+                }
+
+                .icon::after {
+                    content: '';
+                    position: absolute;
+                    top: 0.5em;
+                    left: 0.5em;
+                    width: 2em;
+                    height: 2em;
+                    background-image: url('svg/arrow_left.svg');
+                    background-size: contain;
+                    background-repeat: no-repeat;
+                    background-position: center;
+                    display: inline-block;
+                }
+
+                .icon.arrow_r::after {
+                    background-image: url('svg/arrow_right.svg');
+                }
+
+                .icon.arrow_u::after {
+                    background-image: url('svg/arrow_up.svg');
+                }
+
+                .icon.arrow_d::after {
+                    background-image: url('svg/arrow_down.svg');
+                }
+
+                // Clickable which goes to the place where we came from
+                &.clickable.lastest-clickable {
+
+                }
+            }
+
+            &.text-field {
+                background-color: rgba(black, 0.7);
+                color: white;
+                border-radius: 1em;
+                padding: 1em;
+                $normal_width: 20em;
+                max-width: $normal_width;
+
+                .text-field-title {
+                    text-align: center;
+                    font-weight: bold;
+                    margin-bottom: 1em;
+                }
+
+                .text-field-content {
+                    display: inline-block;
+                    white-space: normal;
+                }
+
+                &.normal {
+                    max-width: $normal_width;
+                }
+
+                &.small {
+                    max-width: math.div($normal_width, 2);
+                }
+
+                &.large {
+                    max-width: $normal_width*2;
+                }
+
+                &.x-large {
+                    max-width: $normal_width*4;
+                }
+
+                &.xx-large {
+                    max-width: $normal_width*8;
+                }
+            }
+        }
+
+        // see js class ClickableHint
+        .clickable-hint {
+            //transform: translate(-50%, -50%);
+            content: url("svg/arrow_right.svg");
+            position: absolute;
+            $background-color: rgba(0, 0, 0, 0.75);
+            background-color: $background-color;
+            width: 3em;
+            height: 3em;
+            padding: 0.5em;
+            border-radius: 2em;
+            border: black 1px solid;
+
+            animation-duration: 1s;
+            animation-name: clickable-hint-movement;
+            animation-timing-function: ease;
+            animation-iteration-count: infinite;
+            animation-delay: 2s;
+            animation-direction: alternate;
+
+            @keyframes clickable-hint-movement {
+                0% {
+                    scale: 1;
+                }
+                80% {
+                    background-color: $background-color;
+                }
+                100% {
+                    scale: 1.5;
+                    border-color: #c526f1;
+                }
+            }
+
+            &:not(.show) {
+                display: none !important;
+            }
+        }
+
+        iframe.bg {
+            width: 100%;
+            height: 100%;
+        }
+
+        &.pg_panorama, &.deg360 {
+            .pg_wrapper {
+                overflow-x: auto;
+
+                .bg_container {
+                    height: 100%;
+                    width: auto;
+
+                    // without this, firefox displays spaces between the two imgs
+                    width: -moz-available;
+
+                    & > .bg {
+                        height: 100%;
+                        width: inherit;
+
+                    }
+                }
+            }
+        }
+
+        &.deg360 .pg_wrapper {
+            /*Hide scrollbar because of infinite scrolling*/
+            //scrollbar-width: auto;
+        }
+
+        // active while an animation is running
+        &.show {
+            &.before-show, &.before-hide {
+                z-index: 1;
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                display: flex;
+            }
+        }
+    }
+
+    .addressable {
+        $activate-animation-prefix: activate;
+        $deactivate-animation-prefix: deactivate;
+        $animation-attr: data-tour-animation;
+        $animation-attr-onetime: data-tour-animation-onetime;
+
+        /* mixin ("prototype") for a new animation
+         * Usage:
+         *      @include animation(my-name, (0: (opacity: 0), 100: (opacity: 1))) {
+         *          // set any other things e.g.:
+         *          animation-duration: 500ms;
+         *      }
+         * generates the following keyframes:
+         *      @keyframe activate-my-name {
+         *          0% { opacity: 0; }
+         *          100% {opacity: 1: }
+         *      }
+         *      @keyframe deactivate-my-name {
+         *          100% { opacity: 0; }
+         *          0% {opacity: 1: }
+         *      }
+         * Please use 0 and 100 instead of 'from' and 'to'
+         */
+        @mixin animation($name, $keyframes, $deactivate-keyframes: null) {
+            &[#{$animation-attr}=#{$name}]:not([#{$animation-attr-onetime}]), &[#{$animation-attr-onetime}=#{$name}] {
+
+                // activate
+                @keyframes #{$activate-animation-prefix}-#{$name} {
+                    @each $number, $attribute-map in $keyframes {
+                        #{$number}% {
+                            @each $key, $value in $attribute-map {
+                                #{$key}: $value;
+                            }
+                        }
+                    }
+                }
+
+                // user can specify deactivate keyframes but don't has to
+                @if $deactivate-keyframes == null {
+                    $deactivate-keyframes: ();
+                    // revert keyframes
+                    // 70% {...} -> 30% {...}
+                    @each $number, $attribute-map in $keyframes {
+                        $deactivate-keyframes: map.set($deactivate-keyframes, 100-$number, $attribute-map)
+                    }
+                }
+
+                // deactivate
+                @keyframes #{$deactivate-animation-prefix}-#{$name} {
+                    @each $number, $attribute-map in $deactivate-keyframes {
+                        #{$number}% {
+                            @each $key, $value in $attribute-map {
+                                #{$key}: $value;
+                            }
+                        }
+                    }
+                }
+
+                &.show {
+                    animation-name: none;
+                    animation-duration: 500ms;
+                    @content;
+
+                    &.before-show {
+                        animation-name: #{$activate-animation-prefix}-#{$name};
+                    }
+
+                    &.before-hide {
+                        animation-name: #{$deactivate-animation-prefix}-#{$name};
+                    }
+                }
+            }
+        }
+
+        @include animation(none, ()) {
+            animation-duration: 0ms;
+        }
+
+        @include animation(fade, (0: (opacity: 0), 100: (opacity: 1)));
+
+        @include animation(forward, (0: (transform: scale(0.75), opacity: 0), 100: (transform: scale(1), opacity: 1)),
+                (0: (transform: scale(1), opacity: 1), 100: (transform: scale(1.25), opacity: 0))) {
+            animation-timing-function: ease;
+        }
+
+        @include animation(backward, (0: (transform: scale(1.25), opacity: 0), 100: (transform: scale(1), opacity: 1)),
+                (0: (transform: scale(1), opacity: 1), 100: (transform: scale(0.75), opacity: 0))) {
+            animation-timing-function: ease;
+        }
+    }
+}

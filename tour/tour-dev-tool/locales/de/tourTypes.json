@@ -1,0 +1,22 @@
+{
+  "IconType": {
+    "arrow_l": "Pfeil Nach Links",
+    "arrow_r": "Pfeil Nach Rechts",
+    "arrow_u": "Pfeil Nach Oben",
+    "arrow_d": "Pfeil Nach Unten"
+  },
+
+  "textFieldSizes": {
+    "normal": "Normal",
+    "small": "Klein",
+    "large": "Groß",
+    "x-large": "Extra Groß",
+    "xx-large": "Sehr Sehr Groß"
+  },
+  "animationTypes": {
+    "forward": "Vorwärts",
+    "backward": "Rückwärts",
+    "fade": "Überblenden ohne Bewegung",
+    "none": "Keine Animation"
+  }
+}
