@@ -1,6 +1,6 @@
-import {arrayEqualsContain} from "./utils.js";
+import {DefaultOrType, ExcludeDefault, isDefault, NotSet, wrapDefault} from "./DefaultValueService.js";
 import type {MediaContextType} from "./tour-dev-tool/TourContexts";
-import type {Complete, UnFlatArray} from "./tour-dev-tool/utils";
+import type {UnFlatArray} from "./tour-dev-tool/utils";
 import type {
     AbstractJsonInlineObject,
     ActionType,
@@ -28,20 +28,23 @@ import type {
     TextFieldSize,
     VideoPreloadType,
 } from "./types";
+import {arrayEqualsContain} from "./utils.js";
 
 export const mediaFolder = "media";
 
 type DataTypeWithoutFields<T extends Data> = { [k in keyof Omit<T, "fields" | "field" | "json"> as T[k] extends Function ? never : k]: T[k] };
 type DataType<T extends Data> = //Pick<T, T["field"]>;
     T extends Data<infer U, infer U1> ? U1 : never;
+
 type JsonFromDataType<T extends { [k: string]: any }> = {
     [k in keyof T]:
     (T[k] extends { toJSON: () => infer JsonRet }
-        ? (JsonRet extends Record<symbol | string | number, any> ? JsonFromDataType<JsonRet> : JsonRet)
+        ? (JsonRet extends Record<symbol | string | number, any> ? JsonFromDataType<JsonRet> : JsonRemoveNotSetAndDefaultValues<JsonRet>)
         : (T[k] extends Array<infer AType>
-            ? Array<(AType extends Record<symbol | string | number, any> ? JsonFromDataType<AType> : AType)>
-            : T[k]))
+            ? Array<(AType extends Record<symbol | string | number, any> ? JsonFromDataType<AType> : JsonRemoveNotSetAndDefaultValues<AType>)>
+            : JsonRemoveNotSetAndDefaultValues<T[k]>))
 };
+type JsonRemoveNotSetAndDefaultValues<T> = Exclude<ExcludeDefault<T>, NotSet>;
 
 type JsonType<T extends Data> = T["json"];
 type DeepDataType<T extends Data> = {
@@ -306,22 +309,24 @@ class Data<T extends { [k: string]: any } = any, TUnion extends { [k: string]: a
         }
 
         const jsonObj: JsonFromDataType<TUnion> = {} as JsonFromDataType<TUnion>;
-        for (let i of this.fields) {
-            if (skip.includes(i as Keys)) {
+        for (let key of this.fields) {
+            if (skip.includes(key as Keys)) {
                 continue;
             }
-            // skip undefined values
-            if (this[i as keyof this] === undefined) {
+            const value = this[key as keyof this];
+
+            // skip undefined / unset values or values
+            if (value === undefined || value === NotSet || isDefault(value)) {
                 continue;
             }
-            jsonObj[i as keyof TUnion] = transformObjectToJson(this[i as keyof this]);
-            // if (typeof this[i] === "object" && "toJSON" in this[i]) {
-            //     jsonObj[i] = this[i].toJSON();
+            jsonObj[key as keyof TUnion] = transformObjectToJson(value);
+            // if (typeof this[key] === "object" && "toJSON" in this[key]) {
+            //     jsonObj[key] = this[key].toJSON();
             // }
             // else {
-            //     jsonObj[i] = this[i];
+            //     jsonObj[key] = this[key];
             // }
-            // jsonObj[i] = this[i]?.toJSON?.() ?? this[i];
+            // jsonObj[key] = this[key]?.toJSON?.() ?? this[key];
         }
         return jsonObj;
     }
@@ -356,7 +361,7 @@ class Data<T extends { [k: string]: any } = any, TUnion extends { [k: string]: a
 
 interface AbstractAddressableObjectType {
     readonly id: string,
-    readonly animationType: AnimationType,
+    readonly animationType: DefaultOrType<AnimationType>,
 }
 
 interface AbstractAddressableObject<T, TUnion> extends AbstractAddressableObjectType, DataWiths<AbstractAddressableObjectType> {
@@ -433,7 +438,7 @@ interface AbstractInlineObjectDataType {
 
     // undefined is allowed for things like clickable because we always have a fallback value from the Addressable Object itself
     // (therefore undefined is NOT allowed for addressable object - see AbstractAddressableInlineObjectDataType)
-    readonly animationType: AnimationType | undefined;
+    readonly animationType: DefaultOrType<AnimationType> | NotSet;
     readonly hidden: boolean;
 }
 
@@ -546,7 +551,7 @@ class AbstractInlineObjectData<T extends AbstractInlineObjectDataType = Abstract
 
 interface AbstractAddressableInlineObjectDataType extends AbstractInlineObjectDataType {
     readonly id: string,
-    readonly animationType: AnimationType,
+    readonly animationType: DefaultOrType<AnimationType>,
 }
 
 // @ts-ignore
@@ -729,7 +734,7 @@ class ClickableData extends AbstractActivatingInlineObjectData<ClickableDataType
     public static default: ClickableData = new ClickableData({
         icon: "arrow_l",
         title: "",
-        animationType: undefined,
+        animationType: NotSet,
         goto: "",
         targetType: "auto",
         x: 0,
@@ -758,41 +763,10 @@ class ClickableData extends AbstractActivatingInlineObjectData<ClickableDataType
         });
     }
 
-    // public override toJSON(): this["json"] {
-    //     return {
-    //         ...super.partialToJSON(),
-    //         destinationScroll: this.destinationScroll
-    //     }
-    // }
-
-    // public equals(other: DataType<ClickableData> | undefined | null): other is DataType<ClickableData> {
-    //     return super.equals(other)
-    //         && this.title === other.title
-    //         && this.icon === other.icon;
-    // }
-    //
-    // public toJSON(): JsonClickable {
-    //     return {
-    //         ...super.toJSON(),
-    //         title: this.title,
-    //         icon: this.icon,
-    //     } as JsonClickable;
-    //     // we need to cast here because JsonActivating is dynamic
-    // }
-    //
-    // public withIcon(icon: IconType): ClickableData {
-    //     return new ClickableData({...this, icon: icon});
-    // }
-    //
-    // public withTitle(title: string): ClickableData {
-    //     return new ClickableData({...this, title: title});
-    // }
     static {
         this.makeImmutable();
     }
 }
-
-// type ClickableData = DataClassType<ClickableData>;
 
 // interface TextFieldData extends AbstractInlineObjectData<TextFieldData, JsonTextField>{}
 interface TextFieldDataType extends AbstractAddressableInlineObjectDataType {
@@ -807,15 +781,8 @@ interface TextFieldData extends DataTypeInitializer<TextFieldDataType, never, Ab
 
 class TextFieldData extends AbstractAddressableInlineObjectData<TextFieldDataType> {
     declare public readonly json: JsonTextField;
-    //
-    // public readonly title?: string;
-    // public readonly content: string;
-    // public readonly cssClasses: string[];
-    // public readonly size: TextFieldSize;
-    // public readonly id: string;
-
     declare public readonly type: "text";
-    declare public readonly animationType: TextAnimations;
+    declare public readonly animationType: DefaultOrType<TextAnimations>;
 
     public static readonly Sizes: TextFieldSize[] = ["small", "normal", "large", "x-large", "xx-large"];
 
@@ -827,10 +794,6 @@ class TextFieldData extends AbstractAddressableInlineObjectData<TextFieldDataTyp
             cssClasses: cssClasses,
             size: size,
         });
-        // this.title = title;
-        // this.content = content;
-        // this.cssClasses = cssClasses;
-        // this.size = size;
         this.onConstructionFinished(TextFieldData);
     }
 
@@ -864,51 +827,10 @@ class TextFieldData extends AbstractAddressableInlineObjectData<TextFieldDataTyp
             x: typeof json.x === "number" ? json.x : parseFloat(json.x),
             y: typeof json.y === "number" ? json.y : parseFloat(json.y),
             position: json.position ?? TextFieldData.default.position,
-            animationType: json.animationType ?? TextFieldData.default.animationType,
+            animationType: json.animationType ?? wrapDefault(TextFieldData.default.animationType),
         });
     }
 
-    // public equals(other: DataType<TextFieldData> | undefined | null): other is DataType<TextFieldData> {
-    //     return super.equals(other) &&
-    //         this.title === other.title &&
-    //         this.content === other.content &&
-    //         this.size === other.size &&
-    //         // this.id === other.id &&
-    //         arrayEquals(this.cssClasses, other.cssClasses);
-    // }
-    //
-    // public toJSON(): JsonTextField {
-    //     return {
-    //         ...super.toJSON(),
-    //         title: this.title,
-    //         content: this.content,
-    //         cssClasses: this.cssClasses as Mutable<TextFieldData["cssClasses"]>,
-    //         size: this.size,
-    //     };
-    // }
-    //
-    // public withTitle(title: string): TextFieldData {
-    //     return new TextFieldData({...this, title: title});
-    // }
-    //
-    // public withContent(content: string): TextFieldData {
-    //     return new TextFieldData({...this, content: content});
-    // }
-    //
-    // public withCssClasses(cssClasses: string[]): TextFieldData {
-    //     return new TextFieldData({...this, cssClasses: cssClasses});
-    // }
-    //
-    // public withFooter(footer: string | undefined): TextFieldData {
-    //     return new TextFieldData({...this, footer: footer});
-    // }
-    //
-    // public withSize(size: TextFieldSize): TextFieldData {
-    //     if (this.size === size) {
-    //         return this;
-    //     }
-    //     return new TextFieldData({...this, size: size});
-    // }
     static {
         this.makeImmutable();
     }
@@ -929,7 +851,7 @@ class CustomObjectData extends AbstractInlineObjectData<CustomObjectDataType> {
     // public readonly htmlId: string;
 
     declare public readonly type: "custom";
-    declare public readonly animationType: CustomAnimations;
+    declare public readonly animationType: DefaultOrType<CustomAnimations>;
 
     constructor({htmlId, ...base}: CustomObjectDataType) {
         super({...base, type: "custom"});
@@ -959,22 +881,11 @@ class CustomObjectData extends AbstractInlineObjectData<CustomObjectDataType> {
             x: typeof json.x === "number" ? json.x : parseFloat(json.x),
             y: typeof json.y === "number" ? json.y : parseFloat(json.y),
             position: json.position ?? CustomObjectData.default.position,
-            animationType: json.animationType ?? CustomObjectData.default.animationType,
+            animationType: json.animationType ?? wrapDefault(CustomObjectData.default.animationType),
             hidden: json.hidden ?? CustomObjectData.default.hidden,
         });
     }
 
-    // public equals(other: DataType<CustomObjectData> | undefined | null): other is DataType<CustomObjectData> {
-    //     return super.equals(other) &&
-    //         this.htmlId === other.htmlId;
-    // }
-    //
-    // public toJSON(): JsonCustomObject {
-    //     return {
-    //         ...super.toJSON(),
-    //         htmlId: this.htmlId,
-    //     };
-    // }
     static {
         this.makeImmutable();
     }
@@ -1617,7 +1528,7 @@ class PageData extends AbstractAddressableObject<PageDataType> {
     declare public readonly json: JsonPage & AbstractAddressableObject["json"];
     // declare public readonly field: keyof DataTypeWithoutFields<PageData>;
 
-    public declare readonly animationType: PageAnimations;
+    public declare readonly animationType: DefaultOrType<PageAnimations>;
 
     // public readonly media: MediaData;
     // public readonly is360: boolean;
@@ -1673,7 +1584,7 @@ class PageData extends AbstractAddressableObject<PageDataType> {
         }
 
         return new PageData({
-            animationType: page.animationType ?? PageData.default.animationType,
+            animationType: page.animationType ?? wrapDefault(PageData.default.animationType),
             id: page.id,
             media: media,
             is360: is360,

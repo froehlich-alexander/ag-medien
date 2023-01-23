@@ -11,6 +11,13 @@ import {
     TextFieldData,
     uniqueId,
 } from "./Data.js";
+import {
+    defaultEqual,
+    defaultNullishCoalescing,
+    DefaultOrType,
+    DefaultValue, ExcludeDefault, extractFromDefault,
+    notSetToUndefined,
+} from "./DefaultValueService.js";
 import {Mutable} from "./tour-dev-tool/utils";
 import type {
     AnimationType, InlineObjectType,
@@ -659,7 +666,6 @@ class Page extends AddressableObject() {
     // the position (middle of page) which is our current absolute central position
     public centralPositionAbsolute?: number | null = undefined;
     public readonly inlineObjects: InlineObject[];
-    public readonly animationType: PageAnimations;
     public readonly clickableHints: readonly ClickableHint[];
 
     declare public readonly html: JQuery<HTMLDivElement>;
@@ -693,7 +699,6 @@ class Page extends AddressableObject() {
         this.media.page = this;
         this.is_360 = data.is360;
         this.is_panorama = data.isPanorama;
-        this.animationType = data.animationType;
         this.inlineObjects = inlineObjects.slice();
 
         this.html = $("<div></div>");
@@ -1051,7 +1056,7 @@ class Page extends AddressableObject() {
         return finished_last && !this.activated && !this.activateRunning;
     }
 
-    public override activate(animationType?: PageAnimations, options?: { destinationScroll?: number }): boolean {
+    public override activate(animationType?: DefaultOrType<PageAnimations>, options?: { destinationScroll?: number }): boolean {
         if (!super.activate(animationType)) {
             return false;
         }
@@ -1094,7 +1099,7 @@ class Page extends AddressableObject() {
         return true;
     }
 
-    public override deactivate(animationType?: AnimationType): boolean {
+    public override deactivate(animationType?: DefaultOrType<PageAnimations>): boolean {
         if (!super.deactivate(animationType)) {
             return false;
         }
@@ -1231,7 +1236,7 @@ function AddressableObject<T extends { new(...args: any[]): {} }>(baseClass?: T)
 
     class AddressableObject extends baseClass {
         declare public readonly html: JQuery;
-        declare public readonly data: { animationType: AnimationType };
+        declare public readonly data: { animationType: DefaultOrType<AnimationType> };
 
         // see InlineObject
         declare protected readonly similar?: AddressableObject[];
@@ -1243,7 +1248,7 @@ function AddressableObject<T extends { new(...args: any[]): {} }>(baseClass?: T)
         protected prepareHTML() {
             this.html.addClass("addressable");
             //animations
-            this.html.attr("data-tour-animation", this.data.animationType);
+            this.html.attr("data-tour-animation", this.data.animationType as Exclude<typeof this.data.animationType, DefaultValue<typeof this.data.animationType>>);
             this.html[0].addEventListener("animationend", (event) => this.handleAnimationEnd(event));
         }
 
@@ -1279,7 +1284,7 @@ function AddressableObject<T extends { new(...args: any[]): {} }>(baseClass?: T)
             return this.activated && !this.deactivateRunning && !this.activateRunning;
         }
 
-        public activate(animationType?: AnimationType, options?: {}): boolean {
+        public activate(animationType?: DefaultOrType<AnimationType>, options?: {}): boolean {
             if (!this.activateAllowed()) {
                 return false;
             }
@@ -1293,7 +1298,7 @@ function AddressableObject<T extends { new(...args: any[]): {} }>(baseClass?: T)
                 }
             }
 
-            if (animationType !== undefined && animationType !== this.data.animationType) {
+            if (!defaultEqual(animationType, undefined) && !defaultEqual(animationType, this.data.animationType)) {
                 this.html.attr("data-tour-animation-onetime", animationType);
             }
 
@@ -1304,7 +1309,7 @@ function AddressableObject<T extends { new(...args: any[]): {} }>(baseClass?: T)
             return true;
         }
 
-        public deactivate(animationType?: AnimationType, options?: {}): boolean {
+        public deactivate(animationType?: DefaultOrType<AnimationType>, options?: {}): boolean {
             if (!this.deactivateAllowed()) {
                 return false;
             }
@@ -1318,7 +1323,7 @@ function AddressableObject<T extends { new(...args: any[]): {} }>(baseClass?: T)
                 }
             }
 
-            if (animationType !== undefined && animationType !== this.data.animationType) {
+            if (!defaultEqual(animationType, undefined) && !defaultEqual(animationType, this.data.animationType)) {
                 this.html.attr("data-tour-animation-onetime", animationType);
             }
 
@@ -1327,7 +1332,7 @@ function AddressableObject<T extends { new(...args: any[]): {} }>(baseClass?: T)
             return true;
         }
 
-        public toggle(value?: boolean, animationType?: AnimationType) {
+        public toggle(value?: boolean, animationType?: DefaultOrType<AnimationType>) {
             value ??= !this.activated;
             if (value) {
                 this.activate(animationType);
@@ -1475,7 +1480,7 @@ class CustomObject extends InlineObject {
 
     constructor(data: CustomObjectData, html?: JQuery<HTMLElement>) {
         super(data, html ?? $("#" + data.htmlId), html !== undefined);
-        this.html.attr("data-animation", data.animationType);
+        this.html.attr("data-animation", data.animationType as ExcludeDefault<typeof data.animationType>);
     }
 }
 
@@ -1641,7 +1646,7 @@ class Clickable extends InlineObject {
         for (let destinationPage of Tour.pages) {
             // clickable addresses a page obj
             if (destinationPage.id === this.data.goto) {
-                const animationType = this.data.animationType ?? destinationPage.animationType;
+                const animationType = defaultNullishCoalescing(notSetToUndefined(this.data.animationType), destinationPage.data.animationType);
 
                 // the position on the next page where the user will arrive
                 let destinationScroll: number | "auto" | undefined = this.data.destinationScroll ?? "auto";
@@ -1658,7 +1663,7 @@ class Clickable extends InlineObject {
                     // console.log("dest scroll clickable", destinationScroll, clickable);
                     const pictureWidthUntilRepeat = destinationPage.data.secondBeginning;
                     if (clickable) {
-                        switch (animationType) {
+                        switch (extractFromDefault(animationType)) {
                             case "forward":
                                 // we take the position of the clickable (in percent)
                                 // then we add 50 to it to get the position one would look at when coming from that clickable
@@ -1708,13 +1713,13 @@ class Clickable extends InlineObject {
     private performAction(destinationObj: TextField): void {
         switch (this.data.action) {
             case "activate":
-                destinationObj.activate(this.data.animationType);
+                destinationObj.activate(notSetToUndefined(this.data.animationType));
                 break;
             case "deactivate":
-                destinationObj.deactivate(this.data.animationType);
+                destinationObj.deactivate(notSetToUndefined(this.data.animationType));
                 break;
             case "toggle":
-                destinationObj.toggle(undefined, this.data.animationType);
+                destinationObj.toggle(undefined, notSetToUndefined(this.data.animationType));
                 break;
         }
     }
