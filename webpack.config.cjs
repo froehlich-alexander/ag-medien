@@ -388,6 +388,12 @@ const config = {
     resolve: {
         extensions: [".ts", ".tsx", ".js", ".jsx", ".json"],
         fullySpecified: false,
+        extensionAlias: {
+            '.js': ['.ts', '.js']
+        }
+        // alias: {
+        //     DefaultValueService: path.resolve(__dirname, 'src/')
+        // }
     },
     watch: true,
 };

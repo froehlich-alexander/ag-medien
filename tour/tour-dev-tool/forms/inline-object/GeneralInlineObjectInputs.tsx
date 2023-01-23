@@ -1,15 +1,23 @@
-import React, {ChangeEvent, useCallback} from "react";
-import {Form, FormControl, FormSelect, FormText, InputGroup} from "react-bootstrap";
+import React, {ChangeEvent, useCallback, useMemo} from "react";
+import {FormControl, FormSelect, FormText, InputGroup} from "react-bootstrap";
 import {useTranslation} from "react-i18next";
+import {DefaultValue} from "../../../DefaultValueService";
 import {
-    AbstractAddressableInlineObjectData,
     ClickableData,
     InlineObjectData,
+    InlineObjectDataConstructor,
     PageData,
     TextFieldData,
 } from "../../../Data";
+import {
+    defaultEqual,
+    defaultIsUndefined, ExcludeDefault,
+    extractFromDefault,
+    isDefault,
+    isNotSet,
+    NotSet,
+} from "../../../DefaultValueService";
 import {AnimationType, InlineObjectPosition, InlineObjectType} from "../../../types";
-import type PageForm from '../page/PageForm';
 
 export type InputElementProps<T> = {
     inlineObject: T,
@@ -26,7 +34,7 @@ export function Hidden({onChange, inlineObject}: InputElementProps<InlineObjectD
     return (<>
         <InputGroup>
             <InputGroup.Text as="label" htmlFor="object-hidden">{t("label")}</InputGroup.Text>
-            <InputGroup.Checkbox checked={inlineObject.hidden} id="object-hidden" onChange={handleChange} />
+            <InputGroup.Checkbox checked={inlineObject.hidden} id="object-hidden" onChange={handleChange}/>
             {/*<FormControl.Feedback type="invalid">{t("invalidFeedback")}</FormControl.Feedback>*/}
         </InputGroup>
         <FormText>{t("formText")}</FormText>
@@ -120,10 +128,11 @@ export function Position({onChange, inlineObject}: InputElementProps<InlineObjec
 /**
  * This is also used by {@link PageForm}
  */
-export function AnimationTypeInput<T extends InlineObjectData|PageData>({onChange, inlineObject}: InputElementProps<T>) {
+export function AnimationTypeInput<T extends InlineObjectData | PageData>
+({onChange, inlineObject}: InputElementProps<T>) {
     const {t} = useTranslation("mainPage", {keyPrefix: "pageForm.inlineObjectContainerForm.inlineObjectForm.animationType"});
     const {t: tAnimations} = useTranslation("tourTypes", {keyPrefix: "animationTypes"});
-    const { t :tGlob} = useTranslation("translation");
+    const {t: tGlob} = useTranslation("translation");
 
     const handleChange = useCallback((event: ChangeEvent<HTMLSelectElement>) => {
         const value = event.target.value;
@@ -131,16 +140,27 @@ export function AnimationTypeInput<T extends InlineObjectData|PageData>({onChang
         onChange(inlineObject.withAnimationType(value as AnimationType));
     }, [inlineObject, onChange]);
 
+    const defaultAnimationType = useMemo(() => {
+        return (inlineObject.constructor as InlineObjectDataConstructor | typeof PageData).default.animationType as AnimationType | NotSet;
+    }, [inlineObject.constructor]);
+
+    const animationType = useMemo(() => {
+        return isDefault(inlineObject.animationType) ? NotSet : inlineObject.animationType;
+    }, [inlineObject.animationType]);
+
     return (
         <InputGroup>
             <InputGroup.Text as="label"
                              htmlFor="object-animation">{t("label")}</InputGroup.Text>
-            <FormSelect value={inlineObject.animationType} id="object-animation" required
+            <FormSelect value={animationType} id="object-animation" required
                         onChange={handleChange}>
                 {InlineObjectData.AnimationTypes.map(animationType =>
                     <option key={animationType} value={animationType}>{tAnimations(animationType)}</option>,
                 )}
-                {!inlineObject.isAddressable() && <option key={'undefined'} value={undefined}>{tGlob('notSet')}</option>}
+                {<option key={NotSet} value={NotSet}>
+                    {tGlob('default')}
+                    {!isNotSet(defaultAnimationType) && ` (${tAnimations(defaultAnimationType)})`}
+                </option>}
             </FormSelect>
         </InputGroup>
     );
