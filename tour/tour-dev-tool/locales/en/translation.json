@@ -11,5 +11,6 @@
   "close": "Close",
   "previous": "Previous",
   "next": "Next",
-  "notSet": "not set"
+  "notSet": "Not set",
+  "default": "Default"
 }

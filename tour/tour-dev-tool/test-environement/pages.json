@@ -2,7 +2,6 @@
   "pages": [
     {
       "id": "hof_mitte",
-      "animationType": "forward",
       "media": {
         "src": {
           "name": "hof_mitte x.webp",
@@ -28,7 +27,7 @@
           "type": "clickable",
           "position": "media",
           "animationType": "fade",
-          "hidden": false,
+          "hidden": true,
           "goto": "text-test",
           "targetType": "text-field",
           "action": "toggle",
@@ -138,7 +137,6 @@
     },
     {
       "id": "05_sporthalle",
-      "animationType": "forward",
       "media": {
         "src": {
           "name": "05_sporthalle.webp",
@@ -179,7 +177,6 @@
     },
     {
       "id": "15_eingang",
-      "animationType": "forward",
       "media": {
         "src": {
           "name": "flur_1_w_w.webp",
@@ -244,7 +241,6 @@
     },
     {
       "id": "15_flur_eg",
-      "animationType": "forward",
       "media": {
         "src": {
           "name": "flur_0_w_360 x.webp",
@@ -324,7 +320,6 @@
     },
     {
       "id": "15_glaskasten",
-      "animationType": "forward",
       "media": {
         "src": {
           "name": "Glaskasten.webp",
@@ -375,7 +370,6 @@
     },
     {
       "id": "16_sekretariat",
-      "animationType": "forward",
       "media": {
         "src": {
           "name": "16_sekretariat.webp",
@@ -416,7 +410,6 @@
     },
     {
       "id": "flur_0_nw_foyer",
-      "animationType": "forward",
       "media": {
         "src": {
           "name": "flur_0_nw_360 x.webp",
@@ -483,7 +476,6 @@
     },
     {
       "id": "25_lehrerzimmer",
-      "animationType": "forward",
       "media": {
         "src": {
           "name": "25_lehrerzimmer.webp",
@@ -524,7 +516,6 @@
     },
     {
       "id": "flur_1_nw_foyer",
-      "animationType": "forward",
       "media": {
         "src": {
           "name": "flur_1_nw_360 x.webp",
@@ -605,7 +596,6 @@
     },
     {
       "id": "30_vor_physik_raum",
-      "animationType": "forward",
       "media": {
         "src": {
           "name": "30_vor_physik_raum.webp",
@@ -671,7 +661,6 @@
     },
     {
       "id": "30_physik_raum",
-      "animationType": "forward",
       "media": {
         "srcMin": {
           "name": "fb_physik_s.webm",
@@ -716,7 +705,6 @@
     },
     {
       "id": "30_aula_foyer",
-      "animationType": "forward",
       "media": {
         "src": {
           "name": "flur_1_no_360 (1) x.webp",
@@ -782,7 +770,6 @@
     },
     {
       "id": "klassenraum_x",
-      "animationType": "forward",
       "media": {
         "src": {
           "name": "klassenraum x.webp",
@@ -822,7 +809,6 @@
     },
     {
       "id": "30_Dachboden",
-      "animationType": "forward",
       "media": {
         "src": {
           "name": "Dachboden.webp",
@@ -901,7 +887,6 @@
     },
     {
       "id": "40_Turm",
-      "animationType": "forward",
       "media": {
         "src": {
           "name": "rgs_turm.webp",
@@ -954,7 +939,6 @@
     },
     {
       "id": "60_turm",
-      "animationType": "forward",
       "media": {
         "src": {
           "name": "60_turm.webp",
@@ -1007,7 +991,6 @@
     },
     {
       "id": "Hof_von_oben",
-      "animationType": "forward",
       "media": {
         "src": {
           "name": "schulhof_vom_turm.webp",
@@ -1086,7 +1069,6 @@
     },
     {
       "id": "hof_sw",
-      "animationType": "forward",
       "media": {
         "src": {
           "name": "hof_sw x.webp",
@@ -1140,7 +1122,6 @@
     },
     {
       "id": "balkon",
-      "animationType": "forward",
       "media": {
         "src": {
           "name": "glaskasten_balkon x.webp",
@@ -1193,7 +1174,6 @@
     },
     {
       "id": "schultor",
-      "animationType": "forward",
       "media": {
         "src": {
           "name": "Schultor.webp",
@@ -1230,7 +1210,6 @@
           "y": 92.651,
           "type": "clickable",
           "position": "media",
-          "animationType": "fade",
           "hidden": false,
           "goto": "hof_mitte",
           "targetType": "auto",
@@ -1247,7 +1226,6 @@
     },
     {
       "id": "flur_2_nw_foyer",
-      "animationType": "forward",
       "media": {
         "src": {
           "name": "flur_2_nw_360 x.webp",
@@ -1327,7 +1305,6 @@
     },
     {
       "id": "flur_3_nw_foyer",
-      "animationType": "forward",
       "media": {
         "src": {
           "name": "flur_3_nw_360 x.webp",
@@ -1407,7 +1384,6 @@
     },
     {
       "id": "flur_2_sw",
-      "animationType": "forward",
       "media": {
         "src": {
           "name": "flur_2_sw_360 (1) x.webp",
@@ -1471,7 +1447,6 @@
     },
     {
       "id": "flur_3_n_kunstraum",
-      "animationType": "forward",
       "media": {
         "src": {
           "name": "flur_3_n_360 x.webp",
@@ -1524,7 +1499,6 @@
     },
     {
       "id": "flur_3_w_kunst_flur",
-      "animationType": "forward",
       "media": {
         "src": {
           "name": "flur_3_w_360 x.webp",
@@ -1575,7 +1549,6 @@
     },
     {
       "id": "flur_3_sw_kunst_flur_hinten",
-      "animationType": "forward",
       "media": {
         "src": {
           "name": "flur_3_sw_360 x.webp",
@@ -1639,7 +1612,6 @@
     },
     {
       "id": "flur_2_no_musik",
-      "animationType": "forward",
       "media": {
         "src": {
           "name": "flur_2_no_360 x.webp",
@@ -1690,7 +1662,6 @@
     },
     {
       "id": "flur_1_nw",
-      "animationType": "forward",
       "media": {
         "src": {
           "name": "flur_1_w_360 x.webp",
@@ -1754,7 +1725,6 @@
     },
     {
       "id": "flur_1_n_bio",
-      "animationType": "forward",
       "media": {
         "src": {
           "name": "flur_1_n_360 x.webp",
@@ -1805,7 +1775,6 @@
     },
     {
       "id": "flur_1_sw",
-      "animationType": "forward",
       "media": {
         "src": {
           "name": "flur_1_sw_360 (2) x.webp",
@@ -1869,7 +1838,6 @@
     },
     {
       "id": "flur_-1_w",
-      "animationType": "forward",
       "media": {
         "src": {
           "name": "flur_-1_w_360 x.webp",
@@ -1920,7 +1888,6 @@
     },
     {
       "id": "cafeteteria",
-      "animationType": "forward",
       "media": {
         "src": {
           "name": "cafeteria x.webp",
@@ -1971,7 +1938,6 @@
     },
     {
       "id": "flur_0_n",
-      "animationType": "forward",
       "media": {
         "src": {
           "name": "flur_0_n_360 x.webp",
@@ -2035,7 +2001,6 @@
     },
     {
       "id": "flur_0_nno",
-      "animationType": "forward",
       "media": {
         "src": {
           "name": "flur_0_no2_360 x.webp",
@@ -2099,7 +2064,6 @@
     },
     {
       "id": "flur_0_no",
-      "animationType": "forward",
       "media": {
         "src": {
           "name": "flur_0_no_360 x.webp",
@@ -2152,7 +2116,6 @@
     },
     {
       "id": "flur_01_no",
-      "animationType": "forward",
       "media": {
         "src": {
           "name": "flur_0_no2_360 (2) x.webp",
@@ -2205,7 +2168,6 @@
     },
     {
       "id": "flur_3_no",
-      "animationType": "forward",
       "media": {
         "src": {
           "name": "flur_3_no_360 (2) x.webp",

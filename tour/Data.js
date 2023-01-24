@@ -1,3 +1,4 @@
+import { isDefault, NotSet, wrapDefault } from "./DefaultValueService.js";
 import { arrayEqualsContain } from "./utils.js";
 export const mediaFolder = "media";
 const uniqueId = (() => {
@@ -229,22 +230,23 @@ class Data {
             return obj;
         }
         const jsonObj = {};
-        for (let i of this.fields) {
-            if (skip.includes(i)) {
+        for (let key of this.fields) {
+            if (skip.includes(key)) {
                 continue;
             }
-            // skip undefined values
-            if (this[i] === undefined) {
+            const value = this[key];
+            // skip undefined / unset values or values
+            if (value === undefined || value === NotSet || isDefault(value)) {
                 continue;
             }
-            jsonObj[i] = transformObjectToJson(this[i]);
-            // if (typeof this[i] === "object" && "toJSON" in this[i]) {
-            //     jsonObj[i] = this[i].toJSON();
+            jsonObj[key] = transformObjectToJson(value);
+            // if (typeof this[key] === "object" && "toJSON" in this[key]) {
+            //     jsonObj[key] = this[key].toJSON();
             // }
             // else {
-            //     jsonObj[i] = this[i];
+            //     jsonObj[key] = this[key];
             // }
-            // jsonObj[i] = this[i]?.toJSON?.() ?? this[i];
+            // jsonObj[key] = this[key]?.toJSON?.() ?? this[key];
         }
         return jsonObj;
     }
@@ -489,7 +491,7 @@ class ClickableData extends AbstractActivatingInlineObjectData {
     static { this.default = new ClickableData({
         icon: "arrow_l",
         title: "",
-        animationType: undefined,
+        animationType: NotSet,
         goto: "",
         targetType: "auto",
         x: 0,
@@ -516,34 +518,6 @@ class ClickableData extends AbstractActivatingInlineObjectData {
             destinationScroll: json.destinationScroll ?? ClickableData.default.destinationScroll,
         });
     }
-    // public override toJSON(): this["json"] {
-    //     return {
-    //         ...super.partialToJSON(),
-    //         destinationScroll: this.destinationScroll
-    //     }
-    // }
-    // public equals(other: DataType<ClickableData> | undefined | null): other is DataType<ClickableData> {
-    //     return super.equals(other)
-    //         && this.title === other.title
-    //         && this.icon === other.icon;
-    // }
-    //
-    // public toJSON(): JsonClickable {
-    //     return {
-    //         ...super.toJSON(),
-    //         title: this.title,
-    //         icon: this.icon,
-    //     } as JsonClickable;
-    //     // we need to cast here because JsonActivating is dynamic
-    // }
-    //
-    // public withIcon(icon: IconType): ClickableData {
-    //     return new ClickableData({...this, icon: icon});
-    // }
-    //
-    // public withTitle(title: string): ClickableData {
-    //     return new ClickableData({...this, title: title});
-    // }
     static {
         this.makeImmutable();
     }
@@ -558,10 +532,6 @@ class TextFieldData extends AbstractAddressableInlineObjectData {
             cssClasses: cssClasses,
             size: size,
         });
-        // this.title = title;
-        // this.content = content;
-        // this.cssClasses = cssClasses;
-        // this.size = size;
         this.onConstructionFinished(TextFieldData);
     }
     static {
@@ -592,50 +562,9 @@ class TextFieldData extends AbstractAddressableInlineObjectData {
             x: typeof json.x === "number" ? json.x : parseFloat(json.x),
             y: typeof json.y === "number" ? json.y : parseFloat(json.y),
             position: json.position ?? TextFieldData.default.position,
-            animationType: json.animationType ?? TextFieldData.default.animationType,
+            animationType: json.animationType ?? wrapDefault(TextFieldData.default.animationType),
         });
     }
-    // public equals(other: DataType<TextFieldData> | undefined | null): other is DataType<TextFieldData> {
-    //     return super.equals(other) &&
-    //         this.title === other.title &&
-    //         this.content === other.content &&
-    //         this.size === other.size &&
-    //         // this.id === other.id &&
-    //         arrayEquals(this.cssClasses, other.cssClasses);
-    // }
-    //
-    // public toJSON(): JsonTextField {
-    //     return {
-    //         ...super.toJSON(),
-    //         title: this.title,
-    //         content: this.content,
-    //         cssClasses: this.cssClasses as Mutable<TextFieldData["cssClasses"]>,
-    //         size: this.size,
-    //     };
-    // }
-    //
-    // public withTitle(title: string): TextFieldData {
-    //     return new TextFieldData({...this, title: title});
-    // }
-    //
-    // public withContent(content: string): TextFieldData {
-    //     return new TextFieldData({...this, content: content});
-    // }
-    //
-    // public withCssClasses(cssClasses: string[]): TextFieldData {
-    //     return new TextFieldData({...this, cssClasses: cssClasses});
-    // }
-    //
-    // public withFooter(footer: string | undefined): TextFieldData {
-    //     return new TextFieldData({...this, footer: footer});
-    // }
-    //
-    // public withSize(size: TextFieldSize): TextFieldData {
-    //     if (this.size === size) {
-    //         return this;
-    //     }
-    //     return new TextFieldData({...this, size: size});
-    // }
     static {
         this.makeImmutable();
     }
@@ -666,21 +595,10 @@ class CustomObjectData extends AbstractInlineObjectData {
             x: typeof json.x === "number" ? json.x : parseFloat(json.x),
             y: typeof json.y === "number" ? json.y : parseFloat(json.y),
             position: json.position ?? CustomObjectData.default.position,
-            animationType: json.animationType ?? CustomObjectData.default.animationType,
+            animationType: json.animationType ?? wrapDefault(CustomObjectData.default.animationType),
             hidden: json.hidden ?? CustomObjectData.default.hidden,
         });
     }
-    // public equals(other: DataType<CustomObjectData> | undefined | null): other is DataType<CustomObjectData> {
-    //     return super.equals(other) &&
-    //         this.htmlId === other.htmlId;
-    // }
-    //
-    // public toJSON(): JsonCustomObject {
-    //     return {
-    //         ...super.toJSON(),
-    //         htmlId: this.htmlId,
-    //     };
-    // }
     static {
         this.makeImmutable();
     }
@@ -1205,7 +1123,7 @@ class PageData extends AbstractAddressableObject {
             centralPositions = page.centralPositions;
         }
         return new PageData({
-            animationType: page.animationType ?? PageData.default.animationType,
+            animationType: page.animationType ?? wrapDefault(PageData.default.animationType),
             id: page.id,
             media: media,
             is360: is360,

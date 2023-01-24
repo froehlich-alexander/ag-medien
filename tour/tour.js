@@ -1,4 +1,5 @@
 import { InlineObjectData, MediaData, mediaFolder, SchulTourConfigFile, uniqueId, } from "./Data.js";
+import { defaultEqual, defaultNullishCoalescing, extractFromDefault, notSetToUndefined, } from "./DefaultValueService.js";
 let finished_last = true;
 const idPrefix = "tour_pg_";
 const baustellenFotoUrl = mediaFolder + "/baustelle.webp";
@@ -532,7 +533,6 @@ class Page extends AddressableObject() {
         this.media.page = this;
         this.is_360 = data.is360;
         this.is_panorama = data.isPanorama;
-        this.animationType = data.animationType;
         this.inlineObjects = inlineObjects.slice();
         this.html = $("<div></div>");
         // this.html[0].addEventListener("animationend", this.handleAnimationEnd);
@@ -1057,7 +1057,7 @@ function AddressableObject(baseClass) {
                     clone.activate(animationType, options);
                 }
             }
-            if (animationType !== undefined && animationType !== this.data.animationType) {
+            if (!defaultEqual(animationType, undefined) && !defaultEqual(animationType, this.data.animationType)) {
                 this.html.attr("data-tour-animation-onetime", animationType);
             }
             this.html
@@ -1077,7 +1077,7 @@ function AddressableObject(baseClass) {
                     clone.deactivate(animationType, options);
                 }
             }
-            if (animationType !== undefined && animationType !== this.data.animationType) {
+            if (!defaultEqual(animationType, undefined) && !defaultEqual(animationType, this.data.animationType)) {
                 this.html.attr("data-tour-animation-onetime", animationType);
             }
             this.html
@@ -1307,7 +1307,7 @@ class Clickable extends InlineObject {
             for (let destinationPage of Tour.pages) {
                 // clickable addresses a page obj
                 if (destinationPage.id === this.data.goto) {
-                    const animationType = this.data.animationType ?? destinationPage.animationType;
+                    const animationType = defaultNullishCoalescing(notSetToUndefined(this.data.animationType), destinationPage.data.animationType);
                     // the position on the next page where the user will arrive
                     let destinationScroll = this.data.destinationScroll ?? "auto";
                     // we do not need to compute anything on non panorama pages
@@ -1322,7 +1322,7 @@ class Clickable extends InlineObject {
                         // console.log("dest scroll clickable", destinationScroll, clickable);
                         const pictureWidthUntilRepeat = destinationPage.data.secondBeginning;
                         if (clickable) {
-                            switch (animationType) {
+                            switch (extractFromDefault(animationType)) {
                                 case "forward":
                                     // we take the position of the clickable (in percent)
                                     // then we add 50 to it to get the position one would look at when coming from that clickable
@@ -1386,13 +1386,13 @@ class Clickable extends InlineObject {
     performAction(destinationObj) {
         switch (this.data.action) {
             case "activate":
-                destinationObj.activate(this.data.animationType);
+                destinationObj.activate(notSetToUndefined(this.data.animationType));
                 break;
             case "deactivate":
-                destinationObj.deactivate(this.data.animationType);
+                destinationObj.deactivate(notSetToUndefined(this.data.animationType));
                 break;
             case "toggle":
-                destinationObj.toggle(undefined, this.data.animationType);
+                destinationObj.toggle(undefined, notSetToUndefined(this.data.animationType));
                 break;
         }
     }
