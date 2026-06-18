@@ -53,7 +53,7 @@ const config = {
             logging: "warn",
         },
         host: "localhost",
-        // allowedHosts: "all",
+        // allowedHosts: ["localhost"],
     },
     optimization: {
         minimizer: [

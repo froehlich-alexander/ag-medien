@@ -1362,6 +1362,11 @@ class InlineObject {
     public readonly similar: this[] = [];
     private readonly _html: JQuery;
 
+    // length in px to offset this inline object's x position in html
+    public offsetX = 0;
+    // length in px to offset this inline object's y position in html
+    public offsetY = 0;
+
     // dev tool
     public handleEditClick?: (inlineObjectId: number, inlineObject: InlineObjectData) => void;
 
@@ -1392,14 +1397,7 @@ class InlineObject {
                 this.html.addClass("show");
             }
 
-            // x and y coordinates
-            if (this.data.x !== undefined) {
-                this._html.css("left", this.data.x + "%");
-            }
-
-            if (this.data.y !== undefined) {
-                this._html.css("top", this.data.y + "%");
-            }
+            this.writeCoordinates();
 
             if (Tour.devTool) {
                 this.html
@@ -1426,6 +1424,22 @@ class InlineObject {
                     }));
             }
         }
+    }
+
+    /**
+     * Write the left and top css attributes.<br>
+     * {@link data.x}, {@link data.y}, {@link offsetX} and {@link offsetY} have impact on the position.
+     */
+    public writeCoordinates(): void {
+            // x and y coordinates
+            if (this.data.x !== undefined) {
+                this._html.css("left", `calc(${this.data.x}% + ${this.offsetX}px)`);
+            }
+
+            if (this.data.y !== undefined) {
+                this._html.css("top", `calc(${this.data.y}% + ${this.offsetY}px)`);
+            }
+
     }
 
     /**
@@ -1570,6 +1584,7 @@ class TextField extends AddressableObject(InlineObject) {
 class Clickable extends InlineObject {
     declare public readonly data: ClickableData;
     // the absolute scroll position on the goto target
+    // obsolete?
     public readonly destinationScroll: number | undefined;
 
     constructor(data: ClickableData, html?: JQuery<HTMLElement>) {
@@ -1684,7 +1699,7 @@ class Clickable extends InlineObject {
                         destinationScroll = undefined;
                     }
                 }
-                console.assert(destinationScroll === this.destinationScroll, "destination scroll not equal", destinationScroll, this.destinationScroll);
+                // console.assert(destinationScroll === this.destinationScroll, "destination scroll not equal", destinationScroll, this.destinationScroll);
 
                 destinationPage.activate(animationType, {destinationScroll: destinationScroll});
                 break;
@@ -2025,11 +2040,57 @@ window.addEventListener("popstate", function () {
 });
 
 function adjust_clickables() {
+    // perhaps turn clickables text on left side of icon
     let clickables = $(".clickable");
     clickables.removeClass("right");
     for (let i = 0; i < clickables.length; i++) {
         if (clickables.eq(i).offset()!.left + clickables.eq(i).outerWidth(true)! > clickables.eq(i).parent().offset()!.left + clickables.eq(i).parent().outerWidth(true)!)
             clickables.eq(i).addClass("right");
+    }
+
+    // check if inlineObjects are (partly) out of the screen
+    // +- 10 is for a little margin
+    for (const page of Tour.pages) {
+        for (const inlineObject of page.inlineObjects) {
+            // reset offsets
+            inlineObject.offsetX = 0;
+            inlineObject.offsetY = 0;
+            inlineObject.writeCoordinates();
+
+            // check top
+            const topDiff = inlineObject.html.parent().offset()!.top - inlineObject.html.offset()!.top;
+            if (topDiff > 0) {
+                // move a bit down
+                inlineObject.offsetY = topDiff + 10;
+            }
+
+            // check bottom
+            const botDiff = (inlineObject.html.offset()!.top + inlineObject.html.outerHeight(true)!) - (inlineObject.html.parent().offset()!.top + inlineObject.html.parent().outerHeight(true)!);
+            if (botDiff > 0) {
+                // move a bit up
+                inlineObject.offsetY = -botDiff - 10;
+            }
+
+            // clickable text is already moved to left if needed (see above)
+            // so we can continue as usually
+
+            // check left
+            const leftDiff = inlineObject.html.parent().offset()!.left - inlineObject.html.offset()!.left;
+            if (leftDiff > 0) {
+                inlineObject.offsetX = leftDiff + 10;
+            }
+
+            // check right
+            const rightDiff = (inlineObject.html.offset()!.left + inlineObject.html.outerWidth(true)!) - (inlineObject.html.parent().offset()!.left + inlineObject.html.parent().outerWidth(true)!);
+            if (rightDiff > 0) {
+                inlineObject.offsetX = -rightDiff - 10;
+            }
+
+            inlineObject.writeCoordinates();
+            if (page.id === "schultor") {
+                console.log("coords written:", inlineObject.offsetX, inlineObject.offsetY);
+            }
+        }
     }
 }
 
@@ -2039,26 +2100,10 @@ function adjust_clickables() {
 function createLatestClickable(clickables: Clickable[]) {
     $(".clickable").removeClass("lastest-clickable");
     for (let i of clickables) {
-        console.log("lastest lclickable", i.data.goto, i.data.goto === lastest, i);
+        console.log("latest clickable", i.data.goto, i.data.goto === lastest, i);
         i?.html.addClass("lastest-clickable");
     }
 }
-
-// function createHtml(json: JsonPage[]) {
-//     const pages: Page[] = [];
-//     const tourElement = $("<div/>")
-//         .addClass('schul-tour');
-//     for (let pageData of json.map(PageData.fromJSON)) {
-//         let page = Page.from(pageData);
-//
-//         pages.push(page);
-//         tourElement.append(page.html);
-//     }
-//     Tour.pages = pages;
-//     document.body.append(tourElement[0]);
-//     console.log(json);
-//     adjust_clickables();
-// }
 
 /**
  * Ajax requests to file:// endpoints do not work in chrome base browsers<br>
@@ -2121,7 +2166,7 @@ const Tour = {
     startPage: undefined as Page | undefined,
     initialized: false,
 
-    // variables to be set from out
+    // Variables to be set from out
     // whether this is used by the dev tool (if true e.g. clickables are draggable, etc.)
     devTool: false,
 };
